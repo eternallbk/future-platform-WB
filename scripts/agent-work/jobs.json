@@ -1,0 +1,147 @@
+[
+ {
+  "id": "tencent-wechat-ec-search-agent",
+  "company": "腾讯 WXG 搜一搜（微信电商搜索）",
+  "shortName": "腾讯",
+  "tier": "A",
+  "title": "电商搜索 Agent 算法专家",
+  "directions": ["agent", "post-training", "rl"],
+  "cities": ["深圳"],
+  "pay": null,
+  "duration": null,
+  "conversion": null,
+  "open": true,
+  "applyUrl": "http://careers.tencent.com/jobdesc.html?postId=2091788011841957888",
+  "seasonality": "腾讯招聘页 2026-09-03 发布，滚动招聘；以岗位页状态为准",
+  "highlights": [
+   "Agentic Search 架构：意图理解 → 任务规划 → 信息检索 → 商品推荐 → 答案生成",
+   "大模型后训练：SFT、偏好优化、强化学习、知识蒸馏、拒绝采样、Reward 设计",
+   "直接考核 Agent 任务完成率、答案质量与业务转化"
+  ],
+  "process": [],
+  "notes": "岗位页只给了职责，未公开薪资/名额/转正比例，pay、duration、conversion 一律为 null（待核实）。方向判定来自职责原文：同时点名 SFT/偏好优化/强化学习，所以 post-training 与 rl 都计入。",
+  "confidence": "medium",
+  "sources": [
+   {"title": "腾讯招聘：微信搜索-电商agent算法专家", "url": "http://careers.tencent.com/jobdesc.html?postId=2091788011841957888"}
+  ],
+  "relevance": 79,
+  "postedAt": "2026-09-03T00:00:00+08:00",
+  "deadline": null
+ },
+ {
+  "id": "tencent-wegame-ai-research",
+  "company": "腾讯 IEG WeGame 平台公共",
+  "shortName": "腾讯",
+  "tier": "B",
+  "title": "AI 算法研究（WeGame 游戏平台）",
+  "directions": ["rl", "agent", "post-training"],
+  "cities": ["深圳"],
+  "pay": null,
+  "duration": null,
+  "conversion": null,
+  "open": true,
+  "applyUrl": "http://careers.tencent.com/jobdesc.html?postId=1982705847465299968",
+  "seasonality": "腾讯招聘页 2026-08-28 发布，滚动招聘",
+  "highlights": [
+   "深度学习与大语言模型的训练精调、调优、部署",
+   "智能体 Agent 开发，落地到平台业务场景",
+   "前沿技术跟踪：LLM、VLM、SFT、DPO、RAG、MCP"
+  ],
+  "process": [],
+  "notes": "职责里点名 SFT/DPO 与 VLM，因此计入 post-training 与 rl/agent；薪资与名额未公开，数字字段为 null（待核实）。",
+  "confidence": "medium",
+  "sources": [
+   {"title": "腾讯招聘：WeGame游戏平台-AI算法研究", "url": "http://careers.tencent.com/jobdesc.html?postId=1982705847465299968"}
+  ],
+  "relevance": 91,
+  "postedAt": "2026-08-28T00:00:00+08:00",
+  "deadline": null
+ },
+ {
+  "id": "tencent-agent-platform-engineer",
+  "company": "腾讯 TEG 数据计算平台部",
+  "shortName": "腾讯",
+  "tier": "B",
+  "title": "智能体应用技术算法工程师",
+  "directions": ["agent", "infra"],
+  "cities": ["北京"],
+  "pay": null,
+  "duration": null,
+  "conversion": null,
+  "open": true,
+  "applyUrl": "http://careers.tencent.com/jobdesc.html?postId=2079104781984645120",
+  "seasonality": "腾讯招聘页 2026-09-20 发布，滚动招聘",
+  "highlights": [
+   "智能体编排、工具调用、记忆管理、多智能体协作",
+   "Harness Engineering / Loop Engineering：行为约束、评测闭环、运维自愈",
+   "数据智能体：自然语言提问 → 数据理解 → 分析推理 → 结果生成"
+  ],
+  "process": [],
+  "notes": "职责摘要被采集器截断（末尾停在 RAG、Text2SQL），完整要求需看岗位页；薪资/名额未公开，数字字段为 null（待核实）。",
+  "confidence": "medium",
+  "sources": [
+   {"title": "腾讯招聘：智能体应用技术算法工程师", "url": "http://careers.tencent.com/jobdesc.html?postId=2079104781984645120"}
+  ],
+  "relevance": 87,
+  "postedAt": "2026-09-20T00:00:00+08:00",
+  "deadline": null
+ },
+ {
+  "id": "tencent-game-ai-rl-researcher",
+  "company": "腾讯 TEG 游戏 AI",
+  "shortName": "腾讯",
+  "tier": "B",
+  "title": "强化学习算法研究员",
+  "directions": ["rl", "agent"],
+  "cities": ["深圳"],
+  "pay": null,
+  "duration": null,
+  "conversion": null,
+  "open": true,
+  "applyUrl": "http://careers.tencent.com/jobdesc.html?postId=1831157606756933632",
+  "seasonality": "腾讯招聘页发布，滚动招聘（该 postId 在 2026-09-30 的采集批次里被捕获）",
+  "highlights": [
+   "强化学习、模仿学习、元学习在游戏场景的算法研究与落地",
+   "强化学习效率与效果优化",
+   "前沿技术探索并推进到业务场景"
+  ],
+  "process": [],
+  "notes": "该条目在采集层被分类器归到 rl（而非 job），本轮按岗位信息处理并补录岗位库；薪资/名额未公开，数字字段为 null（待核实）。",
+  "confidence": "medium",
+  "sources": [
+   {"title": "腾讯招聘：游戏AI-强化学习算法研究员", "url": "http://careers.tencent.com/jobdesc.html?postId=1831157606756933632"}
+  ],
+  "relevance": 87,
+  "postedAt": "2026-09-30T00:00:00+08:00",
+  "deadline": null
+ },
+ {
+  "id": "tencent-wechat-asr-engineer",
+  "company": "腾讯 WXG 微信 AI 助手",
+  "shortName": "腾讯",
+  "tier": "B",
+  "title": "语音识别算法工程师",
+  "directions": ["multimodal", "infra"],
+  "cities": ["北京"],
+  "pay": null,
+  "duration": null,
+  "conversion": null,
+  "open": true,
+  "applyUrl": "http://careers.tencent.com/jobdesc.html?postId=2064981110395420672",
+  "seasonality": "腾讯招聘页 2026-09-15 发布，滚动招聘",
+  "highlights": [
+   "流式 ASR：Streaming Conformer、CTC、Transducer、Attention",
+   "低延迟高准确率，服务实时对话/语音助手",
+   "语音理解与动态热词、上下文增强"
+  ],
+  "process": [],
+  "notes": "语音是「多模态输入」的一条独立支线，按 directions 归入 multimodal 与 infra（流式推理）；薪资/名额未公开，数字字段为 null（待核实）。",
+  "confidence": "medium",
+  "sources": [
+   {"title": "腾讯招聘：微信-语音识别算法工程师", "url": "http://careers.tencent.com/jobdesc.html?postId=2064981110395420672"}
+  ],
+  "relevance": 87,
+  "postedAt": "2026-09-15T00:00:00+08:00",
+  "deadline": null
+ }
+]

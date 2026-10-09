@@ -1,0 +1,149 @@
+{
+ "id": "d49207d57f4e9e74",
+ "tldr": "HAD 把蒸馏目标从「模仿老师全部输出」改成「只学老师超出 harness 的能力」：对比同一老师带/不带 harness 信息的动作并做有效性校验。",
+ "keyPoints": [
+  "智能体总带 harness——管理上下文、工具与反馈的软件",
+  "蒸馏小模型时 harness 不变，学生只需老师独有、harness 给不了的能力",
+  "标准蒸馏模仿老师全部输出，把 harness 当成输入的一部分",
+  "HAD 用同一老师「带/不带 harness 信息」的动作做偏好对比",
+  "偏好分数在学生自己的推理之后打；有效性校验剔除与 harness 记录矛盾的对",
+  "无需任务奖励、成功标签或未来信息，长程任务上优于同 harness 的 on-policy 蒸馏"
+ ],
+ "why": "HAD 是后训练与 Agent 蒸馏的新范式，直接关系「小模型智能体如何利用环境与工具信息」，对做 post-training 与 agent 方向的实习面试是加分点。",
+ "difficulty": "hard",
+ "tags": ["posttraining", "distillation", "agent", "on-policy-distillation", "preference-learning"],
+ "entities": ["Harness-Aware Distillation", "HAD", "harness", "on-policy distillation"],
+ "diagram": {
+  "kind": "architecture",
+  "title": "HAD 的蒸馏回路",
+  "caption": "harness 固定不动，蒸馏信号只取老师相对 harness 的增量：带/不带信息的动作对比，再经校验后更新学生。",
+  "svg": "<svg viewBox='0 0 600 300' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='HAD 架构：环境 harness 固定，学生行动，老师带与不带 harness 信息的动作构成偏好对，经有效性校验后更新学生'><rect x='56' y='16' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>① 环境 harness</text><text x='528' y='40' font-size='13' text-anchor='end' fill='currentColor'>管理上下文 / 工具 / 反馈</text><line x1='300' y1='54' x2='300' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,70 296,62 304,62' fill='var(--line-1)'/><rect x='56' y='70' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>② 学生模型行动</text><text x='528' y='94' font-size='13' text-anchor='end' fill='currentColor'>harness 保持不变</text><line x1='300' y1='108' x2='300' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,124 296,116 304,116' fill='var(--line-1)'/><rect x='56' y='124' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>③ 老师对照</text><text x='528' y='148' font-size='13' text-anchor='end' fill='currentColor'>同一老师 带 / 不带 harness 信息</text><line x1='300' y1='162' x2='300' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,178 296,170 304,170' fill='var(--line-1)'/><rect x='56' y='178' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>④ 有效性校验</text><text x='528' y='202' font-size='13' text-anchor='end' fill='currentColor'>剔除与 harness 记录矛盾的对</text><line x1='300' y1='216' x2='300' y2='224' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,232 296,224 304,224' fill='var(--line-1)'/><rect x='56' y='232' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='256' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>⑤ 学生更新</text><text x='528' y='256' font-size='13' text-anchor='end' fill='currentColor'>只学 harness 之外的增量能力</text></svg>",
+  "alt": "自上而下：固定的 harness→学生行动→老师带/不带信息的动作对照→有效性校验→学生只学超出 harness 的增量能力。"
+ },
+ "concepts": [
+  {
+   "name": "Harness（智能体外壳）",
+   "readable": "指围绕语言模型的软件层，负责管理它的上下文、可调用工具与反馈；模型本身只负责在这些信息基础上产出动作。",
+   "analogy": "像司机的驾驶舱：发动机是模型，仪表盘、挡把、导航就是 harness，司机（模型）靠它们才能把车开对。",
+   "analogyBreaksDown": "驾驶舱是固定硬件，而 harness 会随任务改写上下文、注入工具返回的反馈，是动态可编程的，类比体现不出它会主动构造输入。",
+   "mechanism": "关键设计是把「记什么、能调什么、拿到什么反馈」从模型权重里剥离到外部软件，于是同一模型换 harness 就能换行为；代价是模型必须学会正确读取 harness 提供的信息。",
+   "visual": "画三层：模型（中心）—harness（上下文/工具/反馈三块）—环境（任务世界），用箭头表示信息在三者间流动。",
+   "prerequisites": ["LLM 智能体（如 ReAct）基本概念", "上下文与工具调用"],
+   "selfTest": ["harness 具体管哪三样东西？", "为什么换 harness 会让同一模型行为不同？", "学生模型为什么不能只靠模仿老师？"],
+   "formula": ""
+  },
+  {
+   "name": "Harness-Aware Distillation（外壳感知蒸馏）",
+   "readable": "蒸馏小模型时 harness 保留不动，学生只需学老师「超出 harness 的那部分能力」，比如如何正确利用 harness 信息，而不是把 harness 本身也背进权重。",
+   "analogy": "师傅和徒弟用同一套工具箱，徒弟该学的是「看图纸后怎么下刀」的手艺，而不是把工具箱重新买一遍。",
+   "analogyBreaksDown": "工具箱能力是固定的，但 harness 会随任务变化其输入；且偏好对比依赖「同一老师带/不带信息」的对照，现实中很难让师傅装傻再演示一遍。",
+   "mechanism": "把「带 harness 信息的老师动作」与「不带 harness 信息的老师动作」配成偏好对，偏好方向指向正确利用 harness 的那个动作；在学生自身推理之后打分，使信号对齐学生的实际决策点。",
+   "visual": "画两条并排轨迹：teacher+harness 与 teacher-harness，同一状态下分叉出两个动作，用 + / - 标注偏好，箭头指向学生策略更新。",
+   "prerequisites": ["知识蒸馏基础", "偏好优化 / DPO", "on-policy distillation"],
+   "selfTest": ["HAD 与标准蒸馏在目标上差在哪？", "为什么偏好分数要在学生推理之后打？", "为什么不直接用任务奖励？"],
+   "formula": "L_{\\mathrm{HAD}}=-\\mathbb{E}\\left[\\log\\sigma\\left(\\beta\\left(\\log\\pi_{\\theta}(a^{+}\\mid s,r)-\\log\\pi_{\\theta}(a^{-}\\mid s,r)\\right)\\right)\\right]"
+  },
+  {
+   "name": "Validity Check（有效性校验）",
+   "readable": "构造出偏好对后逐一核对：被判定为「更优」的动作是否与 harness 的记录相矛盾；矛盾的对直接丢弃，避免把错误偏好喂给模型。",
+   "analogy": "像校对员：别人写好的对照答案，先对照原始记录查一遍，发现自相矛盾的整条划掉，绝不拿错答案当范本。",
+   "analogyBreaksDown": "校对只查文字一致性，而这里的「矛盾」是动作与工具返回、环境状态冲突；且它只做过滤不修正动作，过滤后样本会变少。",
+   "mechanism": "关键设计是把「老师带 harness 的动作」当正例，但防止它本身与 harness 记录冲突（如声称调用了未调用的工具）；用一致性判定做硬过滤，保证偏好信号可信。",
+   "visual": "画一个漏斗：偏好对进入→按「与 harness 记录是否一致」分流→一致者进训练集，矛盾者丢弃。",
+   "prerequisites": ["偏好数据构造", "智能体轨迹与工具调用记录"],
+   "selfTest": ["没有校验会引入什么错误？", "校验为什么只丢不补？", "它与奖励模型过滤有何区别？"],
+   "formula": "\\tilde{\\mathcal{D}}=\\{(a^{+},a^{-})\\in\\mathcal{D}:\\mathrm{Consistent}(a^{+},\\mathcal{H})=\\mathrm{true}\\}"
+  }
+ ],
+ "formulas": [
+  {
+   "id": "f-had-action-preference",
+   "name": "Harness 感知的动作偏好损失（Harness-Aware Action Preference Loss）",
+   "category": "posttraining",
+   "latex": "L_{\\mathrm{HAD}}=-\\mathbb{E}_{(s,r)\\sim\\mathcal{D}}\\left[\\log\\sigma\\left(\\beta\\left(\\log\\pi_{\\theta}(a^{+}\\mid s,r)-\\log\\pi_{\\theta}(a^{-}\\mid s,r)\\right)\\right)\\right]",
+   "symbols": [["s", "智能体当前状态（含 harness 提供的上下文）"], ["r", "学生模型自己的推理，打分发生在它之后"], ["a^{+}", "偏好动作：同一老师带 harness 信息时的动作"], ["a^{-}", "对照动作：同一老师不带 harness 信息时的动作"], ["\\pi_{\\theta}", "学生策略，参数为 \\theta"], ["\\beta", "偏好强度（温度）系数"], ["\\sigma", "sigmoid 函数"], ["\\mathcal{D}", "经有效性校验后的偏好对集合"]],
+   "derivation": [
+    "第 1 步：动机——harness 固定，学生只需学老师超出 harness 的能力，故应对比「带/不带 harness 信息」的动作。",
+    "第 2 步：用同一老师在同一状态 s 下分别生成带信息与不带信息的动作，构成 a+ 与 a-。",
+    "第 3 步：在学生自己的推理 r 之后，用学生策略对两个动作分别打分。",
+    "第 4 步：套 DPO 式 sigmoid 损失，把学生策略推向 a+、远离 a-。",
+    "第 5 步：配合有效性校验过滤与 harness 记录矛盾的偏好对。"
+   ],
+   "analogy": "像让学生对比「查了资料写的答案」和「没查资料瞎猜的答案」，学的是「如何用资料」，而不是把资料本身背下来。",
+   "pitfalls": [
+    "误以为要模仿老师带 harness 的全部输出；HAD 只学超出 harness 的增量。",
+    "把 harness 信息当普通输入一起模仿（标准蒸馏），让学生把 harness 记录也背进权重。",
+    "忽略偏好对的有效性校验，正例与 harness 记录矛盾会污染训练。"
+   ],
+   "code": "import torch\nimport torch.nn.functional as F\n\ndef had_loss(logp_pos, logp_neg, beta=0.1):\n    # logp_pos/logp_neg: 学生策略对 a+ / a- 的对数概率\n    return -F.logsigmoid(beta * (logp_pos - logp_neg)).mean()\n\nlp_pos = torch.randn(8)  # 偏好动作（带 harness 信息）\nlp_neg = torch.randn(8)  # 对照动作（不带 harness 信息）\nprint(had_loss(lp_pos, lp_neg))",
+   "sources": [{"title": "Harness-Aware Distillation for Small Language Model Agents", "url": "https://huggingface.co/papers/2610.02858"}]
+  },
+  {
+   "id": "f-had-validity-check",
+   "name": "偏好对有效性校验（Preference Pair Validity Check）",
+   "category": "posttraining",
+   "latex": "\\tilde{\\mathcal{D}}=\\{(a^{+},a^{-})\\in\\mathcal{D}:\\mathrm{Consistent}(a^{+},\\mathcal{H})=\\mathrm{true}\\}",
+   "symbols": [["\\mathcal{D}", "原始偏好对集合"], ["\\tilde{\\mathcal{D}}", "校验后保留的偏好对集合"], ["a^{+}", "被判为偏好的动作"], ["\\mathcal{H}", "harness 的记录（工具调用、环境状态等）"], ["\\mathrm{Consistent}(\\cdot)", "一致性判定函数，返回布尔值"]],
+   "derivation": [
+    "第 1 步：偏好对由老师动作构造，但老师动作可能与 harness 记录不一致。",
+    "第 2 步：用 harness 记录 H 核对偏好动作 a+ 是否自洽。",
+    "第 3 步：只保留一致的偏好对，矛盾的丢弃。",
+    "第 4 步：过滤后的集合用于训练，避免学到错误方向。"
+   ],
+   "analogy": "像筛简历：先按「是否与事实一致」把自相矛盾的一份直接筛掉，剩下的才进入面试流程。",
+   "pitfalls": [
+    "把校验当修正：它只丢弃不修补，样本会减少。",
+    "只校验 a+ 不看 a-，可能仍保留有噪声的对照动作。"
+   ],
+   "code": "def keep_valid(pairs, consistent):\n    # pairs: [(a_pos, a_neg), ...]; consistent(a_pos) -> bool\n    return [(p, n) for p, n in pairs if consistent(p)]\n\npairs = [('call_search()', 'call_search()'), ('call_calc()', 'call_search()')]\nconsistent = lambda a: a.startswith('call_')\nprint(keep_valid(pairs, consistent))",
+   "sources": [{"title": "Harness-Aware Distillation for Small Language Model Agents", "url": "https://arxiv.org/abs/2610.02858"}]
+  }
+ ],
+ "selfCheck": {
+  "claims": [
+   "harness 是模型周围的软件，负责管理上下文、工具与反馈",
+   "蒸馏到小模型时 harness 保持不变，学生主要需要老师特有、harness 提供不了的能力",
+   "标准蒸馏模仿老师全部输出并把 harness 当输入",
+   "HAD 聚焦老师超出 harness 的增量，用带/不带 harness 信息的动作做偏好对比",
+   "偏好分数在学生自己的推理之后打分；有效性校验剔除与 harness 记录矛盾的偏好对",
+   "HAD 不需要任务奖励、成功标签或未来信息",
+   "在多个长程 agent 基准和模型上，HAD 优于同 harness 的 on-policy 蒸馏",
+   "分析显示 HAD 更少进入无效循环、更常从错误中恢复，并把可学习反馈留在权重、把状态信息交给 harness 读取"
+  ],
+  "uncertain": [
+   "摘要未给具体损失函数与公式，两条公式为按摘要语义重建的通用 DPO 式形式，需核对原文（待核实）",
+   "具体基准、模型规模与提升数值摘要未列出（待核实）",
+   "「带/不带 harness 信息」两种条件如何实现（例如屏蔽上下文）摘要未说明（待核实）"
+  ]
+ },
+ "teaching": {
+  "progressive": [
+   {"level": "一句话", "text": "小模型智能体蒸馏时，只学老师「超出工具外壳」的那部分本事。"},
+   {"level": "入门", "text": "智能体总连着 harness——管理上下文、工具和反馈的软件。把大模型蒸馏成小的时 harness 不变，所以学生要补的是老师独有的能力，比如怎么正确使用 harness 给的信息。"},
+   {"level": "进阶", "text": "标准蒸馏让学生模仿老师全部输出，等于把 harness 也当输入一起背。HAD 改为对比：让同一老师在有 harness 信息和无 harness 信息两种条件下各出动作，偏好「有信息时」那个动作，而且在学生自己推理之后打分。再加一道有效性校验，把与 harness 记录矛盾的对丢掉。"},
+   {"level": "专家", "text": "与 on-policy 蒸馏相比，HAD 的信号来自老师相对 harness 的增量而非老师的完整分布，因此不需要任务奖励或成功标签。代价是偏好对依赖「同一老师两次条件化」，且校验会减少样本。摘要指出它在长程基准上超出同 harness 的 on-policy 基线，并更少陷入无效循环、更常从错误中恢复，暗示它把可学习反馈留在权重，把状态信息交给 harness 读取。"}
+  ],
+  "socratic": [
+   {"q": "既然 harness 不变，为什么不直接让学生模仿老师的完整轨迹？", "a": "老师的完整输出里混着大量 harness 自己提供的信息，学生照抄会把 harness 记录也背进权重，浪费容量且难泛化；HAD 只取增量。"},
+   {"q": "为什么偏好要在学生自己的推理之后打分？", "a": "决策点发生在学生推理之后，只有在那时打分，偏好才对得上学生真实要优化的动作选择。"},
+   {"q": "有效性校验看起来多此一举，不做行不行？", "a": "不行。老师动作可能声称调用了未调用的工具，若当正例会教坏学生；校验按 harness 记录过滤，保证信号可信。"}
+  ],
+  "mechanism": "核心是「减法」：把老师能力拆成 harness 提供的部分与老师独有的部分，只蒸馏后者。做法是用同一老师的两次条件化（带/不带 harness 信息）构造动作偏好，把差异当成监督信号；再用有效性校验保证正例与 harness 记录自洽，从而在无任务奖励的情况下学到「正确使用工具与反馈」的行为。",
+  "boundary": "当 harness 信息对决策几乎无影响时，对比信号趋于噪声、收益有限；偏好对依赖「同一老师的不带信息版本」，若该版本退化到乱动则对照失效；校验只丢弃不修补，长尾任务可能样本稀少。摘要在若干长程基准上验证，其它任务类型待核实。",
+  "analogyBoundary": "「师傅徒弟共用工具箱」的类比忽略两点：harness 会动态改写输入，「带/不带信息」的对照在现实里很难让师傅装傻重演；且蒸馏是策略层面的偏好，不是把工具动作抄一遍。",
+  "misconceptions": [
+   "把 HAD 当成全新蒸馏损失替换品；它是在 on-policy 蒸馏上叠加动作偏好与校验。",
+   "以为要模仿老师带 harness 的完整输出；实际只取超出 harness 的增量。",
+   "以为需要任务奖励或成功标签；摘要明确说 HAD 不需要。"
+  ],
+  "ownAnalysis": "把「蒸馏什么」从「老师的全部」改成「老师相对环境的增量」，与机器人领域学增量策略、以及「环境已提供的信息不该进权重」的直觉一致（推断）。可疑点在于：不带 harness 信息的老师可能强依赖记忆，比出的差异未必只含「学用 harness 的能力」（待核实）。",
+  "officialNotes": [
+   {"position": "HAD 只聚焦老师超出 harness 的增量，用带/不带 harness 信息的动作偏好对比并做有效性校验，无需任务奖励、成功标签或未来信息，在长程 agent 基准上优于同 harness 的 on-policy 蒸馏。", "source": "https://huggingface.co/papers/2610.02858"}
+  ],
+  "interviewAnswer": "智能体部署时总带着 harness——管理上下文、工具和反馈的软件。蒸馏小模型时 harness 不变，学生只需老师独有、harness 给不了的能力。标准蒸馏模仿老师全部输出、把 harness 当输入，会让学生把环境信息也背进权重。HAD 改为对比：同一老师在有/无 harness 信息下各出动作，在学生推理之后打分构造偏好，再加有效性校验剔除与 harness 记录矛盾的对。它不需要任务奖励或成功标签，在长程 agent 基准上超过同 harness 的 on-policy 蒸馏。",
+  "studyPath": {
+   "prerequisites": ["知识蒸馏", "偏好优化 / DPO", "LLM 智能体（工具调用、上下文管理）"],
+   "nextSteps": ["读 HAD 原文明确偏好对的构造与校验细节", "复现 on-policy 蒸馏基线做对照", "在带工具的长程任务上验证有效性校验的影响"]
+  }
+ }
+}

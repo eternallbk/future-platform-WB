@@ -1,0 +1,26 @@
+{
+ "basis": "web/data/deep-read-plan.json 的 queue + backfill（scripts/plan_deep_read.py 生成：质量闸门 + 每类 2–10 条配额）",
+ "readFrom": "web/data/deep-read-plan.json",
+ "processing": "24 个批次由并行子代理处理，各自写 scripts/agent-work/out-<batchId>.json；再由 scripts/build_agent_payload.py 合并成 payload，scripts/validate_agent_out.py 做硬校验（schema、图解、URL 来源、teaching 十项）",
+ "fullQueueSize": 96,
+ "queueProcessed": 71,
+ "queueSkipped": 25,
+ "skipReasons": "方向类子串误分类 14 条（法学/教育学/精神病学/天体物理/控制理论/无线感知）、求职吐槽与情绪帖 6 条、inbox 占位 URL 2 条、岗位帖按岗位处理 1 条、与目标方向无关的仓库 2 条；逐条证据见 scripts/agent-work/skips.json",
+ "backfillTotal": 45,
+ "backfillProcessed": 45,
+ "backfillMissingSets": {
+  "teaching_only": 33,
+  "diagram+teaching": 6,
+  "diagram+formulas+teaching": 6
+ },
+ "corpusSize": 720,
+ "alreadyEnrichedBeforeThisRun": 45,
+ "freshThisRun": 170,
+ "categories": [
+  "multimodal", "posttraining", "worldmodel", "generative", "rl", "agent",
+  "foundation", "engineering", "coding", "paper", "course", "job"
+ ],
+ "channels": ["arxiv", "hf_papers", "s2", "github", "nowcoder", "jobs_tencent", "inbox", "leiphone"],
+ "quotaRule": "完全按 web/data/deep-read-plan.json 的清单执行，不自己另挑条目；唯一的人工干预是剔除清单里可被证据证伪的误分类与占位条目，剔除依据写在 scripts/agent-work/skips.json，可复核、可回滚。",
+ "note": "backfill 条目只补 missing 里缺的层（teaching / diagram / formulas / concepts），由 build_agent_payload.py 深合并进已有 enrichment，绝不重写或删除已有解析。"
+}

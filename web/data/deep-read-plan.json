@@ -1,0 +1,2873 @@
+{
+ "generatedAt": "2026-10-09T18:11:13+08:00",
+ "generatedBy": "plan_deep_read.py",
+ "policy": {
+  "perCategoryMin": 2,
+  "perCategoryMax": 10,
+  "freshOnly": false,
+  "note": "每个分类挑 2–10 条做深度解析；其余条目仍保留在卡片库里可搜索、参与去重，但不会进入深度解析队列，也不会挤占「今日速览」。",
+  "noiseRules": [
+   {
+    "id": "career-vent",
+    "why": "求职吐槽 / 情绪帖，无信息量"
+   },
+   {
+    "id": "generic-question",
+    "why": "泛化提问 / 求帮选，无法结构化成知识"
+   },
+   {
+    "id": "referral-code",
+    "why": "内推码 / 内推广告，只需进岗位信息"
+   },
+   {
+    "id": "salary-thread",
+    "why": "纯薪资讨论 / 薪资汇总，数字无法核实且易重复"
+   },
+   {
+    "id": "off-topic-hot",
+    "why": "与技术无关的社区热榜"
+   },
+   {
+    "id": "promo",
+    "why": "推广 / 卖课 / 招生 / 引流，不是知识（含「八股汇总」类标题党实为卖课）"
+   },
+   {
+    "id": "paid-guide",
+    "why": "付费充值 / 订阅开通教程，与求职学习无关（只讲怎么付钱，没有可追问的原理）"
+   },
+   {
+    "id": "download-bait",
+    "why": "资料包 / PDF 打包下载引流，不是知识本身"
+   }
+  ]
+ },
+ "totals": {
+  "corpus": 1161,
+  "alreadyEnriched": 491,
+  "candidates": 694,
+  "skimmed": 186,
+  "selected": 84,
+  "categories": 11,
+  "problems": 8,
+  "bankProblems": 14
+ },
+ "perCategory": {
+  "agent": {
+   "quota": 7,
+   "picked": 7,
+   "candidates": 92,
+   "categoryWeight": 0.6
+  },
+  "coding": {
+   "quota": 10,
+   "picked": 10,
+   "candidates": 160,
+   "categoryWeight": 1.0
+  },
+  "engineering": {
+   "quota": 7,
+   "picked": 7,
+   "candidates": 11,
+   "categoryWeight": 0.65
+  },
+  "exam": {
+   "quota": 8,
+   "picked": 8,
+   "candidates": 20,
+   "categoryWeight": 0.8
+  },
+  "foundation": {
+   "quota": 8,
+   "picked": 3,
+   "candidates": 3,
+   "categoryWeight": 0.7
+  },
+  "generative": {
+   "quota": 9,
+   "picked": 9,
+   "candidates": 29,
+   "categoryWeight": 0.85
+  },
+  "job": {
+   "quota": 6,
+   "picked": 1,
+   "candidates": 1,
+   "categoryWeight": 0.5
+  },
+  "multimodal": {
+   "quota": 10,
+   "picked": 10,
+   "candidates": 56,
+   "categoryWeight": 1.0
+  },
+  "posttraining": {
+   "quota": 10,
+   "picked": 10,
+   "candidates": 67,
+   "categoryWeight": 1.0
+  },
+  "rl": {
+   "quota": 9,
+   "picked": 9,
+   "candidates": 16,
+   "categoryWeight": 0.9
+  },
+  "worldmodel": {
+   "quota": 10,
+   "picked": 10,
+   "candidates": 53,
+   "categoryWeight": 1.0
+  }
+ },
+ "queue": [
+  {
+   "id": "633640aabf0338eb",
+   "title": "Mental-Models for Multi-Agent Systems",
+   "category": "agent",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 98.2,
+   "materiality": 0.655,
+   "depthScore": 87.07,
+   "url": "https://arxiv.org/abs/2610.12453v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 31.4,
+    "materiality": 19.6,
+    "career": 18.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "1081cf498cdb08fc",
+   "title": "WareFly-VLA: A Vision-Language-Action Framework for UAV Navigation and Human Tracking in Smart Warehouses",
+   "category": "worldmodel",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 85.6,
+   "materiality": 0.73,
+   "depthScore": 85.29,
+   "url": "https://arxiv.org/abs/2610.08526v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 27.4,
+    "materiality": 21.9,
+    "career": 18.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "ac0db2a7ed9bd053",
+   "title": "GRACE: Generation-aware latent compression for efficient video generation",
+   "category": "generative",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 87.8,
+   "materiality": 0.693,
+   "depthScore": 84.89,
+   "url": "https://arxiv.org/abs/2610.10524v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 28.1,
+    "materiality": 20.8,
+    "career": 18.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "f5bf4f05b6144dc8",
+   "title": "RECAST: Learning to Compute the Right Context through Adaptive Evidence Routing",
+   "category": "posttraining",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 80.6,
+   "materiality": 0.768,
+   "depthScore": 84.83,
+   "url": "https://arxiv.org/abs/2610.10507v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 25.8,
+    "materiality": 23.0,
+    "career": 18.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "f5c24c7fe049da47",
+   "title": "DepthWorld: 3D World Model for Robot Manipulation",
+   "category": "worldmodel",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 78.2,
+   "materiality": 0.768,
+   "depthScore": 84.06,
+   "url": "https://arxiv.org/abs/2610.08780v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 25.0,
+    "materiality": 23.0,
+    "career": 18.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "0a00d4e02dc50cc4",
+   "title": "Rephrase Before You Act: Characterizing and Mitigating Language Sensitivity in Vision-Language-Action Models",
+   "category": "multimodal",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 80.2,
+   "materiality": 0.73,
+   "depthScore": 83.56,
+   "url": "https://arxiv.org/abs/2610.10526v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 25.7,
+    "materiality": 21.9,
+    "career": 18.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "f10b3a64fea8504a",
+   "title": "A Balanced Data Diet: Addressing the Exploration Bottleneck in Mega-Scale RL for Robot Control",
+   "category": "rl",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 82.5,
+   "materiality": 0.693,
+   "depthScore": 83.19,
+   "url": "https://arxiv.org/abs/2610.12465v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 26.4,
+    "materiality": 20.8,
+    "career": 18.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "6ed7fdf25c9dfe52",
+   "title": "VersaCamVLA: Camera-Configurable VLA Policies for Robotic Manipulation",
+   "category": "worldmodel",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 82.5,
+   "materiality": 0.693,
+   "depthScore": 83.19,
+   "url": "https://arxiv.org/abs/2610.12451v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 26.4,
+    "materiality": 20.8,
+    "career": 18.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "dafc1b4d7cbbd25b",
+   "title": "DataSense-Bench: The First Step Toward an AI Scientist",
+   "category": "posttraining",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 75.0,
+   "materiality": 0.768,
+   "depthScore": 83.04,
+   "url": "https://arxiv.org/abs/2610.12190v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 24.0,
+    "materiality": 23.0,
+    "career": 18.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "007283de44a19771",
+   "title": "WorldSolver: Can LLM Agents Simulate the Physical Dynamics via Solver Generation?",
+   "category": "agent",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 77.8,
+   "materiality": 0.73,
+   "depthScore": 82.8,
+   "url": "https://arxiv.org/abs/2610.08720v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 24.9,
+    "materiality": 21.9,
+    "career": 18.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "725a16be31a8a015",
+   "title": "Selective Transfer of RL Updates for Visual Reasoning",
+   "category": "posttraining",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 77.7,
+   "materiality": 0.73,
+   "depthScore": 82.76,
+   "url": "https://arxiv.org/abs/2610.08659v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 24.9,
+    "materiality": 21.9,
+    "career": 18.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "ef3c061bcdcc3d1a",
+   "title": "On-Policy Distillation with Negative-Policy Rollouts",
+   "category": "posttraining",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 76.8,
+   "materiality": 0.73,
+   "depthScore": 82.48,
+   "url": "https://arxiv.org/abs/2610.07874v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 24.6,
+    "materiality": 21.9,
+    "career": 18.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "255f1616af944384",
+   "title": "Before They Can Solve: Predicting Post-Training Coding-Agent Performance from Base Models",
+   "category": "posttraining",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 79.8,
+   "materiality": 0.693,
+   "depthScore": 82.33,
+   "url": "https://arxiv.org/abs/2610.10478v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 25.5,
+    "materiality": 20.8,
+    "career": 18.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "4e1b5267f146c65b",
+   "title": "RSJEV: Discriminative Remote Sensing Scene Classification with Multimodal Large Language Models",
+   "category": "multimodal",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 96.2,
+   "materiality": 0.618,
+   "depthScore": 82.32,
+   "url": "https://arxiv.org/abs/2610.08539v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 30.8,
+    "materiality": 18.5,
+    "career": 15.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "569d72485484eff1",
+   "title": "TaoD2C-Bench: Benchmarking MLLMs for Industrial UI Code Generation Beyond Visual Fidelity",
+   "category": "multimodal",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 79.7,
+   "materiality": 0.693,
+   "depthScore": 82.29,
+   "url": "https://arxiv.org/abs/2610.10374v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 25.5,
+    "materiality": 20.8,
+    "career": 18.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "a526f15fe6c04b42",
+   "title": "RoboJEPA: Scaling Robotic Latent World Models",
+   "category": "worldmodel",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 72.6,
+   "materiality": 0.768,
+   "depthScore": 82.27,
+   "url": "https://arxiv.org/abs/2610.10515v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 23.2,
+    "materiality": 23.0,
+    "career": 18.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "d9d89b09e299af71",
+   "title": "OmniCapBench: A Deep-Structured Evaluation Framework for Fine-Grained Audio-Visual Captioning",
+   "category": "multimodal",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 93.5,
+   "materiality": 0.618,
+   "depthScore": 81.46,
+   "url": "https://huggingface.co/papers/2610.12458",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 29.9,
+    "materiality": 18.5,
+    "career": 15.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "6ac8dd7e823188cc",
+   "title": "MultiFly: A Real-World Multimodal Aerial Dataset with Annotation-Efficient Label Transfer and Cross-Modal Semantic Consistency",
+   "category": "multimodal",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 79.4,
+   "materiality": 0.655,
+   "depthScore": 81.06,
+   "url": "https://arxiv.org/abs/2610.10359v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 25.4,
+    "materiality": 19.6,
+    "career": 18.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "864aa5f7df07768d",
+   "title": "EmbodiedRSI: Active Continual Robot Learning Through Hypothesis-Guided Co-Evolution",
+   "category": "worldmodel",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 72.2,
+   "materiality": 0.73,
+   "depthScore": 81.0,
+   "url": "https://arxiv.org/abs/2610.10498v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 23.1,
+    "materiality": 21.9,
+    "career": 18.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "c6bed269261489ad",
+   "title": "DiffGate: Difficulty-Gated Teacher Guidance for On-Policy Distillation",
+   "category": "posttraining",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 91.1,
+   "materiality": 0.618,
+   "depthScore": 80.69,
+   "url": "https://huggingface.co/papers/2610.04596",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 29.2,
+    "materiality": 18.5,
+    "career": 15.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "8f2f9a8185514295",
+   "title": "OneSearch-VL: Unified Multimodal Deep Research Agent for Image and Video",
+   "category": "multimodal",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 74.4,
+   "materiality": 0.693,
+   "depthScore": 80.6,
+   "url": "https://arxiv.org/abs/2610.12419v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 23.8,
+    "materiality": 20.8,
+    "career": 18.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "2399d927c5394cb9",
+   "title": "Real-Time Joint Audio-Video Generation by Parallel Adapter Composition",
+   "category": "generative",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 83.3,
+   "materiality": 0.693,
+   "depthScore": 80.45,
+   "url": "https://arxiv.org/abs/2610.10343v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 26.7,
+    "materiality": 20.8,
+    "career": 15.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "83a0a88895a87397",
+   "title": "Denoising Hierarchical Representations: Joint Continuous Diffusion for Language Modeling",
+   "category": "generative",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 77.1,
+   "materiality": 0.655,
+   "depthScore": 80.32,
+   "url": "https://arxiv.org/abs/2610.08738v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 24.7,
+    "materiality": 19.6,
+    "career": 18.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "3dfb657c98f58e43",
+   "title": "PrimitiveCAD: An LLM-Based Point-to-CAD Reconstruction with Primitive-Aware Tokenization and Operation Alignment",
+   "category": "rl",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 69.7,
+   "materiality": 0.73,
+   "depthScore": 80.2,
+   "url": "https://arxiv.org/abs/2610.08698v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 22.3,
+    "materiality": 21.9,
+    "career": 18.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "d8f5c2a4bdc33bac",
+   "title": "SlimWise: Decoupling Expert Pruning Across Prefill and Decode for Efficient MoE Serving",
+   "category": "engineering",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 85.3,
+   "materiality": 0.655,
+   "depthScore": 79.95,
+   "url": "https://huggingface.co/papers/2609.34117",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 27.3,
+    "materiality": 19.6,
+    "career": 15.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "d55bf25dd2cd14b6",
+   "title": "LOCAA: An Agentic System for Automated Lossy Compressor Tuning",
+   "category": "agent",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 83.2,
+   "materiality": 0.655,
+   "depthScore": 79.27,
+   "url": "https://arxiv.org/abs/2610.10487v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 26.6,
+    "materiality": 19.6,
+    "career": 15.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "a261181ec7d8f18a",
+   "title": "Beyond Policy Support: Interaction Constrained Offline Reinforcement Learning for Autonomous Driving",
+   "category": "rl",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 85.3,
+   "materiality": 0.523,
+   "depthScore": 78.99,
+   "url": "https://arxiv.org/abs/2610.09763v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 27.3,
+    "materiality": 15.7,
+    "career": 18.0,
+    "directionFit": 0.3
+   }
+  },
+  {
+   "id": "0952570c959a185f",
+   "title": "MiMo-V2.6: Scaling Reinforcement Learning Towards Self-Improvement",
+   "category": "rl",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 81.8,
+   "materiality": 0.655,
+   "depthScore": 78.83,
+   "url": "https://huggingface.co/papers/2610.11959",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 26.2,
+    "materiality": 19.6,
+    "career": 15.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "d138939dd5b0062c",
+   "title": "DAEDALUS: Bootstrapping Agent Memory from Self-Generated Tasks",
+   "category": "agent",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 80.6,
+   "materiality": 0.655,
+   "depthScore": 78.44,
+   "url": "https://huggingface.co/papers/2610.08048",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 25.8,
+    "materiality": 19.6,
+    "career": 15.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "33ee3d94a5d2d3d1",
+   "title": "LEGO: A Lifting-Free Approach for Exocentric-to-Egocentric Video Generation",
+   "category": "generative",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 77.9,
+   "materiality": 0.655,
+   "depthScore": 77.58,
+   "url": "https://arxiv.org/abs/2610.12442v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 24.9,
+    "materiality": 19.6,
+    "career": 15.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "ae8164d86a237df6",
+   "title": "AgentGarten: Code Worlds for Evolving Agents",
+   "category": "rl",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 80.7,
+   "materiality": 0.523,
+   "depthScore": 77.51,
+   "url": "https://arxiv.org/abs/2610.12374v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 25.8,
+    "materiality": 15.7,
+    "career": 18.0,
+    "directionFit": 0.3
+   }
+  },
+  {
+   "id": "658deaffa4055464",
+   "title": "Koopman Observers for Diffusion Acceleration: Correcting Feature Forecasts with Shallow Measurements",
+   "category": "generative",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 75.3,
+   "materiality": 0.679,
+   "depthScore": 77.47,
+   "url": "https://arxiv.org/abs/2610.10366v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 24.1,
+    "materiality": 20.4,
+    "career": 15.0,
+    "directionFit": 0.8
+   }
+  },
+  {
+   "id": "7a1d09356e2ec880",
+   "title": "Controllable Exaggeration for Generative Motion Models via Training-Time Adaptation and Inference-Time Guidance",
+   "category": "generative",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 70.4,
+   "materiality": 0.73,
+   "depthScore": 77.43,
+   "url": "https://arxiv.org/abs/2610.12316v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 22.5,
+    "materiality": 21.9,
+    "career": 15.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "054156dcbe200878",
+   "title": "Multi-Agent Egocentric World Model with Fine-Grained Embodied Interaction",
+   "category": "worldmodel",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 80.6,
+   "materiality": 0.618,
+   "depthScore": 77.33,
+   "url": "https://huggingface.co/papers/2610.12299",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 25.8,
+    "materiality": 18.5,
+    "career": 15.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "2545b0a92a02b0fc",
+   "title": "A Safe Action Is Not Enough: Feasible-Future Decoding for Vision-Language-Action Policies",
+   "category": "worldmodel",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 72.5,
+   "materiality": 0.693,
+   "depthScore": 76.99,
+   "url": "https://huggingface.co/papers/2610.05166",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 23.2,
+    "materiality": 20.8,
+    "career": 15.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "83ddb4ab1baca69d",
+   "title": "OuroWorld: Bringing Any 3D World Alive as Diverse, Endlessly Looping 3D Cinemagraphs",
+   "category": "worldmodel",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 79.5,
+   "materiality": 0.618,
+   "depthScore": 76.98,
+   "url": "https://huggingface.co/papers/2610.12461",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 25.4,
+    "materiality": 18.5,
+    "career": 15.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "f337a0e7a6db2da2",
+   "title": "MORCA: Offline-to-Online Reinforcement Learning for Adaptive Cache Reuse in Video Diffusion Acceleration",
+   "category": "generative",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 78.1,
+   "materiality": 0.523,
+   "depthScore": 76.68,
+   "url": "https://arxiv.org/abs/2610.10457v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 25.0,
+    "materiality": 15.7,
+    "career": 18.0,
+    "directionFit": 0.3
+   }
+  },
+  {
+   "id": "3d393b3e98f36756",
+   "title": "Accurate but Not Humble: Evaluating Epistemic Humility in LLM Agents under Knowledge Conflict",
+   "category": "agent",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 76.2,
+   "materiality": 0.618,
+   "depthScore": 75.92,
+   "url": "https://huggingface.co/papers/2610.12360",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 24.4,
+    "materiality": 18.5,
+    "career": 15.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "ac3dc2887be5e28e",
+   "title": "Rationale-Guided Policy Optimization: Learning to Reason with Adaptive Rationale Scaffolding",
+   "category": "rl",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 69.7,
+   "materiality": 0.655,
+   "depthScore": 74.95,
+   "url": "https://huggingface.co/papers/2610.07342",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 22.3,
+    "materiality": 19.6,
+    "career": 15.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "83d50b8fffe7bd19",
+   "title": "WorldGuide: Goal-Directed Video World Model for Procedural Task Execution",
+   "category": "worldmodel",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 69.1,
+   "materiality": 0.655,
+   "depthScore": 74.76,
+   "url": "https://huggingface.co/papers/2610.12459",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 22.1,
+    "materiality": 19.6,
+    "career": 15.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "1d9ad7d1ea7a5c53",
+   "title": "OPD Before RL: Warm-Starting Rubric-Based RL with On-Policy Distillation",
+   "category": "posttraining",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 72.3,
+   "materiality": 0.618,
+   "depthScore": 74.68,
+   "url": "https://huggingface.co/papers/2610.02781",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 23.1,
+    "materiality": 18.5,
+    "career": 15.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "da3810f62ad3a0bc",
+   "title": "Embodied Turing Machines: Stateful Code for Robot Recursive Self-Improvement",
+   "category": "worldmodel",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 75.1,
+   "materiality": 0.58,
+   "depthScore": 74.43,
+   "url": "https://huggingface.co/papers/2610.12369",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 24.0,
+    "materiality": 17.4,
+    "career": 15.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "c035cc3a364c5b18",
+   "title": "PEARS: Physical-Prior-Guided Efficient Adaptation via Failure Reasoning and Diffusion Steering for Tactile Manipulation",
+   "category": "generative",
+   "channel": "arxiv",
+   "kind": "paper",
+   "relevanceScore": 67.7,
+   "materiality": 0.523,
+   "depthScore": 73.35,
+   "url": "https://arxiv.org/abs/2610.08784v1",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 21.7,
+    "materiality": 15.7,
+    "career": 18.0,
+    "directionFit": 0.3
+   }
+  },
+  {
+   "id": "227fbd7a496ed8f5",
+   "title": "REMORY: Learning Residual Memory for Context Compaction",
+   "category": "agent",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 75.2,
+   "materiality": 0.539,
+   "depthScore": 73.23,
+   "url": "https://huggingface.co/papers/2610.11287",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 24.1,
+    "materiality": 16.2,
+    "career": 15.0,
+    "directionFit": 0.8
+   }
+  },
+  {
+   "id": "cc120f4ea3496ee9",
+   "title": "Post-Training Frontier Text-to-Image Models by Composing Preference and Rubric Rewards",
+   "category": "posttraining",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 67.3,
+   "materiality": 0.618,
+   "depthScore": 73.08,
+   "url": "https://huggingface.co/papers/2610.02967",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 21.5,
+    "materiality": 18.5,
+    "career": 15.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "75fa69bbbb4beb78",
+   "title": "Do Language Models Need a Trainable Input Embedding Table? Fixed Minimal Token Codes at 1.7B-Class Scale",
+   "category": "foundation",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 56.5,
+   "materiality": 0.693,
+   "depthScore": 71.87,
+   "url": "https://huggingface.co/papers/2610.04002",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 18.1,
+    "materiality": 20.8,
+    "career": 15.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "0e4e04fc7b06e699",
+   "title": "CtrlCache: Accelerating Interactive Video World Models with Control-Aware Caching",
+   "category": "generative",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 62.8,
+   "materiality": 0.618,
+   "depthScore": 71.64,
+   "url": "https://huggingface.co/papers/2610.08777",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 20.1,
+    "materiality": 18.5,
+    "career": 15.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "4eb0635c11167ab9",
+   "title": "Human, AI, and Hybrid Ensembles for Detection of Adaptive, RL-based Social Bots",
+   "category": "rl",
+   "channel": "s2",
+   "kind": "paper",
+   "relevanceScore": 71.7,
+   "materiality": 0.508,
+   "depthScore": 71.18,
+   "url": "https://doi.org/10.1145/3820783",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 22.9,
+    "materiality": 15.2,
+    "career": 15.0,
+    "directionFit": 0.3
+   }
+  },
+  {
+   "id": "5813a9b2b79e9343",
+   "title": "ReSPO: Reshaped Sequence Policy Optimization for Gradient Starvation in Off-Policy Learning",
+   "category": "rl",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 60.9,
+   "materiality": 0.618,
+   "depthScore": 71.03,
+   "url": "https://huggingface.co/papers/2609.35433",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 19.5,
+    "materiality": 18.5,
+    "career": 15.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "659c4ed727802f67",
+   "title": "Learning to Steer, Steering to See: Unveiling the Geometry of RLVR in Large Language Models via Trainable Vectors",
+   "category": "posttraining",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 59.1,
+   "materiality": 0.618,
+   "depthScore": 70.45,
+   "url": "https://huggingface.co/papers/2609.34344",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 18.9,
+    "materiality": 18.5,
+    "career": 15.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "1c93aad3debbc2b5",
+   "title": "UNREAL: Unifying Retrieval and Long-Context with a Single Model",
+   "category": "foundation",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 65.0,
+   "materiality": 0.539,
+   "depthScore": 69.97,
+   "url": "https://huggingface.co/papers/2610.08463",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 20.8,
+    "materiality": 16.2,
+    "career": 15.0,
+    "directionFit": 0.8
+   }
+  },
+  {
+   "id": "f363167fd97325e5",
+   "title": "Learning Discriminative Geometry for Drifting Models",
+   "category": "engineering",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 58.2,
+   "materiality": 0.609,
+   "depthScore": 69.89,
+   "url": "https://huggingface.co/papers/2610.04703",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 18.6,
+    "materiality": 18.3,
+    "career": 15.0,
+    "directionFit": 0.8
+   }
+  },
+  {
+   "id": "9f3713206a7aa6ef",
+   "title": "Do LLMs Understand Sequential Structure? A Controlled Study of Inference and Generation",
+   "category": "engineering",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 60.3,
+   "materiality": 0.58,
+   "depthScore": 69.7,
+   "url": "https://huggingface.co/papers/2610.04977",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 19.3,
+    "materiality": 17.4,
+    "career": 15.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "2650022bd4635710",
+   "title": "Multilinguality in Hybrid Attention LLMs",
+   "category": "foundation",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 52.0,
+   "materiality": 0.655,
+   "depthScore": 69.29,
+   "url": "https://huggingface.co/papers/2609.35378",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 16.6,
+    "materiality": 19.6,
+    "career": 15.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "a252f980703a2733",
+   "title": "Execution-Aligned Progressive Noise for Consistent Asynchronous Replanning in Generative Robot Policies",
+   "category": "multimodal",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 60.0,
+   "materiality": 0.539,
+   "depthScore": 68.37,
+   "url": "https://huggingface.co/papers/2610.06090",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 19.2,
+    "materiality": 16.2,
+    "career": 15.0,
+    "directionFit": 0.8
+   }
+  },
+  {
+   "id": "a81c60485ba7615c",
+   "title": "Conditional Trajectory Peaks: Single-Pass Multimodal Policies over Action Chunks",
+   "category": "multimodal",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 60.0,
+   "materiality": 0.539,
+   "depthScore": 68.37,
+   "url": "https://huggingface.co/papers/2610.06104",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 19.2,
+    "materiality": 16.2,
+    "career": 15.0,
+    "directionFit": 0.8
+   }
+  },
+  {
+   "id": "cd1021a7ce7dafcf",
+   "title": "MemFold: Learning Compact Soft Memory for Long-Context Personalization via On-Policy Optimization",
+   "category": "rl",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 53.0,
+   "materiality": 0.609,
+   "depthScore": 68.23,
+   "url": "https://huggingface.co/papers/2609.36435",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 17.0,
+    "materiality": 18.3,
+    "career": 15.0,
+    "directionFit": 0.8
+   }
+  },
+  {
+   "id": "30834584ad427694",
+   "title": "SatNav: A Scalable Benchmark for Long-Horizon UAV Vision-Language Navigation from Satellite Imagery",
+   "category": "multimodal",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 49.1,
+   "materiality": 0.618,
+   "depthScore": 67.25,
+   "url": "https://huggingface.co/papers/2609.31507",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 15.7,
+    "materiality": 18.5,
+    "career": 15.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "2459123f398960a0",
+   "title": "Where WiFi Sensing Fails:A Reproducibility Study of CSI-IMU Substitution for Human Activity Recognition",
+   "category": "multimodal",
+   "channel": "s2",
+   "kind": "paper",
+   "relevanceScore": 57.0,
+   "materiality": 0.672,
+   "depthScore": 66.4,
+   "url": "https://openalex.org/W7208797711",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 18.2,
+    "materiality": 20.2,
+    "career": 10.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "2fa52382eb7a2831",
+   "title": "Foundations of Large Language Models",
+   "category": "engineering",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 69.3,
+   "materiality": 0.481,
+   "depthScore": 65.58,
+   "url": "https://huggingface.co/papers/2501.09223",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 22.2,
+    "materiality": 14.4,
+    "career": 15.0,
+    "directionFit": 0.8
+   }
+  },
+  {
+   "id": "3573d5a391326adf",
+   "title": "阿里巴巴 Java 一面 · 面试题",
+   "category": "exam",
+   "channel": "kamacoder_notes",
+   "kind": "interview",
+   "relevanceScore": 79.0,
+   "materiality": 0.585,
+   "depthScore": 64.63,
+   "url": "https://notes.kamacoder.com/interview/java/alibaba-interview-11-23.html",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "interview",
+    "kindZh": "面经",
+    "relevance": 25.3,
+    "materiality": 17.6,
+    "career": 19.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "6b1d855864495bbf",
+   "title": "每日温度（LeetCode 739）· 大厂高频手撕题",
+   "category": "coding",
+   "channel": "codetop",
+   "kind": "problem",
+   "relevanceScore": 84.4,
+   "materiality": 0.423,
+   "depthScore": 63.75,
+   "url": "https://leetcode.cn/problems/daily-temperatures",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "problem",
+    "kindZh": "手撕/笔试题",
+    "relevance": 27.0,
+    "materiality": 12.7,
+    "career": 20.0,
+    "directionFit": 0.82
+   }
+  },
+  {
+   "id": "d49207d57f4e9e74",
+   "title": "Harness-Aware Distillation for Small Language Model Agents",
+   "category": "posttraining",
+   "channel": "hf_papers",
+   "kind": "paper",
+   "relevanceScore": 55.1,
+   "materiality": 0.426,
+   "depthScore": 63.41,
+   "url": "https://huggingface.co/papers/2610.02858",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "paper",
+    "kindZh": "论文",
+    "relevance": 17.6,
+    "materiality": 12.8,
+    "career": 15.0,
+    "directionFit": 0.24
+   }
+  },
+  {
+   "id": "10a9531f4231c1c1",
+   "title": "160. 相交链表 · 题解",
+   "category": "coding",
+   "channel": "programmercarl",
+   "kind": "problem",
+   "relevanceScore": 92.2,
+   "materiality": 0.425,
+   "depthScore": 63.22,
+   "url": "https://programmercarl.com/algo/other/0160-intersection-of-two-linked-lists.html",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "problem",
+    "kindZh": "手撕/笔试题",
+    "relevance": 29.5,
+    "materiality": 12.8,
+    "career": 19.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "8f0349de263db386",
+   "title": "字符串相乘（LeetCode 43）· 大厂高频手撕题",
+   "category": "coding",
+   "channel": "codetop",
+   "kind": "problem",
+   "relevanceScore": 84.4,
+   "materiality": 0.423,
+   "depthScore": 63.06,
+   "url": "https://leetcode.cn/problems/multiply-strings",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "problem",
+    "kindZh": "手撕/笔试题",
+    "relevance": 27.0,
+    "materiality": 12.7,
+    "career": 20.0,
+    "directionFit": 0.82
+   }
+  },
+  {
+   "id": "b267ff96b62b124d",
+   "title": "t8y2/dbx - 25 MB lightweight cross-platform database client for 100+ databases, including MySQL, PostgreSQL, SQLite, Redis, MongoDB, DuckDB, SQL Server, and Dameng. Built-in AI, MCP Server, CLI, desktop and Docker. | 轻量级跨平台数据库管理工具，支持 MySQL、PostgreSQL、SQLite、Redis、MongoDB、达梦等 100+ 数据库，提供桌面端、Docker、CLI、内置 AI 助手和",
+   "category": "agent",
+   "channel": "gh_trending",
+   "kind": "repo",
+   "relevanceScore": 63.8,
+   "materiality": 0.608,
+   "depthScore": 62.69,
+   "url": "https://github.com/t8y2/dbx",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "repo",
+    "kindZh": "开源仓库",
+    "relevance": 20.4,
+    "materiality": 18.2,
+    "career": 16.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "b5d97e0997c4193a",
+   "title": "盒马面经 · 面试题",
+   "category": "coding",
+   "channel": "kamacoder_notes",
+   "kind": "interview",
+   "relevanceScore": 70.0,
+   "materiality": 0.51,
+   "depthScore": 59.94,
+   "url": "https://notes.kamacoder.com/interview/java/freshhema-interview.html",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "interview",
+    "kindZh": "面经",
+    "relevance": 22.4,
+    "materiality": 15.3,
+    "career": 19.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "b4159e72c6a7bcaf",
+   "title": "最长有效括号（LeetCode 32）· 大厂高频手撕题",
+   "category": "coding",
+   "channel": "codetop",
+   "kind": "problem",
+   "relevanceScore": 84.0,
+   "materiality": 0.315,
+   "depthScore": 59.33,
+   "url": "https://leetcode.cn/problems/longest-valid-parentheses",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "problem",
+    "kindZh": "手撕/笔试题",
+    "relevance": 26.9,
+    "materiality": 9.4,
+    "career": 20.0,
+    "directionFit": 0.82
+   }
+  },
+  {
+   "id": "a12b4a1a2abd9e3b",
+   "title": "爬楼梯（LeetCode 70）· 大厂高频手撕题",
+   "category": "coding",
+   "channel": "codetop",
+   "kind": "problem",
+   "relevanceScore": 84.0,
+   "materiality": 0.315,
+   "depthScore": 58.83,
+   "url": "https://leetcode.cn/problems/climbing-stairs",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "problem",
+    "kindZh": "手撕/笔试题",
+    "relevance": 26.9,
+    "materiality": 9.4,
+    "career": 20.0,
+    "directionFit": 0.82
+   }
+  },
+  {
+   "id": "2dc995f84b8cef04",
+   "title": "亚信安全C++一面面经 · 面试题",
+   "category": "coding",
+   "channel": "kamacoder_notes",
+   "kind": "interview",
+   "relevanceScore": 69.4,
+   "materiality": 0.51,
+   "depthScore": 58.79,
+   "url": "https://notes.kamacoder.com/interview/cpp/yaxin-security-interview.html",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "interview",
+    "kindZh": "面经",
+    "relevance": 22.2,
+    "materiality": 15.3,
+    "career": 19.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "89824e07d162c472",
+   "title": "回溯算法去重问题的另一种写法 · 题解",
+   "category": "coding",
+   "channel": "programmercarl",
+   "kind": "problem",
+   "relevanceScore": 86.6,
+   "materiality": 0.38,
+   "depthScore": 58.73,
+   "url": "https://programmercarl.com/algo/backtracking/alternative-backtracking-deduplication.html",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "problem",
+    "kindZh": "手撕/笔试题",
+    "relevance": 27.7,
+    "materiality": 11.4,
+    "career": 19.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "d5d810d0e17db7b0",
+   "title": "和为K的子数组（LeetCode 560）· 大厂高频手撕题",
+   "category": "coding",
+   "channel": "codetop",
+   "kind": "problem",
+   "relevanceScore": 83.3,
+   "materiality": 0.315,
+   "depthScore": 58.73,
+   "url": "https://leetcode.cn/problems/subarray-sum-equals-k",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "problem",
+    "kindZh": "手撕/笔试题",
+    "relevance": 26.7,
+    "materiality": 9.4,
+    "career": 20.0,
+    "directionFit": 0.82
+   }
+  },
+  {
+   "id": "b6599b92013b6f4a",
+   "title": "207. 课程表：拓扑排序（BFS） · 题解",
+   "category": "coding",
+   "channel": "programmercarl",
+   "kind": "problem",
+   "relevanceScore": 86.8,
+   "materiality": 0.343,
+   "depthScore": 58.63,
+   "url": "https://programmercarl.com/algo/other/0207-course-schedule.html",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "problem",
+    "kindZh": "手撕/笔试题",
+    "relevance": 27.8,
+    "materiality": 10.3,
+    "career": 20.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "a4c8cc97dd754931",
+   "title": "ashhart/TensorFold - LLM Inference Engine for Metal, CUDA and Vulkan.",
+   "category": "engineering",
+   "channel": "github",
+   "kind": "repo",
+   "relevanceScore": 75.5,
+   "materiality": 0.368,
+   "depthScore": 56.75,
+   "url": "https://github.com/ashhart/TensorFold",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "repo",
+    "kindZh": "开源仓库",
+    "relevance": 24.2,
+    "materiality": 11.0,
+    "career": 16.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "bbb40282c7cfc434",
+   "title": "dphnAI/sonar - Large-scale LLM inference engine",
+   "category": "engineering",
+   "channel": "github",
+   "kind": "repo",
+   "relevanceScore": 54.8,
+   "materiality": 0.368,
+   "depthScore": 51.07,
+   "url": "https://github.com/dphnAI/sonar",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "repo",
+    "kindZh": "开源仓库",
+    "relevance": 17.5,
+    "materiality": 11.0,
+    "career": 16.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "fbcd218ee56a57f3",
+   "title": "jjang-ai/mlxstudio - MLX Studio - Easiest way to run LLM's on your Mac. All in one engine.",
+   "category": "engineering",
+   "channel": "github",
+   "kind": "repo",
+   "relevanceScore": 56.6,
+   "materiality": 0.343,
+   "depthScore": 50.73,
+   "url": "https://github.com/jjang-ai/mlxstudio",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "repo",
+    "kindZh": "开源仓库",
+    "relevance": 18.1,
+    "materiality": 10.3,
+    "career": 16.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "5d166480d300892b",
+   "title": "磁盘调度算法有什么？ · 八股",
+   "category": "exam",
+   "channel": "kamacoder_notes",
+   "kind": "notes",
+   "relevanceScore": 78.0,
+   "materiality": 0.528,
+   "depthScore": 48.91,
+   "url": "https://notes.kamacoder.com/base/disk-scheduling-algorithms.html",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "notes",
+    "kindZh": "知识点/八股",
+    "relevance": 25.0,
+    "materiality": 15.8,
+    "career": 12.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "209a6520800a5cf3",
+   "title": "能说说拥塞控制是怎样实现的吗？ · 八股",
+   "category": "exam",
+   "channel": "kamacoder_notes",
+   "kind": "notes",
+   "relevanceScore": 71.4,
+   "materiality": 0.528,
+   "depthScore": 47.41,
+   "url": "https://notes.kamacoder.com/base/congestion-control.html",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "notes",
+    "kindZh": "知识点/八股",
+    "relevance": 22.8,
+    "materiality": 15.8,
+    "career": 12.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "b06d216e7d58a20f",
+   "title": "上下文窗口有多大？Context Engineering入门 · 大模型笔记",
+   "category": "exam",
+   "channel": "kamacoder_notes",
+   "kind": "notes",
+   "relevanceScore": 65.4,
+   "materiality": 0.415,
+   "depthScore": 47.04,
+   "url": "https://notes.kamacoder.com/llm/app/context_engineering.html",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "notes",
+    "kindZh": "知识点/八股",
+    "relevance": 20.9,
+    "materiality": 12.4,
+    "career": 17.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "45af88edc732a0d6",
+   "title": "事务的四大特性有哪些？ · 八股",
+   "category": "exam",
+   "channel": "kamacoder_notes",
+   "kind": "notes",
+   "relevanceScore": 70.6,
+   "materiality": 0.528,
+   "depthScore": 46.99,
+   "url": "https://notes.kamacoder.com/base/acid-properties.html",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "notes",
+    "kindZh": "知识点/八股",
+    "relevance": 22.6,
+    "materiality": 15.8,
+    "career": 12.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "8d63fbcdd499a7d4",
+   "title": "软连接和硬链接的区别 · 八股",
+   "category": "exam",
+   "channel": "kamacoder_notes",
+   "kind": "notes",
+   "relevanceScore": 71.5,
+   "materiality": 0.49,
+   "depthScore": 46.53,
+   "url": "https://notes.kamacoder.com/base/hard-link-vs-soft-link.html",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "notes",
+    "kindZh": "知识点/八股",
+    "relevance": 22.9,
+    "materiality": 14.7,
+    "career": 12.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "ef096469dd679455",
+   "title": "产生死锁的原因有什么？ · 八股",
+   "category": "exam",
+   "channel": "kamacoder_notes",
+   "kind": "notes",
+   "relevanceScore": 78.7,
+   "materiality": 0.415,
+   "depthScore": 46.53,
+   "url": "https://notes.kamacoder.com/base/deadlock-causes.html",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "notes",
+    "kindZh": "知识点/八股",
+    "relevance": 25.2,
+    "materiality": 12.4,
+    "career": 12.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "bfa2262c9d9e3dec",
+   "title": "索引失效的场景有哪些 · 八股",
+   "category": "exam",
+   "channel": "kamacoder_notes",
+   "kind": "notes",
+   "relevanceScore": 78.1,
+   "materiality": 0.415,
+   "depthScore": 46.22,
+   "url": "https://notes.kamacoder.com/base/index-failure-scenarios.html",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "notes",
+    "kindZh": "知识点/八股",
+    "relevance": 25.0,
+    "materiality": 12.4,
+    "career": 12.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "f538a919e3ac60c2",
+   "title": "金融大模型-算法工程师",
+   "category": "job",
+   "channel": "jobs_tencent",
+   "kind": "job",
+   "relevanceScore": 67.6,
+   "materiality": 0.365,
+   "depthScore": 17.04,
+   "url": "http://careers.tencent.com/jobdesc.html?postId=2101507113946886144",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "job",
+    "kindZh": "岗位",
+    "relevance": 21.6,
+    "materiality": 10.9,
+    "career": 3.0,
+    "directionFit": 1.0
+   }
+  }
+ ],
+ "problemQueue": [
+  {
+   "id": "6b1d855864495bbf",
+   "title": "每日温度（LeetCode 739）· 大厂高频手撕题",
+   "category": "coding",
+   "channel": "codetop",
+   "kind": "problem",
+   "relevanceScore": 84.4,
+   "materiality": 0.423,
+   "depthScore": 63.75,
+   "url": "https://leetcode.cn/problems/daily-temperatures",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "problem",
+    "kindZh": "手撕/笔试题",
+    "relevance": 27.0,
+    "materiality": 12.7,
+    "career": 20.0,
+    "directionFit": 0.82
+   }
+  },
+  {
+   "id": "10a9531f4231c1c1",
+   "title": "160. 相交链表 · 题解",
+   "category": "coding",
+   "channel": "programmercarl",
+   "kind": "problem",
+   "relevanceScore": 92.2,
+   "materiality": 0.425,
+   "depthScore": 63.22,
+   "url": "https://programmercarl.com/algo/other/0160-intersection-of-two-linked-lists.html",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "problem",
+    "kindZh": "手撕/笔试题",
+    "relevance": 29.5,
+    "materiality": 12.8,
+    "career": 19.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "8f0349de263db386",
+   "title": "字符串相乘（LeetCode 43）· 大厂高频手撕题",
+   "category": "coding",
+   "channel": "codetop",
+   "kind": "problem",
+   "relevanceScore": 84.4,
+   "materiality": 0.423,
+   "depthScore": 63.06,
+   "url": "https://leetcode.cn/problems/multiply-strings",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "problem",
+    "kindZh": "手撕/笔试题",
+    "relevance": 27.0,
+    "materiality": 12.7,
+    "career": 20.0,
+    "directionFit": 0.82
+   }
+  },
+  {
+   "id": "b4159e72c6a7bcaf",
+   "title": "最长有效括号（LeetCode 32）· 大厂高频手撕题",
+   "category": "coding",
+   "channel": "codetop",
+   "kind": "problem",
+   "relevanceScore": 84.0,
+   "materiality": 0.315,
+   "depthScore": 59.33,
+   "url": "https://leetcode.cn/problems/longest-valid-parentheses",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "problem",
+    "kindZh": "手撕/笔试题",
+    "relevance": 26.9,
+    "materiality": 9.4,
+    "career": 20.0,
+    "directionFit": 0.82
+   }
+  },
+  {
+   "id": "a12b4a1a2abd9e3b",
+   "title": "爬楼梯（LeetCode 70）· 大厂高频手撕题",
+   "category": "coding",
+   "channel": "codetop",
+   "kind": "problem",
+   "relevanceScore": 84.0,
+   "materiality": 0.315,
+   "depthScore": 58.83,
+   "url": "https://leetcode.cn/problems/climbing-stairs",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "problem",
+    "kindZh": "手撕/笔试题",
+    "relevance": 26.9,
+    "materiality": 9.4,
+    "career": 20.0,
+    "directionFit": 0.82
+   }
+  },
+  {
+   "id": "89824e07d162c472",
+   "title": "回溯算法去重问题的另一种写法 · 题解",
+   "category": "coding",
+   "channel": "programmercarl",
+   "kind": "problem",
+   "relevanceScore": 86.6,
+   "materiality": 0.38,
+   "depthScore": 58.73,
+   "url": "https://programmercarl.com/algo/backtracking/alternative-backtracking-deduplication.html",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "problem",
+    "kindZh": "手撕/笔试题",
+    "relevance": 27.7,
+    "materiality": 11.4,
+    "career": 19.0,
+    "directionFit": 1.0
+   }
+  },
+  {
+   "id": "d5d810d0e17db7b0",
+   "title": "和为K的子数组（LeetCode 560）· 大厂高频手撕题",
+   "category": "coding",
+   "channel": "codetop",
+   "kind": "problem",
+   "relevanceScore": 83.3,
+   "materiality": 0.315,
+   "depthScore": 58.73,
+   "url": "https://leetcode.cn/problems/subarray-sum-equals-k",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "problem",
+    "kindZh": "手撕/笔试题",
+    "relevance": 26.7,
+    "materiality": 9.4,
+    "career": 20.0,
+    "directionFit": 0.82
+   }
+  },
+  {
+   "id": "b6599b92013b6f4a",
+   "title": "207. 课程表：拓扑排序（BFS） · 题解",
+   "category": "coding",
+   "channel": "programmercarl",
+   "kind": "problem",
+   "relevanceScore": 86.8,
+   "materiality": 0.343,
+   "depthScore": 58.63,
+   "url": "https://programmercarl.com/algo/other/0207-course-schedule.html",
+   "hasSummary": true,
+   "scoreBreakdown": {
+    "kind": "problem",
+    "kindZh": "手撕/笔试题",
+    "relevance": 27.8,
+    "materiality": 10.3,
+    "career": 20.0,
+    "directionFit": 1.0
+   }
+  }
+ ],
+ "problemQuota": {
+  "floor": 6,
+  "cap": 14,
+  "selected": 8,
+  "addedByFloor": []
+ },
+ "problemBankQueue": [
+  {
+   "itemId": "a77b0b38fd1be916",
+   "allItemIds": [
+    "a77b0b38fd1be916"
+   ],
+   "key": "lc-146",
+   "number": 146,
+   "title": "LRU缓存机制",
+   "track": "algorithm",
+   "difficulty": "medium",
+   "frequency": 896,
+   "companies": [
+    "字节跳动",
+    "腾讯",
+    "阿里巴巴",
+    "快手",
+    "美团",
+    "百度"
+   ],
+   "lastAsked": "2026-09-28",
+   "topics": [
+    "哈希表"
+   ],
+   "analysisStatus": "partial",
+   "hasCode": false,
+   "hasDiagram": false,
+   "url": "https://leetcode.cn/problems/lru-cache",
+   "sources": [
+    {
+     "title": "LRU缓存机制（LeetCode 146）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/lru-cache"
+    }
+   ]
+  },
+  {
+   "itemId": "218d3e48bbac3784",
+   "allItemIds": [
+    "218d3e48bbac3784",
+    "3deab4af259ac294"
+   ],
+   "key": "lc-206",
+   "number": 206,
+   "title": "反转链表",
+   "track": "algorithm",
+   "difficulty": "easy",
+   "frequency": 721,
+   "companies": [
+    "字节跳动",
+    "腾讯",
+    "美团",
+    "百度",
+    "快手",
+    "滴滴"
+   ],
+   "lastAsked": "2026-09-21",
+   "topics": [
+    "双指针",
+    "链表"
+   ],
+   "analysisStatus": "partial",
+   "hasCode": false,
+   "hasDiagram": false,
+   "url": "https://leetcode.cn/problems/reverse-linked-list",
+   "sources": [
+    {
+     "title": "206.反转链表 · 题解",
+     "url": "https://programmercarl.com/algo/linked-list/0206-reverse-linked-list.html"
+    },
+    {
+     "title": "反转链表（LeetCode 206）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/reverse-linked-list"
+    }
+   ]
+  },
+  {
+   "itemId": "ce0ad6ab3e2e154a",
+   "allItemIds": [
+    "ce0ad6ab3e2e154a"
+   ],
+   "key": "lc-215",
+   "number": 215,
+   "title": "数组中的第K个最大元素",
+   "track": "algorithm",
+   "difficulty": "medium",
+   "frequency": 567,
+   "companies": [
+    "字节跳动",
+    "美团",
+    "腾讯",
+    "百度",
+    "快手",
+    "阿里巴巴"
+   ],
+   "lastAsked": "2026-09-17",
+   "topics": [
+    "排序与TopK"
+   ],
+   "analysisStatus": "partial",
+   "hasCode": false,
+   "hasDiagram": false,
+   "url": "https://leetcode.cn/problems/kth-largest-element-in-an-array",
+   "sources": [
+    {
+     "title": "数组中的第K个最大元素（LeetCode 215）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/kth-largest-element-in-an-array"
+    }
+   ]
+  },
+  {
+   "itemId": "4850800a9f8bfcd8",
+   "allItemIds": [
+    "4850800a9f8bfcd8"
+   ],
+   "key": "lc-25",
+   "number": 25,
+   "title": "K 个一组翻转链表",
+   "track": "algorithm",
+   "difficulty": "hard",
+   "frequency": 470,
+   "companies": [
+    "字节跳动",
+    "美团",
+    "腾讯",
+    "阿里巴巴",
+    "快手",
+    "滴滴"
+   ],
+   "lastAsked": "2026-09-16",
+   "topics": [
+    "链表",
+    "字符串"
+   ],
+   "analysisStatus": "partial",
+   "hasCode": false,
+   "hasDiagram": false,
+   "url": "https://leetcode.cn/problems/reverse-nodes-in-k-group",
+   "sources": [
+    {
+     "title": "K 个一组翻转链表（LeetCode 25）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/reverse-nodes-in-k-group"
+    }
+   ]
+  },
+  {
+   "itemId": "bbf388bcc19ae05a",
+   "allItemIds": [
+    "bbf388bcc19ae05a",
+    "572d334951ddfcc2"
+   ],
+   "key": "lc-15",
+   "number": 15,
+   "title": "三数之和",
+   "track": "algorithm",
+   "difficulty": "medium",
+   "frequency": 465,
+   "companies": [
+    "字节跳动",
+    "美团",
+    "百度",
+    "快手",
+    "腾讯",
+    "阿里巴巴"
+   ],
+   "lastAsked": "2026-10-06",
+   "topics": [
+    "双指针",
+    "哈希表",
+    "排序与TopK"
+   ],
+   "analysisStatus": "partial",
+   "hasCode": false,
+   "hasDiagram": false,
+   "url": "https://leetcode.cn/problems/3sum",
+   "sources": [
+    {
+     "title": "三数之和（LeetCode 15）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/3sum"
+    },
+    {
+     "title": "第15题. 三数之和 · 题解",
+     "url": "https://programmercarl.com/algo/hash-table/0015-3sum.html"
+    }
+   ]
+  },
+  {
+   "itemId": "562df016aeec7465",
+   "allItemIds": [
+    "562df016aeec7465",
+    "cee9b7fa56459766",
+    "2d66aa302d127346"
+   ],
+   "key": "lc-5",
+   "number": 5,
+   "title": "最长回文子串",
+   "track": "algorithm",
+   "difficulty": "medium",
+   "frequency": 304,
+   "companies": [
+    "字节跳动",
+    "快手",
+    "百度",
+    "腾讯",
+    "阿里巴巴",
+    "滴滴"
+   ],
+   "lastAsked": "2026-09-21",
+   "topics": [
+    "动态规划",
+    "双指针",
+    "字符串"
+   ],
+   "analysisStatus": "partial",
+   "hasCode": false,
+   "hasDiagram": false,
+   "url": "https://leetcode.cn/problems/longest-palindromic-substring",
+   "sources": [
+    {
+     "title": "5.最长回文子串 · 题解",
+     "url": "https://programmercarl.com/algo/other/0005-longest-palindromic-substring.html"
+    },
+    {
+     "title": "5. 最长回文子串 · 题解",
+     "url": "https://programmercarl.com/hot100/0005.longest-palindromic-substring.html"
+    },
+    {
+     "title": "最长回文子串（LeetCode 5）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/longest-palindromic-substring"
+    }
+   ]
+  },
+  {
+   "itemId": "74b546c8e2d25647",
+   "allItemIds": [
+    "74b546c8e2d25647"
+   ],
+   "key": "lc-33",
+   "number": 33,
+   "title": "搜索旋转排序数组",
+   "track": "algorithm",
+   "difficulty": "medium",
+   "frequency": 247,
+   "companies": [
+    "字节跳动",
+    "快手",
+    "阿里巴巴",
+    "微软",
+    "滴滴",
+    "京东"
+   ],
+   "lastAsked": "2026-10-07",
+   "topics": [
+    "排序与TopK"
+   ],
+   "analysisStatus": "partial",
+   "hasCode": false,
+   "hasDiagram": false,
+   "url": "https://leetcode.cn/problems/search-in-rotated-sorted-array",
+   "sources": [
+    {
+     "title": "搜索旋转排序数组（LeetCode 33）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/search-in-rotated-sorted-array"
+    }
+   ]
+  },
+  {
+   "itemId": "814e895b8d210660",
+   "allItemIds": [
+    "814e895b8d210660",
+    "bc0ec1aea3e03eb1"
+   ],
+   "key": "lc-200",
+   "number": 200,
+   "title": "岛屿数量",
+   "track": "algorithm",
+   "difficulty": "medium",
+   "frequency": 246,
+   "companies": [
+    "字节跳动",
+    "百度",
+    "阿里巴巴",
+    "华为",
+    "滴滴",
+    "亚马逊"
+   ],
+   "lastAsked": "2026-09-06",
+   "topics": [
+    "二叉树",
+    "图论",
+    "dsu",
+    "graph"
+   ],
+   "analysisStatus": "partial",
+   "hasCode": true,
+   "hasDiagram": false,
+   "url": "https://leetcode.cn/problems/number-of-islands",
+   "sources": [
+    {
+     "title": "200. 岛屿数量 · 题解",
+     "url": "https://programmercarl.com/algo/other/0200-number-of-islands-bfs.html"
+    },
+    {
+     "title": "岛屿数量（LeetCode 200）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/number-of-islands"
+    },
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    }
+   ]
+  },
+  {
+   "itemId": "99eea52bfd97b716",
+   "allItemIds": [
+    "99eea52bfd97b716",
+    "cef3f865b5e87e66"
+   ],
+   "key": "lc-46",
+   "number": 46,
+   "title": "全排列",
+   "track": "algorithm",
+   "difficulty": "medium",
+   "frequency": 231,
+   "companies": [
+    "字节跳动",
+    "快手",
+    "百度",
+    "阿里巴巴",
+    "滴滴",
+    "华为"
+   ],
+   "lastAsked": "2026-09-16",
+   "topics": [
+    "二叉树",
+    "回溯"
+   ],
+   "analysisStatus": "partial",
+   "hasCode": false,
+   "hasDiagram": false,
+   "url": "https://leetcode.cn/problems/permutations",
+   "sources": [
+    {
+     "title": "46.全排列 · 题解",
+     "url": "https://programmercarl.com/algo/backtracking/0046-permutations.html"
+    },
+    {
+     "title": "全排列（LeetCode 46）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/permutations"
+    }
+   ]
+  },
+  {
+   "itemId": "b0a9a5de579bcd4a",
+   "allItemIds": [
+    "b0a9a5de579bcd4a"
+   ],
+   "key": "lc-103",
+   "number": 103,
+   "title": "二叉树的锯齿形层次遍历",
+   "track": "algorithm",
+   "difficulty": "medium",
+   "frequency": 201,
+   "companies": [
+    "字节跳动",
+    "微软"
+   ],
+   "lastAsked": "2026-09-15",
+   "topics": [
+    "二叉树"
+   ],
+   "analysisStatus": "partial",
+   "hasCode": false,
+   "hasDiagram": false,
+   "url": "https://leetcode.cn/problems/binary-tree-zigzag-level-order-traversal",
+   "sources": [
+    {
+     "title": "二叉树的锯齿形层次遍历（LeetCode 103）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/binary-tree-zigzag-level-order-traversal"
+    }
+   ]
+  },
+  {
+   "itemId": "d5f812800250910d",
+   "allItemIds": [
+    "d5f812800250910d"
+   ],
+   "key": "lc-121",
+   "number": 121,
+   "title": "买卖股票的最佳时机",
+   "track": "algorithm",
+   "difficulty": "easy",
+   "frequency": 192,
+   "companies": [
+    "字节跳动",
+    "腾讯",
+    "拼多多",
+    "京东",
+    "亚马逊"
+   ],
+   "lastAsked": "2026-07-14",
+   "topics": [
+    "动态规划"
+   ],
+   "analysisStatus": "partial",
+   "hasCode": false,
+   "hasDiagram": false,
+   "url": "https://leetcode.cn/problems/best-time-to-buy-and-sell-stock",
+   "sources": [
+    {
+     "title": "买卖股票的最佳时机（LeetCode 121）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/best-time-to-buy-and-sell-stock"
+    }
+   ]
+  },
+  {
+   "itemId": "18112dcf61f4af70",
+   "allItemIds": [
+    "18112dcf61f4af70",
+    "b7168d9e50be9233"
+   ],
+   "key": "lc-236",
+   "number": 236,
+   "title": "二叉树的最近公共祖先",
+   "track": "algorithm",
+   "difficulty": "medium",
+   "frequency": 179,
+   "companies": [
+    "字节跳动",
+    "快手",
+    "微软",
+    "亚马逊"
+   ],
+   "lastAsked": "2026-09-29",
+   "topics": [
+    "二叉树",
+    "回溯"
+   ],
+   "analysisStatus": "partial",
+   "hasCode": false,
+   "hasDiagram": false,
+   "url": "https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree",
+   "sources": [
+    {
+     "title": "二叉树的最近公共祖先（LeetCode 236）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree"
+    },
+    {
+     "title": "236. 二叉树的最近公共祖先 · 题解",
+     "url": "https://programmercarl.com/algo/binary-tree/0236-lowest-common-ancestor-of-a-binary-tree.html"
+    }
+   ]
+  },
+  {
+   "itemId": "a64a5cde474031d8",
+   "allItemIds": [
+    "a64a5cde474031d8",
+    "2261b0ca47b558ad"
+   ],
+   "key": "lc-54",
+   "number": 54,
+   "title": "螺旋矩阵",
+   "track": "algorithm",
+   "difficulty": "medium",
+   "frequency": 161,
+   "companies": [
+    "字节跳动",
+    "拼多多",
+    "京东",
+    "商汤"
+   ],
+   "lastAsked": "2026-09-16",
+   "topics": [
+    "二叉树",
+    "数学与模拟"
+   ],
+   "analysisStatus": "partial",
+   "hasCode": false,
+   "hasDiagram": false,
+   "url": "https://leetcode.cn/problems/spiral-matrix",
+   "sources": [
+    {
+     "title": "54.螺旋矩阵 · 题解",
+     "url": "https://programmercarl.com/algo/other/0054-spiral-matrix.html"
+    },
+    {
+     "title": "螺旋矩阵（LeetCode 54）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/spiral-matrix"
+    }
+   ]
+  },
+  {
+   "itemId": "d17aeca17c9ceb7f",
+   "allItemIds": [
+    "d17aeca17c9ceb7f"
+   ],
+   "key": "lc-23",
+   "number": 23,
+   "title": "合并K个排序链表",
+   "track": "algorithm",
+   "difficulty": "hard",
+   "frequency": 153,
+   "companies": [
+    "字节跳动",
+    "快手",
+    "拼多多",
+    "京东"
+   ],
+   "lastAsked": "2026-08-21",
+   "topics": [
+    "链表",
+    "排序与TopK"
+   ],
+   "analysisStatus": "partial",
+   "hasCode": false,
+   "hasDiagram": false,
+   "url": "https://leetcode.cn/problems/merge-k-sorted-lists",
+   "sources": [
+    {
+     "title": "合并K个排序链表（LeetCode 23）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/merge-k-sorted-lists"
+    }
+   ]
+  }
+ ],
+ "backfill": [
+  {
+   "id": "08bb5fe94761a493",
+   "title": "chrisliu298/awesome-on-policy-distillation - A curated collection of papers, technical reports, frameworks, and tools for on-policy distillation (OPD) of large language models",
+   "category": "posttraining",
+   "channel": "github",
+   "url": "https://github.com/chrisliu298/awesome-on-policy-distillation",
+   "missing": [
+    "formulas"
+   ],
+   "backfillWeight": 1.0,
+   "hasSummary": true
+  },
+  {
+   "id": "12192a17a1d97235",
+   "title": "pegainfer-project/pegainfer - Pure Rust + CUDA LLM inference engine — no PyTorch, OpenAI-compatible, serves Qwen3 to Kimi-K2",
+   "category": "engineering",
+   "channel": "github",
+   "url": "https://github.com/pegainfer-project/pegainfer",
+   "missing": [
+    "formulas"
+   ],
+   "backfillWeight": 1.0,
+   "hasSummary": true
+  },
+  {
+   "id": "17807f6b228bf63a",
+   "title": "bentoml/BentoML - The easiest way to serve AI apps and models - Build Model Inference APIs, Job queues, LLM apps, Multi-model pipelines, and more!",
+   "category": "engineering",
+   "channel": "github",
+   "url": "https://github.com/bentoml/BentoML",
+   "missing": [
+    "formulas"
+   ],
+   "backfillWeight": 1.0,
+   "hasSummary": true
+  },
+  {
+   "id": "b7b17a114ffa47c7",
+   "title": "XuankunRong/Awesome-LVLM-Safety - A curated list of resources dedicated to the safety of Large Vision-Language Models. This repository aligns with our survey titled A Survey of Safety on Large Vision-Language Models: Attacks, Defenses, and Evaluations.",
+   "category": "multimodal",
+   "channel": "github",
+   "url": "https://github.com/XuankunRong/Awesome-LVLM-Safety",
+   "missing": [
+    "formulas"
+   ],
+   "backfillWeight": 1.0,
+   "hasSummary": true
+  }
+ ],
+ "backfillTotal": 4,
+ "skimSample": [
+  {
+   "id": "338ac3c14ab13ac9",
+   "title": "无重复字符的最长子串（LeetCode 3）· 大厂高频手撕题",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.21）：没有可深挖的实质内容"
+  },
+  {
+   "id": "74b546c8e2d25647",
+   "title": "搜索旋转排序数组（LeetCode 33）· 大厂高频手撕题",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.23）：没有可深挖的实质内容"
+  },
+  {
+   "id": "bbf388bcc19ae05a",
+   "title": "三数之和（LeetCode 15）· 大厂高频手撕题",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.21）：没有可深挖的实质内容"
+  },
+  {
+   "id": "a77b0b38fd1be916",
+   "title": "LRU缓存机制（LeetCode 146）· 大厂高频手撕题",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.24）：没有可深挖的实质内容"
+  },
+  {
+   "id": "18112dcf61f4af70",
+   "title": "二叉树的最近公共祖先（LeetCode 236）· 大厂高频手撕题",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.23）：没有可深挖的实质内容"
+  },
+  {
+   "id": "55027a70a8c71344",
+   "title": "107. 寻找存在的路径 · 题解",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.24）：没有可深挖的实质内容"
+  },
+  {
+   "id": "e9e3f7d7fa781ad9",
+   "title": "203.移除链表元素 · 题解",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.24）：没有可深挖的实质内容"
+  },
+  {
+   "id": "e5c17234ddcbba0a",
+   "title": "349. 两个数组的交集 · 题解",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.24）：没有可深挖的实质内容"
+  },
+  {
+   "id": "81f498712f9f54bd",
+   "title": "129. 求根节点到叶节点数字之和 · 题解",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.24）：没有可深挖的实质内容"
+  },
+  {
+   "id": "2478646855d75f15",
+   "title": "283. 移动零：动态规划：一样的套路，再求一次完全平方数 · 题解",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.24）：没有可深挖的实质内容"
+  },
+  {
+   "id": "e78f840af8af718c",
+   "title": "108. 冗余连接 · 题解",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.24）：没有可深挖的实质内容"
+  },
+  {
+   "id": "f0af1e71dbc27e1d",
+   "title": "55. 跳跃游戏 · 题解",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.24）：没有可深挖的实质内容"
+  },
+  {
+   "id": "1f25646f05b99d02",
+   "title": "100. 相同的树 · 题解",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.24）：没有可深挖的实质内容"
+  },
+  {
+   "id": "328dfcaedfd119e8",
+   "title": "234.回文链表 · 题解",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.24）：没有可深挖的实质内容"
+  },
+  {
+   "id": "b72ce2874c45ff79",
+   "title": "657. 机器人能否返回原点 · 题解",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.24）：没有可深挖的实质内容"
+  },
+  {
+   "id": "cee9b7fa56459766",
+   "title": "5. 最长回文子串 · 题解",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.28）：没有可深挖的实质内容"
+  },
+  {
+   "id": "c116b6520e7722f4",
+   "title": "最大子数组和（LeetCode 53）· 大厂高频手撕题",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.21）：没有可深挖的实质内容"
+  },
+  {
+   "id": "3deab4af259ac294",
+   "title": "反转链表（LeetCode 206）· 大厂高频手撕题",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.23）：没有可深挖的实质内容"
+  },
+  {
+   "id": "2d66aa302d127346",
+   "title": "最长回文子串（LeetCode 5）· 大厂高频手撕题",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.21）：没有可深挖的实质内容"
+  },
+  {
+   "id": "ce0ad6ab3e2e154a",
+   "title": "数组中的第K个最大元素（LeetCode 215）· 大厂高频手撕题",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.21）：没有可深挖的实质内容"
+  },
+  {
+   "id": "4850800a9f8bfcd8",
+   "title": "K 个一组翻转链表（LeetCode 25）· 大厂高频手撕题",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.23）：没有可深挖的实质内容"
+  },
+  {
+   "id": "cef3f865b5e87e66",
+   "title": "全排列（LeetCode 46）· 大厂高频手撕题",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.21）：没有可深挖的实质内容"
+  },
+  {
+   "id": "2261b0ca47b558ad",
+   "title": "螺旋矩阵（LeetCode 54）· 大厂高频手撕题",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.21）：没有可深挖的实质内容"
+  },
+  {
+   "id": "6983847cd27af954",
+   "title": "相交链表（LeetCode 160）· 大厂高频手撕题",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.23）：没有可深挖的实质内容"
+  },
+  {
+   "id": "b0a9a5de579bcd4a",
+   "title": "二叉树的锯齿形层次遍历（LeetCode 103）· 大厂高频手撕题",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.23）：没有可深挖的实质内容"
+  },
+  {
+   "id": "0a34bf1b8d4d244c",
+   "title": "两数之和（LeetCode 1）· 大厂高频手撕题",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.21）：没有可深挖的实质内容"
+  },
+  {
+   "id": "bc0ec1aea3e03eb1",
+   "title": "岛屿数量（LeetCode 200）· 大厂高频手撕题",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.21）：没有可深挖的实质内容"
+  },
+  {
+   "id": "3caf3ab04780e5b9",
+   "title": "HTTP中常见的状态码有哪些？分别是什么含义？ · 八股",
+   "category": "exam",
+   "rule": "deep-read-blocker",
+   "kind": "notes",
+   "why": "知识材料性过低（0.28）：没有可深挖的实质内容"
+  },
+  {
+   "id": "1ac3fbaefe7a7579",
+   "title": "网站更新日志 · 八股",
+   "category": "exam",
+   "rule": "deep-read-blocker",
+   "kind": "notes",
+   "why": "知识材料性过低（0.14）：没有可深挖的实质内容"
+  },
+  {
+   "id": "6901105fe7fa133e",
+   "title": "113.国际象棋 · 题解",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.28）：没有可深挖的实质内容"
+  },
+  {
+   "id": "cdbc44e3b381351a",
+   "title": "112. 挑战boss · 题解",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.28）：没有可深挖的实质内容"
+  },
+  {
+   "id": "d5f812800250910d",
+   "title": "买卖股票的最佳时机（LeetCode 121）· 大厂高频手撕题",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.21）：没有可深挖的实质内容"
+  },
+  {
+   "id": "d17aeca17c9ceb7f",
+   "title": "合并K个排序链表（LeetCode 23）· 大厂高频手撕题",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.23）：没有可深挖的实质内容"
+  },
+  {
+   "id": "39b1f2676b61a2dd",
+   "title": "GET请求和POST请求的区别？ · 八股",
+   "category": "exam",
+   "rule": "deep-read-blocker",
+   "kind": "notes",
+   "why": "知识材料性过低（0.28）：没有可深挖的实质内容"
+  },
+  {
+   "id": "2f568c043ab8610b",
+   "title": "111. 构造二阶行列式 · 题解",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.22）：没有可深挖的实质内容"
+  },
+  {
+   "id": "1326131dee2da1b4",
+   "title": "什么是死锁？如何避免死锁？ · 八股",
+   "category": "exam",
+   "rule": "deep-read-blocker",
+   "kind": "notes",
+   "why": "知识材料性过低（0.28）：没有可深挖的实质内容"
+  },
+  {
+   "id": "5020522898806099",
+   "title": "实现 strStr()（LeetCode 28）· 大厂高频手撕题",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.24）：没有可深挖的实质内容"
+  },
+  {
+   "id": "239a967411d7c011",
+   "title": "接雨水（LeetCode 42）· 大厂高频手撕题",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.21）：没有可深挖的实质内容"
+  },
+  {
+   "id": "7bd3594540462ff6",
+   "title": "迷路的机器人（LeetCode 面试题 08.02）· 大厂高频手撕题",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.23）：没有可深挖的实质内容"
+  },
+  {
+   "id": "707bcfb4345e4505",
+   "title": "删除排序链表中的重复元素（LeetCode 83）· 大厂高频手撕题",
+   "category": "coding",
+   "rule": "deep-read-blocker",
+   "kind": "problem",
+   "why": "知识材料性过低（0.23）：没有可深挖的实质内容"
+  }
+ ],
+ "skimByRule": {
+  "deep-read-blocker": 173,
+  "category-mismatch": 13
+ }
+}

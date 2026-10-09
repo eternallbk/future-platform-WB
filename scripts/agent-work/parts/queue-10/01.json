@@ -1,0 +1,155 @@
+{
+  "id": "75fa69bbbb4beb78",
+  "tldr": "把输入嵌入表换成固定的 16 位 token 码，1.7B 级模型仍学到可观能力，说明可训练嵌入是「有用但非必要」。",
+  "keyPoints": [
+    "三组同 tokenizer、同主干、同配方、各约 100B token 的 decoder-only 模型做对照",
+    "三种输入接口：可学习表、canonical 16 位 token-ID 码、GF(2) 上固定可逆重编码",
+    "固定码直接重复铺到模型宽度，不加额外可训练输入投影",
+    "固定码模型达 HellaSwag 52.40%、PIQA 70.51%、LAMBADA 42.75%",
+    "可学习控制在 HellaSwag、LAMBADA 等更好，故结论是可行性而非性能持平"
+  ],
+  "why": "直击「嵌入表是否必须可训练」这一基础架构问题，对做模型缩放、参数预算与表征学习的求职者是高质量谈资。",
+  "difficulty": "medium",
+  "tags": ["foundation", "llm", "embedding", "architecture", "parameter-efficiency"],
+  "entities": ["HellaSwag", "PIQA", "LAMBADA", "GF(2)", "decoder-only Transformer"],
+  "diagram": {
+    "kind": "architecture",
+    "title": "固定码 vs 可学习嵌入对照",
+    "caption": "三种输入接口只在「token 身份怎么变成向量」上不同，主干与训练配方完全相同。",
+    "svg": "<svg viewBox='0 0 480 228' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='三种输入接口汇入共享 Transformer 主干再经解绑输出头，固定接口省下参数'>\n<rect x='16' y='14' width='144' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='88' y='32' font-size='14' text-anchor='middle' fill='currentColor' font-weight='bold'>可学习嵌入表</text>\n<text x='88' y='48' font-size='13' text-anchor='middle' fill='currentColor'>baseline 对照组</text>\n<rect x='168' y='14' width='144' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='240' y='32' font-size='14' text-anchor='middle' fill='currentColor' font-weight='bold'>16-bit token 码</text>\n<text x='240' y='48' font-size='13' text-anchor='middle' fill='currentColor'>canonical 固定码</text>\n<rect x='320' y='14' width='144' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='392' y='32' font-size='14' text-anchor='middle' fill='currentColor' font-weight='bold'>GF(2) 可逆码</text>\n<text x='392' y='48' font-size='13' text-anchor='middle' fill='currentColor'>固定线性重编码</text>\n<line x1='88' y1='54' x2='88' y2='68' stroke='var(--line-1)' stroke-width='1.6'/>\n<line x1='240' y1='54' x2='240' y2='68' stroke='var(--line-1)' stroke-width='1.6'/>\n<line x1='392' y1='54' x2='392' y2='68' stroke='var(--line-1)' stroke-width='1.6'/>\n<rect x='40' y='68' width='400' height='44' rx='8' fill='none' stroke='var(--accent)' stroke-width='1.6'/>\n<text x='240' y='87' font-size='14' text-anchor='middle' fill='currentColor' font-weight='bold'>共享 Transformer 主干</text>\n<text x='240' y='104' font-size='13' text-anchor='middle' fill='currentColor'>同 tokenizer / 同配方 / 约 100B token</text>\n<line x1='240' y1='112' x2='240' y2='126' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,134 236,126 244,126' fill='var(--line-1)'/>\n<rect x='40' y='134' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='240' y='158' font-size='14' text-anchor='middle' fill='currentColor' font-weight='bold'>解绑输出头（untied）</text>\n<text x='240' y='205' font-size='13' text-anchor='middle' fill='var(--accent)'>固定接口省 100.7M 参数 → 1.711B 模型</text>\n</svg>",
+    "alt": "三种输入接口（可学习嵌入表、16-bit 固定码、GF(2) 可逆码）汇入同一 Transformer 主干，再经解绑输出头；固定接口省下 100.7M 参数。"
+  },
+  "concepts": [
+    {
+      "name": "Fixed Token Identity Interface（固定 token 身份接口）",
+      "readable": "每个词的输入向量不再由可训练参数决定，而是由它的 token ID 直接换算出来（如 16 位二进制码重复铺满模型宽度），整张输入表被冻结。",
+      "analogy": "像用学号当座位号：号码固定不变，成长全靠后面的课程（主干）在改变，而不是每人发一本可改写的档案。",
+      "analogyBreaksDown": "学号只是标识、彼此无结构；而 token ID 在模型里会参与线性/比特运算，固定码的二进制排列本身携带结构信息，二者不等价。",
+      "mechanism": "把 token-specific 参数降为恒等映射并去掉输入投影，主干必须在不可变输入上学出全部表征，从而把「嵌入表是否必要」与「主干能力」彻底解耦。",
+      "visual": "横轴 token 序号、纵轴嵌入维度：可学习表画成一堆可移动的随机点云，固定码画成规则、不可动的阶梯条纹。",
+      "prerequisites": ["Transformer 输入嵌入", "tokenizer 与 token id", "参数量估算"],
+      "selfTest": ["固定码模型是完全不能学，还是只是略差？", "省下的 100.7M 参数主要来自哪一块？", "为什么作者称结论是「可行性而非持平」？"],
+      "formula": "e_t = \\mathrm{Tile}(M\\, b_t),\\quad M\\in GL(16,\\mathbb{F}_2)"
+    },
+    {
+      "name": "GF(2) Invertible Recoding（GF(2) 上的可逆重编码）",
+      "readable": "把 16 位 token 码当成 GF(2) 上的比特向量，乘一个固定的可逆方阵做线性变换；可逆保证不同 token 不会被映射成同一个码。",
+      "analogy": "像换一本密码本：每个字用一套固定且可逆的替换规则重写，字与字仍一一对应，只是编码看起来不同。",
+      "analogyBreaksDown": "替换密码允许任意可查表的非线性映射；这里限制为 GF(2) 线性且必须可逆，自由度小得多，不能随意乱换否则会撞码。",
+      "mechanism": "提供第三种「固定」接口，用来检验结论不依赖某一个具体固定码，从而把「可学习性」这个变量真正拿掉，而非只对比一种码。",
+      "visual": "画一个 16×16 的 0/1 棋盘矩阵 M；输入的 16 位比特向量作为行向量右乘它，输出仍是 16 位比特。",
+      "prerequisites": ["GF(2) 有限域", "可逆矩阵", "位运算"],
+      "selfTest": ["为什么必须要求 M 可逆？", "线性重编码改变了什么、又没改变什么？", "固定码「重复铺宽」为什么不需要额外投影？"],
+      "formula": "c_t = M\\, b_t \\ \\mathrm{mod}\\ 2"
+    },
+    {
+      "name": "Architectural Necessity vs Empirical Utility（架构必要 vs 经验有用）",
+      "readable": "论文区分两件事：某设计「是不是能力的前提」（必要）与「有没有让结果更好」（有用）。固定嵌入证伪了前者，却没有否定后者。",
+      "analogy": "像问「自行车必须有车铃吗」：没铃也能骑（非必要），但有铃更安全（有用）——这是两个不同问题。",
+      "analogyBreaksDown": "车铃是外挂、与骑行机制无关；嵌入表却参与训练梯度流，二者在优化上并不对称，不能简单并列。",
+      "mechanism": "用单次同配方对照把两类问题分开陈述，避免把「没变差太多」误读为「完全没用」，也避免把「参数更少」当成核心卖点。",
+      "visual": "两根柱状对比：固定码 vs 可学习在 HellaSwag/LAMBADA 上的分数，可学习略高，直观显示「有用但非必要」。",
+      "prerequisites": ["对照实验设计", "消融研究", "语言模型评测"],
+      "selfTest": ["为什么作者强调「参数减少不是核心结论」？", "单次运行对结论强度有什么限制？", "要什么证据才能声称「性能持平」？"],
+      "formula": ""
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-fixed-token-code",
+      "name": "固定 token 码输入接口（Fixed Token Identity Code）",
+      "category": "foundation",
+      "latex": "e_t = \\mathrm{Tile}\\big(M\\, b_t\\big),\\quad M\\in GL(16,\\mathbb{F}_2),\\quad b_t\\in\\{0,1\\}^{16}",
+      "symbols": [
+        ["b_t", "第 t 个 token 的 16 位身份码（canonical 码即二进制 ID）"],
+        ["M", "GF(2) 上固定可逆方阵，canonical 码对应单位阵"],
+        ["e_t", "铺到模型宽度 d 的输入向量"],
+        ["\\mathrm{Tile}", "把码重复到 d 维，毫无可学习参数"]
+      ],
+      "derivation": [
+        "原始做法：维护可训练表 E 属于 R^{V x d}，每个 token 一个独立向量。",
+        "固定接口：给 token ID 一个 16 位码 b_t，canonical 码就是其二进制表示。",
+        "可选再乘固定可逆矩阵 M（GF(2)）得到等价身份码，可逆保证不撞码。",
+        "把码重复铺满足够宽度即得输入，整张可训练表与输入投影都被去掉。"
+      ],
+      "analogy": "像用身份证号当座位号：号码固定不动，坐哪儿由后面流程决定，不再给每人配一块可改写的名牌。",
+      "pitfalls": [
+        "误以为固定码模型没有输入表征——主干仍会算出表征",
+        "把 token ID 的排列顺序当成无关信息",
+        "忽略 untied 输出头本身也是一大块参数"
+      ],
+      "code": "import torch\nV, d = 2**16, 1536\ndef fixed_embed(ids, d):\n    bits = ((ids.unsqueeze(-1) >> torch.arange(16)) & 1).float()  # [B,16]\n    return bits.repeat(1, (d + 15) // 16)[:, :d]\nids = torch.randint(0, V, (4,))\nprint(fixed_embed(ids, d).shape)  # torch.Size([4, 1536])",
+      "sources": [{"title": "Do Language Models Need a Trainable Input Embedding Table? Fixed Minimal Token Codes at 1.7B-Class Scale", "url": "https://arxiv.org/abs/2610.04002"}]
+    },
+    {
+      "id": "f-no-embed-param-saving",
+      "name": "去掉嵌入表的参数量（Embedding Parameter Savings）",
+      "category": "foundation",
+      "latex": "\\Delta P = V \\times d \\approx 1.007\\times 10^{8}",
+      "symbols": [
+        ["V", "词表大小，16 位码上界为 2^16 = 65536"],
+        ["d", "模型隐藏宽度（按反推取 1536）"],
+        ["\\Delta P", "被移除的可训练输入嵌入参数，约 100.7M"]
+      ],
+      "derivation": [
+        "可学习输入表参数量 = 词表大小 × 隐藏宽度。",
+        "16 位码对应词表上界 2^16 = 65536，隐藏宽度取 1536。",
+        "65536 × 1536 = 100,663,296 约等于 100.7M，与摘要数字吻合。",
+        "据此可核对：固定接口模型 1.711B，加上这块约 1.812B 为可学习对照组规模（推断）。"
+      ],
+      "analogy": "像一本每人一格的名册，格子总数 = 人数 × 每格栏位；固定码等于把整本名册直接撤掉。",
+      "pitfalls": [
+        "把 1.711B 当成含输出头的全部规模",
+        "以为参数减少本身是论文核心（原文明确说不是）"
+      ],
+      "code": "V, d = 2**16, 1536\nsaved = V * d\nprint(saved, round(saved / 1e6, 1))  # 100663296 100.7",
+      "sources": [{"title": "Do Language Models Need a Trainable Input Embedding Table?", "url": "https://huggingface.co/papers/2610.04002"}]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "论文比较三组同 tokenizer、同主干、同训练配方的 decoder-only 模型",
+      "每模型目标预算约 100B prediction token",
+      "三种输入接口：可学习表、canonical 16-bit 码、GF(2) 固定可逆重编码",
+      "固定码模型达到 HellaSwag 52.40%、PIQA 70.51%、LAMBADA 42.75%",
+      "可学习控制在 HellaSwag 与 LAMBADA 等更好，故为可行性而非持平",
+      "固定接口移除 100.7M 参数，得 1.711B 参数模型"
+    ],
+    "uncertain": [
+      "V=65536、d=1536 是按 100.7M 反推的（推断），摘要未给词表与隐宽",
+      "单次运行、无多种子，统计显著性未知",
+      "untied 输出头的具体参数量摘要未给，故对照组 1.812B 为推断"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "把词向量表换成固定编号，模型照样能学会语言。"},
+      {"level": "入门", "text": "平时每个词有一块可训练向量。论文把它换成固定的 16 位 token 码、重复铺宽当输入，发现 1.7B 模型仍学到可观能力，只是比可学习版本略差。"},
+      {"level": "进阶", "text": "关键在对照干净：同 tokenizer、同主干、同配方、同样约 100B token，只换输入接口。固定码省掉整张嵌入表（100.7M 参数）与输入投影，主干必须在不可变输入上学出全部表征，于是「嵌入是否必要」和「主干能力」被解耦。"},
+      {"level": "专家", "text": "结论是区分架构必要性与经验有用性：固定码模型 HellaSwag 52.40%、PIQA 70.51%、LAMBADA 42.75%，说明不必须；但可学习输入在 HellaSwag/LAMBADA 更强，说明仍有用。作者强调参数减少不是核心结论，单次运行也限制了强度；固定身份接口还提供了一个可控设定来研究「不可变输入下游」的表征学习，但不回答能力定位在哪。"}
+    ],
+    "socratic": [
+      {"q": "如果去掉可学习嵌入会怎样？", "a": "不会崩，模型仍能学；只是部分评测掉分，说明嵌入有用、但不是能力前提。"},
+      {"q": "为什么还要加 GF(2) 可逆重编码这一组？", "a": "证明结论不依赖某个具体固定码，把「可学习性」这个变量真正拿掉。"},
+      {"q": "同参数量下换个更简单做法够不够？", "a": "不够——不经严格对照，无法区分差异来自参数少了还是接口固定了。"}
+    ],
+    "mechanism": "把最常见的 token-specific 参数降为恒等映射并去掉输入投影，主干必须在不可变输入上从零学出全部表征；这样任何能力差异都只能归因于「输入是否可训练」，从而把架构必要性从经验有用性中隔离出来。",
+    "boundary": "结论来自单次运行、约 100B token、1.7B 级、三个固定接口，不能外推到更大模型或其它码制；摘要未给统计显著性，也不说明可学习嵌入在多大尺度上才变得关键。",
+    "analogyBoundary": "「学号固定、成长靠主干」成立的前提是主干确实能自由调整；若主干也被冻结或容量极小，固定输入可能真的学不动，此时类比失效。",
+    "misconceptions": [
+      "「固定嵌入 = 没有输入表征」——错，主干仍会算表征",
+      "「固定码更好」——错，可学习版在多个评测更强",
+      "「省参数是论文卖点」——原文明确说参数减少不是核心结论"
+    ],
+    "ownAnalysis": "（推断）这与「LayerNorm/位置编码可简化」一类去可训练组件的思路一致：把某组件的学习职责转移给主干。值得注意的是 token ID 的二进制结构本身携带顺序信息，可能在固定接口下被主干利用，从而部分补偿可学习表——但摘要未验证，需读正文消融。（待核实）",
+    "officialNotes": [
+      {"position": "固定接口移除 100.7M 可训练参数，得 1.711B 模型；但参数减少不是核心结论", "source": "https://arxiv.org/abs/2610.04002"},
+      {"position": "固定码模型在部分评测略逊于可学习输入，故结果确立的是可行性而非性能持平", "source": "https://huggingface.co/papers/2610.04002"}
+    ],
+    "interviewAnswer": "我读到一篇 1.7B 级对照实验：把输入嵌入表换成固定的 16 位 token 码，只要主干和训练配方不变，模型仍能达到 HellaSwag 52.4%、PIQA 70.5%、LAMBADA 42.8%，说明可训练嵌入是「有用但非必要」。它的价值在于用干净对照把架构必要性和经验有用性分开，也提供了一个不可变输入下游的表征学习测试床。",
+    "studyPath": {
+      "prerequisites": ["Transformer 输入嵌入与解绑输出头", "tokenizer 与 token id", "消融实验与参数量估算"],
+      "nextSteps": ["复现固定码接口的 embedding 层与参数量核算", "读正文确认词表/隐宽与消融细节", "对比位置编码、LayerNorm 可简化类工作"]
+    }
+  }
+}

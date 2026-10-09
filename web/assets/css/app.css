@@ -1,0 +1,1781 @@
+/* ============================================================================
+   Future · 求职学习工作台
+   app.css — shell layout, components, views, motion
+   Depends only on tokens from theme.css.
+   ========================================================================= */
+
+/* ==========================================================================
+   0. GLOBAL OVERFLOW GUARDS
+   =========================================================================
+   Three separate layout bugs in this project had the SAME root cause: a flex or
+   grid item defaults to `min-width: auto`, which refuses to shrink below its
+   content width. Any long data-derived string (a 200-character salary note, a
+   Chinese company name, a timestamp) therefore widened its container, escaped
+   into an ancestor with `overflow: hidden`, and was silently clipped - which is
+   why they were invisible in review and only found by measuring
+   (scripts/audit-layout.mjs).
+
+   Rather than patch each site, these two rules make shrinking the default for
+   every flex/grid child, and let long unbroken text wrap. Components that DO
+   want a fixed intrinsic width (badges, tags, icons) opt back out with
+   `flex: 0 0 auto`.
+   ========================================================================= */
+* { min-width: 0; }
+* { overflow-wrap: break-word; }
+
+/* The `hidden` attribute must win.
+ *
+ * WHY this is needed: `[hidden] { display: none }` lives in the USER-AGENT
+ * stylesheet, so ANY author rule that sets `display` on the same element beats it.
+ * `.formula-body { display: grid }` and `.module-body { ... }` did exactly that, so
+ * the collapse toggles on 公式剖析 and the knowledge cards set the attribute, updated
+ * `aria-expanded`, and reported correct state to the DOM - while the panel stayed
+ * fully visible. The control looked completely dead.
+ *
+ * Every collapse/expand in this app toggles the `hidden` attribute, so this single
+ * rule fixes all of them at once instead of patching each component's display value.
+ */
+[hidden] { display: none !important; }
+
+/* ==========================================================================
+   1. APP SHELL
+   ========================================================================= */
+#app {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: var(--rail-w) minmax(0, 1fr);
+  grid-template-rows: var(--topbar-h) minmax(0, 1fr);
+  grid-template-areas:
+    "rail topbar"
+    "rail main";
+  height: 100vh;
+  height: 100dvh;
+  max-width: var(--content-max);
+  margin-inline: auto;
+  /* `overflow-x: clip` was added to contain a 4px horizontal overflow. It also
+     FORCED the used value of `overflow-y` to `clip` (spec: a `clip` on one axis
+     makes the other axis clip too, unlike `hidden`), which made #app a clipping
+     ancestor for absolutely-positioned popovers - that is what cut the topbar
+     button tooltips in half, because they are placed ABOVE the button
+     (`bottom: calc(100% + 7px)`) and therefore sit outside the topbar box.
+     Measured with scripts/probe-overflow.mjs after the flex-shrink fixes: the 4px
+     overflow no longer exists at 1024/1200/1440/1680px (document overflow is
+     negative), so the guard is not needed and the tooltips can escape normally. */
+  overflow: visible;
+}
+
+/* --- Topbar -------------------------------------------------------------- */
+.topbar {
+  grid-area: topbar;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 0 var(--sp-5);
+  border-bottom: 1px solid var(--line-0);
+  background: var(--bg-glass);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.brand-mini, #rail-open { display: none; }
+
+/* --- Command palette trigger (fake input) -------------------------------- */
+.cmd-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: min(420px, 34vw);
+  height: 36px;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--line-1);
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  color: var(--fg-3);
+  font-size: var(--fs-xs);
+  transition: border-color var(--t-fast), background var(--t-fast), box-shadow var(--t-fast);
+}
+.cmd-trigger:hover {
+  border-color: var(--line-2);
+  background: var(--bg-3);
+  color: var(--fg-2);
+}
+.cmd-trigger kbd {
+  margin-left: auto;
+  padding: 2px 6px;
+  border: 1px solid var(--line-1);
+  border-bottom-width: 2px;
+  border-radius: var(--r-xs);
+  background: var(--bg-3);
+  font-size: var(--fs-3xs);
+  color: var(--fg-2);
+}
+
+.topbar-actions { display: flex; align-items: center; gap: var(--sp-1); margin-left: auto; }
+
+/* --- Rail (left navigation) --------------------------------------------- */
+.rail {
+  grid-area: rail;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--line-0);
+  background: var(--bg-1);
+  z-index: 50;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  height: var(--topbar-h);
+  padding: 0 var(--sp-5);
+  border-bottom: 1px solid var(--line-0);
+  flex: 0 0 auto;
+}
+.brand-mark {
+  position: relative;
+  width: 30px; height: 30px;
+  border-radius: 9px;
+  background: linear-gradient(140deg, var(--accent), var(--accent-lo) 70%);
+  box-shadow: 0 4px 14px -4px var(--accent-ring), var(--shadow-inset);
+  flex: 0 0 auto;
+  display: grid; place-items: center;
+  color: var(--accent-fg);
+  font-weight: 800;
+  font-size: var(--fs-xs);
+  letter-spacing: -0.04em;
+}
+.brand-mark::after {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(60% 60% at 30% 20%, rgba(255,255,255,.45), transparent 70%);
+  pointer-events: none;
+}
+.brand-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+.brand-title { font-size: var(--fs-base); font-weight: 700; color: var(--fg-0); letter-spacing: -0.02em; }
+.brand-sub { font-size: var(--fs-3xs); color: var(--fg-3); letter-spacing: var(--tracking-wide); }
+
+.rail-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: var(--sp-3) var(--sp-2) var(--sp-6); }
+
+.nav-group { margin-bottom: var(--sp-4); }
+.nav-group-title {
+  padding: var(--sp-2) var(--sp-3) var(--sp-2);
+  font-size: var(--fs-3xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--fg-3);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: 7px var(--sp-3);
+  border-radius: var(--r-sm);
+  color: var(--fg-2);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  text-align: left;
+  transition: background var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out);
+}
+.nav-item + .nav-item { margin-top: 1px; }
+.nav-item:hover { background: var(--bg-3); color: var(--fg-0); }
+.nav-item.is-active { background: var(--accent-wash); color: var(--accent-hi); font-weight: 600; }
+.nav-item.is-active::before {
+  content: "";
+  position: absolute; left: -2px; top: 50%; translate: 0 -50%;
+  width: 3px; height: 16px;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+}
+.nav-icon { width: 16px; height: 16px; flex: 0 0 auto; opacity: .85; }
+.nav-item.is-active .nav-icon { opacity: 1; }
+.nav-label { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-count {
+  flex: 0 0 auto;
+  min-width: 20px;
+  padding: 0 5px;
+  height: 17px;
+  display: grid; place-items: center;
+  border-radius: var(--r-pill);
+  background: var(--bg-4);
+  color: var(--fg-2);
+  font-size: var(--fs-3xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.nav-item.is-active .nav-count { background: var(--accent); color: var(--accent-fg); }
+.nav-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--cat, var(--accent)); flex: 0 0 auto; box-shadow: 0 0 8px -1px var(--cat, var(--accent)); }
+
+.rail-foot { flex: 0 0 auto; padding: var(--sp-3) var(--sp-4); border-top: 1px solid var(--line-0); }
+
+/* --- Main --------------------------------------------------------------- */
+.main {
+  grid-area: main;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+.main-inner { padding: var(--sp-6) var(--sp-6) var(--sp-16); max-width: 1180px; margin-inline: auto; }
+
+/* --- Aside (right context rail) ----------------------------------------- */
+.aside {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  width: var(--aside-w);
+  border-left: 1px solid var(--line-0);
+  background: var(--bg-1);
+  /* Long unbroken strings (Chinese titles with no spaces, URLs, SHA hashes)
+     could previously force the rail wider than its column. `anywhere` lets them
+     break instead of pushing the layout out of view. */
+  overflow-wrap: anywhere;
+}
+/* The aside hosts lists whose rows are built from user/data-derived text of
+   arbitrary length. These two rules are the general guard: grid/flex children may
+   shrink below their content size, and long words wrap rather than overflow. */
+.aside .panel, .aside .mini-list, .aside .mini-item { min-width: 0; max-width: 100%; }
+.aside .kv dd, .aside .kv dt { min-width: 0; overflow-wrap: anywhere; }
+
+/* ==========================================================================
+   2. PRIMITIVES
+   ========================================================================= */
+
+/* --- Buttons ------------------------------------------------------------ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: var(--sp-2);
+  height: 34px;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--line-1);
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  color: var(--fg-1);
+  font-size: var(--fs-xs);
+  font-weight: 560;
+  white-space: nowrap;
+  transition: background var(--t-fast) var(--ease-out), border-color var(--t-fast),
+    color var(--t-fast), transform var(--t-fast) var(--ease-spring), box-shadow var(--t-fast);
+}
+.btn:hover { background: var(--bg-4); border-color: var(--line-2); color: var(--fg-0); }
+.btn:active { transform: scale(0.97); }
+.btn svg { width: 15px; height: 15px; flex: 0 0 auto; }
+
+.btn-primary {
+  background: linear-gradient(180deg, var(--accent), var(--accent-lo));
+  border-color: transparent;
+  color: var(--accent-fg);
+  font-weight: 640;
+  box-shadow: 0 3px 12px -3px var(--accent-ring);
+}
+.btn-primary:hover { background: linear-gradient(180deg, var(--accent-hi), var(--accent)); color: var(--accent-fg); }
+
+.btn-ghost { background: transparent; border-color: transparent; color: var(--fg-2); }
+.btn-ghost:hover { background: var(--bg-3); color: var(--fg-0); border-color: transparent; }
+
+.btn-sm { height: 28px; padding: 0 var(--sp-2); font-size: var(--fs-2xs); border-radius: var(--r-sm); }
+.btn-icon { width: 34px; padding: 0; }
+.btn-icon.btn-sm { width: 28px; }
+
+.btn.is-on { border-color: var(--accent); color: var(--accent-hi); background: var(--accent-wash); }
+
+/* --- Chips / pills ------------------------------------------------------ */
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 24px;
+  padding: 0 9px;
+  border: 1px solid var(--line-1);
+  border-radius: var(--r-pill);
+  background: var(--bg-2);
+  color: var(--fg-2);
+  font-size: var(--fs-3xs);
+  font-weight: 560;
+  white-space: nowrap;
+  transition: all var(--t-fast) var(--ease-out);
+}
+button.chip:hover { border-color: var(--line-2); color: var(--fg-0); background: var(--bg-3); }
+.chip.is-on {
+  background: var(--cat, var(--accent));
+  border-color: transparent;
+  color: #fff;
+}
+[data-theme="daylight"] .chip.is-on,
+[data-theme="sand"] .chip.is-on { color: #fff; }
+.chip-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cat, var(--accent)); flex: 0 0 auto; }
+.chip.is-on .chip-dot { background: currentColor; opacity: .8; }
+.chip-soft { background: color-mix(in oklab, var(--cat, var(--accent)) 14%, transparent); border-color: color-mix(in oklab, var(--cat, var(--accent)) 30%, transparent); color: var(--cat, var(--accent)); }
+
+.tag {
+  display: inline-flex; align-items: center;
+  padding: 1px 7px;
+  border-radius: var(--r-xs);
+  background: var(--bg-3);
+  color: var(--fg-2);
+  font-size: var(--fs-3xs);
+  font-family: var(--font-mono);
+  letter-spacing: -0.01em;
+}
+.tag-accent { background: var(--accent-wash); color: var(--accent-hi); }
+
+.badge {
+  display: inline-grid; place-items: center;
+  min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: var(--r-xs);
+  font-size: var(--fs-3xs); font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  /* `place-items: center` on an inline-grid makes EVERY child a grid item, and a
+     bare text node is split into one item per character in some engines. Chinese
+     labels therefore stacked vertically: the 认证 column rendered "公" above "开"
+     and the row looked broken. nowrap keeps the label on one line. */
+  white-space: nowrap;
+}
+.badge-ok { background: color-mix(in oklab, var(--ok) 18%, transparent); color: var(--ok); }
+.badge-warn { background: color-mix(in oklab, var(--warn) 18%, transparent); color: var(--warn); }
+.badge-err { background: color-mix(in oklab, var(--err) 18%, transparent); color: var(--err); }
+.badge-info { background: color-mix(in oklab, var(--info) 18%, transparent); color: var(--info); }
+.badge-mute { background: var(--bg-4); color: var(--fg-2); }
+
+/* --- Cards -------------------------------------------------------------- */
+.card {
+  position: relative;
+  border: 1px solid var(--line-0);
+  border-radius: var(--r-lg);
+  background: var(--bg-2);
+  transition: border-color var(--t-base) var(--ease-out), box-shadow var(--t-base) var(--ease-out),
+    transform var(--t-base) var(--ease-out), background var(--t-base) var(--ease-out);
+}
+.card-pad { padding: var(--sp-4); }
+.card-hover:hover {
+  border-color: var(--line-1);
+  background: var(--bg-3);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+.card-accent::before {
+  content: "";
+  position: absolute; inset: 0 0 auto 0;
+  height: 2px;
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  background: linear-gradient(90deg, var(--cat, var(--accent)), transparent 85%);
+  opacity: .9;
+}
+
+.panel {
+  border: 1px solid var(--line-0);
+  border-radius: var(--r-lg);
+  background: var(--bg-2);
+  overflow: hidden;
+}
+.panel-head {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--line-0);
+  background: linear-gradient(180deg, var(--bg-3), transparent);
+}
+.panel-title { font-size: var(--fs-xs); font-weight: 680; color: var(--fg-0); letter-spacing: .01em; display: flex; align-items: center; gap: var(--sp-2); }
+.panel-title svg { width: 14px; height: 14px; color: var(--accent); }
+.panel-body { padding: var(--sp-4); }
+.panel-body.flush { padding: 0; }
+
+/* --- Inputs ------------------------------------------------------------- */
+.field {
+  display: flex; align-items: center; gap: var(--sp-2);
+  height: 34px;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--line-1);
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+.field:focus-within { border-color: var(--accent); box-shadow: var(--ring); }
+.field svg { width: 15px; height: 15px; color: var(--fg-3); flex: 0 0 auto; }
+.field input, .field select {
+  flex: 1 1 auto; min-width: 0;
+  background: none; border: none;
+  color: var(--fg-0);
+  font-size: var(--fs-xs);
+}
+.field input::placeholder { color: var(--fg-3); }
+.field-sm { height: 28px; font-size: var(--fs-2xs); }
+
+select.select {
+  height: 34px;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--line-1);
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  color: var(--fg-1);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+  appearance: none;
+  padding-right: var(--sp-8);
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 15px) 15px, calc(100% - 10px) 15px;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+.select-sm { height: 28px; font-size: var(--fs-2xs); background-position: calc(100% - 15px) 12px, calc(100% - 10px) 12px; }
+
+/* --- Segmented control -------------------------------------------------- */
+.segmented {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--line-1);
+  border-radius: var(--r-md);
+  background: var(--bg-1);
+  gap: 2px;
+}
+.segmented button {
+  padding: 4px 10px;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-3xs);
+  font-weight: 580;
+  color: var(--fg-2);
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.segmented button:hover { color: var(--fg-0); }
+.segmented button.is-on { background: var(--bg-4); color: var(--fg-0); box-shadow: var(--shadow-xs); }
+
+/* --- Switch ------------------------------------------------------------- */
+.switch {
+  position: relative;
+  width: 34px; height: 19px;
+  border-radius: var(--r-pill);
+  background: var(--bg-4);
+  border: 1px solid var(--line-1);
+  transition: background var(--t-base), border-color var(--t-base);
+  flex: 0 0 auto;
+}
+.switch::after {
+  content: "";
+  position: absolute; top: 2px; left: 2px;
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  background: var(--fg-2);
+  transition: translate var(--t-base) var(--ease-spring), background var(--t-base);
+}
+.switch[aria-checked="true"] { background: var(--accent); border-color: transparent; }
+.switch[aria-checked="true"]::after { translate: 15px 0; background: var(--accent-fg); }
+
+/* --- Progress ----------------------------------------------------------- */
+.bar { height: 5px; border-radius: var(--r-pill); background: var(--bg-4); overflow: hidden; }
+.bar > i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--cat, var(--accent)), var(--accent)); transition: width var(--t-slow) var(--ease-out); }
+.bar-lg { height: 8px; }
+
+.ring { transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-linecap: round; }
+.ring .track { stroke: var(--bg-4); }
+.ring .val { stroke: var(--cat, var(--accent)); transition: stroke-dashoffset var(--t-slower) var(--ease-out); }
+
+/* --- Tooltip ------------------------------------------------------------
+   Two fixes over the original version:
+   1. A transparent `::before` "bridge" fills the 7px gap between the trigger and
+      the bubble. Without it, moving the pointer into the tooltip left the trigger,
+      the bubble vanished, and the tooltip became unreadable - it flickered.
+   2. `bottom: calc(100% + 8px)` keeps the bubble above the trigger, which now
+      works because #app no longer clips (see the note in the app-shell section).
+   The bubble is pointer-events:none, so the bridge is what holds the hover. */
+[data-tip] { position: relative; }
+[data-tip]::before {
+  content: "";
+  position: absolute;
+  bottom: 100%; left: 0; right: 0;
+  height: 9px;                       /* covers the 8px gap plus a little slack */
+}
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%; translate: -50% 0;
+  padding: 5px 9px;
+  border-radius: var(--r-sm);
+  background: var(--bg-4);
+  border: 1px solid var(--line-1);
+  color: var(--fg-0);
+  font-size: var(--fs-3xs);
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: var(--shadow-lg);
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--t-fast), translate var(--t-fast) var(--ease-out);
+  z-index: 100;
+}
+[data-tip]:hover::after, [data-tip]:focus-visible::after { opacity: 1; translate: -50% -2px; }
+
+/* The topbar is only 60px tall and its 28px buttons are vertically centred, so a
+   trigger sits at y=16 - a tooltip placed ABOVE it lands at y=-18, i.e. completely
+   off-screen. That is the real reason the three top-right controls appeared to show
+   "incomplete" popovers: the bubble was painted above the viewport. Placement is
+   therefore flipped for anything inside the topbar, where there is a whole page of
+   room below. The bridge is flipped with it so the hover does not break. */
+.topbar [data-tip]::before { bottom: auto; top: 100%; }
+.topbar [data-tip]::after {
+  bottom: auto;
+  top: calc(100% + 8px);
+  translate: -50% 0;
+}
+.topbar [data-tip]:hover::after,
+.topbar [data-tip]:focus-visible::after { translate: -50% 2px; }
+/* Keep the right-most bubble inside the viewport instead of letting it run off the
+   right edge (it is centred on a trigger that is already near the edge). */
+.topbar-actions [data-tip]::after { left: auto; right: 0; translate: 0 0; }
+.topbar-actions [data-tip]:hover::after,
+.topbar-actions [data-tip]:focus-visible::after { translate: 0 2px; }
+
+/* The '深度解析 / 深读 / 仅摘要' tag and the relative-time span sit in a card's
+   footer or meta row, which is at the BOTTOM of the card. A downward tooltip can
+   therefore fall past the card and be clipped by the scrolling `#main` (measured:
+   a tag at y=1223 produced a bubble at y=1251..1277, outside the viewport). These
+   triggers always have card content above them, so they point up. */
+.tag[data-tip]::after,
+.kcard-foot [data-tip]::after,
+.kcard-meta [data-tip]::after {
+  top: auto;
+  bottom: calc(100% + 8px);
+  translate: -50% 0;
+}
+.tag[data-tip]::before,
+.kcard-foot [data-tip]::before,
+.kcard-meta [data-tip]::before { top: auto; bottom: 100%; }
+.tag[data-tip]:hover::after,
+.tag[data-tip]:focus-visible::after,
+.kcard-foot [data-tip]:hover::after,
+.kcard-foot [data-tip]:focus-visible::after,
+.kcard-meta [data-tip]:hover::after,
+.kcard-meta [data-tip]:focus-visible::after { translate: -50% -2px; }
+
+/* --- Divider / section headers ----------------------------------------- */
+.section-head {
+  display: flex; align-items: flex-end; gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+  flex-wrap: wrap;
+}
+.section-title { font-size: var(--fs-xl); font-weight: 680; letter-spacing: -0.02em; }
+.section-desc { font-size: var(--fs-xs); color: var(--fg-2); max-width: 68ch; }
+.section-actions { margin-left: auto; display: flex; align-items: center; gap: var(--sp-2); }
+
+.rule { height: 1px; background: linear-gradient(90deg, var(--line-1), transparent); margin: var(--sp-6) 0; }
+
+/* --- Empty / skeleton --------------------------------------------------- */
+.empty {
+  display: grid; place-items: center; gap: var(--sp-3);
+  padding: var(--sp-12) var(--sp-6);
+  border: 1px dashed var(--line-1);
+  border-radius: var(--r-lg);
+  text-align: center;
+  color: var(--fg-2);
+}
+.empty svg { width: 34px; height: 34px; color: var(--fg-3); }
+.empty h4 { font-size: var(--fs-base); color: var(--fg-1); }
+.empty p { font-size: var(--fs-xs); max-width: 46ch; }
+
+.skel {
+  border-radius: var(--r-md);
+  background: linear-gradient(100deg, var(--bg-3) 30%, var(--bg-4) 50%, var(--bg-3) 70%);
+  background-size: 240% 100%;
+  animation: shimmer 1.5s linear infinite;
+}
+@keyframes shimmer { from { background-position: 180% 0; } to { background-position: -60% 0; } }
+
+/* ==========================================================================
+   3. VIEW-SPECIFIC
+   ========================================================================= */
+
+/* --- Hero / dashboard --------------------------------------------------- */
+.hero {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line-0);
+  border-radius: var(--r-xl);
+  background:
+    radial-gradient(120% 150% at 0% 0%, var(--accent-wash), transparent 55%),
+    linear-gradient(160deg, var(--bg-3), var(--bg-1));
+  padding: var(--sp-6) var(--sp-6) var(--sp-5);
+  margin-bottom: var(--sp-6);
+}
+.hero::after {
+  content: "";
+  position: absolute; right: -60px; top: -60px;
+  width: 320px; height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent-wash), transparent 65%);
+  pointer-events: none;
+  animation: floaty 14s var(--ease-in-out) infinite;
+}
+@keyframes floaty {
+  0%, 100% { translate: 0 0; }
+  50% { translate: -22px 18px; }
+}
+.hero > * { position: relative; z-index: 1; }
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  padding: 3px 10px;
+  margin-bottom: var(--sp-3);
+  border: 1px solid var(--line-1);
+  border-radius: var(--r-pill);
+  background: var(--bg-glass);
+  backdrop-filter: blur(10px);
+  font-size: var(--fs-3xs);
+  font-weight: 600;
+  color: var(--fg-1);
+  letter-spacing: var(--tracking-wide);
+}
+.pulse { position: relative; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); flex: 0 0 auto; }
+.pulse::after {
+  content: ""; position: absolute; inset: -3px;
+  border-radius: 50%; border: 1.5px solid var(--ok);
+  animation: pulse-ring 2.2s var(--ease-out) infinite;
+}
+@keyframes pulse-ring {
+  0% { opacity: .9; scale: .7; }
+  100% { opacity: 0; scale: 1.5; }
+}
+.hero h1 { font-size: var(--fs-3xl); font-weight: 720; letter-spacing: -0.035em; margin-bottom: var(--sp-2); }
+.hero h1 em { font-style: normal; background: linear-gradient(96deg, var(--accent-hi), var(--accent) 45%, var(--c-generative)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero p { font-size: var(--fs-sm); color: var(--fg-2); max-width: 74ch; }
+.hero-stats { display: flex; flex-wrap: wrap; gap: var(--sp-6); margin-top: var(--sp-5); }
+
+.stat { display: flex; flex-direction: column; gap: 2px; min-width: 84px; }
+.stat-val { font-size: var(--fs-2xl); font-weight: 700; color: var(--fg-0); letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stat-val small { font-size: var(--fs-xs); font-weight: 600; color: var(--fg-2); margin-left: 3px; }
+.stat-key { font-size: var(--fs-3xs); color: var(--fg-3); letter-spacing: var(--tracking-wide); text-transform: uppercase; font-weight: 650; }
+.stat-delta { font-size: var(--fs-3xs); font-weight: 650; }
+.stat-delta.up { color: var(--ok); }
+.stat-delta.down { color: var(--err); }
+.stat-delta.flat { color: var(--fg-3); }
+
+/* --- Grids -------------------------------------------------------------- */
+.grid { display: grid; gap: var(--sp-4); }
+.grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.grid-auto { grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); }
+.grid-auto-sm { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.grid-dash { grid-template-columns: minmax(0, 1.62fr) minmax(0, 1fr); }
+
+/* --- Knowledge card ---------------------------------------------------- */
+.kcard {
+  display: flex; flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  cursor: pointer;
+  animation: card-in var(--t-slow) var(--ease-out) both;
+}
+/* Motion note: entrance animations must never make content invisible. `both`
+   holds the 0-opacity start frame during the delay, which would hide
+   below-the-fold cards for a long time when a list delays each card. So the
+   delay is capped at 240ms in the renderers and, more importantly, the
+   animation only translates — it does not touch opacity. Readers with
+   `prefers-reduced-motion` get the static layout. */
+@keyframes card-in {
+  from { translate: 0 10px; }
+  to { translate: 0 0; }
+}
+.kcard-top { display: flex; align-items: flex-start; gap: var(--sp-3); }
+.kcard-cat {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: color-mix(in oklab, var(--cat, var(--accent)) 15%, transparent);
+  color: var(--cat, var(--accent));
+  font-size: var(--fs-3xs);
+  font-weight: 680;
+  letter-spacing: .02em;
+  flex: 0 0 auto;
+}
+.kcard-cat::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.kcard-title {
+  font-size: var(--fs-base);
+  font-weight: 620;
+  color: var(--fg-0);
+  line-height: var(--lh-snug);
+  letter-spacing: -0.012em;
+}
+.kcard:hover .kcard-title { color: var(--accent-hi); }
+.kcard-why {
+  padding: var(--sp-2) var(--sp-3);
+  border-left: 2px solid var(--cat, var(--accent));
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  background: color-mix(in oklab, var(--cat, var(--accent)) 7%, transparent);
+  font-size: var(--fs-2xs);
+  color: var(--fg-1);
+  line-height: var(--lh-snug);
+}
+.kcard-why b { color: var(--cat, var(--accent)); font-weight: 680; }
+.kcard-summary { font-size: var(--fs-xs); color: var(--fg-2); line-height: var(--lh-normal); }
+.kcard-points { display: flex; flex-direction: column; gap: 4px; }
+.kcard-points li { display: flex; gap: var(--sp-2); font-size: var(--fs-2xs); color: var(--fg-1); line-height: var(--lh-snug); }
+.kcard-points li::before { content: ""; width: 4px; height: 4px; margin-top: 6px; border-radius: 50%; background: var(--cat, var(--accent)); flex: 0 0 auto; opacity: .8; }
+.kcard-foot { display: flex; align-items: center; gap: var(--sp-2); margin-top: auto; padding-top: var(--sp-2); border-top: 1px solid var(--line-0); font-size: var(--fs-3xs); color: var(--fg-3); }
+.kcard-src { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; color: var(--fg-2); }
+.kcard-src:hover { color: var(--accent); }
+.kcard-meta { display: flex; align-items: center; gap: var(--sp-2); margin-left: auto; }
+/* The knowledge card footer packs source, difficulty, "深读/仅摘要" state, a
+   sparkline and the score into one row. Measured with scripts/audit-layout.mjs
+   the 仅摘要 tag was being crushed to 47px while needing 126px, so the text was
+   silently clipped mid-glyph. The tags must keep their intrinsic width; only the
+   card body text is allowed to truncate. */
+.kcard-meta > .tag,
+.kcard-foot > .tag { flex: 0 0 auto; white-space: nowrap; }
+.kcard-meta > * { min-width: 0; }
+.kcard-actions { display: flex; align-items: center; gap: 2px; }
+
+.icon-btn {
+  width: 26px; height: 26px;
+  display: grid; place-items: center;
+  border-radius: var(--r-sm);
+  color: var(--fg-3);
+  transition: color var(--t-fast), background var(--t-fast), transform var(--t-fast) var(--ease-spring);
+}
+.icon-btn:hover { background: var(--bg-4); color: var(--fg-0); }
+.icon-btn:active { transform: scale(.88); }
+.icon-btn svg { width: 15px; height: 15px; }
+.icon-btn.is-on { color: var(--warn); }
+.icon-btn.is-on svg { fill: currentColor; }
+.icon-btn.is-done { color: var(--ok); }
+
+.relevance {
+  display: flex; align-items: center; gap: 5px;
+  font-size: var(--fs-3xs); font-weight: 650;
+  color: var(--fg-2);
+  flex: 0 0 auto;
+}
+.relevance-bar { width: 34px; height: 4px; border-radius: var(--r-pill); background: var(--bg-4); overflow: hidden; }
+.relevance-bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent-lo), var(--accent)); }
+
+/* --- Digest timeline --------------------------------------------------- */
+.digest-day { margin-bottom: var(--sp-8); }
+.digest-day-head {
+  position: sticky; top: 0;
+  z-index: 10;
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-3) 0;
+  margin-bottom: var(--sp-4);
+  background: linear-gradient(180deg, var(--bg-0) 62%, transparent);
+  backdrop-filter: blur(8px);
+}
+.digest-date {
+  display: flex; align-items: baseline; gap: var(--sp-2);
+  font-size: var(--fs-lg); font-weight: 700; color: var(--fg-0); letter-spacing: -0.02em;
+}
+.digest-date small { font-size: var(--fs-2xs); font-weight: 560; color: var(--fg-3); letter-spacing: 0; }
+.digest-thread { position: relative; padding-left: var(--sp-5); }
+.digest-thread::before {
+  content: ""; position: absolute; left: 5px; top: 4px; bottom: 8px;
+  width: 2px; border-radius: var(--r-pill);
+  background: linear-gradient(180deg, var(--accent), transparent 92%);
+  opacity: .35;
+}
+.digest-node { position: relative; margin-bottom: var(--sp-4); }
+.digest-node::before {
+  content: ""; position: absolute; left: calc(-1 * var(--sp-5) + 1px); top: 15px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--bg-0);
+  border: 2px solid var(--cat, var(--accent));
+}
+
+/* --- Category overview tiles ------------------------------------------- */
+.cat-tile {
+  position: relative;
+  display: flex; flex-direction: column; gap: var(--sp-2);
+  padding: var(--sp-4);
+  overflow: hidden;
+  cursor: pointer;
+}
+.cat-tile::after {
+  content: ""; position: absolute; right: -30px; bottom: -30px;
+  width: 110px; height: 110px; border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in oklab, var(--cat) 22%, transparent), transparent 68%);
+  transition: scale var(--t-slow) var(--ease-out);
+}
+.cat-tile:hover::after { scale: 1.35; }
+.cat-tile-head { display: flex; align-items: center; gap: var(--sp-2); }
+.cat-tile-icon {
+  width: 30px; height: 30px; border-radius: var(--r-md);
+  display: grid; place-items: center;
+  background: color-mix(in oklab, var(--cat) 15%, transparent);
+  color: var(--cat);
+  flex: 0 0 auto;
+}
+.cat-tile-icon svg { width: 16px; height: 16px; }
+.cat-tile-name { font-size: var(--fs-sm); font-weight: 660; color: var(--fg-0); }
+.cat-tile-en { font-size: var(--fs-3xs); color: var(--fg-3); font-family: var(--font-mono); }
+.cat-tile-desc { font-size: var(--fs-2xs); color: var(--fg-2); line-height: var(--lh-snug); }
+.cat-tile-foot { display: flex; align-items: center; gap: var(--sp-3); margin-top: var(--sp-2); position: relative; z-index: 1; }
+.cat-tile-num { font-size: var(--fs-lg); font-weight: 700; color: var(--cat); font-variant-numeric: tabular-nums; line-height: 1; }
+.cat-tile-num small { font-size: var(--fs-3xs); color: var(--fg-3); font-weight: 560; margin-left: 3px; }
+
+/* --- Diagrams (deep-read layer output) ---------------------------------- */
+.diagram {
+  margin: 0 0 var(--sp-4);
+  border: 1px solid var(--line-0);
+  border-radius: var(--r-lg);
+  background: var(--bg-2);
+  overflow: hidden;
+}
+.dg-head {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  border-bottom: 1px solid var(--line-0);
+  background: var(--bg-3);
+}
+.dg-kind {
+  flex: 0 0 auto;
+  padding: 1px 7px;
+  border-radius: var(--r-xs);
+  background: var(--accent-wash);
+  color: var(--accent-hi);
+  font-size: var(--fs-3xs);
+  font-weight: 700;
+}
+.dg-title { font-size: var(--fs-2xs); font-weight: 640; color: var(--fg-0); }
+.dg-svg { padding: var(--sp-4); display: grid; place-items: center; }
+.dg-svg svg { width: 100%; height: auto; max-height: 340px; }
+.dg-caption {
+  padding: var(--sp-2) var(--sp-4) var(--sp-3);
+  font-size: var(--fs-2xs); color: var(--fg-1); line-height: var(--lh-snug);
+}
+.dg-alt { padding: 0 var(--sp-4) var(--sp-3); font-size: var(--fs-3xs); color: var(--fg-3); }
+
+.dg-flow { display: flex; align-items: stretch; gap: var(--sp-2); padding: var(--sp-4); overflow-x: auto; }
+.dg-flow .dg-node {
+  flex: 1 1 0; min-width: 96px;
+  display: flex; flex-direction: column; gap: 2px;
+  padding: var(--sp-3);
+  border: 1px solid var(--line-1);
+  border-radius: var(--r-md);
+  background: var(--bg-3);
+  text-align: center;
+}
+.dg-flow.architecture .dg-node { border-style: dashed; }
+.dg-node-label { font-size: var(--fs-2xs); font-weight: 640; color: var(--fg-0); }
+.dg-node-detail { font-size: var(--fs-3xs); color: var(--fg-2); line-height: var(--lh-snug); }
+.dg-arrow { align-self: center; flex: 0 0 auto; color: var(--accent); font-size: var(--fs-sm); }
+.dg-edges { padding: 0 var(--sp-4) var(--sp-4); display: flex; flex-direction: column; gap: 3px; }
+.dg-edges li { font-size: var(--fs-3xs); color: var(--fg-2); }
+.dg-edge-pair { color: var(--fg-1); font-family: var(--font-mono); }
+
+.dg-timeline { padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); }
+.dg-timeline li { display: flex; gap: var(--sp-3); align-items: flex-start; }
+.dg-tl-dot {
+  flex: 0 0 auto; width: 9px; height: 9px; margin-top: 5px;
+  border-radius: 50%; background: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-wash);
+}
+.dg-curve { padding: var(--sp-4); }
+
+/* --- Concept cards inside the detail drawer ----------------------------- */
+.concept-card {
+  border: 1px solid var(--line-0);
+  border-radius: var(--r-lg);
+  background: var(--bg-2);
+  margin-bottom: var(--sp-3);
+  overflow: hidden;
+}
+.concept-card > .cc-head {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--line-0);
+  background: linear-gradient(180deg, var(--bg-3), transparent);
+}
+.cc-glyph {
+  flex: 0 0 auto; width: 26px; height: 26px;
+  display: grid; place-items: center;
+  border-radius: 8px;
+  background: var(--accent-wash);
+  color: var(--accent-hi);
+  font-family: var(--font-serif); font-style: italic; font-size: var(--fs-sm);
+}
+.cc-name { font-size: var(--fs-xs); font-weight: 660; color: var(--fg-0); }
+.cc-body { padding: var(--sp-3) var(--sp-4) var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-2); }
+.cc-row { font-size: var(--fs-2xs); color: var(--fg-1); line-height: var(--lh-normal); }
+.cc-row > b { color: var(--fg-0); font-weight: 660; }
+.cc-visual {
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-sm);
+  background: var(--bg-3);
+  border-left: 2px solid var(--accent);
+  font-size: var(--fs-2xs);
+  color: var(--fg-1);
+}
+
+/* --- Quality legend (仅摘要 / 深读 / 深度解析) -------------------------- */
+.quality-legend { display: flex; flex-wrap: wrap; gap: var(--sp-3); font-size: var(--fs-3xs); color: var(--fg-2); }
+.quality-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.q-dot { width: 8px; height: 8px; border-radius: 3px; flex: 0 0 auto; }
+
+/* --- Formula cards ----------------------------------------------------- */
+.formula {
+  border: 1px solid var(--line-0);
+  border-radius: var(--r-lg);
+  background: var(--bg-2);
+  overflow: hidden;
+}
+.formula-head {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-4);
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+.formula-head:hover { background: var(--bg-3); }
+.formula-glyph {
+  width: 38px; height: 38px; flex: 0 0 auto;
+  display: grid; place-items: center;
+  border-radius: var(--r-md);
+  background: color-mix(in oklab, var(--cat, var(--accent)) 13%, transparent);
+  color: var(--cat, var(--accent));
+  font-family: var(--font-serif);
+  font-size: var(--fs-lg);
+  font-style: italic;
+}
+.formula-title { font-size: var(--fs-sm); font-weight: 640; color: var(--fg-0); }
+.formula-sub { font-size: var(--fs-3xs); color: var(--fg-3); }
+/* The expand chevron is a direct <svg> sibling inside the head; without an
+   explicit size an inline SVG with no width/height attribute stretches to the
+   full flex width (it did, dramatically). Pin it. */
+.formula-head > svg { width: 18px; height: 18px; flex: 0 0 auto; color: var(--fg-3); rotate: 90deg; transition: rotate var(--t-base) var(--ease-out), color var(--t-fast); }
+.formula-head:hover > svg { color: var(--fg-1); }
+.formula-head > svg.is-open { rotate: 0deg; color: var(--accent); }
+.formula-body {
+  display: grid;
+  gap: var(--sp-4);
+  padding: 0 var(--sp-4) var(--sp-4);
+  animation: reveal var(--t-slow) var(--ease-out);
+}
+@keyframes reveal {
+  from { opacity: 0; translate: 0 -6px; }
+  to { opacity: 1; translate: 0 0; }
+}
+.math {
+  padding: var(--sp-4);
+  border-radius: var(--r-md);
+  background: var(--bg-1);
+  border: 1px solid var(--line-0);
+  overflow-x: auto;
+  text-align: center;
+  color: var(--fg-0);
+  font-family: var(--font-serif);
+  font-size: var(--fs-md);
+  line-height: 2.1;
+}
+.math .frac { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; margin: 0 3px; }
+.math .frac > span:first-child { border-bottom: 1.4px solid currentColor; padding: 0 5px; }
+.math .frac > span:last-child { padding: 0 5px; }
+.math sub, .math sup { font-size: .68em; }
+.math var { font-style: italic; font-family: var(--font-serif); }
+
+/* --- our own LaTeX rendering (see tex() in core.part.js) ---------------- */
+.math .tex-num { font-family: var(--font-serif); }
+.math .tex-word { font-style: normal; }
+.math .tex-op { font-style: normal; padding: 0 .12em; }
+.math .tex-greek { font-style: italic; }
+.math .tex-sym { padding: 0 .1em; }
+.math .tex-bold { font-weight: 700; }
+.math .tex-bb { font-weight: 600; letter-spacing: -.02em; }
+.math .tex-cal { font-style: italic; }
+.math .tex-mono { font-family: var(--font-mono); font-size: .9em; }
+.math .tex-bigop { font-size: 1.45em; vertical-align: -.18em; line-height: 1; padding: 0 .08em; }
+.math .tex-sup, .math .tex-sub { font-size: .68em; }
+.math .tex-unknown { color: var(--err); font-family: var(--font-mono); font-size: .85em; }
+
+/* Accents: CSS decoration around the argument (no font support needed). */
+.math .tex-acc-bar { text-decoration: overline; text-underline-offset: 2px; }
+.math .tex-acc-hat::after { content: "^"; position: relative; top: -.9em; font-size: .8em; }
+.math .tex-acc-tilde { text-decoration: overline; text-decoration-style: wavy; }
+.math .tex-acc-dot::after { content: "·"; position: relative; top: -.9em; font-size: 1em; }
+.math .tex-acc-ddot::after { content: "··"; position: relative; top: -.9em; font-size: .8em; letter-spacing: -.1em; }
+.math .tex-acc-vec::after { content: "→"; position: relative; top: -.95em; font-size: .72em; }
+.math .tex-space { display: inline-block; width: 1.6em; }
+.math .tex-thinspace { display: inline-block; width: .3em; }
+.math .tex-align { display: inline-block; width: 2.4em; }
+/* \underbrace{X}_{label} / \overbrace{X}^{label}: a bracketed span with the
+   annotation above or below. Without a rule here the label collided with the
+   expression and read as a second formula. */
+.math .tex-under, .math .tex-over {
+  display: inline-flex; flex-direction: column; align-items: center;
+  vertical-align: middle; margin: 0 .18em;
+}
+.math .tex-over { flex-direction: column-reverse; }
+.math .tex-brace-label {
+  font-size: .62em; color: var(--fg-2); line-height: 1.15;
+  border-top: 1.2px solid currentColor; padding-top: 2px; margin-top: 1px;
+  white-space: nowrap;
+}
+.math .tex-over > .tex-brace-label { border-top: 0; border-bottom: 1.2px solid currentColor; padding-top: 0; padding-bottom: 2px; margin: 0 0 1px; }
+/* \not: combining long solidus overlay, so \not= and \not\in stay legible. */
+.math .tex-not { display: inline-block; margin-right: -.55em; }
+/* \sqrt: the radical glyph followed by a rule that grows with the radicand */
+.math .sqrt { display: inline-flex; align-items: stretch; }
+.math .sqrt > .radicand { border-top: 1.2px solid currentColor; padding: 0 .18em; margin-left: -.06em; }
+
+/* The source stays visible so a formula is copy-pasteable and verifiable */
+.math-source {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-sm);
+  background: var(--bg-3);
+  border: 1px solid var(--line-0);
+  overflow-x: auto;
+}
+.math-source code { font-size: var(--fs-2xs); color: var(--accent-hi); white-space: nowrap; }
+
+/* Topbar actions -----------------------------------------------------------------
+   `#btn-refresh` measured 75px of content in a 31px box, which pushed the whole
+   header 4px past the viewport. The cause was NOT the buttons: the search trigger
+   `.cmd-trigger` has `flex: 1 1 auto`, so it consumed the free space and squeezed
+   `.topbar-actions` down to 97px. The buttons then shrank below their content
+   because nothing set `flex-shrink: 0` on them.
+   Fix: the action group keeps its intrinsic size and never shrinks; the search
+   trigger is the one flexible element and is allowed to shrink.
+   -------------------------------------------------------------------------------- */
+.topbar-actions { min-width: 0; flex: 0 0 auto; flex-wrap: nowrap; }
+.topbar-actions > .btn { min-width: 0; flex: 0 0 auto; }
+.topbar-actions > .btn > svg { flex: 0 0 auto; }
+.topbar-actions > .btn > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cmd-trigger { min-width: 0; }
+@media (max-width: 1240px) {
+  /* Drop the word rather than squeeze it into "刷…": the icon still reads clearly. */
+  .topbar-actions > .btn > span { display: none; }
+  .topbar-actions > .btn { padding: 0 var(--sp-2); }
+}
+.math-source .icon-btn { margin-left: auto; flex: 0 0 auto; }
+.sym-table { display: grid; grid-template-columns: max-content 1fr; gap: 6px var(--sp-4); align-items: baseline; }
+.sym-table dt {
+  font-family: var(--font-serif); font-style: italic;
+  color: var(--cat, var(--accent)); font-size: var(--fs-sm); white-space: nowrap;
+}
+.sym-table dd { font-size: var(--fs-2xs); color: var(--fg-2); line-height: var(--lh-snug); }
+.derive { display: flex; flex-direction: column; gap: var(--sp-2); }
+.derive-step {
+  display: flex; gap: var(--sp-3);
+  padding: var(--sp-3);
+  border-radius: var(--r-sm);
+  background: var(--bg-3);
+  font-size: var(--fs-2xs);
+  line-height: var(--lh-normal);
+  color: var(--fg-1);
+}
+.derive-step > b {
+  flex: 0 0 auto;
+  width: 18px; height: 18px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--accent-wash);
+  color: var(--accent-hi);
+  font-size: var(--fs-3xs);
+  font-weight: 700;
+}
+.analogy {
+  display: flex; gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  background: linear-gradient(100deg, color-mix(in oklab, var(--c-rl) 11%, transparent), transparent);
+  border: 1px dashed color-mix(in oklab, var(--c-rl) 35%, transparent);
+}
+.analogy svg { width: 17px; height: 17px; color: var(--c-rl); flex: 0 0 auto; margin-top: 2px; }
+.analogy p { font-size: var(--fs-2xs); color: var(--fg-1); line-height: var(--lh-normal); }
+.analogy b { color: var(--c-rl); }
+
+/* --- Code --------------------------------------------------------------- */
+.code-wrap { position: relative; border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--line-0); background: var(--bg-1); }
+.code-head {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: 6px var(--sp-3);
+  border-bottom: 1px solid var(--line-0);
+  background: var(--bg-3);
+  font-size: var(--fs-3xs);
+  color: var(--fg-3);
+  font-family: var(--font-mono);
+}
+.code-head .copy { margin-left: auto; }
+pre.code {
+  padding: var(--sp-4);
+  overflow-x: auto;
+  font-size: var(--fs-2xs);
+  line-height: 1.7;
+  color: var(--fg-1);
+  tab-size: 4;
+}
+.tok-kw { color: var(--c-generative); }
+.tok-str { color: var(--c-agent); }
+.tok-num { color: var(--c-rl); }
+.tok-com { color: var(--fg-3); font-style: italic; }
+.tok-fn { color: var(--accent-hi); }
+.tok-cls { color: var(--c-worldmodel); }
+.tok-op { color: var(--c-posttraining); }
+
+/* --- Tables ------------------------------------------------------------- */
+.tbl-wrap { overflow-x: auto; border-radius: var(--r-md); border: 1px solid var(--line-0); }
+table.tbl { font-size: var(--fs-2xs); }
+table.tbl thead th {
+  position: sticky; top: 0;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--bg-3);
+  border-bottom: 1px solid var(--line-1);
+  color: var(--fg-2);
+  font-weight: 660;
+  font-size: var(--fs-3xs);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  text-align: left;
+  white-space: nowrap;
+  z-index: 2;
+}
+table.tbl td {
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--line-0);
+  color: var(--fg-1);
+  vertical-align: top;
+}
+table.tbl tbody tr { transition: background var(--t-fast); }
+table.tbl tbody tr:hover { background: var(--bg-3); }
+table.tbl tbody tr:last-child td { border-bottom: none; }
+table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* --- Teaching layer (deep-read analysis: explain, don't summarise) -------- */
+.teach { display: flex; flex-direction: column; gap: var(--sp-3); }
+.teach-prog { display: flex; flex-direction: column; gap: var(--sp-2); list-style: none; padding: 0; }
+.teach-prog > li {
+  display: grid; grid-template-columns: 4.4em minmax(0, 1fr); gap: var(--sp-3);
+  align-items: baseline; font-size: var(--fs-2xs); color: var(--fg-1); line-height: var(--lh-normal);
+}
+.teach-level {
+  font-size: var(--fs-3xs); font-weight: 680; color: var(--accent-hi);
+  background: var(--accent-wash); border-radius: var(--r-xs);
+  padding: 1px 6px; text-align: center; white-space: nowrap;
+}
+.teach-qa { border-left: 2px solid var(--line-1); padding-left: var(--sp-3); margin-bottom: var(--sp-2); }
+.teach-q { font-size: var(--fs-2xs); font-weight: 620; color: var(--fg-0); margin: 0 0 2px; }
+.teach-a { font-size: var(--fs-2xs); color: var(--fg-1); margin: 0; line-height: var(--lh-normal); }
+.teach-row {
+  font-size: var(--fs-2xs); color: var(--fg-1); line-height: var(--lh-normal);
+  margin: 0 0 var(--sp-2);
+}
+.teach-row > b { color: var(--fg-0); font-weight: 660; }
+.teach-mis { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.teach-mis > li {
+  font-size: var(--fs-2xs); color: var(--fg-1);
+  padding-left: var(--sp-4); position: relative;
+}
+.teach-mis > li::before {
+  content: "✗"; position: absolute; left: 2px; color: var(--err); font-size: var(--fs-3xs);
+}
+.teach-official {
+  font-size: var(--fs-2xs); color: var(--fg-1);
+  border-left: 2px solid var(--accent); padding-left: var(--sp-3); margin-bottom: 4px;
+}
+.teach-path {
+  font-size: var(--fs-3xs); color: var(--fg-2);
+  background: var(--bg-3); border-radius: var(--r-sm); padding: var(--sp-2) var(--sp-3);
+}
+
+/* --- Job board --------------------------------------------------------- */
+.job-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 2fr) minmax(0, .8fr) minmax(0, .7fr) auto;
+  gap: var(--sp-3);
+  align-items: center;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--line-0);
+  transition: background var(--t-fast);
+}
+.job-row:hover { background: var(--bg-3); }
+.job-row:last-child { border-bottom: none; }
+.job-co { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
+.job-logo {
+  width: 30px; height: 30px; border-radius: 8px; flex: 0 0 auto;
+  display: grid; place-items: center;
+  background: var(--bg-4);
+  color: var(--fg-1);
+  font-weight: 750; font-size: var(--fs-2xs);
+  letter-spacing: -0.02em;
+  border: 1px solid var(--line-0);
+}
+.job-co-name { font-size: var(--fs-xs); font-weight: 640; color: var(--fg-0); }
+.job-co-meta { font-size: var(--fs-3xs); color: var(--fg-3); }
+.job-role { font-size: var(--fs-2xs); color: var(--fg-1); min-width: 0; }
+.job-role .dir { color: var(--fg-3); }
+.job-pay { font-size: var(--fs-2xs); font-weight: 640; color: var(--ok); font-variant-numeric: tabular-nums; }
+.tier {
+  display: grid; place-items: center;
+  width: 20px; height: 20px; border-radius: 6px;
+  font-size: var(--fs-3xs); font-weight: 800;
+  flex: 0 0 auto;
+}
+.tier[data-tier="S"] { background: linear-gradient(140deg, #f43f5e, #b91c1c); color: #fff; }
+.tier[data-tier="A"] { background: linear-gradient(140deg, #f59e0b, #b45309); color: #fff; }
+.tier[data-tier="B"] { background: var(--bg-4); color: var(--fg-1); }
+.tier[data-tier="C"] { background: var(--bg-4); color: var(--fg-3); }
+
+/* --- Kanban ------------------------------------------------------------- */
+/* auto-fit (not auto-columns) so six funnel stages always fit the container
+   width; the board never scrolls sideways at desktop sizes. */
+.kanban { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--sp-3); align-items: start; }
+.kan-col { display: flex; flex-direction: column; gap: var(--sp-2); min-width: 0; }
+.kan-head {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--bg-3);
+  border: 1px solid var(--line-0);
+}
+.kan-title { font-size: var(--fs-2xs); font-weight: 680; color: var(--fg-0); }
+.kan-count { margin-left: auto; font-size: var(--fs-3xs); color: var(--fg-3); font-variant-numeric: tabular-nums; }
+.kan-card {
+  padding: var(--sp-3);
+  cursor: grab;
+  font-size: var(--fs-2xs);
+}
+.kan-card:active { cursor: grabbing; }
+.kan-card.dragging { opacity: .45; }
+.kan-col.drop-target { outline: 2px dashed var(--accent); outline-offset: 4px; border-radius: var(--r-lg); }
+
+/* --- Roadmap timeline -------------------------------------------------- */
+.track-bar { display: flex; gap: 0; border-radius: var(--r-pill); overflow: hidden; height: 8px; background: var(--bg-4); }
+.track-bar > i { display: block; height: 100%; transition: width var(--t-slow) var(--ease-out); }
+
+.timeline { position: relative; padding-left: var(--sp-8); }
+.timeline::before {
+  content: ""; position: absolute; left: 10px; top: 6px; bottom: 6px; width: 2px;
+  background: linear-gradient(180deg, var(--accent), var(--c-generative), var(--c-agent), transparent);
+  opacity: .4;
+}
+.tl-item { position: relative; margin-bottom: var(--sp-5); }
+.tl-dot {
+  position: absolute; left: calc(-1 * var(--sp-8) + 4px); top: 4px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--bg-0);
+  border: 2.5px solid var(--cat, var(--accent));
+  display: grid; place-items: center;
+}
+.tl-dot.done { background: var(--cat, var(--accent)); }
+.tl-dot.done::after { content: "✓"; font-size: 8px; color: var(--bg-0); font-weight: 900; }
+.tl-head { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+.tl-title { font-size: var(--fs-sm); font-weight: 640; color: var(--fg-0); }
+.tl-week { font-size: var(--fs-3xs); color: var(--fg-3); font-family: var(--font-mono); }
+
+.module {
+  border: 1px solid var(--line-0);
+  border-radius: var(--r-md);
+  background: var(--bg-3);
+  margin-bottom: var(--sp-2);
+  overflow: hidden;
+}
+.module-head {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-3);
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+.module-head:hover { background: var(--bg-4); }
+.module-name { font-size: var(--fs-xs); font-weight: 620; color: var(--fg-0); }
+.module-meta { margin-left: auto; display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-3xs); color: var(--fg-3); }
+.module-head > svg { width: 14px; height: 14px; color: var(--fg-3); rotate: 90deg; transition: rotate var(--t-base) var(--ease-out); flex: 0 0 auto; }
+[data-act="toggle-expand"] svg { rotate: 90deg; transition: rotate var(--t-base) var(--ease-out); }
+[data-act="toggle-expand"] svg.is-open { rotate: 0deg; }
+.module-body { padding: 0 var(--sp-3) var(--sp-3); animation: reveal var(--t-base) var(--ease-out); }
+
+.task {
+  display: flex; align-items: flex-start; gap: var(--sp-3);
+  padding: var(--sp-2) 0;
+  border-top: 1px solid var(--line-0);
+}
+.task-check {
+  width: 16px; height: 16px; margin-top: 2px; flex: 0 0 auto;
+  border: 1.5px solid var(--line-2);
+  border-radius: var(--r-xs);
+  display: grid; place-items: center;
+  transition: all var(--t-fast) var(--ease-out);
+}
+.task-check:hover { border-color: var(--accent); }
+.task-check.on { background: var(--accent); border-color: var(--accent); }
+.task-check.on::after { content: "✓"; font-size: 10px; color: var(--accent-fg); font-weight: 900; line-height: 1; }
+.task-main { flex: 1 1 auto; min-width: 0; }
+.task-title { font-size: var(--fs-2xs); color: var(--fg-1); line-height: var(--lh-snug); }
+.task.on .task-title { color: var(--fg-3); text-decoration: line-through; text-decoration-color: var(--line-2); }
+.task-done { font-size: var(--fs-3xs); color: var(--fg-3); margin-top: 2px; }
+.task-badges { display: flex; gap: 4px; flex: 0 0 auto; }
+
+/* --- Search results ---------------------------------------------------- */
+.search-hits { display: flex; flex-direction: column; }
+.hit {
+  display: flex; align-items: flex-start; gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--line-0);
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+.hit:hover, .hit.is-cursor { background: var(--bg-3); }
+.hit.is-cursor { box-shadow: inset 2px 0 0 var(--accent); }
+.hit-main { flex: 1 1 auto; min-width: 0; }
+.hit-title { font-size: var(--fs-xs); font-weight: 620; color: var(--fg-0); }
+.hit-snippet { font-size: var(--fs-2xs); color: var(--fg-2); margin-top: 2px; }
+.hit-snippet mark, .hit-title mark { background: color-mix(in oklab, var(--warn) 30%, transparent); color: var(--fg-0); border-radius: 2px; padding: 0 2px; }
+.hit-side { flex: 0 0 auto; display: flex; align-items: center; gap: var(--sp-2); }
+
+/* --- Detail drawer ----------------------------------------------------- */
+.scrim {
+  position: fixed; inset: 0; z-index: 90;
+  background: rgba(0, 0, 0, .5);
+  backdrop-filter: blur(3px);
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--t-base) var(--ease-out);
+}
+.scrim.open { opacity: 1; pointer-events: auto; }
+
+.drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 95;
+  width: min(760px, 94vw);
+  display: flex; flex-direction: column;
+  background: var(--bg-1);
+  border-left: 1px solid var(--line-1);
+  box-shadow: var(--shadow-xl);
+  translate: 100% 0;
+  transition: translate var(--t-slow) var(--ease-out);
+}
+.drawer.open { translate: 0 0; }
+.drawer-head {
+  display: flex; align-items: flex-start; gap: var(--sp-3);
+  padding: var(--sp-5);
+  border-bottom: 1px solid var(--line-0);
+  background: linear-gradient(180deg, var(--bg-3), transparent);
+}
+.drawer-body { flex: 1 1 auto; overflow-y: auto; padding: var(--sp-5) var(--sp-5) var(--sp-12); }
+.drawer-foot { flex: 0 0 auto; padding: var(--sp-3) var(--sp-5); border-top: 1px solid var(--line-0); display: flex; align-items: center; gap: var(--sp-2); background: var(--bg-2); }
+
+.prose { font-size: var(--fs-sm); line-height: var(--lh-normal); color: var(--fg-1); }
+.prose h2 { font-size: var(--fs-lg); margin: var(--sp-6) 0 var(--sp-3); padding-bottom: var(--sp-2); border-bottom: 1px solid var(--line-0); }
+.prose h2:first-child { margin-top: 0; }
+.prose h3 { font-size: var(--fs-base); margin: var(--sp-5) 0 var(--sp-2); color: var(--fg-0); }
+.prose p { margin-bottom: var(--sp-3); }
+.prose ul, .prose ol { margin: 0 0 var(--sp-3) 0; padding-left: var(--sp-5); }
+.prose ul li { list-style: none; position: relative; margin-bottom: 5px; }
+.prose ul li::before { content: ""; position: absolute; left: -15px; top: 9px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); opacity: .75; }
+.prose ol { list-style: decimal; }
+.prose ol li { margin-bottom: 5px; padding-left: 2px; }
+.prose ol li::marker { color: var(--accent); font-weight: 700; }
+.prose strong { color: var(--fg-0); font-weight: 660; }
+.prose code { padding: 1px 5px; border-radius: var(--r-xs); background: var(--bg-4); color: var(--accent-hi); font-size: .88em; }
+.prose blockquote {
+  margin: var(--sp-3) 0;
+  padding: var(--sp-3) var(--sp-4);
+  border-left: 3px solid var(--accent);
+  background: var(--bg-3);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  color: var(--fg-1);
+  font-size: var(--fs-xs);
+}
+.prose a { color: var(--accent); border-bottom: 1px solid var(--accent-ring); }
+.prose a:hover { border-bottom-color: var(--accent); }
+.prose table { font-size: var(--fs-2xs); margin: var(--sp-3) 0; }
+.prose th, .prose td { padding: var(--sp-2) var(--sp-3); border: 1px solid var(--line-0); text-align: left; }
+.prose th { background: var(--bg-3); font-weight: 660; }
+
+/* --- Command palette --------------------------------------------------- */
+.palette-wrap {
+  position: fixed; inset: 0; z-index: 200;
+  display: grid; place-items: start center;
+  padding-top: 12vh;
+  background: rgba(0, 0, 0, .55);
+  backdrop-filter: blur(4px);
+  animation: fade-in var(--t-fast) var(--ease-out);
+}
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.palette {
+  width: min(680px, 92vw);
+  max-height: 66vh;
+  display: flex; flex-direction: column;
+  border: 1px solid var(--line-1);
+  border-radius: var(--r-xl);
+  background: var(--bg-2);
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+  animation: palette-in var(--t-base) var(--ease-spring);
+}
+@keyframes palette-in {
+  from { opacity: 0; translate: 0 -14px; scale: .97; }
+  to { opacity: 1; translate: 0 0; scale: 1; }
+}
+.palette-input {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-5);
+  border-bottom: 1px solid var(--line-0);
+}
+.palette-input input { flex: 1 1 auto; font-size: var(--fs-md); color: var(--fg-0); }
+.palette-input input::placeholder { color: var(--fg-3); }
+.palette-input svg { width: 18px; height: 18px; color: var(--fg-3); }
+.palette-body { flex: 1 1 auto; overflow-y: auto; padding: var(--sp-2); }
+.palette-foot {
+  display: flex; align-items: center; gap: var(--sp-4);
+  padding: var(--sp-2) var(--sp-4);
+  border-top: 1px solid var(--line-0);
+  background: var(--bg-1);
+  font-size: var(--fs-3xs);
+  color: var(--fg-3);
+}
+.palette-foot kbd {
+  padding: 1px 5px; border: 1px solid var(--line-1); border-radius: var(--r-xs);
+  background: var(--bg-3); font-size: var(--fs-3xs); font-family: var(--font-mono);
+}
+.pal-group-label {
+  padding: var(--sp-2) var(--sp-3) 4px;
+  font-size: var(--fs-3xs); font-weight: 700; letter-spacing: var(--tracking-caps);
+  text-transform: uppercase; color: var(--fg-3);
+}
+.pal-item {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-xs);
+  color: var(--fg-1);
+  cursor: pointer;
+}
+.pal-item.is-cursor { background: var(--accent-wash); color: var(--fg-0); }
+.pal-item.is-cursor .pal-hint { color: var(--accent-hi); }
+.pal-item svg { width: 15px; height: 15px; color: var(--fg-3); flex: 0 0 auto; }
+.pal-item.is-cursor svg { color: var(--accent); }
+.pal-hint { margin-left: auto; font-size: var(--fs-3xs); color: var(--fg-3); font-family: var(--font-mono); }
+
+/* --- Toast ------------------------------------------------------------- */
+.toasts {
+  position: fixed; bottom: var(--sp-5); left: 50%; translate: -50% 0;
+  z-index: 300;
+  display: flex; flex-direction: column-reverse; gap: var(--sp-2);
+  pointer-events: none;
+}
+.toast {
+  display: flex; align-items: center; gap: var(--sp-3);
+  min-width: 240px; max-width: 460px;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--line-1);
+  border-radius: var(--r-md);
+  background: var(--bg-3);
+  box-shadow: var(--shadow-lg);
+  font-size: var(--fs-xs);
+  color: var(--fg-0);
+  pointer-events: auto;
+  animation: toast-in var(--t-base) var(--ease-spring);
+}
+@keyframes toast-in {
+  from { opacity: 0; translate: 0 16px; scale: .95; }
+  to { opacity: 1; translate: 0 0; scale: 1; }
+}
+.toast.out { animation: toast-out var(--t-base) var(--ease-out) forwards; }
+@keyframes toast-out {
+  to { opacity: 0; translate: 0 10px; scale: .96; }
+}
+.toast svg { width: 16px; height: 16px; flex: 0 0 auto; }
+.toast.ok svg { color: var(--ok); }
+.toast.warn svg { color: var(--warn); }
+.toast.err svg { color: var(--err); }
+.toast.info svg { color: var(--info); }
+
+/* --- Theme popover ----------------------------------------------------- */
+.popover {
+  position: fixed; z-index: 150;
+  min-width: 250px;
+  padding: var(--sp-3);
+  border: 1px solid var(--line-1);
+  border-radius: var(--r-lg);
+  background: var(--bg-2);
+  box-shadow: var(--shadow-xl);
+  animation: palette-in var(--t-fast) var(--ease-out);
+}
+.popover-title { font-size: var(--fs-3xs); font-weight: 700; letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--fg-3); padding: var(--sp-1) var(--sp-2) var(--sp-2); }
+.theme-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-2); }
+.theme-opt {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: var(--sp-2);
+  border: 1px solid var(--line-0);
+  border-radius: var(--r-md);
+  font-size: var(--fs-2xs);
+  color: var(--fg-1);
+  transition: all var(--t-fast);
+}
+.theme-opt:hover { border-color: var(--line-2); background: var(--bg-3); }
+.theme-opt.is-on { border-color: var(--accent); background: var(--accent-wash); color: var(--fg-0); }
+.swatches { display: flex; gap: 2px; flex: 0 0 auto; }
+.swatch { width: 11px; height: 11px; border-radius: 3px; border: 1px solid var(--line-1); }
+.accent-row { display: flex; gap: var(--sp-2); padding: var(--sp-2); flex-wrap: wrap; }
+.accent-dot {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid transparent;
+  box-shadow: var(--shadow-xs);
+  transition: scale var(--t-fast) var(--ease-spring), border-color var(--t-fast);
+}
+.accent-dot:hover { scale: 1.15; }
+.accent-dot.is-on { border-color: var(--fg-0); scale: 1.1; }
+
+/* --- Aside blocks ------------------------------------------------------ */
+.aside-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-4); }
+
+/* Category legend used inside the dashboard aside: name, proportional bar, count.
+   A bar makes the distribution readable at a glance in a narrow column, which the
+   previous donut-plus-two-column layout could not do. */
+.legend-block { display: flex; flex-direction: column; gap: 7px; }
+.legend-block .legend-item {
+  display: grid; grid-template-columns: 8px minmax(0, 6.5em) minmax(0, 1fr) auto;
+  align-items: center; gap: var(--sp-2); font-size: var(--fs-3xs); color: var(--fg-1);
+}
+.legend-block .legend-name { min-width: 0; }
+.legend-block .legend-bar {
+  height: 5px; border-radius: var(--r-pill); background: var(--bg-4); overflow: hidden;
+}
+.legend-block .legend-bar > i { display: block; height: 100%; border-radius: var(--r-pill); }
+.legend-block .lv { font-variant-numeric: tabular-nums; color: var(--fg-2); font-weight: 620; }
+
+.mini-list { display: flex; flex-direction: column; }
+.mini-item {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-4);
+  border-bottom: 1px solid var(--line-0);
+  font-size: var(--fs-2xs);
+  transition: background var(--t-fast);
+}
+.mini-item:last-child { border-bottom: none; }
+.mini-item:hover { background: var(--bg-3); }
+.mini-item .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cat, var(--fg-3)); flex: 0 0 auto; }
+.mini-item .t { flex: 1 1 auto; min-width: 0; color: var(--fg-1); }
+.mini-item .n { flex: 0 0 auto; color: var(--fg-3); font-variant-numeric: tabular-nums; font-size: var(--fs-3xs); }
+
+/* --- Job rows inside the dashboard aside ---------------------------------
+   The previous version was a single flex line: tier | company | directions |
+   pay. Job pay/notes strings in jobs.json run to 200+ characters (they are
+   media-reported salary ranges), and with `flex: 2` on the directions cell plus
+   no max-width anywhere, the row grew wider than its column. Because the parent
+   used `overflow-x: hidden`, the excess was simply cut off and every cell wrapped
+   into a tall pile of fragments - the layout seen in the reported screenshot.
+
+   Fix strategy, in order of importance:
+     1. a GRID with minmax(0, 1fr) so children can shrink below content width
+     2. `.job-mini-pay` clamped to 2 lines plus a tooltip carrying the full text
+     3. `overflow-wrap: anywhere` so a long unbroken string cannot force width
+   The component now has a fixed two-line footprint per job regardless of how
+   verbose the underlying pay text is.
+   -------------------------------------------------------------------------- */
+.job-mini {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "head head"
+    "dirs pay";
+  align-items: center;
+  gap: 2px var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+}
+.job-mini-head { grid-area: head; display: flex; align-items: center; gap: 6px; min-width: 0; }
+.job-mini-name {
+  font-weight: 640; color: var(--fg-0); font-size: var(--fs-xs);
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.job-mini-dirs {
+  grid-area: dirs; min-width: 0; color: var(--fg-3);
+  font-size: var(--fs-3xs); line-height: var(--lh-snug);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; overflow-wrap: anywhere;
+}
+.job-mini-pay {
+  grid-area: pay; max-width: 11em; text-align: right;
+  color: var(--ok); font-weight: 640; font-size: var(--fs-3xs);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; overflow-wrap: anywhere;
+}
+
+.heat { display: grid; grid-template-columns: repeat(auto-fill, 11px); gap: 3px; }
+.heat-cell { width: 11px; height: 11px; border-radius: 2.5px; background: var(--bg-4); }
+.heat-cell[data-lv="1"] { background: color-mix(in oklab, var(--accent) 30%, var(--bg-4)); }
+.heat-cell[data-lv="2"] { background: color-mix(in oklab, var(--accent) 55%, var(--bg-4)); }
+.heat-cell[data-lv="3"] { background: color-mix(in oklab, var(--accent) 78%, var(--bg-4)); }
+.heat-cell[data-lv="4"] { background: var(--accent); }
+
+.donut-wrap { display: flex; align-items: center; gap: var(--sp-4); }
+.legend { display: flex; flex-direction: column; gap: 5px; flex: 1 1 auto; min-width: 0; }
+.legend-item { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-3xs); color: var(--fg-2); }
+.legend-swatch { width: 8px; height: 8px; border-radius: 2px; flex: 0 0 auto; }
+.legend-item .lv { margin-left: auto; color: var(--fg-1); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.spark { width: 100%; height: 44px; overflow: visible; }
+.spark polyline { fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+.spark .area { fill: color-mix(in oklab, var(--accent) 16%, transparent); stroke: none; }
+.spark .dot { fill: var(--accent); }
+
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 5px var(--sp-3); font-size: var(--fs-3xs); }
+.kv dt { color: var(--fg-3); white-space: nowrap; }
+.kv dd { color: var(--fg-1); text-align: right; font-variant-numeric: tabular-nums; }
+
+/* --- Health / status --------------------------------------------------- */
+.status-line { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-3xs); color: var(--fg-2); }
+.status-line .ok { color: var(--ok); }
+.status-line .warn { color: var(--warn); }
+.status-line .err { color: var(--err); }
+
+/* The rail footer status strip is a flex row: icon + label + "43 分钟前" + "14/24".
+   Measured with scripts/audit-layout.mjs at 1100px it overflowed its 239px rail by
+   40px. The cause is specific and easy to miss: a flex child's default
+   `min-width: auto` resolves to its CONTENT width, so neither the label nor the
+   "1/1" chip could shrink below ~50px, and the row ended up 247px inside a 207px
+   box. Setting `min-width: 0` on the children is what actually allows the row to
+   fit; `overflow: hidden` alone only clips. */
+.rail-foot { flex: 0 0 auto; min-width: 0; padding: var(--sp-3) var(--sp-4); border-top: 1px solid var(--line-0); }
+#rail-status {
+  min-width: 0; max-width: 100%;
+  display: flex; flex-wrap: nowrap; align-items: center;
+  /* Four pieces (icon, state label, relative time, channel ratio) need ~247px while
+     the rail offers ~207px at a 1200px viewport. `overflow: hidden` silently cut the
+     LAST child: the ratio chip measured 18px through a 57px content box, so its text
+     disappeared completely.
+     The row is a fixed budget, so the pieces must FIT rather than overflow: the icon
+     is decorative and tiny, the label and timestamp are capped and ellipsised, and the
+     ratio chip keeps its intrinsic width. */
+  gap: var(--sp-1);
+  overflow: visible;
+}
+#rail-status > * { min-width: 0; }
+#rail-status > svg { flex: 0 0 auto; }
+/* The label gives up space first, and truncates WITH an ellipsis so the truncation is
+   visible rather than silent. It must NOT grow: with `flex: 1 1 auto` it claimed
+   103px for 55px of text while the chip was crushed to 18px, because a growable item
+   absorbs free space before fixed siblings are honoured. `0 1 auto` sizes to content
+   and shrinks only when space actually runs out - which is why BOTH flexible members
+   need an explicit `flex-shrink`, or they simply refuse to give up their content width
+   and the row overflows instead. */
+#rail-status > span:not(.tnum) {
+  flex: 0 1 auto; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* The timestamp is the element that absorbs slack (it carries `margin-left: auto` so
+   short labels still push it right), but it must not GROW either: measured, with
+   `flex: 1 1 auto` it took 133px for 49px of text and crushed the ratio chip to 26px -
+   the same greedy-sibling bug as the label, just moved one element to the right. */
+#rail-status > span[data-tip="最近一次采集"] {
+  flex: 0 1 auto; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: var(--fs-3xs);
+}
+/* The ratio chip is the one element that must never be squeezed: 2-6 characters of
+   tabular digits, and it was precisely the thing being clipped away. */
+#rail-status > span.tnum {
+  flex: 0 0 auto; white-space: nowrap;
+  font-size: var(--fs-3xs);
+  padding-inline: 4px;
+}
+
+/* --- Tabs -------------------------------------------------------------- */
+.tabs { display: flex; align-items: center; gap: var(--sp-1); border-bottom: 1px solid var(--line-0); margin-bottom: var(--sp-4); overflow-x: auto; }
+.tab {
+  position: relative;
+  padding: var(--sp-2) var(--sp-3) calc(var(--sp-2) + 2px);
+  font-size: var(--fs-xs);
+  font-weight: 580;
+  color: var(--fg-2);
+  white-space: nowrap;
+  transition: color var(--t-fast);
+}
+.tab:hover { color: var(--fg-0); }
+.tab.is-on { color: var(--accent-hi); font-weight: 660; }
+.tab.is-on::after {
+  content: ""; position: absolute; left: var(--sp-2); right: var(--sp-2); bottom: -1px;
+  height: 2px; border-radius: var(--r-pill); background: var(--accent);
+}
+.tab .cnt { margin-left: 5px; font-size: var(--fs-3xs); color: var(--fg-3); font-variant-numeric: tabular-nums; }
+.tab.is-on .cnt { color: var(--accent); }
+
+/* --- Filter bar -------------------------------------------------------- */
+.filterbar {
+  display: flex; align-items: center; gap: var(--sp-2);
+  flex-wrap: wrap;
+  padding: var(--sp-3) 0;
+  margin-bottom: var(--sp-4);
+  position: sticky; top: 0; z-index: 20;
+  background: linear-gradient(180deg, var(--bg-0) 72%, transparent);
+  backdrop-filter: blur(8px);
+}
+.filterbar .spacer { flex: 1 1 auto; }
+.result-line { font-size: var(--fs-2xs); color: var(--fg-3); display: flex; align-items: center; gap: var(--sp-2); }
+.result-line b { color: var(--fg-1); font-variant-numeric: tabular-nums; }
+
+/* ==========================================================================
+   4. RESPONSIVE
+   ========================================================================= */
+@media (max-width: 1400px) {
+  :root { --rail-w: 240px; --aside-w: 320px; }
+}
+
+/* Between the tablet breakpoint and full desktop the aside was squeezed to
+   `minmax(210px, 1fr)` of a two-column dashboard, which is far too narrow for
+   its content (job rows, health key/values, category legend) and produced badly
+   wrapped text. 1180px is where the dashboard already collapses to one column,
+   so widening the floor here costs nothing. */
+@media (max-width: 1280px) {
+  :root { --aside-w: 300px; }
+  /* The sidebar status line holds four items (state, relative time, channel ratio)
+     which need ~247px of content. Below ~1280px the rail's content box dropped to
+     ~207px and the ratio chip was clipped away entirely - measured: an 18px client box
+     around 57px of content. Widening the rail is the honest fix: the alternative is
+     silently hiding data, and there is room for it here because `.main-inner` still has
+     its own padding. */
+  :root { --rail-w: 272px; }
+}
+
+@media (max-width: 1180px) {
+  #app { grid-template-columns: var(--rail-w) minmax(0, 1fr); }
+  .main-inner { padding: var(--sp-5) var(--sp-5) var(--sp-12); }
+  .grid-dash { grid-template-columns: minmax(0, 1fr); }
+  .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 940px) {
+  #app {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "topbar" "main";
+  }
+  .rail {
+    position: fixed; top: 0; bottom: 0; left: 0; z-index: 120;
+    width: 280px;
+    translate: -100% 0;
+    transition: translate var(--t-base) var(--ease-out);
+    box-shadow: var(--shadow-xl);
+  }
+  .rail.open { translate: 0 0; }
+  .brand-mini { display: grid; }
+  #rail-open { display: grid; }
+  .grid-3, .grid-2 { grid-template-columns: minmax(0, 1fr); }
+  .hero h1 { font-size: var(--fs-2xl); }
+  .job-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
+  .job-row .job-pay, .job-row .job-city { grid-column: 2 / 3; }
+  .cmd-trigger { width: auto; flex: 1 1 auto; }
+}
+
+@media (max-width: 640px) {
+  .grid-4, .grid-auto, .grid-auto-sm { grid-template-columns: minmax(0, 1fr); }
+  .hero-stats { gap: var(--sp-4); }
+  .stat-val { font-size: var(--fs-xl); }
+  .main-inner { padding: var(--sp-4) var(--sp-4) var(--sp-12); }
+  .drawer { width: 100vw; }
+  .topbar { padding: 0 var(--sp-3); gap: var(--sp-2); }
+}
+
+/* Print — turn a view into a clean study handout */
+@media print {
+  body { overflow: visible; background: #fff; }
+  #app { display: block; height: auto; }
+  .rail, .topbar, .aside, .toasts, .palette-wrap, .filterbar { display: none !important; }
+  .main { overflow: visible; }
+  .main-inner { padding: 0; max-width: none; }
+  .card, .panel, .formula { break-inside: avoid; border-color: #ccc; }
+  .hero::after { display: none; }
+}
+

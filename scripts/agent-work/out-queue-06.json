@@ -1,0 +1,998 @@
+{
+ "batchId": "queue-06",
+ "entries": [
+  {
+   "id": "d55bf25dd2cd14b6",
+   "tldr": "让 LLM 智能体真跑压缩器、按质量反馈定误差界来调科学有损压缩，比二分法少一半评估次数。",
+   "keyPoints": [
+    "用户设误差界 EB，却用 PSNR/SSIM 质量指标验收",
+    "EB 到质量的关系随数据集与压缩器变，穷举代价高",
+    "LOCAA 做压缩在环搜索：工具执行、压缩器感知引导、持久记忆",
+    "固定比率搜索比二分法少 1.98x、比 FRaZ 少 5.03x 评估次数"
+   ],
+   "why": "「昂贵黑箱 + 真实工具反馈 + 记忆复用」的寻优范式，可迁移到数据管线与生成模型采样参数调优。",
+   "difficulty": "medium",
+   "tags": [
+    "agent",
+    "llm-agent",
+    "compression",
+    "auto-tuning"
+   ],
+   "entities": [
+    "LOCAA",
+    "FRaZ",
+    "PSNR",
+    "SSIM"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "压缩在环的智能体搜索",
+    "caption": "把压缩执行与质量测量接成工具，LLM 每轮据真实反馈改误差界，记忆跨时间步复用。",
+    "spec": {
+     "type": "flow",
+     "nodes": [
+      {
+       "label": "目标与约束",
+       "detail": "用户自定义质量/时间约束"
+      },
+      {
+       "label": "LLM 提议并执行",
+       "detail": "输出 EB 并真跑取 PSNR/SSIM"
+      },
+      {
+       "label": "持久记忆更新",
+       "detail": "同字段跨时间步复用"
+      }
+     ],
+     "edges": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "提议误差界"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "反馈指标环回"
+      }
+     ]
+    },
+    "alt": "三步流程：目标与约束→LLM 提议误差界并真跑取质量→更新持久记忆环回。"
+   },
+   "concepts": [
+    {
+     "name": "Compression-in-the-Loop Search（压缩在环搜索）",
+     "readable": "不靠离线代理模型，而是真跑一遍压缩器，用返回的质量与压缩比反馈决定下一个误差界试多少。",
+     "analogy": "像调老式收音机旋钮找电台：每扭一点听一下杂音，而不是照说明书算频率。",
+     "analogyBreaksDown": "旋钮到电台连续单调，而误差界到质量常非单调、跨压缩器形状不同，微调未必朝对方向走。",
+     "mechanism": "把压缩执行与指标测量封装成工具，每步真实反馈进上下文与持久记忆；压缩器感知引导让提议贴合该压缩器行为，故无需为每个目标写搜索策略。",
+     "visual": "横轴评估次数、纵轴当前最优压缩比；画二分法、FRaZ、LOCAA 三条阶梯曲线，LOCAA 更陡。",
+     "prerequisites": [
+      "有损压缩与误差界",
+      "PSNR/SSIM 指标",
+      "LLM 工具调用"
+     ],
+     "selfTest": [
+      "为何 EB 配置却用质量指标验收会让搜索变难？",
+      "持久记忆在什么场景最省评估次数？",
+      "相对二分法的非单调优势在哪？"
+     ],
+     "formula": "\\max_{\\mathrm{EB}}\\ \\mathrm{CR}\\quad \\mathrm{s.t.}\\ \\mathrm{PSNR}\\ge P_0,\\ \\mathrm{SSIM}\\ge S_0"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-locaa-constrained-cr",
+     "name": "受质量约束的压缩比最大化（Constrained CR Maximization）",
+     "category": "engineering",
+     "latex": "\\max_{\\mathrm{EB}}\\ \\mathrm{CR}(\\mathrm{EB})\\quad \\mathrm{s.t.}\\ \\mathrm{PSNR}(\\mathrm{EB})\\ge P_0,\\ \\mathrm{SSIM}(\\mathrm{EB})\\ge S_0",
+     "symbols": [
+      [
+       "\\mathrm{EB}",
+       "误差界，可设置的配置量"
+      ],
+      [
+       "\\mathrm{CR}",
+       "压缩比，越大越省存储"
+      ],
+      [
+       "\\mathrm{PSNR}, \\mathrm{SSIM}",
+       "质量指标"
+      ],
+      [
+       "P_0, S_0",
+       "质量下限约束"
+      ]
+     ],
+     "derivation": [
+      "用户能设误差界 EB，真正关心压缩比与质量，两者经黑箱函数相连。",
+      "把质量要求写成可行域，压缩比最大化转为约束优化。",
+      "EB 到指标非单调且无解析式，智能体用历史评估逼近边界最优 EB。"
+     ],
+     "analogy": "像在预算内挑最划算的机票：越便宜越好，但行李额与退改签不能低于底线，只能一个个查。",
+     "pitfalls": [
+      "把 EB 到指标当单调递增直接二分，遇非单调即漏掉更优解",
+      "把硬约束当软惩罚加权，可能选出违反约束的配置"
+     ],
+     "code": "import numpy as np\ndef best(ebs,psnr,ssim,cr,P0,S0):\n    ok=(psnr>=P0)&(ssim>=S0)\n    if not ok.any(): return None\n    return ebs[np.argmax(np.where(ok,cr,-np.inf))]",
+     "sources": [
+      {
+       "title": "LOCAA: An Agentic System for Automated Lossy Compressor Tuning",
+       "url": "https://arxiv.org/abs/2610.10487v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "用户按误差界配置压缩器，却用质量指标与端到端性能评估结果",
+     "EB 与结果的关系随数据集与压缩器而变，通常需穷举搜索",
+     "LOCAA 是 LLM 智能体，含工具执行、压缩器感知引导、持久记忆",
+     "固定比率搜索比二分法少 1.98x、比 FRaZ 少 5.03x 评估次数",
+     "联合 PSNR 与 SSIM 约束下平均评估次数从 61.5 降到 17，降 72.4%",
+     "持久记忆使同字段多时间步平均试验数再降 27.9%"
+    ],
+    "uncertain": [
+     "误差界与指标的具体函数形式摘要未给，公式为按问题表述重建的通用形式，需核对原文",
+     "压缩器感知引导的实现方式摘要未说明，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "让 AI 帮你在科学压缩器上调参，试的次数比传统方法少几倍。"
+     },
+     {
+      "level": "入门",
+      "text": "科学仿真数据要压，用户能设误差界却关心画质与体积。LOCAA 让 LLM 每轮真跑压缩器，看质量反馈再定下一个误差界。"
+     },
+     {
+      "level": "进阶",
+      "text": "三个设计：工具执行给真实指标；压缩器感知引导让提议达标；持久记忆让同字段跨时间步复用经验。"
+     },
+     {
+      "level": "专家",
+      "text": "相比二分法与 FRaZ，它把策略交给 LLM 并用真实评估纠偏，能处理非单调、跨压缩器形状各异的映射。固定比率比二分法少 1.98x、比 FRaZ 少 5.03x；联合 PSNR/SSIM 约束下平均次数由 61.5 降到 17。边界是单次评估极贵时预算受限。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "若用离线代理模型预测指标？",
+      "a": "代理跨数据集泛化差，预测偏了会引到错误区域，反比真评估更费次数。"
+     },
+     {
+      "q": "为什么二分法不够？",
+      "a": "二分假设误差界到指标单调，真实映射常非单调，会朝更差方向收敛。"
+     }
+    ],
+    "mechanism": "可设置的量与关心的量之间是黑箱、非单调、随压缩器变的映射，传统搜索固定假设一破就失效。作者让能读真实反馈的 LLM 当策略，把压缩执行与指标测量接成工具，再用持久记忆固化跨时间步经验。",
+    "boundary": "每次评估都真跑压缩器，若单次极慢或可查次数很少，总预算仍卡死；若约束矛盾使可行域为空，任何搜索都无法满足。",
+    "analogyBoundary": "旋钮类比预设连续单峰；现实中误差界到质量常跳变、有平台区，微调的直觉会误导。",
+    "misconceptions": [
+     "以为 LLM 直接算出最优误差界——实为反复真评估逼近。",
+     "把持久记忆当缓存——它复用的是一个字段跨时间步的经验。"
+    ],
+    "ownAnalysis": "可迁移的是「昂贵黑箱 + 真实反馈 + 记忆复用」这套配方（推断），与多模态数据管线参数调优同构。可疑处：摘要只给绝对次数节省，未说明同等精度下是否优于贝叶斯优化。",
+    "officialNotes": [
+     {
+      "position": "工具增强的 LLM 智能体可为科学有损压缩提供灵活自动调参，比二分法与 FRaZ 用更少评估次数",
+      "source": "arxiv: 2610.10487v1"
+     }
+    ],
+    "interviewAnswer": "科学数据要压，用户能设的只有误差界，验收看 PSNR、SSIM 和压缩比，关系随数据集与压缩器变，只能穷举。LOCAA 把 LLM 当搜索策略，用工具真跑拿真实反馈，再用压缩器感知引导和记忆省试错，固定比率比二分法少 1.98 倍、比 FRaZ 少 5.03 倍次数。",
+    "studyPath": {
+     "prerequisites": [
+      "有损压缩与误差界",
+      "PSNR/SSIM 指标",
+      "LLM 工具调用"
+     ],
+     "nextSteps": [
+      "读原文看三个用例与五个压缩器设置",
+      "对比贝叶斯优化在同等预算下的表现"
+     ]
+    }
+   }
+  },
+  {
+   "id": "a261181ec7d8f18a",
+   "tldr": "离线 RL 只约束策略动作空间不够：自驾还需约束自车与周围车的联合支持度，提出交互分布偏移 IDS 与框架 ICDP。",
+   "keyPoints": [
+    "离线 RL 靠固定数据提升策略，分布偏移令价值估计不可靠",
+    "已有方法只在策略自身动作空间控制偏移",
+    "自驾中自车轨迹边缘支持好却与周围车联合支持差",
+    "IDS 与 ICDP 把联合支持退化精确分解为自车项与残差交互项"
+   ],
+   "why": "分布偏移是 RL/post-training 核心考点；把支持度从单智能体扩到交互级，对多智能体后训练与世界模型 rollout 有启发。",
+   "difficulty": "hard",
+   "tags": [
+    "rl",
+    "offline-rl",
+    "autonomous-driving",
+    "distribution-shift",
+    "multi-agent"
+   ],
+   "entities": [
+    "ICDP",
+    "interaction distribution shift",
+    "nuPlan",
+    "InterPlan"
+   ],
+   "diagram": {
+    "kind": "architecture",
+    "title": "联合支持退化的分解",
+    "caption": "交互级支持退化＝自车支持项＋残差交互项，后者靠对比密度比估计隔离。",
+    "spec": {
+     "type": "architecture",
+     "nodes": [
+      {
+       "label": "离线联合数据",
+       "detail": "自车与周围车未来"
+      },
+      {
+       "label": "分解支持退化",
+       "detail": "自车项 + 残差交互项"
+      },
+      {
+       "label": "对比密度比估计",
+       "detail": "隔离交互兼容性"
+      }
+     ],
+     "edges": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "链式分解"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "估计残差交互项"
+      }
+     ]
+    },
+    "alt": "三步：离线联合数据→分解为自车支持项与残差交互支持项→对比密度比估计隔离交互兼容性。"
+   },
+   "concepts": [
+    {
+     "name": "Interaction Distribution Shift（交互分布偏移）",
+     "readable": "候选自车轨迹单独看数据里出现过，但和当时周围车的具体行为配在一起却从没见过；这种联合层面的不支持叫交互分布偏移。",
+     "analogy": "像两段独舞各自都会，但两人合跳的这套配合从没练过：单独合格不等于搭档合格。",
+     "analogyBreaksDown": "舞蹈配合能临时磨合，而离线 RL 里策略优化时周围车不会真响应，联合不支持会被价值估计当合法行为放大。",
+     "mechanism": "从自车与周围车未来的联合分布出发，把联合支持退化精确拆成自车边缘支持与残差交互支持；用对比密度比估计后者，无需显式联合密度建模、周围车预测或反应式 rollout。",
+     "visual": "二维热力图：横轴自车轨迹簇、纵轴周围车行为簇；两轴都有值但联合格为空的格子标红，表示交互不支持。",
+     "prerequisites": [
+      "离线 RL 与分布偏移",
+      "密度比估计/对比学习",
+      "轨迹规划基础"
+     ],
+     "selfTest": [
+      "IDS 与通常的策略分布偏移差在哪？",
+      "为什么联合支持可拆成自车项加残差交互项？",
+      "密度比估计替代了什么昂贵计算？"
+     ],
+     "formula": "p(a_{\\mathrm{ego}},a_{\\mathrm{oth}}\\mid s)=p_{\\mathrm{ego}}(a_{\\mathrm{ego}}\\mid s)\\,p_{\\mathrm{int}}(a_{\\mathrm{oth}}\\mid a_{\\mathrm{ego}},s)"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-icdp-joint-support-decomp",
+     "name": "联合支持的精确分解（Joint-Support Decomposition）",
+     "category": "rl",
+     "latex": "p(a_{\\mathrm{ego}},a_{\\mathrm{oth}}\\mid s)=p_{\\mathrm{ego}}(a_{\\mathrm{ego}}\\mid s)\\cdot p_{\\mathrm{int}}(a_{\\mathrm{oth}}\\mid a_{\\mathrm{ego}},s)",
+     "symbols": [
+      [
+       "s",
+       "当前场景状态"
+      ],
+      [
+       "a_{\\mathrm{ego}}",
+       "候选自车未来轨迹"
+      ],
+      [
+       "a_{\\mathrm{oth}}",
+       "周围智能体未来行为"
+      ],
+      [
+       "p_{\\mathrm{ego}}",
+       "自车边缘支持分布"
+      ],
+      [
+       "p_{\\mathrm{int}}",
+       "残差交互支持分布"
+      ]
+     ],
+     "derivation": [
+      "离线 RL 关心联合分布是否支持候选自车行为。",
+      "用链式法则把联合密度写成边缘自车项乘条件交互项。",
+      "自车项即已有方法控制的部分，残差交互项是新引入的 IDS。",
+      "用对比密度比估计交互项，避开显式联合密度建模。"
+     ],
+     "analogy": "像把双人表演可行性拆成「这动作本身会做吗」和「和这搭档这么做合得来吗」分别评估。",
+     "pitfalls": [
+      "以为控制住策略自身支持就够了，忽略联合层面退化",
+      "把残差交互项当成需显式联合密度建模，其实只用密度比估计",
+      "误以为需要在线 rollout 周围车反应，摘要明确说不需要"
+     ],
+     "code": "import torch\ndef interaction_score(f_ego,f_int,s,a_ego,a_oth):\n    logit=(f_int(s,a_ego)*f_ego(a_oth)).sum(-1)\n    return torch.sigmoid(logit)  # 越大越联合支持",
+     "sources": [
+      {
+       "title": "Beyond Policy Support: Interaction Constrained Offline Reinforcement Learning for Autonomous Driving",
+       "url": "https://arxiv.org/abs/2610.09763v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "离线 RL 无需在线探索即可从固定数据提升策略，但安全关键域有分布偏移",
+     "现有方法主要在策略自身动作空间控制偏移",
+     "自驾中自车轨迹可能边缘支持好但联合周围车支持差，称 IDS",
+     "联合支持退化可精确分解为自车支持项与残差交互项",
+     "用对比密度比估计残差项，无需显式联合密度、周围车预测或反应式 rollout",
+     "在 nuPlan、InterPlan 与真实卡车实验上抑制高价值但交互不支持的轨迹选择"
+    ],
+    "uncertain": [
+     "自车项与残差项的具体参数化与损失摘要未给，公式为按摘要重建的通用分解形式，需核对原文",
+     "「精确分解」在连续动作空间与函数近似下如何成立摘要未说明，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "自驾里光看自车动作是否见过不够，还要看它和旁边车的行为搭不搭。"
+     },
+     {
+      "level": "入门",
+      "text": "离线 RL 只能用已有数据学，策略会挑数据没充分支持的动作。自驾更麻烦：一条自车轨迹单独看数据里有，却可能和当时周围车的行为凑成从没出现过的组合，叫交互分布偏移。"
+     },
+     {
+      "level": "进阶",
+      "text": "作者从自车与周围车的联合未来分布出发，证明联合支持退化能拆成自车支持加残差交互支持：前者已有方法管，后者用对比密度比估计补上，且不需显式联合密度或在线 rollout。"
+     },
+     {
+      "level": "专家",
+      "text": "相比只在策略动作空间约束，ICDP 把约束提到交互级，能压掉高价值但交互上不被支持的轨迹，并用密度比估计省掉联合密度建模与在线 rollout。摘要称在 nuPlan、InterPlan 与真实卡车实验的交互关键场景更好。边界是对周围车假设与估计质量敏感。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "只约束策略自身支持为什么不够？",
+      "a": "自车动作可边缘支持，但与特定周围车行为的组合可能零支持，价值估计会把非法组合当高回报。"
+     },
+     {
+      "q": "为什么要拆成自车项加残差项？",
+      "a": "自车项已被现有方法控制，拆出后可只针对真正缺失的残差交互项估计。"
+     }
+    ],
+    "mechanism": "分布偏移的本质是策略倾向数据不支持的动作，但自驾的动作与环境耦合：自车轨迹的合法性取决于周围车的同时行为。只约束边缘自车分布会漏掉联合不支持的组合，故必须显式建模交互层支持；用密度比估计而非联合密度，是为在无生成式环境、无在线 rollout 下也能算这个量。",
+    "boundary": "当周围车行为难从离线数据估计、或密度比估计样本不足时，残差交互项会失准；若任务几乎没有交互耦合（如单车巡航），交互级约束收益有限。",
+    "analogyBoundary": "双人表演类比里搭档会临场调整；而离线 RL 中周围车行为被固定在日志里，策略不能真的引导它们反应，故「临时磨合」不成立。",
+    "misconceptions": [
+     "以为控制住策略动作支持就等于控制住分布偏移。",
+     "把残差交互项当成需要显式联合密度建模。",
+     "认为必须在反应式仿真里 rollout 周围车才能算交互支持。"
+    ],
+    "ownAnalysis": "把支持度从动作空间提升到交互级，与多智能体后训练、世界模型 rollout 的建模同构（推断）：价值估计不可靠常源于耦合而非单个行为罕见。可疑处：摘要说分解「精确」，但对连续动作空间与函数近似下如何保持未给细节，需核对原文。",
+    "officialNotes": [
+     {
+      "position": "ICDP 显式控制交互级分布偏移，抑制高价值但交互不支持的轨迹选择，改进交互关键驾驶场景",
+      "source": "arxiv: 2610.09763v1"
+     }
+    ],
+    "interviewAnswer": "离线 RL 从固定数据学，核心难题是分布偏移。以往方法只在策略自己的动作空间做约束，但自驾这种交互环境里不够：一条自车轨迹可能边缘支持很好，却和当时周围车的具体行为联合不被支持，我称之为交互分布偏移。做法是从联合分布出发，把支持退化拆成自车支持项与残差交互支持项，后者用对比密度比估计隔离，不需要显式联合密度或反应式 rollout。",
+    "studyPath": {
+     "prerequisites": [
+      "离线 RL 与保守价值估计",
+      "密度比估计与对比学习",
+      "轨迹规划与 nuPlan 类基准"
+     ],
+     "nextSteps": [
+      "读原文看分解的精确性证明",
+      "对比 CQL/IQL 在交互场景的表现"
+     ]
+    }
+   }
+  },
+  {
+   "id": "0952570c959a185f",
+   "tldr": "MiMo-V2.6 全模态模型报告：从大批量异步、更多样环境、更多 grader 计算三个维度扩 RL 算力，推进自我改进。",
+   "keyPoints": [
+    "RL 被视为大模型自我改进的核心训练范式",
+    "RL 前先做多模态中训练，扩大探索空间",
+    "维度一：更大批量与吞吐，每步 1568 样本、2.7–3.7B token，上下文至 1M",
+    "维度二：环境更多样复杂，覆盖代码、通用、视觉、网络，混合多种 agent harness",
+    "维度三：更多 grader 计算，groupwise 智能体评分并把模型引向更短更省 token 的解"
+   ],
+   "why": "RL 扩算力 + agentic 环境 + 抗 reward hacking 是 post-training 实习最核心的工程方向；报告开源训练动态与环境，可复现。",
+   "difficulty": "hard",
+   "tags": [
+    "rl",
+    "post-training",
+    "multimodal",
+    "moe",
+    "agentic-rl"
+   ],
+   "entities": [
+    "MiMo-V2.6",
+    "hybrid-SWA",
+    "Mixture-of-Experts",
+    "groupwise agentic grading"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "RL 扩算力的三个维度",
+    "caption": "中训练铺探索空间，再从批量吞吐、环境多样性、grader 计算三维扩 RL，并加稳定与基建。",
+    "spec": {
+     "type": "flow",
+     "nodes": [
+      {
+       "label": "RL 前中训练",
+       "detail": "多模态语料扩探索空间"
+      },
+      {
+       "label": "三向扩 RL 算力",
+       "detail": "大规模/多环境/多 grader"
+      },
+      {
+       "label": "稳定与基建",
+       "detail": "冻结 MoE 路由、抗 reward hacking"
+      }
+     ],
+     "edges": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "铺探索空间"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "规模化需稳定"
+      }
+     ]
+    },
+    "alt": "三步：RL 前多模态中训练→从批量吞吐、环境多样性、grader 计算三向扩算力→冻结 MoE 路由并防御 reward hacking。"
+   },
+   "concepts": [
+    {
+     "name": "Groupwise Agentic Grading（成组智能体评分）",
+     "readable": "不再对单个答案给一个标量分，而是把同一任务的多个解放一组让智能体评分器相互比较，得到更准更稳的奖励信号。",
+     "analogy": "像老师批卷不逐份独立打分，而是把同题的一摞卷子摊开对比着评，标准更一致，也更易看出谁真的好。",
+     "analogyBreaksDown": "批卷标准固定，而这里 grader 本身可能是模型，会偏爱某类风格；成组比较减少绝对尺度漂移，却可能放大组内同质偏好。",
+     "mechanism": "对同一 prompt 采一组 rollout 交给智能体 grader 相对评分，得到组内相对优势而非绝对奖励；相对打分降低奖励尺度漂移，并配合长度信号把模型推向更短、更省 token 的解。",
+     "visual": "横轴同一 prompt 的多个 rollout、纵轴相对偏好分；同组内两两比较后归一化成组内优势。",
+     "prerequisites": [
+      "RLHF/RLVR 与奖励模型",
+      "策略梯度与组内归一化优势",
+      "长程任务评测"
+     ],
+     "selfTest": [
+      "成组评分相对逐条绝对打分改进了什么？",
+      "为什么组内相对信号能抗奖励尺度漂移？",
+      "grader 本身有偏会带来什么风险？"
+     ],
+     "formula": "A_i=\\frac{r_i-\\mathrm{mean}(\\{r_j\\})}{\\mathrm{std}(\\{r_j\\})+\\epsilon}"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-mimo-group-relative-advantage",
+     "name": "组内相对优势（Group-Relative Advantage）",
+     "category": "posttraining",
+     "latex": "A_i=\\frac{r_i-\\mathrm{mean}(\\{r_j\\}_{j=1}^{G})}{\\mathrm{std}(\\{r_j\\}_{j=1}^{G})+\\epsilon}",
+     "symbols": [
+      [
+       "A_i",
+       "第 i 个 rollout 的组内优势"
+      ],
+      [
+       "r_i",
+       "该 rollout 的奖励/grader 分"
+      ],
+      [
+       "G",
+       "同一 prompt 的 rollout 数"
+      ],
+      [
+       "\\epsilon",
+       "数值稳定小量"
+      ]
+     ],
+     "derivation": [
+      "绝对奖励尺度随任务与 grader 漂移，直接优化不稳。",
+      "把同一 prompt 的一批 rollout 放成一组，用组内均值作基线。",
+      "除以组内标准差归一化，得到可比优势信号，再据其加权更新策略。"
+     ],
+     "analogy": "像班级里按排名而非绝对分数升级：试卷难度年年变，名次比卷面分更公平。",
+     "pitfalls": [
+      "把组内优势当绝对奖励用，忽略其尺度无关性",
+      "组内全对或全错时方差为零，需专门处理避免除零",
+      "误以为 groupwise 只是工程技巧，它其实决定奖励信号稳定性"
+     ],
+     "code": "import torch\ndef group_advantage(rewards,eps=1e-6):\n    r=torch.as_tensor(rewards,dtype=torch.float32)\n    return (r-r.mean())/(r.std(unbiased=False)+eps)",
+     "sources": [
+      {
+       "title": "MiMo-V2.6: Scaling Reinforcement Learning Towards Self-Improvement",
+       "url": "https://arxiv.org/abs/2610.11959"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "RL 被视为推进大模型自我改进的核心训练范式",
+     "MiMo-V2.6 是全模态家族，通过扩 RL 算力推进智能",
+     "RL 前先做多模态中训练扩大探索空间，并在 hybrid-SWA 架构上搭基建",
+     "含异步训练每步 1568 样本、2.7–3.7B token，上下文至 1M",
+     "环境覆盖代码、通用、视觉、网络，混合多种 agent harness",
+     "用 groupwise 智能体评分给长程任务更准奖励，并把模型引向更短更省 token 的解",
+     "冻结 MoE 路由并建多层防御对抗 reward hacking",
+     "开源训练动态、RL 环境与 RL 框架"
+    ],
+    "uncertain": [
+     "组内归一化优势是据「groupwise 智能体评分」重建的通用 GRPO 式形式，摘要未给精确目标函数，需核对原文",
+     "三个扩展维度的具体超参与训练时长摘要未给，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "一份全模态模型报告，讲怎么把强化学习算力大幅扩充来让模型自我进步。"
+     },
+     {
+      "level": "入门",
+      "text": "报告认为 RL 是让大模型继续变强的核心手段。MiMo-V2.6 先做多模态中训练打基础，再从三向扩 RL 算力：跑更大批量、用更多样更复杂的环境、让评分器算得更多更准。"
+     },
+     {
+      "level": "进阶",
+      "text": "规模化带来新问题：长程任务奖励信号不准、模型易 reward hacking。报告用 groupwise 智能体评分在组内相对打分得到更稳信号，并把模型推向更短省 token 的解；同时冻结 MoE 路由、建多层防御稳住训练。"
+     },
+     {
+      "level": "专家",
+      "text": "它把 RL 扩算力拆成批量吞吐、环境多样性、grader 计算三条正交轴，并配套混合任务 agentic RL 基建（统一轨迹表示、高并发多框架 rollout、控制面数据面解耦、训推一致）。相比只堆采样量，它强调环境与评分器也要同比例扩展。边界是基建与算力门槛极高，小团队难复现；组内相对信号在组内同质时会退化。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "只扩大批量而不扩环境与 grader 会怎样？",
+      "a": "采样再多也只覆盖同质任务与弱信号，长程任务奖励仍不准，模型进步很快饱和。"
+     },
+     {
+      "q": "为什么要冻结 MoE 路由？",
+      "a": "RL 阶段路由随奖励一起漂移会让专家分配不稳、训练发散，冻结可把优化限制在可控子空间。"
+     }
+    ],
+    "mechanism": "RL 扩算力的瓶颈不只是采样数量：长程任务上奖励信号本身不准，弱 grader 会把模型推向刷分与冗长回答；环境单一则探索空间受限。报告把环境与 grader 计算与批量同比例扩展，使更多算力转化为更可靠奖励；同时冻结路由、加多层防御，避免规模化下 reward hacking 与训练不稳把收益吃掉。",
+    "boundary": "需要极大的训练与推理基建，收益依赖环境与 grader 质量；若任务能低成本精确验证（如短代码单元测试），大规模 agentic grading 的边际收益会下降。",
+    "analogyBoundary": "批卷类比里标准客观统一；但这里 grader 是模型，可能自带偏好与盲点，成组相对打分只减尺度漂移，不能消除系统性偏好。",
+    "misconceptions": [
+     "以为扩 RL 就是加大 batch，忽略环境与 grader 也要同步扩。",
+     "把 groupwise 评分当纯工程优化，忽视它决定奖励是否稳定。",
+     "认为冻结 MoE 路由会限制能力，实际上它主要换来训练稳定。"
+    ],
+    "ownAnalysis": "「批量 × 环境 × grader」三轴扩展与 GRPO 类组内相对优化一脉相承（推断）：核心是把算力投向更可靠的奖励与更多样探索，而非单纯增加采样。可疑处：报告只强调开源与规模，未给与同类模型的精度对比，需核对原文。",
+    "officialNotes": [
+     {
+      "position": "MiMo-V2.6 从批量吞吐、环境多样性、grader 计算三向扩 RL 算力，冻结 MoE 路由并防御 reward hacking，开源训练动态、环境与框架",
+      "source": "arxiv: 2610.11959"
+     }
+    ],
+    "interviewAnswer": "这份报告的核心观点是 RL 是大模型自我改进的主路径。MiMo-V2.6 先多模态中训练铺探索空间，再从三向扩 RL 算力：更大批量与异步训练，每步一千多样本、上十亿 token；更多样更复杂的环境，覆盖代码、通用、视觉、网络并混合多种 agent harness；更多 grader 计算，用 groupwise 智能体评分给长程任务更准奖励并把模型引向更短省 token 的解。为稳住规模还冻结 MoE 路由、多层防御 reward hacking。",
+    "studyPath": {
+     "prerequisites": [
+      "RLHF/RLVR 与策略梯度",
+      "Mixture-of-Experts 与长上下文训练",
+      "分布式训练与推理一致性"
+     ],
+     "nextSteps": [
+      "读报告训练动态与时延曲线",
+      "对比 GRPO 与 groupwise agentic grading 的差异"
+     ]
+    }
+   }
+  },
+  {
+   "id": "d138939dd5b0062c",
+   "tldr": "无需人工指南或 oracle 验证器：explorer 自动出题、solver 反复验证启发式，把可复用智能体记忆自举出来。",
+   "keyPoints": [
+    "LLM 智能体缺操作知识，无记忆时会跨任务重复犯错、轨迹更长",
+    "已有方法依赖人工指南，或训练任务的程序性记忆加 oracle 验证器",
+    "DAEDALUS 用 explorer 生成有挑战却可解的任务，solver 尝试求解",
+    "启发式从 solver 失败中抽取，须在上下文中反复成功才被接受",
+    "接受结果反馈 explorer 调难度，启发式并入记忆库供测试期用"
+   ],
+   "why": "自举记忆、无 oracle 验证是 agent 方向热点；explorer/solver 双智能体与启发式验收可迁移到多模态 agent 与 RL 环境自动出题。",
+   "difficulty": "hard",
+   "tags": [
+    "agent",
+    "memory",
+    "self-improvement",
+    "llm-agent",
+    "bootstrap"
+   ],
+   "entities": [
+    "DAEDALUS",
+    "AppWorld",
+    "AutomationBench",
+    "oracle verifier"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "自举记忆的双智能体循环",
+    "caption": "explorer 出题、solver 失败产启发式，反复成功才入库，结果再回去调难度。",
+    "spec": {
+     "type": "flow",
+     "nodes": [
+      {
+       "label": "Explorer 出题",
+       "detail": "有挑战但可解的任务"
+      },
+      {
+       "label": "Solver 尝试",
+       "detail": "失败则抽取启发式"
+      },
+      {
+       "label": "验收并入记忆库",
+       "detail": "反复成功才接受"
+      }
+     ],
+     "edges": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "生成任务"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "回馈难度"
+      }
+     ]
+    },
+    "alt": "三步：explorer 自生成可解任务→solver 尝试并从失败抽启发式→反复成功才被接受并入记忆库。"
+   },
+   "concepts": [
+    {
+     "name": "Bootstrapped Procedural Memory（自举程序性记忆）",
+     "readable": "不靠人写攻略、也不靠标准答案验证器，让智能体自己造练习题、自己踩坑，把踩坑得到的经验沉淀成可复用规则。",
+     "analogy": "像没人教你吉他，你自己编越来越难的练习曲，练错就总结一条要领，只有这条要领反复让曲子顺利弹下来才记进小本子。",
+     "analogyBreaksDown": "自编练习曲可能只练自己擅长的方向，覆盖面窄；真实测试环境千变万化，自举记忆未必覆盖分布外情形。",
+     "mechanism": "explorer 按难度生成可解任务，solver 尝试；每次失败抽一条启发式，只有带着它在上下文里反复成功才被接受，从而过滤掉过拟合单次的假规律；接受结果回馈 explorer 调难度，接受的启发式合并成记忆库。",
+     "visual": "横轴任务难度、纵轴 solver 成功率；画 explorer 难度爬升曲线，标注失败点抽启发式、接受点入库，成功率阶梯上升。",
+     "prerequisites": [
+      "LLM 智能体与环境交互",
+      "程序性记忆/经验复用",
+      "课程学习直觉"
+     ],
+     "selfTest": [
+      "为什么启发式要通过反复成功才接受？",
+      "explorer 如何利用 solver 结果调难度？",
+      "没有 oracle 验证器时如何判断解题正确？"
+     ],
+     "formula": "\\mathrm{accept}(h)=\\mathbf{1}\\!\\left[\\frac{1}{k}\\sum_{i=1}^{k}\\mathbf{1}[\\mathrm{succ}_i(h)]\\ge\\tau\\right]"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-daedalus-heuristic-acceptance",
+     "name": "启发式验收准则（Heuristic Acceptance Rule）",
+     "category": "agent",
+     "latex": "\\mathrm{accept}(h)=\\mathbf{1}\\!\\left[\\frac{1}{k}\\sum_{i=1}^{k}\\mathbf{1}[\\mathrm{succ}_i(h)]\\ge\\tau\\right]",
+     "symbols": [
+      [
+       "h",
+       "从失败中抽取的候选启发式"
+      ],
+      [
+       "k",
+       "用该启发式重试的次数"
+      ],
+      [
+       "\\mathrm{succ}_i(h)",
+       "第 i 次带启发式尝试是否成功"
+      ],
+      [
+       "\\tau",
+       "接受阈值"
+      ]
+     ],
+     "derivation": [
+      "solver 失败后从轨迹抽一条候选启发式 h。",
+      "单次成功可能是偶然，需多次验证稳健性。",
+      "用带 h 的 k 次尝试成功率与阈值比较。",
+      "达标才接受并合并进记忆库，避免噪声规则污染。"
+     ],
+     "analogy": "像试新偏方：一次见效不算数，反复几次都好用才敢推荐给别人。",
+     "pitfalls": [
+      "只验证一次就入库，会把偶然成功当规律",
+      "阈值过低会混入大量无效规则，过高则几乎学不到东西",
+      "误以为需要 oracle 判定成功，摘要强调无需 oracle 验证器"
+     ],
+     "code": "def accept(success_flags,tau=1.0):\n    k=len(success_flags)\n    return sum(success_flags)/k >= tau",
+     "sources": [
+      {
+       "title": "DAEDALUS: Bootstrapping Agent Memory from Self-Generated Tasks",
+       "url": "https://arxiv.org/abs/2610.08048"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "LLM 智能体缺环境操作知识，无记忆时会跨任务重复犯错、轨迹更长",
+     "已有方法依赖人工指南或训练任务程序性记忆加 oracle 验证器，均需环境先验",
+     "DAEDALUS 无需既有任务或 oracle 验证器，从自生成练习自举记忆",
+     "explorer 生成有挑战却可解的任务，solver 尝试求解",
+     "启发式从 solver 失败抽取，须反复成功才接受；结果反馈 explorer 调难度",
+     "在 AppWorld、tau^2-bench、AutomationBench 上平均成功率提升至多 15.9 点、pass^5 至多 2.2x",
+     "消融显示 solver 轨迹是关键信息，分解早期发现让探索更省成本"
+    ],
+    "uncertain": [
+     "验收的 k 与阈值 tau 具体取值摘要未给，公式为按「反复成功才接受」重建的通用形式，需核对原文",
+     "提升 15.9 点与 2.2x 的基线与推理成本对照摘要只给相对描述，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "让 AI 自己出题、自己踩坑，把踩坑经验沉淀成可复用的小抄。"
+     },
+     {
+      "level": "入门",
+      "text": "LLM 智能体到新环境常不知工具怎么用，做了也不记事，于是反复犯同样的错。已有做法要么靠人写指南，要么靠训练任务加标准答案验证器。DAEDALUS 不要这些，让 explorer 自己造越来越难的题，solver 去做。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键是启发式验收：solver 每次失败后抽一条经验，只有带着它反复成功才会被接受进记忆库，从而过滤偶然生效的假规律。接受情况又反馈给 explorer 调后续难度，形成难度爬升的课程。"
+     },
+     {
+      "level": "专家",
+      "text": "它与人工指南和 oracle 监督路线的差别是完全自举、无需环境先验，代价是记忆质量取决于自生成任务的覆盖与 solver 的判断。摘要称在 AppWorld、tau^2-bench、AutomationBench 上平均成功率升至 15.9 点、pass^5 高 2.2x。边界是探索预算与任务覆盖，分布外环境仍可能缺规则。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么启发式要反复成功才接受？",
+      "a": "单次成功可能只是运气或任务偶然，反复验证才能筛掉过拟合一次的假规律。"
+     },
+     {
+      "q": "没有 oracle 时怎么知道做对了？",
+      "a": "靠 solver 在同一启发式下多次一致成功的稳定性作代理信号，而非外部标准答案。"
+     }
+    ],
+    "mechanism": "新环境里既没有现成任务也没有标准答案验证器，人写指南又依赖先验。DAEDALUS 把造题与做题解耦到两个智能体：explorer 保证任务可解且难度可调，solver 的失败提供经验来源；再用反复成功这条稳定性判据把经验筛成规则，于是记忆获得不依赖任何外部监督，也把探索成本集中在最需要的难度区间。",
+    "boundary": "当环境无法自动判断任务是否可解、或 solver 太弱无法产生可复用经验时自举会失败；自生成任务分布偏窄时，记忆覆盖不到测试中的新情形。",
+    "analogyBoundary": "自己编练习曲的前提是能听出弹对与否；若连对错都判断不了，「反复成功才记录」的判据就失去意义。",
+    "misconceptions": [
+     "以为仍然需要一个验证器判定成功——摘要强调无需 oracle。",
+     "把单次成功当经验成立——必须反复成功才接受。",
+     "认为记忆是一次性产物——它由两个智能体的持续循环逐步沉淀。"
+    ],
+    "ownAnalysis": "「自生成任务 + 稳定性验收」把课程学习与程序性记忆自举结合得很干净（推断），与 RL 环境自动出题、多模态 agent 经验复用都可对接。可疑处：提升数字都是相对的，缺少与人工指南方法的成本对照；explorer 与 solver 同源时可能形成共同盲点，需核对原文消融。",
+    "officialNotes": [
+     {
+      "position": "DAEDALUS 无需既有任务或 oracle 验证器即可自举可复用智能体记忆，在多基准上提升成功率与 pass^5",
+      "source": "arxiv: 2610.08048"
+     }
+    ],
+    "interviewAnswer": "LLM 智能体到新环境常缺操作知识，没记忆就反复犯错。以往要么靠人写指南，要么靠训练任务加 oracle 验证器，都需要环境先验。DAEDALUS 不要这些：一个 explorer 自己造有挑战却可解的任务，一个 solver 去解；每次失败抽一条启发式，只有带着它反复成功才被接受进记忆库，这样过滤掉偶然生效的假规律，结果再回去调难度。在 AppWorld 等基准上平均成功率最多升 15.9 点、pass^5 高 2.2x。",
+    "studyPath": {
+     "prerequisites": [
+      "LLM 智能体与环境交互",
+      "程序性记忆与经验复用",
+      "课程学习直觉"
+     ],
+     "nextSteps": [
+      "读原文消融看 solver 轨迹为何关键",
+      "对比人工指南与 oracle 监督路线"
+     ]
+    }
+   }
+  },
+  {
+   "id": "33ee3d94a5d2d3d1",
+   "tldr": "第三人称到第一人称视频生成不显式 lifting：用 LVSM 式 transformer 直接渲染自我视角，概率式对应保结构、细节交给扩散补。",
+   "keyPoints": [
+    "从单段第三人称视频生成第一人称视频是难的新视角合成，两相机几乎不重叠、目标视角多未观测",
+    "SOTA 显式重建：估深度、抬升成点云、从第一人称相机重渲以条件化视频扩散模型",
+    "确定性映射把每像素投到单一位置，深度误差会变成内容错位",
+    "LEGO 用学习式视角合成器（LVSM 式 transformer 微调）直接渲染，无深度、点云、重投影",
+    "概率映射按学到的对应分布对候选源位置加权，保结构但细纹理被平均；集中度给出逐区域置信度"
+   ],
+   "why": "跨视角生成 + 扩散条件是生成式与世界模型交叉考点；「条件应给结构而非锐度」的判断对视频生成条件设计很有启发。",
+   "difficulty": "hard",
+   "tags": [
+    "generative",
+    "diffusion",
+    "video-generation",
+    "novel-view-synthesis",
+    "multimodal"
+   ],
+   "entities": [
+    "LEGO",
+    "LVSM",
+    "video diffusion model",
+    "exocentric",
+    "egocentric"
+   ],
+   "diagram": {
+    "kind": "architecture",
+    "title": "显式 lifting 对比无 lifting",
+    "caption": "显式管线确定性映射把深度误差变错位；LEGO 用概率式直接渲染并输出置信度引导去噪。",
+    "spec": {
+     "type": "architecture",
+     "nodes": [
+      {
+       "label": "显式 lifting",
+       "detail": "深度→点云→重投影"
+      },
+      {
+       "label": "确定映射代价",
+       "detail": "深度误差→内容错位"
+      },
+      {
+       "label": "LEGO 直接渲染",
+       "detail": "概率聚合+置信度引导"
+      }
+     ],
+     "edges": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "误差被固化"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "改为概率映射"
+      }
+     ]
+    },
+    "alt": "三步：显式 lifting 估深度成点云再重投影→确定性映射把深度误差变内容错位→LEGO 概率式直接渲染并输出置信度引导扩散。"
+   },
+   "concepts": [
+    {
+     "name": "Lifting-Free View Synthesis（无抬升视角合成）",
+     "readable": "跳过「估深度再抬成点云再投回相机」这条管线，让 transformer 直接从外视角特征渲染出目标视角画面，跨视角对应在模型内部隐式求解。",
+     "analogy": "像请熟练的速写师照着侧面照片画正面像：不先建 3D 模型，直接凭对形体的理解画，结构靠理解、细节靠脑补。",
+     "analogyBreaksDown": "速写师画错结构是明显跑形，而这里渲染错误会被下游扩散模型「顺手」补成看似合理却错的细节，错得更隐蔽",
+     "mechanism": "用 LVSM 式 transformer 把源视角特征直接聚合到目标像素，聚合权重是学到的对应分布，因此是概率映射：一个目标区域按权重平均多个候选源位置，保结构、平滑掉细纹理；集中度顺带给出逐区域置信度，用于掩低置信区并在早期去噪引导布局。",
+     "visual": "横轴目标视角像素、纵轴对应源位置权重；确定映射是一根尖峰（one-hot），概率映射是覆盖几处源位置的小山包，越矮平置信度越低。",
+     "prerequisites": [
+      "新视角合成与跨视角几何",
+      "扩散模型条件化与去噪",
+      "Transformer 注意力聚合"
+     ],
+     "selfTest": [
+      "lifting-free 省掉了显式管线的哪几步？",
+      "为什么概率映射适合作为扩散模型的条件？",
+      "置信度从哪来、用来做什么？"
+     ],
+     "formula": "\\hat{I}(u)=\\sum_{j}p(j\\mid u)\\,I_{\\mathrm{src}}(j),\\quad \\sum_j p(j\\mid u)=1"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-lego-probabilistic-view-synth",
+     "name": "概率式视角合成（Probabilistic View Synthesis）",
+     "category": "generative",
+     "latex": "\\hat{I}(u)=\\sum_{j}p(j\\mid u)\\,I_{\\mathrm{src}}(j),\\quad \\sum_{j}p(j\\mid u)=1",
+     "symbols": [
+      [
+       "u",
+       "目标（第一人称）视角的像素位置"
+      ],
+      [
+       "j",
+       "候选源（第三人称）像素位置"
+      ],
+      [
+       "p(j\\mid u)",
+       "学到的对应分布：u 由源位置 j 生成的概率"
+      ],
+      [
+       "I_{\\mathrm{src}}(j)",
+       "源视角像素值/特征"
+      ]
+     ],
+     "derivation": [
+      "目标视角大部未观测，需从源视角找对应。",
+      "显式方法给每像素单一映射（one-hot），深度误差即错位。",
+      "改用学到的对应分布 p(j|u)，对候选源位置加权平均。",
+      "加权平均保结构、钝化纹理，恰好适合下游扩散去噪补细节。"
+     ],
+     "analogy": "像根据几张侧面照合成正面照：不强行给每个点指定唯一来源，而让多个可能来源按可信度投票，结构更稳。",
+     "pitfalls": [
+      "以为渲染越锐越好——这里故意牺牲纹理换结构对齐",
+      "把 p(j|u) 当真实几何对应，它只是学到的分布，可能有偏",
+      "忽略置信度，对低置信区也照常条件化会引入错结构"
+     ],
+     "code": "import torch,torch.nn.functional as F\ndef render(src_feat,logits):\n    p=F.softmax(logits,dim=-1)      # p(j|u)\n    out=p@src_feat                  # 加权聚合\n    return out,p.max(dim=-1).values # 集中度作置信度",
+     "sources": [
+      {
+       "title": "LEGO: A Lifting-Free Approach for Exocentric-to-Egocentric Video Generation",
+       "url": "https://arxiv.org/abs/2610.12442v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "从单段第三人称视频生成第一人称视频是新视角合成，两相机重叠少、目标视角多未观测",
+     "SOTA 显式重建：估深度、抬升成点云、从第一人称相机重渲以条件化视频扩散模型",
+     "确定性映射把每像素投到单一位置，深度误差转为内容错位",
+     "LEGO 用 LVSM 式 transformer 微调直接渲染自我视角，无深度、点云、重投影",
+     "概率映射按学到的对应分布平均候选源位置，保结构但细纹理被平均",
+     "对应分布集中度给出逐区域置信度，用于掩低置信区并引导早期去噪",
+     "方法优于 SOTA 显式管线并能无需重训泛化到其它数据集"
+    ],
+    "uncertain": [
+     "对应分布 p(j|u) 的具体参数化（如注意力）摘要未明说，公式为按「学到的对应分布加权平均」重建的通用形式，需核对原文",
+     "置信度如何具体注入扩散早期去噪（掩码还是加权）摘要未给细节，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "不先建 3D 点云，直接让模型把第三人称画面渲染成第一人称，再让扩散模型补细节。"
+     },
+     {
+      "level": "入门",
+      "text": "要把一段第三人称视频变成第一人称，两视角几乎不重叠、目标画面大多看不到。以往先估深度、抬成点云、再从第一人称相机重渲染去条件化视频扩散模型，问题是这种映射确定，深度一旦估错像素就投到错位置。"
+     },
+     {
+      "level": "进阶",
+      "text": "LEGO 换掉这套管线，用一个学过的新视角合成器（LVSM 式 transformer 微调）直接渲染。它的映射是概率式的：一个目标区域按学到的对应分布对多个候选源位置加权平均，结构保住、细纹理被平均掉，恰好适合让扩散模型去补。"
+     },
+     {
+      "level": "专家",
+      "text": "它的判断是：给扩散模型的条件应优先结构对齐而非锐度，因为去噪训练本就擅长恢复细节。对应分布的集中度顺带给出逐区域置信度，用来掩掉低置信区并在早期布局阶段引导生成。摘要称它持续优于显式管线，且无需重训即可泛化到其它数据集。边界是场景几乎无重叠、对应分布不可学时概率渲染也会失准。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么确定性重投影对扩散条件不理想？",
+      "a": "它把深度误差直接变成错误的内容位置，扩散模型会把错结构当真去补细节，错误更隐蔽。"
+     },
+     {
+      "q": "为什么要用概率映射而非更清晰的渲染？",
+      "a": "概率加权保结构、钝化纹理，正好把细纹理交给擅长恢复细节的扩散去噪，分工更合理。"
+     }
+    ],
+    "mechanism": "难点在目标视角大部未观测、两相机几乎不重叠，显式深度抬升会把误差不可逆地固化到像素位置。作者把「条件该给什么」重新定义：条件应提供可靠的结构对齐而非锐利纹理，于是用可学习合成器输出概率式区域平均与置信度，把纹理恢复外包给扩散模型，从源头降低对深度精度的依赖。",
+    "boundary": "当两视角重叠极低、对应分布难从数据学出，或目标区域完全无源信息时，概率渲染与置信度都会退化；场景几何极端复杂时隐式对应也可能不准。",
+    "analogyBoundary": "速写师能靠经验纠正明显跑形；这里错误结构会被扩散模型补成看似合理的细节，审阅者更难一眼发现是错的。",
+    "misconceptions": [
+     "以为渲染越锐利越好的条件——本方法恰恰主动钝化纹理。",
+     "把学到的对应分布当成真实几何对应。",
+     "忽略置信度，对低置信区域也照常条件化。"
+    ],
+    "ownAnalysis": "「条件给结构、细节交给扩散」的分工与潜变量/多阶段生成里把粗结构与大细节分层的思路同构（推断），可迁移到世界模型的观测条件设计。可疑处：摘要未给具体指标与数据集名称，也未说明置信度阈值如何选，需核对原文。",
+    "officialNotes": [
+     {
+      "position": "LEGO 用无 lifting 的学习式合成器为扩散模型提供条件，持续优于 SOTA 显式管线且能无需重训泛化到其它数据集",
+      "source": "arxiv: 2610.12442v1"
+     }
+    ],
+    "interviewAnswer": "任务是从一段第三人称视频生成第一人称视频，两视角几乎不重叠、目标画面大多没看过。以往估深度、抬成点云、再重投影来条件化扩散模型，但这是确定性映射，深度误差会被固化成像素错位。LEGO 不用 lifting，改用一个微调过的 LVSM 式 transformer 直接渲染目标视角，它的对应是概率分布：对多个候选源位置加权平均，保结构、钝化纹理，正好让扩散补细节；分布集中度还给出逐区域置信度，用来掩低置信区并在早期去噪引导布局。",
+    "studyPath": {
+     "prerequisites": [
+      "新视角合成与跨视角几何",
+      "扩散模型条件化",
+      "Transformer 注意力聚合"
+     ],
+     "nextSteps": [
+      "读原文看置信度如何注入早期去噪",
+      "对比显式 lifting 管线的误差传播"
+     ]
+    }
+   }
+  }
+ ],
+ "skipped": []
+}

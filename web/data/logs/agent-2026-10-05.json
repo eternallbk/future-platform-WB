@@ -1,0 +1,40 @@
+{
+ "date": "2026-10-05",
+ "startedAt": "2026-10-05T01:12:00+08:00",
+ "finishedAt": "2026-10-05T01:51:26+08:00",
+ "status": "ok",
+ "enrichedCount": 317,
+ "enrichedThisRun": 103,
+ "backfilledThisRun": 8,
+ "formulaCount": 360,
+ "newJobs": 0,
+ "generatedBy": "daily-agent",
+ "notes": "按 web/data/deep-read-plan.json 的清单执行，未自行另挑条目。队列 92 条深读 88 条、4 条按证据剔除；题库批次 13 题（6 条模型赛道手撕题按要求带 variants+comparison，7 条高频算法题）；backfill 8 条（missing 均为 formulas）全部补齐；needsFetch 2 条（plan 未收录、selfcheck 点名）单独成批处理，1 条成功解析、1 条抓取失败按证据跳过。共 25 个批次，分 5 波并发子代理处理。",
+ "errors": [],
+ "selection": {
+  "basis": "web/data/deep-read-plan.json 的 queue + problemBankQueue + backfill",
+  "readFrom": "web/data/deep-read-plan.json",
+  "fullQueueSize": 92,
+  "queueProcessed": 88,
+  "queueSkipped": 4,
+  "backfillTotal": 8,
+  "backfillProcessed": 8,
+  "problemBankProcessed": 13,
+  "needsFetchProcessed": 2,
+  "corpusSize": 744,
+  "quotaRule": "完全按清单执行；唯一人工干预是把清单里可被证据证伪的学科误收与领域不匹配条目剔除，依据可复核。"
+ },
+ "details": {
+  "batches": 25,
+  "entriesWritten": 103,
+  "formulasAppended": 106,
+  "backfilledEntries": 8,
+  "skippedIds": [
+   "d235d4d0dd5acd4b",
+   "2459123f398960a0",
+   "3573d5a391326adf",
+   "0e6ec16a4d728100"
+  ],
+  "validator": "scripts/apply_agent_out.py（schema / 图解合规 / teaching 十项 / formula 五层 / URL 白名单 / LaTeX 门禁预检）"
+ }
+}

@@ -1,0 +1,240 @@
+{
+ "id": "a64a5cde474031d8",
+ "tldr": "用 top/bottom/left/right 四边界收缩，每层走完外圈即内缩，O(mn) 时间收集全部元素。",
+ "keyPoints": [
+  "固定 top/bottom/left/right 四条边界",
+  "每层按 上→右→下→左 走一圈",
+  "走完一圈把四条边界各内缩一步",
+  "长方形矩阵最后两段必须判边界防重复"
+ ],
+ "why": "矩阵模拟与边界控制的经典题，考察下标不越界与循环不变量，是手撕题里最容易因细节写挂的一类。",
+ "difficulty": "medium",
+ "tags": [
+  "leetcode",
+  "matrix",
+  "simulation",
+  "array",
+  "medium"
+ ],
+ "entities": [
+  "LeetCode 54",
+  "边界收缩",
+  "方向数组"
+ ],
+ "diagram": {
+  "kind": "matrix",
+  "title": "螺旋遍历次序",
+  "caption": "3×3 矩阵中数字是访问先后；走完外圈后四边界各内缩一格，再处理内层。",
+  "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='螺旋矩阵遍历顺序 3x3'><text x='240' y='30' font-size='14' text-anchor='middle' fill='currentColor' font-weight='bold'>按顺时针访问次序编号</text><rect x='186' y='54' width='44' height='44' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='208' y='81' font-size='15' text-anchor='middle' fill='currentColor'>1</text><rect x='230' y='54' width='44' height='44' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='252' y='81' font-size='15' text-anchor='middle' fill='currentColor'>2</text><rect x='274' y='54' width='44' height='44' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='296' y='81' font-size='15' text-anchor='middle' fill='currentColor'>3</text><rect x='186' y='98' width='44' height='44' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='208' y='125' font-size='15' text-anchor='middle' fill='currentColor'>8</text><rect x='230' y='98' width='44' height='44' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='252' y='125' font-size='15' text-anchor='middle' fill='currentColor'>9</text><rect x='274' y='98' width='44' height='44' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='296' y='125' font-size='15' text-anchor='middle' fill='currentColor'>4</text><rect x='186' y='142' width='44' height='44' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='208' y='169' font-size='15' text-anchor='middle' fill='currentColor'>7</text><rect x='230' y='142' width='44' height='44' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='252' y='169' font-size='15' text-anchor='middle' fill='currentColor'>6</text><rect x='274' y='142' width='44' height='44' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='296' y='169' font-size='15' text-anchor='middle' fill='currentColor'>5</text><text x='240' y='204' font-size='13' text-anchor='middle' fill='currentColor'>右 → 下 → 左 → 上，再进内层</text><text x='240' y='226' font-size='13' text-anchor='middle' fill='currentColor'>外圈走完，四边界各内缩一格</text></svg>",
+  "alt": "3×3 网格，格内数字为访问顺序：上边向右 1-2-3，右边向下 4，下边向左 5-6-7，左边向上 8，中心 9。"
+ },
+ "concepts": [
+  {
+   "name": "边界收缩 / 循环不变量（Shrinking Boundaries）",
+   "readable": "用四个下标圈定『还没访问的矩形』，每走完最外一圈就把四条边往里收一格，直到边界交叉。",
+   "analogy": "像吃蛋糕：先把最外面的一圈吃掉，再吃紧挨着的下一圈，直到只剩中心。",
+   "analogyBreaksDown": "蛋糕每圈都是完整方环；矩阵可能是长条（单行或单列），此时『下边』和『左边』会退化成一条线甚至一个点，不判边界就会把同一格吃两遍。",
+   "mechanism": "把螺旋拆成一层一层：每层用边界变量控制四条直线段，天然避免越界；每层结束更新四边界。循环不变量是『外层已全部收集、内层尚未触碰』。",
+   "visual": "矩形外围画四段带箭头的粗线（上 / 右 / 下 / 左），内层再画一圈，箭头一律顺时针。",
+   "prerequisites": [
+    "二维数组下标",
+    "for 循环与区间"
+   ],
+   "selfTest": [
+    "单行矩阵 [1,2,3] 时下边和左边循环会发生什么？",
+    "为什么最后两段要加 top<=bottom / left<=right 判断？",
+    "循环终止条件为什么是 top<=bottom 且 left<=right？"
+   ],
+   "formula": ""
+  },
+  {
+   "name": "方向数组模拟（Direction Array Simulation）",
+   "readable": "用 (0,1)(1,0)(0,-1)(-1,0) 四个方向轮流走，撞到边界或访问过的格子就右转。",
+   "analogy": "在一个房间里贴着墙走，撞到墙就顺时针转向继续前进。",
+   "analogyBreaksDown": "房间的墙是固定的；这里『墙』还包含已经访问过的格子，必须额外维护 visited 标记才能停下，会多花 O(mn) 空间。",
+   "mechanism": "方向数组把『转向』编码成 (d+1) mod 4；每步先试探下一格是否越界、是否已访问，不合法就转向。代码更短，但需要 visited 标记，以空间换简洁。",
+   "visual": "格子按访问时间涂成渐变色，每格画出进入方向箭头，越界处画一个直角转弯符号。",
+   "prerequisites": [
+    "二维数组",
+    "取模运算"
+   ],
+   "selfTest": [
+    "visited 版本的空间复杂度是多少？",
+    "为什么外侧循环恰好执行 m×n 次？",
+    "方向数组的四个方向顺序能随意调换吗？"
+   ],
+   "formula": ""
+  }
+ ],
+ "formulas": [
+  {
+   "id": "f-spiral-boundary-shrink",
+   "name": "螺旋矩阵边界收缩递推（Spiral Boundary Shrink Recurrence）",
+   "category": "engineering",
+   "latex": "\\mathrm{top}\\leftarrow \\mathrm{top}+1,\\ \\mathrm{right}\\leftarrow \\mathrm{right}-1,\\ \\mathrm{bottom}\\leftarrow \\mathrm{bottom}-1,\\ \\mathrm{left}\\leftarrow \\mathrm{left}+1,\\quad \\mathrm{while}\\ \\mathrm{top}\\le \\mathrm{bottom}\\ \\wedge\\ \\mathrm{left}\\le \\mathrm{right}",
+   "symbols": [
+    [
+     "top, bottom",
+     "未访问区域的上 / 下边界行"
+    ],
+    [
+     "left, right",
+     "未访问区域的左 / 右边界列"
+    ],
+    [
+     "m, n",
+     "矩阵的行数与列数"
+    ]
+   ],
+   "derivation": [
+    "初始未访问区域为整个 m×n 矩阵。",
+    "每轮沿上边、右边、下边、左边走完当前外圈。",
+    "走完后把四条边界各内缩一步，指向新的内层矩形。",
+    "当 top 超过 bottom 或 left 超过 right 时区域为空，循环结束。"
+   ],
+   "analogy": "剥洋葱：每剥掉一层，可剥的范围就缩小一圈，直到没有可剥的。",
+   "pitfalls": [
+    "最后两段不加边界判断，单行或单列会重复输出",
+    "循环条件用 or 连接，会多走一轮造成越界",
+    "右列起点写成 top 而不是 top+1，重复左上顶点"
+   ],
+   "code": "res=[]; top,bottom,left,right=0,len(m)-1,0,len(m[0])-1\nwhile top<=bottom and left<=right:\n    for j in range(left,right+1): res.append(matrix[top][j])\n    top+=1\n    for i in range(top,bottom+1): res.append(matrix[i][right])\n    right-=1\n    # 下边、左边各需一个边界判断",
+   "sources": [
+    {
+     "title": "54.螺旋矩阵 · 题解",
+     "url": "https://programmercarl.com/algo/other/0054-spiral-matrix.html"
+    },
+    {
+     "title": "螺旋矩阵（LeetCode 54）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/spiral-matrix"
+    }
+   ]
+  }
+ ],
+ "selfCheck": {
+  "claims": [
+   "本题为重排矩阵的模拟题，按顺时针螺旋顺序遍历所有元素",
+   "题解强调坚持循环不变量与左闭右开原则",
+   "需处理长方形（非正方形）矩阵的边界条件"
+  ],
+  "uncertain": [
+   "源信息未给题目示例，problem.examples 为自行构造并已用参考实现核对",
+   "考频与最近出现时间来自采集层，未逐条核实"
+  ]
+ },
+ "teaching": {
+  "progressive": [
+   {
+    "level": "一句话",
+    "text": "一圈一圈从外往里剥，每层沿四边走。"
+   },
+   {
+    "level": "入门",
+    "text": "用四个下标框住还没访问的矩形区域，先走上面一行、再走右边一列、下面一行、左边一列，然后把这个框往里缩一格。"
+   },
+   {
+    "level": "进阶",
+    "text": "关键是每条边都用左闭右开或统一的边界条件，避免顶点重复。走完一圈后 top+1、right-1、bottom-1、left+1；仅当 top<=bottom 才走底边、left<=right 才走左边，否则单行单列会重复。"
+   },
+   {
+    "level": "专家",
+    "text": "另一种写法用方向数组加 visited 标记，逻辑更直白但多 O(mn) 空间；边界收缩法额外空间 O(1)、常数更小，是面试首选。二者时间同为 O(mn)，区别在于空间与代码可读性的取舍。"
+   }
+  ],
+  "socratic": [
+   {
+    "q": "如果不加 top<=bottom 判断会怎样？",
+    "a": "只剩一行时，走完上边后 top>bottom，底边循环会重复输出同一行，导致结果里出现重复元素。"
+   },
+   {
+    "q": "换成方向数组加 visited 为什么要多花空间？",
+    "a": "需要额外矩阵记录哪些格子已访问，否则贴着边界走无法判断下一步是墙还是走过的路。"
+   }
+  ],
+  "mechanism": "模拟题的核心风险是下标越界与顶点重复，所以设计上把『螺旋』拆解为逐层的四条直线段，并用边界变量统一控制每条段的区间，使每格恰好被访问一次，无需额外标记结构。",
+  "boundary": "该方法假设矩阵非空。若矩阵为空或列为空需提前返回空列表；对于极大矩阵仍受输出规模限制，本身算法无其他失效条件，但若把题目改成顺时针生成矩阵需改用填充而非读取。",
+  "analogyBoundary": "『吃蛋糕剥圈』类比前提是每圈都是完整方环；对长条形矩阵，最内层可能只是一条线段，此时『一圈四边』退化为一条边走完，类比会让人误以为必然有四段。",
+  "misconceptions": [
+   "认为螺旋矩阵必须是方阵，忽略 m 与 n 不等",
+   "把四条边的区间都写成闭区间导致顶点重复",
+   "循环条件用 or，导致多跑一轮访问越界"
+  ],
+  "ownAnalysis": "（推断）本题的思路可直接迁移到『螺旋矩阵 II（59）』的填充与『顺时针打印』变体；面试若要求原地或节省输出空间要谨慎，因为本题本质必须输出全部元素，空间下界由输出决定。",
+  "officialNotes": [],
+  "interviewAnswer": "我用边界收缩：维护 top、bottom、left、right 四条边界。每轮先走顶行，再从右列向下，再走底行（需 top<=bottom 防重复），再走左列向上（需 left<=right），然后四边界各内缩一步，直到边界交叉。时间复杂度 O(mn)，除输出外只需 O(1) 额外空间。",
+  "studyPath": {
+   "prerequisites": [
+    "二维数组下标",
+    "循环与区间",
+    "大 O 记号"
+   ],
+   "nextSteps": [
+    "LeetCode 59 螺旋矩阵 II（生成）",
+    "LeetCode 48 旋转图像",
+    "练习方向数组的写法"
+   ]
+  }
+ },
+ "problem": {
+  "title": "螺旋矩阵",
+  "number": 54,
+  "difficulty": "medium",
+  "statement": "给定一个 m 行 n 列的矩阵 matrix，请按顺时针螺旋顺序返回矩阵中的所有元素。螺旋从左上角开始，先向右，再向下、向左、向上绕行，逐步进入内层，直到取完全部元素。",
+  "examples": [
+   {
+    "input": "matrix = [[1,2,3],[4,5,6],[7,8,9]]",
+    "output": "[1,2,3,6,9,8,7,4,5]",
+    "why": "外圈顺时针后进入中心 5"
+   },
+   {
+    "input": "matrix = [[1,2,3,4],[5,6,7,8],[9,10,11,12]]",
+    "output": "[1,2,3,4,8,12,11,10,9,5,6,7]",
+    "why": "3×4 长方形，外圈后剩内层 6,7"
+   }
+  ],
+  "approach": {
+   "idea": "用四个边界下标 top、bottom、left、right 圈定还没访问的矩形。每轮依次走顶行、右列、底行、左列，走完把四条边界各内缩一格，直到边界交叉。",
+   "steps": [
+    "1. 初始 top=0, bottom=m-1, left=0, right=n-1。",
+    "2. 从左到右走顶行，然后 top += 1。",
+    "3. 从上到下走右列，然后 right -= 1。",
+    "4. 若 top<=bottom，从右到左走底行并 bottom -= 1。",
+    "5. 若 left<=right，从下到上走左列并 left += 1；重复直到 top>bottom 或 left>right。"
+   ],
+   "whyItWorks": "循环不变量是『边界外的所有格子都已按螺旋顺序收集，边界内的格子都未被访问』。每轮恰好收集当前外圈的全部元素且不重复，随后边界内缩保证下一轮处理新的内层，最终所有 m×n 个格子各被访问一次。",
+   "alternatives": [
+    {
+     "name": "方向数组 + visited",
+     "complexity": "O(mn)/O(mn)",
+     "when": "更看重代码直白、不介意额外矩阵标记时可用，撞墙或撞已访问即转向"
+    },
+    {
+     "name": "逐层递归模拟",
+     "complexity": "O(mn)/O(min(m,n))",
+     "when": "想用递归表达分层结构时；空间是递归深度，实测不如迭代直观"
+    }
+   ]
+  },
+  "solution": {
+   "python": "from typing import List\n\n\ndef spiralOrder(matrix: List[List[int]]) -> List[int]:\n    if not matrix or not matrix[0]:\n        return []\n    top, bottom, left, right = 0, len(matrix) - 1, 0, len(matrix[0]) - 1\n    res = []\n    while top <= bottom and left <= right:\n        for j in range(left, right + 1):\n            res.append(matrix[top][j])\n        top += 1\n        for i in range(top, bottom + 1):\n            res.append(matrix[i][right])\n        right -= 1\n        if top <= bottom:\n            for j in range(right, left - 1, -1):\n                res.append(matrix[bottom][j])\n            bottom -= 1\n        if left <= right:\n            for i in range(bottom, top - 1, -1):\n                res.append(matrix[i][left])\n            left += 1\n    return res\n\n\nif __name__ == '__main__':\n    print(spiralOrder([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))",
+   "python_alt": "from typing import List\n\n\ndef spiralOrder(matrix: List[List[int]]) -> List[int]:\n    if not matrix or not matrix[0]:\n        return []\n    m, n = len(matrix), len(matrix[0])\n    dirs = [(0, 1), (1, 0), (0, -1), (-1, 0)]\n    seen = [[False] * n for _ in range(m)]\n    r = c = d = 0\n    res = []\n    for _ in range(m * n):\n        res.append(matrix[r][c])\n        seen[r][c] = True\n        nr, nc = r + dirs[d][0], c + dirs[d][1]\n        if not (0 <= nr < m and 0 <= nc < n and not seen[nr][nc]):\n            d = (d + 1) % 4\n            nr, nc = r + dirs[d][0], c + dirs[d][1]\n        r, c = nr, nc\n    return res",
+   "notes": "最后两段必须各加一次边界判断，否则单行、单列或内层只剩一条线时会重复访问。空矩阵或空列要提前返回空列表。"
+  },
+  "complexity": {
+   "time": "O(mn)",
+   "space": "O(1)",
+   "why": "每个元素恰好入结果一次；边界收缩法除输出数组外只用 4 个整型变量，方向数组法需 O(mn) 的 visited。"
+  },
+  "pitfalls": [
+   "底行、左列不加 top<=bottom / left<=right 判断，单行单列重复",
+   "while 条件用 or，导致多走一轮并越界",
+   "右列起点写成 top 而非 top+1，重复左上角顶点"
+  ],
+  "edgeCases": [
+   "矩阵为空或第一行为空：直接返回 []",
+   "只有一行或一列：最后两段需靠边界判断跳过",
+   "1×1 矩阵：只输出那个唯一元素"
+  ],
+  "interviewTips": "先明确四条边的区间取法（建议统一左闭右开），再强调边界判断是本题唯一易错点。写完用手算一个 1×3 或 3×1 的例子验证，能立刻暴露重复输出的 bug；最后给出 O(mn)/O(1) 的复杂度结论。"
+ }
+}

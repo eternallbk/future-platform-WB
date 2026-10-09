@@ -1,0 +1,115 @@
+{
+  "id": "f10b3a64fea8504a",
+  "tldr": "把 RL 采样集中到策略能力前沿附近的任务配置上（SGS），让百万并行环境的经验不被浪费。",
+  "keyPoints": [
+    "sim-to-real RL 依赖手工奖励、示教等按任务先验",
+    "多样重置 + 大规模并行能省工程，但朴素放大不稳",
+    "均匀采样把经验浪费在已掌握或无法尝试的配置上",
+    "SGS 自适应采样聚焦策略能力前沿",
+    "百万并行环境下解出四足多地形与接触密集装配"
+  ],
+  "why": "大规模并行 RL 与自适应课程是 RL 实习高频考点；「把算力花在能力边界」可直接迁移到后训练采样。",
+  "difficulty": "medium",
+  "tags": ["rl", "sim-to-real", "curriculum", "robot-control", "sampling"],
+  "entities": ["Success Guided Sampling", "sim-to-real RL", "quadruped locomotion", "contact-rich assembly"],
+  "diagram": {
+    "kind": "flow",
+    "title": "SGS 采样闭环",
+    "caption": "估计各配置成功率，按能力前沿重采样，策略变强后前沿自动外扩。",
+    "svg": "<svg viewBox='0 0 480 178' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='SGS 四层流程'>\n<rect x='40' y='14' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='38' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>大量并行重置配置（至多 2^20 环境）</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='40' y='70' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>估计各配置成功率</text>\n<line x1='240' y1='110' x2='240' y2='118' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,126 236,118 244,118' fill='var(--line-1)'/>\n<rect x='40' y='126' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='150' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>SGS 按能力前沿重采样 → 策略外扩</text>\n</svg>",
+    "alt": "三层闭环：大量并行重置配置→估计各配置成功率→SGS 按能力前沿重采样使策略外扩。"
+  },
+  "concepts": [
+    {
+      "name": "Exploration Bottleneck in Uniform Sampling（均匀采样的探索瓶颈）",
+      "readable": "均匀随机出任务时，策略已经会做或根本做不了的任务占了大部分，真正能带来提升的「中间难度」样本越来越少。",
+      "analogy": "像刷题只按题库顺序抽，抽到的多是已会的送分题或完全超纲题，进步最慢。",
+      "analogyBreaksDown": "题库难度固定；这里任务难度随策略变化，越练「中间难度」越会移动，不是静态分布。",
+      "mechanism": "学习信号只来自成功率非 0 非 1 的样本。采样分布固定而策略能力前沿上移，落在前沿的配置占比递减，使放大的并行算力被稀释、收益不显。",
+      "visual": "横轴按难度排列的配置，纵轴数量；中间可学区间是一段窄带，随训练向右移动且变窄。",
+      "prerequisites": ["RL 策略梯度基础", "回放与采样分布"],
+      "selfTest": ["为什么均匀采样在大规模并行下反而低效？", "「可学区间」为什么随训练移动？", "这与稀疏奖励问题是一回事吗？"],
+      "formula": "\\eta=\\mathbb{E}_{c\\sim U}\\left[\\mathbf{1}\\{0<\\hat{s}(c)<1\\}\\right]"
+    },
+    {
+      "name": "Success Guided Sampling（成功率引导采样）",
+      "readable": "按每个任务配置「离策略能力边界有多近」来重新分配采样概率，越靠近前沿越常被抽到。",
+      "analogy": "像教练按你当前水平挑陪练，专挑略强于你的对手，进步最快。",
+      "analogyBreaksDown": "陪练强度是外生给定的；这里难度由策略成功率定义，重采样又反过来改变策略，形成自指回路。",
+      "mechanism": "用估计成功率给配置加权，使采样密度跟随能力前沿移动；从而在固定并行规模下提高每批的经验利用率，让大规模并行的收益真正体现。",
+      "visual": "横轴难度、纵轴采样权重；在目标成功率处出现一个峰，峰随训练向右滑。",
+      "prerequisites": ["重要性采样概念", "课程学习"],
+      "selfTest": ["SGS 与 prioritized replay 有何异同？", "成功率估计不准会怎样？", "为何它能免任务先验？"],
+      "formula": "w(c)\\propto g(\\hat{s}(c))"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-sgs-frontier-reweight",
+      "name": "成功率引导重加权（Success-Guided Reweighting）",
+      "category": "rl",
+      "latex": "w(c)=\\frac{g(\\hat{s}(c))}{\\sum_{c'} g(\\hat{s}(c'))},\\quad g(s)=\\exp\\!\\left(-\\lambda\\,|s-s^{\\star}|\\right)",
+      "symbols": [["c", "一个任务配置（如地形、装配参数）"], ["\\hat{s}(c)", "策略在该配置上的估计成功率"], ["s^{\\star}", "能力前沿的目标成功率"], ["\\lambda", "聚焦强度"], ["g", "权重核函数"], ["w(c)", "重采样概率"]],
+      "derivation": ["第 1 步：均匀采样忽略配置难度，导致可学样本被稀释。", "第 2 步：统计/估计每个配置的成功率 ŝ(c)。", "第 3 步：以核函数 g 让 ŝ 接近前沿目标 s* 的配置获得高权重。", "第 4 步：归一化得采样分布 w，用于下一批并行环境。"],
+      "analogy": "像按「差一点就能做对」的距离给练习题打权重，越接近临界分越高。",
+      "pitfalls": ["把 s* 当成固定 0.5——前沿应随训练移动", "忽略 ŝ 估计噪声，会把采样误导到伪前沿", "误以为重加权不改变最优解——它改的是采样分布而非目标"],
+      "code": "import torch\ndef sgs(hat_s, s_star=0.5, lam=8.0):\n    g = torch.exp(-lam * (hat_s - s_star).abs())\n    return g / g.sum()  # 采样概率",
+      "sources": [{"title": "A Balanced Data Diet: Exploration Bottleneck in Mega-Scale RL", "url": "https://arxiv.org/abs/2610.12465v1"}]
+    },
+    {
+      "id": "f-frontier-learning-efficiency",
+      "name": "可学样本占比（Frontier Learnable Fraction）",
+      "category": "rl",
+      "latex": "\\eta=\\frac{1}{N}\\sum_{i=1}^{N}\\mathbf{1}\\!\\left[\\,s_{\\mathrm{lo}}\\le \\hat{s}(c_i)\\le s_{\\mathrm{hi}}\\,\\right]",
+      "symbols": [["N", "一个 batch 内的环境数"], ["c_i", "第 i 个环境的任务配置"], ["\\hat{s}(c_i)", "该配置估计成功率"], ["s_{\\mathrm{lo}},s_{\\mathrm{hi}}", "可学区间的下/上界"], ["\\eta", "批次中带学习信号的样本占比"]],
+      "derivation": ["第 1 步：成功率≈0 或≈1 的样本几乎不产生策略梯度。", "第 2 步：用一对阈值界定「可学区间」。", "第 3 步：数出落在区间的样本占比 η。", "第 4 步：SGS 的目标即是提高 η，从而提升每批经验利用率。"],
+      "analogy": "像班级里「跳一跳够得着」的题所占比例，才是这次练习的有效题量。",
+      "pitfalls": ["把 η 当成最终性能——它是过程指标", "阈值选取无依据，η 变得不可比", "忽略长尾困难任务仍有探索价值"],
+      "code": "def learnable_frac(hat_s, lo=0.05, hi=0.95):\n    return ((hat_s > lo) & (hat_s < hi)).float().mean()",
+      "sources": [{"title": "A Balanced Data Diet: Exploration Bottleneck in Mega-Scale RL", "url": "https://arxiv.org/abs/2610.12465v1"}]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "sim-to-real RL 依赖按任务的结构先验（手工奖励、示教等）",
+      "多样模拟器重置 + 大规模并行可减轻部分操作任务的工程负担",
+      "均匀采样把经验浪费在策略已掌握或无法尝试的配置上，稀释学习信号",
+      "提出 Success Guided Sampling（SGS），聚焦策略能力前沿",
+      "实验用至多 2^20（超百万）并行环境",
+      "SGS 解出多地形四足运动与接触密集装配任务",
+      "把学到的操作策略蒸馏为 RGB 策略并零样本迁移真机"
+    ],
+    "uncertain": [
+      "SGS 的精确采样分布/核函数摘要未给，公式为按摘要重建的通用形式，需核对原文",
+      "「能力前沿」判据（目标成功率数值）与成功率估计方式摘要未说明，待核实",
+      "各任务具体提升数值摘要未给，待核实"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "RL 训练把仿真经验集中在策略「刚好还不会」的难度上，别耗在太易或太难的任务。"},
+      {"level": "入门", "text": "大规模并行仿真能给机器人省掉手工奖励设计，但均匀随机出任务时，很多经验花在策略已会或还做不了的任务上。SGS 按任务难度重新分配采样，把训练集中到能力边界附近，于是在百万级并行环境里也能解出难任务。"},
+      {"level": "进阶", "text": "关键在采样分布：均匀采样下能提供学习信号的「中间难度」配置占比随训练推进不断缩小，批次里大量样本无梯度收益。SGS 估计各配置成功率，按接近前沿的程度重加权采样，让每个批次学习信号更密，于是放大并行的收益才真正体现。"},
+      {"level": "专家", "text": "与手工课程学习不同，SGS 从策略自身成功率在线估计出自适应采样，免任务先验，且前沿随策略变强自动外扩。代价是依赖可靠成功率估计，对稀疏奖励/不可重置任务不友好。摘要称其解出前人失败的四足多地形与接触密集装配，并蒸馏为 RGB 策略零样本上真机。"}
+    ],
+    "socratic": [
+      {"q": "为什么不直接继续扩大并行环境数量？", "a": "并行放大后若采样仍均匀，落在中间难度的样本占比不增，学习信号被稀释，算力收益看不出来。"},
+      {"q": "为什么不用人工课程学习？", "a": "人工课程要按任务手工设计难度顺序与先验，正是摘要想摆脱的工程负担；SGS 用策略自身成功率在线自适应，免这些先验。"}
+    ],
+    "mechanism": "RL 的学习信号只来自成功率既非 0 也非 1 的样本。均匀采样分布固定，而策略能力前沿随训练移动，落在前沿的配置占比越来越小，批次里多数样本对梯度无贡献，形成探索瓶颈。SGS 用估计成功率给配置重加权，使采样密度跟随前沿移动，把「放大并行」的算力转为有效学习信号。",
+    "boundary": "SGS 需能估计每个任务配置的成功率并可靠重置环境；对稀疏奖励、成功信号难判定或不可重置的任务不适用。若成功率估计噪声大，采样会被误导到伪前沿。",
+    "analogyBoundary": "「只练刚好不会的题」类比忽略了：这里难度不是独立给定的，改采样会改变策略、进而改变各配置真实难度，是反馈回路。",
+    "misconceptions": [
+      "以为 SGS 是人工课程学习——它是从策略成功率在线自适应的采样。",
+      "以为瓶颈在并行规模——真正的瓶颈是采样分布与学习信号密度。",
+      "以为只是调参——它改变的是任务配置的采样分布。"
+    ],
+    "ownAnalysis": "「采样分布随能力前沿移动」这一抽象很像 prioritized replay / 自适应课程（推断）。可迁移点：任何大规模 rollout 训练都可问「批次里多大比例落在可学区间」。可疑处：摘要强调成功率引导，但未说明如何在不额外训练下估计配置难度（待核实）；标题「平衡的数据饮食」暗示可能还有多样性/配比约束，摘要未展开。",
+    "officialNotes": [{"position": "均匀采样会把经验浪费在已掌握或无法尝试的配置；SGS 聚焦能力前沿，使至多 2^20 并行环境的 RL 解出前人失败的运动与装配任务，并蒸馏为 RGB 策略零样本上真机", "source": "arxiv: 2610.12465v1"}],
+    "interviewAnswer": "问题是大规模并行 sim-to-real RL 虽省掉手工奖励，但均匀采样会把算力浪费在策略已会或还不会的配置上，批次学习信号越来越稀，放大并行也看不出收益。SGS 的做法是估计每个任务配置的成功率，按接近策略能力前沿的程度重加权采样，让采样密度跟着前沿走。结果是在至多一百万个并行环境里解出四足多地形和接触密集装配，还能蒸馏成 RGB 策略零样本上真机。",
+    "studyPath": {
+      "prerequisites": ["RL 基础（策略梯度/回放）", "课程学习概念"],
+      "nextSteps": ["读原文与项目页 sgs-rl.github.io", "对比均匀采样与 SGS 的批次学习信号密度"]
+    }
+  }
+}

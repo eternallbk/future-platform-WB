@@ -1,0 +1,131 @@
+{
+  "id": "c6bed269261489ad",
+  "tldr": "DiffGate 把 GRPO 与选择性有界教师引导结合：只对失败轨迹叠加教师监督，按组难度缩放并平滑有界，防止极端师生差距主导优化。",
+  "keyPoints": [
+    "On-policy distillation 在学生自生成轨迹上监督，缓解训练-测试不匹配",
+    "现有 OPD 目标仍是 token-local、outcome-agnostic，只优化逐前缀一致",
+    "GRPO 给结果级监督但有稀疏奖励与粗粒度 credit，全失败组信号消失",
+    "OPD 与 RLVR 盲点互补：教师密集但与正确性弱对齐，组奖励对但 credit 粗",
+    "只对失败轨迹施以教师监督，按组难度缩放并有界裁剪"
+  ],
+  "why": "把「教师信号」与「可验证奖励」按结果门控组合，是后训练岗位最前沿的实操思路；Qwen3 上的收益数字也是面试可直接引用的证据。",
+  "difficulty": "hard",
+  "tags": ["posttraining", "distillation", "rlvr", "grpo", "llm"],
+  "entities": ["DiffGate", "On-Policy Distillation", "GRPO", "RLVR", "Qwen3-0.6B", "Qwen3-1.7B"],
+  "diagram": {
+    "kind": "flow",
+    "title": "DiffGate 结果门控流程",
+    "caption": "验证器决定谁拿教师信号，教师只在失败轨迹里给密集方向。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='DiffGate 四层流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>学生自生成轨迹</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>on-policy rollout</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>验证器 / 组相对奖励</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>结果级信号，稀疏</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>结果门控</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>仅失败轨迹开教师通道</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>有界教师引导</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>按组难度缩放并裁剪</text>\n</svg>",
+    "spec": {
+      "type": "flow",
+      "nodes": [
+        {"label": "学生 rollout", "detail": "自生成轨迹"},
+        {"label": "验证器/组奖励", "detail": "结果级、稀疏"},
+        {"label": "结果门控", "detail": "只对失败轨迹开教师信号"},
+        {"label": "有界教师引导", "detail": "按组难度缩放并平滑裁边"}
+      ],
+      "edges": [
+        {"from": 0, "to": 1, "label": "判定对错"},
+        {"from": 1, "to": 2, "label": "门控开关"},
+        {"from": 2, "to": 3, "label": "token 级密集方向"}
+      ]
+    },
+    "alt": "DiffGate 用验证器对失败轨迹开启教师监督，教师信号按组难度缩放并有界裁剪，与 GRPO 项相加。"
+  },
+  "concepts": [
+    {
+      "name": "Outcome-Gated Teacher Guidance",
+      "readable": "教师只在学生答错的题上出声，音量由这组题整体难度决定，再设上限，免得师生差距太大把训练带偏。",
+      "analogy": "像教练带队员：做对的不用纠正，只在动作做砸时逐帧指出问题，差距极大时只给方向不硬掰。",
+      "analogyBreaksDown": "教练能看清每个动作对错；语言模型轨迹里「哪一步导致答错」不可知，门控只能按最终结果开关，无法保证监督落在出错那一步。",
+      "mechanism": "用可验证的结果做门控开关，把教师信号限制在确实需要修正的轨迹上；再按组内难度调整权重，使全失败等困难组获得足够梯度，同时对师生差异做平滑有界处理，避免少数异常样本主导更新。",
+      "visual": "画热力图：横轴是 token 位置，纵轴是 rollout 样本；答对的整行留白，答错的行在关键 token 处涂深色，深度按组难度整体缩放，超过阈值的被截平。",
+      "prerequisites": ["知识蒸馏与 KL / 前反向 KL", "GRPO 的组相对优势估计", "RLVR 与可验证奖励"],
+      "selfTest": [
+        "为什么教师监督只加在失败轨迹上？",
+        "平滑有界这一步是在防什么？",
+        "全失败组上 GRPO 与 DiffGate 的行为差别是什么？"
+      ],
+      "formula": "\\mathcal{L} = \\mathcal{L}_{\\mathrm{GRPO}} + \\lambda\\, w(g)\\, \\mathbf{1}[\\mathrm{fail}]\\, \\min\\!\\left(\\sum_{t} d_t, \\tau\\right)"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-diffgate-objective",
+      "name": "DiffGate 结果门控目标（Difficulty-Gated Objective）",
+      "category": "posttraining",
+      "latex": "\\mathcal{L} = \\mathcal{L}_{\\mathrm{GRPO}} + \\lambda\\, w(g)\\, \\mathbf{1}[\\mathrm{fail}]\\, \\min\\!\\left(\\sum_{t} d_t, \\tau\\right), \\quad d_t = D_{\\mathrm{KL}}\\!\\left(p_T(\\cdot \\mid s_t)\\,\\|\\,p_S(\\cdot \\mid s_t)\\right)",
+      "symbols": [
+        ["\\mathcal{L}_{\\mathrm{GRPO}}", "组相对策略优化项（结果级监督）"],
+        ["\\lambda", "教师引导总权重"],
+        ["g", "该 rollout 所属组的难度"],
+        ["w(g)", "按组难度缩放的权重函数"],
+        ["\\mathbf{1}[\\mathrm{fail}]", "门控指示：仅轨迹失败时为 1"],
+        ["d_t", "第 t 步教师与学生的分布差异（KL）"],
+        ["\\tau", "差异上界，防止极端师生差距主导"],
+        ["p_T, p_S", "教师与学生在各前缀 s_t 上的下一 token 分布"]
+      ],
+      "derivation": [
+        "动机：OPD 的 token 级密集信号与正确性弱对齐，GRPO 的结果级信号又太稀疏。",
+        "保留 GRPO 项作为结果级骨架，先保证轨迹正确性被直接优化。",
+        "用验证器结果做门控：只有失败的轨迹才接收教师 token 级监督，避免在已正确的轨迹上做无谓扰动。",
+        "按组难度缩放权重 w(g)，让困难组（尤其全失败组）不至于因优势全为 0 而失去梯度。",
+        "对教师-学生差异总和做 min(·, tau) 的平滑有界，防止少数极端 token 主导整个更新。"
+      ],
+      "analogy": "像补习班只给考不及格的学生发精讲讲义，且讲义量按班级平均分调整、单次最多发一叠，避免有个别学生被塞爆。",
+      "pitfalls": [
+        "把门控写成硬阈值后直接乘，忽略它需要与 GRPO 的优势项量纲匹配",
+        "忘记有界裁剪，导致师生差距极大时梯度爆炸或崩塌",
+        "混淆前向/反向 KL：用反向 KL 会鼓励学生覆盖教师所有模式，与前向 KL 的均值对齐行为不同"
+      ],
+      "code": "import torch, torch.nn.functional as F\ndef diffgate_loss(logits_T, logits_S, grpo_loss, difficulty, failed, lam=1.0, tau=5.0):\n    # logits_*: (B, T, V) 教师与学生在每个前缀下的下一 token 分布\n    logp_T = F.log_softmax(logits_T, -1)\n    logp_S = F.log_softmax(logits_S, -1)\n    d_t = (logp_T.exp() * (logp_T - logp_S)).sum(-1)      # (B, T) 逐 token KL\n    bounded = torch.clamp(d_t.sum(-1), max=tau)           # (B,) 平滑有界\n    gate = failed.float() * difficulty                    # 仅失败且按难度缩放\n    return grpo_loss + lam * (gate * bounded).mean()",
+      "sources": [{"title": "DiffGate: Difficulty-Gated Teacher Guidance for On-Policy Distillation", "url": "https://huggingface.co/papers/2610.04596"}]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "OPD 在学生自生成轨迹上监督，缓解训练-测试不匹配",
+      "现有 OPD 目标 largely token-local、outcome-agnostic",
+      "GRPO 有稀疏奖励与粗粒度 credit，且在全失败组上信号消失",
+      "DiffGate 将 GRPO 与选择性有界教师引导组合，教师监督只用于失败轨迹",
+      "教师权重按组难度缩放，并平滑有界以限制极端师生差异",
+      "Qwen3-0.6B/1.7B 上：代码 avg@8 +1.7/+1.8、pass@8 +1.6/+5.7；数学 avg@8 差 ≤0.5、pass@8 +1.1/+3.9"
+    ],
+    "uncertain": [
+      "公式为按摘要中 selective / bounded / scaled by group difficulty 重建的通用形式，需核对原文具体权重函数 w(g) 与是否用 KL",
+      "摘要未说明教师模型的来源与规模、以及组难度 g 的精确定义，待核实",
+      "原文摘要末尾被截断（under our ev...），可能还有额外实验结论，待核实"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "只在学生答错的轨迹上请老师补课，且补课量随难度调节、有上限。"},
+      {"level": "入门", "text": "on-policy distillation 让学生在自生成的轨迹上被教师逐 token 纠正，信号密集但和最终对错关系不大；GRPO 用组内相对奖励看结果，信号对但太稀疏、全错一组时没有梯度。DiffGate 把两者缝合：结果决定是否请老师，难度决定老师讲多少，并给讲量设上限。"},
+      {"level": "进阶", "text": "核心是门控与缩放：1[失败] 把教师监督限定在需要修正的轨迹上，避免在正确轨迹上引入噪声；w(g) 按组难度提升困难组的教师权重，缓解全失败组优势为零的问题；min(·,τ) 对师生 KL 之和做平滑有界，防止个别极端 token 主导更新。"},
+      {"level": "专家", "text": "与前向 KL 的知识蒸馏相比，它把「在哪里蒸馏」当作核心变量，而不是只调温度与权重；与纯 GRPO 相比，它用教师补上了结果级信号无法提供的 token 级 credit。边界是门控只能按最终结果开关，无法保证监督落在真正出错的那一步；若教师本身在困难组上也不可靠，按难度加权反而会放大教师的错误。"}
+    ],
+    "socratic": [
+      {"q": "为什么不把所有轨迹都加上教师监督？", "a": "正确的轨迹已经达到目标，再拉向教师分布会引入无谓扰动，甚至把学生拉离已经找到的更优解；门控把监督集中到真正需要的地方。"},
+      {"q": "GRPO 在全失败组上为什么会失效？", "a": "组相对优势是组内归一化的，一组全失败时奖励相同、优势为零，梯度消失，于是没有任何学习信号。"},
+      {"q": "为什么一定要有界？", "a": "困难样本上师生差异可能极大，若不裁剪，少数 token 的巨大会主导整个 batch 的更新，训练不稳定。"}
+    ],
+    "mechanism": "必须这样组合，是因为两种监督的失效模式恰好互补：教师信号密集但不懂「最终对不对」，组相对奖励懂对错但只在有正负样本对比时才有梯度。门控用可验证结果决定教师的作用范围，难度缩放补上困难组的梯度空洞，有界处理保证这种补丁不会反过来破坏稳定性。",
+    "boundary": "依赖可靠的验证器；若奖励可被刷分，门控会系统性地把教师引到错误方向。当教师模型在困难任务上本身不可靠时，按难度加权会放大其错误；另外门控是轨迹级的，长轨迹中只错一步也会让整条轨迹接收教师信号，可能引入不必要扰动。",
+    "analogyBoundary": "「教练只纠正做砸的动作」的类比失效在于：动作对错是可见的，而推理轨迹里哪一步错了没有标注，门控只知道整条答错了，教师监督可能落在正确的中间步骤上，产生副作用。",
+    "misconceptions": [
+      "以为 DiffGate 是一种新的 RL 算法；它是在 GRPO 上加门控教师项",
+      "把 OPD 与离线蒸馏混为一谈；OPD 的关键是在学生自己的轨迹上监督",
+      "认为 pass@8 提升等同于 avg@8 提升；摘要显示数学上 avg@8 基本持平而 pass@8 提升"
+    ],
+    "ownAnalysis": "这个思路与「按难度做数据筛选」的课程学习有相通之处（推断）：不同的是它把难度用在权重而不是采样上，因此不会丢弃困难样本。值得注意的是摘要里数学任务 avg@8 只与 GRPO 持平（差 ≤0.5），说明收益主要来自解空间的多样性（pass@8）而非平均水平，这暗示门控更多在帮模型「换个思路」而不是「答得更对」（推断）。另外原文摘要末尾截断，可能还有更细的消融，待核实。",
+    "officialNotes": [
+      {"position": "作者称 OPD 与 RLVR 存在互补盲点：教师信号密集但与 rollout 正确性弱对齐，组相对奖励捕捉任务成功但 token credit 粗且在组内全失败时为零", "source": "hf_papers https://huggingface.co/papers/2610.04596"}
+    ],
+    "interviewAnswer": "DiffGate 解决 on-policy distillation 和 GRPO 各自的短板。OPD 在学生自生成轨迹上给密集 token 级监督，但它是局部、和最终对错无关的；GRPO 有可验证的结果级奖励，却稀疏、credit 粗，而且一组全失败时优势全为零没有梯度。DiffGate 用验证器做门控：只有失败轨迹才叠加教师监督，权重按组难度缩放，并对师生 KL 之和做平滑有界裁剪。Qwen3 上它在代码任务把 avg@8 提升 1.7/1.8，pass@8 提升 1.6/5.7，数学上 avg@8 基本持平而 pass@8 明显提升，说明主要改善的是解答覆盖度。",
+    "studyPath": {
+      "prerequisites": ["知识蒸馏与前向/反向 KL", "GRPO 与组相对优势", "RLVR 可验证奖励"],
+      "nextSteps": ["复现 DiffGate 门控损失并做消融", "研究门控粒度从轨迹级到步骤级的改进", "对比 GKD、MiniLLM 等蒸馏方案"]
+    }
+  }
+}

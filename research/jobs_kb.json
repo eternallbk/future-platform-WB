@@ -1,0 +1,4028 @@
+{
+ "meta": {
+  "generatedAt": "2026-10-01T00:00:00+08:00",
+  "searchCount": 19,
+  "fetchCount": 33,
+  "notes": "面向中国 AI 硕士（约 2027 届毕业、计划约 6 个月后找算法实习）的算法实习求职知识库。覆盖方向：多模态、后训练(SFT/RLHF/DPO/GRPO/RLVR)、生成式模型(diffusion/AR)、世界模型/具身。所有 sources 均为本次实际访问过的 URL；数字类事实全部标注来源与 confidence，第二手/转述数据一律降级并在 note 中说明。凡未取证的字段显式写“未获取到”，不做推测。调研方法：19 次 web_search（中英文各半）+ 33 次 web_fetch，优先牛客面经、知乎/CSDN 复盘、GitHub 面试仓库、各厂官方招聘页与官方博客、深蓝学院/国聘岗位帖、界面新闻与 21 财经的薪资报道。注意：本知识库中的面经时间跨度从 2020 年到 2026 年，引用较早材料时已在对应条目中标注年份。",
+  "sections": {
+   "companies": 21,
+   "skillMatrix": 32,
+   "interviewProcess": 21,
+   "handWrittenCoding": 22,
+   "writtenExam": 25,
+   "salaryBands": 16
+  }
+ },
+ "companies": [
+  {
+   "id": "bytedance-seed",
+   "name": "字节跳动 Seed / 豆包",
+   "shortName": "字节",
+   "tier": "S",
+   "cities": [
+    "北京",
+    "上海",
+    "深圳",
+    "杭州",
+    "新加坡",
+    "圣何塞",
+    "西雅图"
+   ],
+   "directions": [
+    "multimodal",
+    "post-training",
+    "world-model",
+    "generative",
+    "rl",
+    "agent",
+    "infra"
+   ],
+   "internship": {
+    "open": true,
+    "dailyPayRange": "技术类实习公开报道 500 元/天起（2026 年初由 400 元/天上调至 500 元，涨幅 25%）；TopSeed/顶尖算法岗报道可达 2000 元/天、上不封顶；普通 AI 算法实习多名受访者落在 500-1200 元/天",
+    "duration": "Seed 实习招聘要求面向 2027 年 9 月及以后毕业的在读同学；具体实习时长以岗位页为准（同类媒体表述为 3 个月起、每周 4 天以上）",
+    "conversion": "Seed 校招文案写明“符合要求的应届生与优秀实习生有机会获得豆包股”，即存在实习转正通道；具体转正比例未公开",
+    "applyUrl": "https://seed.bytedance.com/zh/seedearlycareer",
+    "seasonality": "Seed 2027 届大模型人才校招 2026-04-01 启动（含实习），岗位页常年滚动；媒体报道字节在元旦后统一上调技术类实习日薪"
+   },
+   "highlights": [
+    "Seed 基座大模型与 GenMedia（Seedance/Seedream/Seed Audio）",
+    "视觉智能：多模态预训练新范式、生成理解统一、多模态 Agent",
+    "具身智能：通用机器人操作大模型、数据算法与强化学习",
+    "机器学习系统：超大规模训练、推理优化、软硬件协同"
+   ],
+   "interviewProcess": [
+    "简历/内推（多为简历+笔试筛）",
+    "1-2 轮技术面（项目深挖+大模型八股+手撕代码）",
+    "交叉面/加面（部分部门）",
+    "HR 面"
+   ],
+   "notes": "Seed 是当前国内多模态/生成/具身方向岗位最全的团队之一，2027 届校招同时收应届生与实习生；面经显示字节技术面“每一面都有 coding”，且喜欢深挖论文与工程细节。注意：网上传播的“字节seed一面”帖子可能来自非算法团队（如前端组），引用时需核对岗位。",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "字节跳动 Seed 2027 届大模型人才校招启动（含实习）",
+     "url": "https://seed.bytedance.com/zh/blog/bytedance-seed-2027-foundation-model-campus-recruitment-is-now-open-internships-included"
+    },
+    {
+     "title": "实习生涨价了（21财经/投资界，含字节腾讯实习薪资调整数据）",
+     "url": "https://m.21jingji.com/article/20260807/herald/19034354bed0bfd967d75d2e90b1815f.html"
+    },
+    {
+     "title": "日薪千元的AI实习生，在焦虑什么？",
+     "url": "https://www.jiemian.com/article/15087508.html"
+    },
+    {
+     "title": "LLM-Algorithm-Intern-Guide：2026届大模型算法岗实习面经（含手撕 PPO/RoPE/Transformer、RLHF 核心与八股文）",
+     "url": "https://github.com/Junvate/LLM-Algorithm-Intern-Guide"
+    },
+    {
+     "title": "字节seed一面（前端组，含手撕形式参考）",
+     "url": "https://www.nowcoder.com/feed/main/detail/a3ba705bba5b4ca99010bc6317ef2709"
+    }
+   ]
+  },
+  {
+   "id": "alibaba-tongyi",
+   "name": "阿里巴巴 通义实验室 / 淘天集团",
+   "shortName": "阿里",
+   "tier": "S",
+   "cities": [
+    "杭州",
+    "北京",
+    "上海"
+   ],
+   "directions": [
+    "multimodal",
+    "post-training",
+    "generative",
+    "rl",
+    "agent",
+    "infra"
+   ],
+   "internship": {
+    "open": true,
+    "dailyPayRange": "淘天 2027 届实习：算法/AI 研发/AI 产品 500 元/天，T-star 顶尖人才计划 2000 元/天",
+    "duration": "淘天 2027 届实习招聘面向 2026-11-01 至 2027-10-30 毕业的应届生；媒体口径为春季启动、4 月中旬起陆续发 offer",
+    "conversion": "校招实习岗普遍标注有转正通道（面经中“暑期实习→oc”路径常见），具体转正比例未公开",
+    "applyUrl": "https://talent.alibaba.com/",
+    "seasonality": "淘天 2027 届实习招聘 2026-03-18 启动，3 月 31 日起进校宣讲，4 月中旬开始发实习 offer；暑期实习面经显示投递高峰在 3 月"
+   },
+   "highlights": [
+    "通义实验室对话智能/多模态团队招收研究型实习生",
+    "淘天新增 AI 应用算法、AI Agent 优化（数据/训练/评测）岗位",
+    "阿里云多模态大模型暑期实习有完整 4 轮面经记录"
+   ],
+   "interviewProcess": [
+    "投递+在线测评（测评成绩会影响结果，有面经称因测评不佳而焦虑）",
+    "一面（简历深挖+场景题+八股+手撕）",
+    "二面",
+    "三面",
+    "HR 面"
+   ],
+   "notes": "面经显示阿里系算法实习面试会追问到“用了多少张卡、学习率、训练多久、多少数据、显存占用”这一级细节；手撕题不限于 hot100（如二叉树右视图、非 hot100 滑动窗口、扎气球最少箭数）。淘天多模态岗三面延续 CLIP/LoRA/BLIP/Qwen-VL 系列八股。",
+   "confidence": "high",
+   "sources": [
+    {
+     "title": "淘天开启2027届实习生招聘：技术类占比超9成，算法/AI研发等岗位日薪达500元",
+     "url": "https://finance.sina.cn/tech/2026-03-18/detail-inhrmihh4677569.d.html"
+    },
+    {
+     "title": "阿里云多模态大模型暑期实习（已oc）",
+     "url": "https://www.nowcoder.com/feed/main/detail/c2e2058a1cb24c7ca5e21f32826179d8"
+    },
+    {
+     "title": "大模型面经 - 淘天（搜推智能产品事业部-多模态大模型）",
+     "url": "https://blog.csdn.net/weixin_45768638/article/details/145885586"
+    },
+    {
+     "title": "北京内推 | 阿里通义实验室对话智能团队招聘大模型研究型实习生",
+     "url": "https://finance.sina.cn/2026-04-22/detail-inhvkcsk4394827.d.html"
+    }
+   ]
+  },
+  {
+   "id": "tencent-hunyuan",
+   "name": "腾讯 混元大模型 / TEG",
+   "shortName": "腾讯",
+   "tier": "S",
+   "cities": [
+    "深圳",
+    "北京",
+    "上海",
+    "成都"
+   ],
+   "directions": [
+    "multimodal",
+    "post-training",
+    "rl",
+    "generative",
+    "agent",
+    "infra"
+   ],
+   "internship": {
+    "open": true,
+    "dailyPayRange": "媒体报道腾讯五一后重点上调研发岗实习薪资：研发实习生月薪调整为 11000 元 + 2000 元房补，合计约 13000 元/月（按 21.75 工作日约 600 元/天）；青云计划混元 AI 团队有“月薪可高达十万”的报道口径（属顶尖计划，个例）",
+    "duration": "以 join.qq.com 岗位页为准；青云计划为面向顶尖学生的专项实习计划",
+    "conversion": "青云计划对外宣传“实习生可参与甚至主导核心项目”，并设有转正通道（宣传口径）",
+    "applyUrl": "https://join.qq.com/",
+    "seasonality": "青云实习生招聘春季启动；面经记录显示 3 月已有混元大模型团队面试，秋招/春招均滚动"
+   },
+   "highlights": [
+    "TEG 混元大模型团队（对齐、后训练）",
+    "青云计划（顶尖人才专项）",
+    "面经显示一共四轮技术面，强度高"
+   ],
+   "interviewProcess": [
+    "简历/内推",
+    "一面（八股多、两道手撕，约 1.5 小时）",
+    "二面（结合实习工程细节：DeepSpeed ZeRO 各阶段、单卡显存估算）",
+    "三面（对齐专题深挖）",
+    "四面（思维与数理基础：反向传播推导、概率题）",
+    "HR 面"
+   ],
+   "notes": "混元对齐岗四面技术面：一面问 Qwen/DeepSeek 区别、MoE 动机、LoRA vs 全量微调、RLHF 损失函数，手撕“括号生成”+“多头自注意力”；二面追问 ZeRO-1/2/3 区别与 ZeRO-3 微调 72B 的每卡显存估算；三面聚焦 RLHF 流程、GRPO 相比 PPO 的改进，手撕零钱兑换 I/II；四面推导反向传播+排列组合概率题。腾讯有“无限复活”机制（被捞回重面的案例）。",
+   "confidence": "high",
+   "sources": [
+    {
+     "title": "腾讯-混元大模型面经-华5硕",
+     "url": "https://www.nowcoder.com/feed/main/detail/c002e91fda6c44dabe2db9ac79a6ccba"
+    },
+    {
+     "title": "实习生涨价了（21财经/投资界，含字节腾讯实习薪资调整数据）",
+     "url": "https://m.21jingji.com/article/20260807/herald/19034354bed0bfd967d75d2e90b1815f.html"
+    },
+    {
+     "title": "腾讯青云实习生招聘正式启动，实习生可参与甚至主导核心项目",
+     "url": "https://www.sohu.com/a/999018567_362042"
+    }
+   ]
+  },
+  {
+   "id": "deepseek",
+   "name": "DeepSeek（深度求索）",
+   "shortName": "DeepSeek",
+   "tier": "S",
+   "cities": [
+    "杭州",
+    "北京"
+   ],
+   "directions": [
+    "post-training",
+    "rl",
+    "infra",
+    "generative"
+   ],
+   "internship": {
+    "open": true,
+    "dailyPayRange": "未公开统一日薪；媒体与面经只披露“全员扩招一倍、33 个岗位全开，均接受实习”，具体薪资需以官方沟通为准",
+    "duration": "官方招聘未公开统一时长要求；岗位页以具体岗位 description 为准",
+    "conversion": "官方招聘信息未明确公开转正比例",
+    "applyUrl": "https://www.deepseek.com/",
+    "seasonality": "2026-06-26 前后公布 7 个部门、数十个岗位招聘需求，计划将所有部门规模扩大至少一倍，均接受实习"
+   },
+   "highlights": [
+    "笔试/面试深度偏研究：MoE 通信量计算、无辅助损失负载均衡、KV Cache 压缩、推理加速",
+    "强调“不招天才，只要发光的人”"
+   ],
+   "interviewProcess": [
+    "简历",
+    "笔试（研究型大题：手写 MHA、DPO 全流程推导、MoE 通信与负载均衡、PagedAttention/投机解码、KV Cache 压缩、视觉原语建模）",
+    "技术面",
+    "HR 面"
+   ],
+   "notes": "可查到的 DeepSeek 大模型算法岗笔试题（2026-07-26 面经）难度明显高于常规大厂笔试：要求推导而非背诵，且明确要求“不能只写框架”。答案中反复强调“具体版本号/参数规模应以公开模型配置和可复现实验为准”，说明该公司面试对数字严谨性要求高。",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "2026-07-26_DeepSeek_大模型算法岗笔试面经分享（含完整答案）",
+     "url": "https://api-cdn.nowcoder.com/discuss/913482312753418240"
+    },
+    {
+     "title": "DeepSeek全员扩招一倍！33个岗位全开，“不招天才”只要发光的人",
+     "url": "https://www.eet-china.com/news/202606262416.html"
+    }
+   ]
+  },
+  {
+   "id": "baidu-wenxin",
+   "name": "百度 文心 / 飞桨",
+   "shortName": "百度",
+   "tier": "A",
+   "cities": [
+    "北京",
+    "上海",
+    "深圳"
+   ],
+   "directions": [
+    "post-training",
+    "multimodal",
+    "rl",
+    "agent"
+   ],
+   "internship": {
+    "open": true,
+    "dailyPayRange": "未在本次调研中获取到百度算法实习的官方日薪口径；受访者提到曾在百度搜索产品团队做 Agent 实习（未披露具体数字）",
+    "duration": "以百度校招官网岗位页为准",
+    "conversion": "未获取到公开转正比例数据",
+    "applyUrl": "https://talent.baidu.com/",
+    "seasonality": "百度有“特殊计划可同时面试多个部门”的机制（面经记录），春招/秋招均滚动"
+   },
+   "highlights": [
+    "文心一言大模型算法团队（对齐/推理能力方向）",
+    "飞桨（深度技术部）、ACG 智能制造、视觉技术部"
+   ],
+   "interviewProcess": [
+    "简历",
+    "一面（对齐八股：PPO/GRPO/DPO）",
+    "二面/三面（讲论文+手撕）",
+    "用人经理面",
+    "HRBP 面"
+   ],
+   "notes": "文心一言一面几乎全是后训练开放题：PPO 与 GRPO 区别、DPO 训练曲线与正例概率是否提升、DPO 如何解决回答过长、如何增强 base model 的 reasoning、reward hacking 等，几乎不考传统 CV 八股。飞桨/视觉技术部则重论文讲解、手写 NMS、旋转框 NMS（鼓励 C++）、编辑距离变体。",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "百度文心一言大模型算法实习一面",
+     "url": "https://www.nowcoder.com/feed/main/detail/1c01b2eaeb9c46e48c2b67f498bb7f3d"
+    },
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    }
+   ]
+  },
+  {
+   "id": "meituan",
+   "name": "美团 基础大模型 / 大模型应用",
+   "shortName": "美团",
+   "tier": "A",
+   "cities": [
+    "北京",
+    "上海",
+    "深圳"
+   ],
+   "directions": [
+    "post-training",
+    "rl",
+    "agent",
+    "multimodal"
+   ],
+   "internship": {
+    "open": true,
+    "dailyPayRange": "未获取到美团算法实习的官方日薪口径；受访者曾在美团基础大模型团队做数据优化实习（未披露数字）",
+    "duration": "以美团校招官网为准",
+    "conversion": "未获取到公开转正比例数据",
+    "applyUrl": "https://zhaopin.meituan.com/",
+    "seasonality": "秋招 9-12 月为主（面经时间集中在 12 月），春季亦滚动"
+   },
+   "highlights": [
+    "基础大模型团队（数据/后训练）",
+    "二面被评价“问得挺难”"
+   ],
+   "interviewProcess": [
+    "简历",
+    "一面（项目+实习）",
+    "二面（后训练深度：RMSNorm/SwiGLU/GRPO/KL/LoRA/DeepSpeed）",
+    "HR 面"
+   ],
+   "notes": "美团大模型算法二面是一份高信息密度的后训练八股清单：Qwen 相对原始 Transformer 的结构改动、RMSNorm 公式与优势、SwiGLU 公式、GRPO 公式与 clip 作用、KL 散度公式与必要性、10w 词表的损失计算、GRPO 显存开销与单 step 时长、reward 震荡原因、V3→R1 路径、LoRA 为什么有效、DeepSpeed 分布式训练、FLUX 中 LoRA 的作用。",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "美团大模型算法二面-秋招面经",
+     "url": "https://www.nowcoder.com/feed/main/detail/e72d861f57c1499393be6651f8611177"
+    },
+    {
+     "title": "日薪千元的AI实习生，在焦虑什么？",
+     "url": "https://www.jiemian.com/article/15087508.html"
+    }
+   ]
+  },
+  {
+   "id": "kuaishou-kling",
+   "name": "快手 可灵（视频生成）",
+   "shortName": "快手",
+   "tier": "A",
+   "cities": [
+    "北京",
+    "杭州"
+   ],
+   "directions": [
+    "generative",
+    "rl",
+    "world-model",
+    "multimodal"
+   ],
+   "internship": {
+    "open": true,
+    "dailyPayRange": "未获取到可灵实习的官方日薪口径",
+    "duration": "以快手校招官网为准",
+    "conversion": "未获取到公开转正比例数据",
+    "applyUrl": "https://campus.kuaishou.cn/",
+    "seasonality": "面经显示 9 月仍在面试（策略梯度岗），2027 届校招已开放；可灵为快手新独立团队，工作强度较大（面经称单休+加班）"
+   },
+   "highlights": [
+    "可灵（视频生成）策略梯度/强化学习岗",
+    "世界模型与视频生成方向结合紧密"
+   ],
+   "interviewProcess": [
+    "简历",
+    "一面（论文+实习深挖，RL 算法对比，手撕非 hot100 DP/记忆化搜索）",
+    "二面",
+    "HR 面"
+   ],
+   "notes": "可灵策略梯度岗一面会问：几种主流强化学习算法及区别、GAE、Diffusion model、RLVF（可验证奖励的强化学习）、GRPO 具体有什么问题；手撕为“切分披萨数”（DP 或 dfs+记忆化）。注意该岗位明确告知工作强度大（单休+加班）。",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "9.18快手可灵策略梯度岗一面",
+     "url": "https://www.nowcoder.com/discuss/933402920173699072"
+    },
+    {
+     "title": "计算机27/28届实习时间线全解析",
+     "url": "https://www.nowcoder.com/feed/main/detail/67020c6b8eab4e119f972cddc0da59c2"
+    }
+   ]
+  },
+  {
+   "id": "zhipu-ai",
+   "name": "智谱 AI（北京智谱华章）",
+   "shortName": "智谱",
+   "tier": "A",
+   "cities": [
+    "北京",
+    "杭州"
+   ],
+   "directions": [
+    "post-training",
+    "multimodal",
+    "agent",
+    "generative"
+   ],
+   "internship": {
+    "open": true,
+    "dailyPayRange": "未获取到智谱实习的官方日薪口径",
+    "duration": "以智谱招聘官网岗位页为准",
+    "conversion": "未获取到公开转正比例数据",
+    "applyUrl": "https://zhipuai.cn/",
+    "seasonality": "有“智谱日常实习”与 2026 校园招聘简章记录（大模型算法实习生-行业应用-杭州）"
+   },
+   "highlights": [
+    "大模型算法实习生（行业应用方向，含杭州 base）",
+    "日常实习常年开放"
+   ],
+   "interviewProcess": [
+    "简历",
+    "技术面（项目/大模型基础）",
+    "HR 面"
+   ],
+   "notes": "本次调研只取到智谱的岗位页索引与招聘简章标题，未能读取到完整 JD 正文与面经，因此条目信息较薄，confidence 定为 low。",
+   "confidence": "low",
+   "sources": [
+    {
+     "title": "大模型算法实习生-行业应用-杭州(北京智谱华章科技股份有限公司2026校园招聘简章职位详情)",
+     "url": "https://www.shushuqiuzhi.com/position/162353"
+    }
+   ]
+  },
+  {
+   "id": "moonshot-ai",
+   "name": "月之暗面 Moonshot AI（Kimi）",
+   "shortName": "月之暗面",
+   "tier": "A",
+   "cities": [
+    "北京",
+    "上海"
+   ],
+   "directions": [
+    "post-training",
+    "rl",
+    "multimodal",
+    "agent"
+   ],
+   "internship": {
+    "open": true,
+    "dailyPayRange": "未获取到统一日薪；媒体报道“AI 独角兽 MiniMax 和月之暗面，开始向实习生授予期权”（属顶尖/人才计划口径，非普适待遇）",
+    "duration": "以官方招聘页为准",
+    "conversion": "未获取到公开转正比例数据",
+    "applyUrl": "https://www.moonshot.cn/",
+    "seasonality": "未获取到公开的固定批次时间线，以日常实习为主"
+   },
+   "highlights": [
+    "长上下文与 Agent 方向",
+    "媒体报道开始向实习生授予期权"
+   ],
+   "interviewProcess": [
+    "简历",
+    "技术面",
+    "HR 面（具体轮次未在本次调研中取证）"
+   ],
+   "notes": "本次调研未取得月之暗面的完整面经或 JD 正文，仅取到媒体关于期权激励的报道，confidence 定为 low，建议后续以官方招聘页与牛客/一亩三分地面经补充。",
+   "confidence": "low",
+   "sources": [
+    {
+     "title": "实习生涨价了（21财经/投资界，含字节腾讯实习薪资调整数据）",
+     "url": "https://m.21jingji.com/article/20260807/herald/19034354bed0bfd967d75d2e90b1815f.html"
+    }
+   ]
+  },
+  {
+   "id": "minimax",
+   "name": "MiniMax",
+   "shortName": "MiniMax",
+   "tier": "A",
+   "cities": [
+    "上海",
+    "北京"
+   ],
+   "directions": [
+    "multimodal",
+    "generative",
+    "post-training",
+    "rl"
+   ],
+   "internship": {
+    "open": true,
+    "dailyPayRange": "未获取到统一日薪；媒体报道 MiniMax 与月之暗面开始向实习生授予期权",
+    "duration": "以官方招聘页为准",
+    "conversion": "未获取到公开转正比例数据",
+    "applyUrl": "https://www.minimaxi.com/",
+    "seasonality": "未获取到公开的固定批次时间线"
+   },
+   "highlights": [
+    "多模态与生成式模型（含 Lightning Attention 等架构创新，见 Awesome-LLM-Interview 国产模型全景）",
+    "实习生期权激励（媒体报道）"
+   ],
+   "interviewProcess": [
+    "简历",
+    "技术面",
+    "HR 面（具体轮次未在本次调研中取证）"
+   ],
+   "notes": "未取得 MiniMax 的完整面经与 JD 正文，confidence 定为 low；其技术资料可从 Awesome-LLM-Interview 的“国产主流模型全景（DeepSeek/Qwen/GLM/MiniMax）”章节侧面印证。",
+   "confidence": "low",
+   "sources": [
+    {
+     "title": "实习生涨价了（21财经/投资界，含字节腾讯实习薪资调整数据）",
+     "url": "https://m.21jingji.com/article/20260807/herald/19034354bed0bfd967d75d2e90b1815f.html"
+    },
+    {
+     "title": "Awesome-LLM-Interview README（笔记目录：Transformer/RLHF/DPO/LoRA/KV Cache/MoE/分布式训练）",
+     "url": "https://raw.githubusercontent.com/laoshan-song/Awesome-LLM-Interview/main/README.md"
+    }
+   ]
+  },
+  {
+   "id": "stepfun",
+   "name": "阶跃星辰 StepFun",
+   "shortName": "阶跃星辰",
+   "tier": "A",
+   "cities": [
+    "上海",
+    "北京"
+   ],
+   "directions": [
+    "multimodal",
+    "generative",
+    "post-training"
+   ],
+   "internship": {
+    "open": true,
+    "dailyPayRange": "未获取到统一日薪；StepStar 为顶尖人才招聘项目，具体待遇以官方沟通为准",
+    "duration": "以官方招聘页为准",
+    "conversion": "未获取到公开转正比例数据",
+    "applyUrl": "https://www.stepfun.com/",
+    "seasonality": "StepStar 大模型顶尖人才招聘通过高校就业信息渠道发布（清华大学就业信息网可见）"
+   },
+   "highlights": [
+    "StepStar 顶尖人才招聘项目",
+    "多模态与生成式方向"
+   ],
+   "interviewProcess": [
+    "简历",
+    "技术面",
+    "HR 面（具体轮次未在本次调研中取证）"
+   ],
+   "notes": "仅取到 StepStar 项目的发布渠道与标题，未取得 JD 正文与面经，confidence 定为 low。",
+   "confidence": "low",
+   "sources": [
+    {
+     "title": "阶跃星辰StepStar大模型顶尖人才招聘（清华大学就业信息）",
+     "url": "https://career.cic.tsinghua.edu.cn/xsglxt/f/jyxt/anony/showZwxx?zpxxid=542094271"
+    }
+   ]
+  },
+  {
+   "id": "sensetime",
+   "name": "商汤科技 SenseTime",
+   "shortName": "商汤",
+   "tier": "A",
+   "cities": [
+    "北京",
+    "上海",
+    "深圳"
+   ],
+   "directions": [
+    "multimodal",
+    "world-model",
+    "generative",
+    "post-training"
+   ],
+   "internship": {
+    "open": true,
+    "dailyPayRange": "未获取到商汤实习的官方日薪口径",
+    "duration": "以 hr.sensetime.com 岗位页为准",
+    "conversion": "未获取到公开转正比例数据",
+    "applyUrl": "https://hr.sensetime.com/",
+    "seasonality": "校园招聘与“顶尖实习生”专项并行开放（岗位页可见）"
+   },
+   "highlights": [
+    "顶尖实习生-空间智能与视觉推理方向",
+    "大模型算法实习生（多模态基模型）"
+   ],
+   "interviewProcess": [
+    "简历",
+    "零面（讲最有理论深度的论文、问喜欢的工作类型）",
+    "技术面（讲论文为主）",
+    "智力题/物理题（商汤特色）",
+    "HR 面"
+   ],
+   "notes": "多份面经指出商汤面试“以讲论文为主”，并喜欢问智力题与物理题（如 a^b 与 b^a 谁大、100 盏灯切换开关后亮几盏、天宫一号中宇航员受力分析）。CV 岗会问 one-stage/two-stage 区别、样本不平衡、MobileNet/ShuffleNet 的 DW 卷积计算量与剪枝细节。注意：本次抓取商汤岗位详情页返回 404，只有岗位页入口可验证，故具体 JD 要求未取证。",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "商汤科技校园招聘岗位（顶尖实习生-空间智能与视觉推理 / 大模型算法实习生-多模态基模型）",
+     "url": "https://hr.sensetime.com/top/position/7661941515421763890/detail"
+    },
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    },
+    {
+     "title": "实习算法岗血泪面经，商汤，旷世，阿里，字节跳动",
+     "url": "https://www.wondercv.com/community/11273.html"
+    }
+   ]
+  },
+  {
+   "id": "megvii",
+   "name": "旷视科技 Megvii",
+   "shortName": "旷视",
+   "tier": "B",
+   "cities": [
+    "北京",
+    "上海"
+   ],
+   "directions": [
+    "multimodal",
+    "generative",
+    "infra"
+   ],
+   "internship": {
+    "open": true,
+    "dailyPayRange": "未获取到旷视实习的官方日薪口径",
+    "duration": "以旷视官方招聘页为准",
+    "conversion": "未获取到公开转正比例数据",
+    "applyUrl": "https://www.megvii.com/",
+    "seasonality": "4 月为 CV 算法实习投递起始期（面经记录 4 月初面旷视 CV 岗），秋招滚动"
+   },
+   "highlights": [
+    "CV 算法岗（检测/分割）",
+    "多轮面试均以讲论文为主（面经记录 4 轮都在讲论文）"
+   ],
+   "interviewProcess": [
+    "简历",
+    "一面-三面（均围绕论文）",
+    "四面（论文+项目+手写图像插值：最近邻与双线性）",
+    "五面（开放性问题：论文落地场景合理性）"
+   ],
+   "notes": "旷视面经明确：FCN 结构、上采样具体操作、空洞卷积与 DeepLab v1/v2 改进、focal loss、Lovász loss 数学原理（被问但答不上）、卷积浮点计算量、RPN、MobileNet、U-Net 缺点与 U-Net++ 改进、何恺明最新文章。对 CV 基础广度要求高，面试官会直接评价“知识面不够宽”。",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    },
+    {
+     "title": "实习算法岗血泪面经，商汤，旷世，阿里，字节跳动",
+     "url": "https://www.wondercv.com/community/11273.html"
+    }
+   ]
+  },
+  {
+   "id": "huawei-noah",
+   "name": "华为 诺亚方舟实验室",
+   "shortName": "华为",
+   "tier": "A",
+   "cities": [
+    "北京",
+    "上海",
+    "深圳",
+    "杭州"
+   ],
+   "directions": [
+    "multimodal",
+    "post-training",
+    "infra",
+    "generative",
+    "rl"
+   ],
+   "internship": {
+    "open": true,
+    "dailyPayRange": "未获取到诺亚实习的官方日薪口径",
+    "duration": "以华为招聘官网岗位页为准",
+    "conversion": "有转正通道（面经中有人直接问“楼主转正了吗”）；比例未公开",
+    "applyUrl": "https://career.huawei.com/",
+    "seasonality": "面经记录 3 月投递→4 月笔试/二面→4 月 offer，春季批次较早；另有 2012 实验室等并行批次"
+   },
+   "highlights": [
+    "诺亚方舟实验室 CV/多模态方向",
+    "笔试形式特殊：两道题（一道算法、一道深度学习框架），两小时线下做"
+   ],
+   "interviewProcess": [
+    "官网邮箱投递/内推",
+    "笔试（算法题 + 深度学习框架题，2 小时线下）",
+    "一面",
+    "二面（每次面试两位面试官轮流提问）",
+    "offer"
+   ],
+   "notes": "诺亚面经显示面试“主要围绕做过什么、想做什么来问，顺着项目问基础知识和发散性点子”，甚至问到 design pattern 和“如何安装 pytorch”。另有用户提到官网流程为“两轮 coding → 业务面试 → 学术报告 → HR 面试 → 综合面试”，说明不同部门/年份流程差异大，引用时需标注来源年份（该贴为 2020 年）。",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "华为诺亚方舟实习offer记录",
+     "url": "https://www.nowcoder.com/discuss/353156334143086592"
+    },
+    {
+     "title": "embodied-interview-qa：具身智能高频面试题库",
+     "url": "https://github.com/WinstonJQ/embodied-interview-qa"
+    }
+   ]
+  },
+  {
+   "id": "xiaohongshu",
+   "name": "小红书（智能创作）",
+   "shortName": "小红书",
+   "tier": "A",
+   "cities": [
+    "上海",
+    "北京"
+   ],
+   "directions": [
+    "multimodal",
+    "post-training",
+    "rl",
+    "generative",
+    "agent"
+   ],
+   "internship": {
+    "open": true,
+    "dailyPayRange": "媒体报道小红书人才项目为顶尖算法实习生开出 3500 元/天的价码（顶尖计划口径，非普适）；日常实习薪资本次未取证",
+    "duration": "以小红书招聘官网岗位页为准（有“实习生招聘”专区）",
+    "conversion": "未获取到公开转正比例数据",
+    "applyUrl": "https://job.xiaohongshu.com/campus/intern",
+    "seasonality": "日常实习常年开放（面经发布于 8 月，面的是日常实习）"
+   },
+   "highlights": [
+    "智能创作团队（首页创作入口、产品 Agent 智能化）",
+    "多模态算法日常实习"
+   ],
+   "interviewProcess": [
+    "简历",
+    "一面（项目深挖：大模型/Agent/强化学习项目 + PPO/DPO/GRPO 对比 + GAE 深问 + 手撕二分）",
+    "二面/HR 面（面经未详述）"
+   ],
+   "notes": "小红书多模态日常实习面经信息密度高：算法核心对比必问 PPO/DPO/GRPO 的原理、适用场景与优劣；PPO 深挖到 GAE 原理、λ/γ 物理意义、MC 与 TD 的偏差方差权衡、为什么 GAE 是 PPO 工业标配；手撕为“基础二分查找”，考察边界条件与循环写法。",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "小红书多模态算法日常实习面经",
+     "url": "https://www.nowcoder.com/feed/main/detail/af39cddf1c2d40738269b866cb7bc776"
+    },
+    {
+     "title": "实习生涨价了（21财经/投资界，含字节腾讯实习薪资调整数据）",
+     "url": "https://m.21jingji.com/article/20260807/herald/19034354bed0bfd967d75d2e90b1815f.html"
+    }
+   ]
+  },
+  {
+   "id": "shanghai-ai-lab",
+   "name": "上海人工智能实验室（上海AI Lab）",
+   "shortName": "上海AI Lab",
+   "tier": "S",
+   "cities": [
+    "上海"
+   ],
+   "directions": [
+    "multimodal",
+    "post-training",
+    "rl",
+    "agent",
+    "world-model",
+    "infra"
+   ],
+   "internship": {
+    "open": true,
+    "dailyPayRange": "未获取到官方日薪口径",
+    "duration": "以官方招聘页为准",
+    "conversion": "未获取到公开转正比例数据",
+    "applyUrl": "https://www.shlab.org.cn/",
+    "seasonality": "校招/实习均滚动；有“竞争太激烈”的社区讨论"
+   },
+   "highlights": [
+    "Agent 算法岗（Agent 系统架构、Reward 设计、全模态意图识别、SFT 数据工程）",
+    "开源模型与评测体系"
+   ],
+   "interviewProcess": [
+    "简历",
+    "一面（Agent 系统架构 + Reward 设计 + 全模态意图识别 + SFT 数据工程）",
+    "后续轮次未取证"
+   ],
+   "notes": "可查到的一手复盘标题显示上海 AI Lab Agent 算法岗校招一面覆盖 Agent 系统架构、Reward 设计、全模态意图识别与 SFT 数据工程四大块；另有社区讨论称“大模型算法岗竞争太激烈”。完整 JD 与更多轮次未取证。",
+   "confidence": "low",
+   "sources": [
+    {
+     "title": "大模型实习模拟面试面经：上海AILab Agent算法岗校招一面深度复盘",
+     "url": "https://blog.csdn.net/2402_84764726/article/details/157993865"
+    }
+   ]
+  },
+  {
+   "id": "horizon-robotics",
+   "name": "地平线 具身智能实验室（世界模型团队）",
+   "shortName": "地平线",
+   "tier": "A",
+   "cities": [
+    "北京",
+    "上海"
+   ],
+   "directions": [
+    "world-model",
+    "generative",
+    "rl",
+    "multimodal"
+   ],
+   "internship": {
+    "open": true,
+    "dailyPayRange": "官方招聘文案仅写“有竞争力的薪资，你的价值不会被低估”，未给出数字",
+    "duration": "实习周期至少 4 个月，每周 4 天以上",
+    "conversion": "未获取到公开转正比例数据",
+    "applyUrl": "mailto:xia01.chen@horizon.auto（邮件标题格式：【世界模型实习】- 姓名 - 学校 - 可实习时长）",
+    "seasonality": "2026-09-08 发布招聘帖，滚动招聘"
+   },
+   "highlights": [
+    "千卡级 GPU 集群与 B300 算力资源",
+    "1v1 科研指导，目标冲顶会",
+    "研究成果可在实车/真机部署验证"
+   ],
+   "interviewProcess": [
+    "邮件投递简历",
+    "技术面（论文/研究经历）",
+    "HR 面（未取证具体轮次）"
+   ],
+   "notes": "这是本次调研中世界模型方向信息最具体的一条：核心关注自动驾驶/机器人世界模型（大规模场景生成、未来预测、闭环仿真与 RL）、基于扩散/DiT 的视频生成与长时序一致性、3D 场景重建与生成（NeRF/3DGS/深度估计/视频到 4D）、空间智能与具身世界模型（物理推理、Sim2Real）。明确要求 CVPR/ICCV/ECCV/NeurIPS/ICLR/RSS/CoRL/ICRA 一作论文或投稿优先。",
+   "confidence": "high",
+   "sources": [
+    {
+     "title": "地平线具身智能实验室，招世界模型实习生！",
+     "url": "https://www.shenlanxueyuan.com/news/detail/91"
+    }
+   ]
+  },
+  {
+   "id": "xpeng-world-model",
+   "name": "小鹏汽车（世界模型 Research Intern）",
+   "shortName": "小鹏",
+   "tier": "A",
+   "cities": [
+    "广州",
+    "上海",
+    "北京",
+    "深圳"
+   ],
+   "directions": [
+    "world-model",
+    "generative",
+    "rl"
+   ],
+   "internship": {
+    "open": true,
+    "dailyPayRange": "未在岗位页取到日薪数字",
+    "duration": "以岗位页为准",
+    "conversion": "未取证",
+    "applyUrl": "https://xiaopeng.jobs.feishu.cn/campus/position/7688175893932558633/detail",
+    "seasonality": "校招系统常年开放岗位发布"
+   },
+   "highlights": [
+    "明确以“世界模型（World Model）”命名的 Research Intern 岗位（自动驾驶方向）"
+   ],
+   "interviewProcess": [
+    "简历",
+    "技术面",
+    "HR 面（未取证）"
+   ],
+   "notes": "岗位页在抓取时未渲染出正文（前端渲染），仅验证了该岗位 URL 与岗位标题存在。世界模型方向的技能要求可参考地平线同方向的公开要求。confidence 定为 low。",
+   "confidence": "low",
+   "sources": [
+    {
+     "title": "【实习生】Research Intern（世界模型）（小鹏汽车校招岗位页）",
+     "url": "https://xiaopeng.jobs.feishu.cn/campus/position/7688175893932558633/detail"
+    },
+    {
+     "title": "地平线具身智能实验室，招世界模型实习生！",
+     "url": "https://www.shenlanxueyuan.com/news/detail/91"
+    }
+   ]
+  },
+  {
+   "id": "embodied-startups",
+   "name": "具身智能公司（智元/银河通用/宇树等，含国聘岗位）",
+   "shortName": "具身创业公司",
+   "tier": "A",
+   "cities": [
+    "北京",
+    "上海",
+    "深圳",
+    "杭州",
+    "苏州"
+   ],
+   "directions": [
+    "world-model",
+    "rl",
+    "multimodal",
+    "generative"
+   ],
+   "internship": {
+    "open": true,
+    "dailyPayRange": "未获取到统一日薪口径（各家差异大，部分按日薪+期权）",
+    "duration": "以各家招聘页为准；具身方向普遍偏好 4 个月以上长期实习",
+    "conversion": "未获取到公开转正比例数据",
+    "applyUrl": "https://www.iguopin.com/",
+    "seasonality": "2026 年具身智能岗位密集释放（有 29 家公司、2359 个岗位的统计文章），VLA 能力从“加分项”变“必选项”"
+   },
+   "highlights": [
+    "具身智能基础模型与操作算法实习生",
+    "具身智能导航与空间智能算法实习生",
+    "VLA（视觉-语言-动作）方向题库已成体系"
+   ],
+   "interviewProcess": [
+    "简历",
+    "技术面（VLA/模仿学习/强化学习）",
+    "HR 面（各家差异大）"
+   ],
+   "notes": "可验证的信息：国聘平台上存在“具身智能基础模型与操作算法实习生”“具身智能导航与空间智能算法实习生”等岗位；GitHub 上有成体系的具身/VLA 面试题库（VLA-Handbook/question-bank、embodied-interview-qa）；有统计文章称 29 家具身智能公司释放 2359 个岗位。具体某一家（智元/银河通用/宇树）的 JD 正文与面经本次未逐家取证，因此统一归并为一条并标 medium。",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "VLA-Handbook/question-bank：具身智能/VLA 面试题库",
+     "url": "https://github.com/sou350121/VLA-Handbook/tree/main/question-bank"
+    },
+    {
+     "title": "embodied-interview-qa：具身智能高频面试题库",
+     "url": "https://github.com/WinstonJQ/embodied-interview-qa"
+    },
+    {
+     "title": "我扒了29家具身智能公司的2359个岗位，告诉你他们在招什么样的人",
+     "url": "https://zhuanlan.zhihu.com/p/2068994452434182343"
+    }
+   ]
+  },
+  {
+   "id": "jd-jdy",
+   "name": "京东（JDD/JDY 实习 + 人才计划）",
+   "shortName": "京东",
+   "tier": "A",
+   "cities": [
+    "北京",
+    "上海",
+    "深圳",
+    "成都"
+   ],
+   "directions": [
+    "post-training",
+    "rl",
+    "agent",
+    "multimodal"
+   ],
+   "internship": {
+    "open": true,
+    "dailyPayRange": "北大 AI 方向博士生受访者称“日薪超过 1500 元，一人一薪，具体数字不便透露”，并提供免费人才公寓与餐补（人才计划口径，非普适）",
+    "duration": "以京东校招为准；受访者描述为“两轮面试就发了 Offer”，流程快",
+    "conversion": "受访者称“今年有些实习岗位名额比去年少，人才计划转正的比例也比去年低”",
+    "applyUrl": "https://campus.jd.com/",
+    "seasonality": "人才计划滚动招募；受访者在腾讯 HR 推荐后同时投递多家人才计划"
+   },
+   "highlights": [
+    "人才计划：一人一薪、免费人才公寓、餐补",
+    "Agentic RL / 长程任务方向"
+   ],
+   "interviewProcess": [
+    "简历",
+    "一面",
+    "二面/HR 面（受访者称两轮面试即发 Offer）"
+   ],
+   "notes": "京东的薪资与福利数字来自界面新闻对北大 AI 博士生的访谈（一人一薪、日薪 1500+、人才公寓、餐补 20 元/餐、晚餐免费），属第二手但受访者身份明确的证词，confidence 定为 medium。注意受访者同时指出人才计划门槛逐年升高、转正比例下降。",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "日薪千元的AI实习生，在焦虑什么？",
+     "url": "https://www.jiemian.com/article/15087508.html"
+    },
+    {
+     "title": "实习生涨价了（21财经/投资界，含字节腾讯实习薪资调整数据）",
+     "url": "https://m.21jingji.com/article/20260807/herald/19034354bed0bfd967d75d2e90b1815f.html"
+    }
+   ]
+  },
+  {
+   "id": "pico-xr",
+   "name": "字节跳动 PICO（多模态交互）",
+   "shortName": "PICO",
+   "tier": "B",
+   "cities": [
+    "北京",
+    "上海",
+    "青岛"
+   ],
+   "directions": [
+    "multimodal",
+    "world-model",
+    "generative"
+   ],
+   "internship": {
+    "open": true,
+    "dailyPayRange": "与字节跳动统一实习薪资体系（技术类公开报道 500 元/天起）",
+    "duration": "以岗位页为准",
+    "conversion": "与字节体系一致",
+    "applyUrl": "https://jobs.bytedance.com/campus/position/7629685037575096629/detail",
+    "seasonality": "与字节校招批次一致"
+   },
+   "highlights": [
+    "多模态交互算法实习生（XR/空间计算方向）"
+   ],
+   "interviewProcess": [
+    "简历",
+    "技术面",
+    "HR 面（未取证）"
+   ],
+   "notes": "该岗位页在抓取时未渲染正文，仅验证 URL 与标题存在；作为字节体系下多模态/空间交互方向的一个入口列出。confidence 定为 low。",
+   "confidence": "low",
+   "sources": [
+    {
+     "title": "多模态交互算法实习生-PICO（字节跳动校招岗位页）",
+     "url": "https://jobs.bytedance.com/campus/position/7629685037575096629/detail"
+    },
+    {
+     "title": "实习生涨价了（21财经/投资界，含字节腾讯实习薪资调整数据）",
+     "url": "https://m.21jingji.com/article/20260807/herald/19034354bed0bfd967d75d2e90b1815f.html"
+    }
+   ]
+  }
+ ],
+ "skillMatrix": [
+  {
+   "id": "mha-attention",
+   "skill": "Transformer / Multi-Head Self-Attention 原理与手写",
+   "category": "foundation",
+   "importance": 5,
+   "demandCompanies": [
+    "字节",
+    "腾讯",
+    "阿里",
+    "美团",
+    "DeepSeek"
+   ],
+   "evidence": "腾讯混元一面手撕题直接是“多头自注意力”；淘天多模态一面代码题是“实现多头自注意力”；DeepSeek 笔试第一题要求手写完整 MHA 且“不能只写框架”；Awesome-LLM-Interview 把 Transformer 架构列为推荐优先阅读篇目，含 220+ 高频题",
+   "howToProve": "能白板写出带 mask、缩放、多头的完整实现，并解释除以 sqrt(d_k) 的原因（控制点积方差、避免 softmax 饱和导致梯度变小）",
+   "learnCost": "1 周",
+   "sources": [
+    {
+     "title": "腾讯-混元大模型面经-华5硕",
+     "url": "https://www.nowcoder.com/feed/main/detail/c002e91fda6c44dabe2db9ac79a6ccba"
+    },
+    {
+     "title": "大模型面经 - 淘天（搜推智能产品事业部-多模态大模型）",
+     "url": "https://blog.csdn.net/weixin_45768638/article/details/145885586"
+    },
+    {
+     "title": "2026-07-26_DeepSeek_大模型算法岗笔试面经分享（含完整答案）",
+     "url": "https://api-cdn.nowcoder.com/discuss/913482312753418240"
+    },
+    {
+     "title": "Awesome-LLM-Interview README（笔记目录：Transformer/RLHF/DPO/LoRA/KV Cache/MoE/分布式训练）",
+     "url": "https://raw.githubusercontent.com/laoshan-song/Awesome-LLM-Interview/main/README.md"
+    }
+   ]
+  },
+  {
+   "id": "post-training-pipeline",
+   "skill": "后训练全流程（SFT → RLHF/DPO → 评测闭环）",
+   "category": "post-training",
+   "importance": 5,
+   "demandCompanies": [
+    "字节",
+    "腾讯",
+    "阿里",
+    "美团",
+    "百度"
+   ],
+   "evidence": "腾讯混元三面：“讲一下 RLHF 的流程，为什么 SFT 之后还要做 RLHF，只用 SFT 可以吗”；美团二面第 9 题直接问“Post-Training 的工作机制，为什么要做三阶段训练，如何从 V3 到 R1”；字节 Seed 校招文案用实习生案例强调后训练环节的数据-训练-评测闭环",
+   "howToProve": "能画出三阶段流程图并说明每阶段的数据形态、目标函数与失败模式；能讲清自己在哪一段做过什么、指标怎么定的",
+   "learnCost": "3-4 周",
+   "sources": [
+    {
+     "title": "腾讯-混元大模型面经-华5硕",
+     "url": "https://www.nowcoder.com/feed/main/detail/c002e91fda6c44dabe2db9ac79a6ccba"
+    },
+    {
+     "title": "美团大模型算法二面-秋招面经",
+     "url": "https://www.nowcoder.com/feed/main/detail/e72d861f57c1499393be6651f8611177"
+    },
+    {
+     "title": "字节跳动 Seed 2027 届大模型人才校招启动（含实习）",
+     "url": "https://seed.bytedance.com/zh/blog/bytedance-seed-2027-foundation-model-campus-recruitment-is-now-open-internships-included"
+    }
+   ]
+  },
+  {
+   "id": "ppo-grpo-dpo",
+   "skill": "PPO / GRPO / DPO 原理、损失函数与工程差异",
+   "category": "post-training",
+   "importance": 5,
+   "demandCompanies": [
+    "字节",
+    "腾讯",
+    "阿里",
+    "美团",
+    "百度",
+    "快手"
+   ],
+   "evidence": "百度文心一面 8 道题里 5 道围绕 PPO/GRPO/DPO；小红书多模态实习把“系统阐述 PPO、DPO、GRPO 三种主流对齐算法”列为高频必问；美团二面要求写出 GRPO 公式并解释 clip 作用与优势度改进；腾讯三面问 GRPO 相比 GPT 的 PPO 做了哪些改进",
+   "howToProve": "能写出三者损失函数、解释 GRPO 去掉 critic 后优势估计怎么算、说明 DPO 为什么不需要 reward model 却能做偏好优化",
+   "learnCost": "2-3 周",
+   "sources": [
+    {
+     "title": "百度文心一言大模型算法实习一面",
+     "url": "https://www.nowcoder.com/feed/main/detail/1c01b2eaeb9c46e48c2b67f498bb7f3d"
+    },
+    {
+     "title": "小红书多模态算法日常实习面经",
+     "url": "https://www.nowcoder.com/feed/main/detail/af39cddf1c2d40738269b866cb7bc776"
+    },
+    {
+     "title": "美团大模型算法二面-秋招面经",
+     "url": "https://www.nowcoder.com/feed/main/detail/e72d861f57c1499393be6651f8611177"
+    },
+    {
+     "title": "腾讯-混元大模型面经-华5硕",
+     "url": "https://www.nowcoder.com/feed/main/detail/c002e91fda6c44dabe2db9ac79a6ccba"
+    }
+   ]
+  },
+  {
+   "id": "gae-rl-theory",
+   "skill": "强化学习基础与 GAE（偏差-方差权衡、MC/TD）",
+   "category": "post-training",
+   "importance": 4,
+   "demandCompanies": [
+    "小红书",
+    "快手",
+    "字节"
+   ],
+   "evidence": "小红书多模态面经把 GAE 原理、λ/γ 物理意义、MC 与 TD 的偏差方差对比、为什么 GAE 是 PPO 工业标配列为“高阶八股”；快手可灵要求“详细介绍几种主流强化学习算法并解释区别”，并问 GAE",
+   "howToProve": "能手推 GAE 递推式并解释 λ 在 MC 与 TD 之间的插值作用；能说出自己训练中 λ、γ 取值的理由",
+   "learnCost": "1-2 周",
+   "sources": [
+    {
+     "title": "小红书多模态算法日常实习面经",
+     "url": "https://www.nowcoder.com/feed/main/detail/af39cddf1c2d40738269b866cb7bc776"
+    },
+    {
+     "title": "9.18快手可灵策略梯度岗一面",
+     "url": "https://www.nowcoder.com/discuss/933402920173699072"
+    }
+   ]
+  },
+  {
+   "id": "rlvr",
+   "skill": "RLVR / 可验证奖励强化学习（含 RLVF 概念）",
+   "category": "post-training",
+   "importance": 4,
+   "demandCompanies": [
+    "快手",
+    "字节",
+    "DeepSeek"
+   ],
+   "evidence": "快手可灵策略梯度岗一面直接问“RLVF 是什么”；Awesome-LLM-Interview 设“2025 前沿对齐技术（RLVR / DAPO / RLAIF）”专题，含 DAPO/Dr.GRPO/OpenRLHF/veRL",
+   "howToProve": "能说明 RLVR 的奖励来源（规则/单元测试/数学答案校验）、与 RLHF 奖励模型路径的区别，以及 reward hacking 风险",
+   "learnCost": "1 周",
+   "sources": [
+    {
+     "title": "9.18快手可灵策略梯度岗一面",
+     "url": "https://www.nowcoder.com/discuss/933402920173699072"
+    },
+    {
+     "title": "Awesome-LLM-Interview README（笔记目录：Transformer/RLHF/DPO/LoRA/KV Cache/MoE/分布式训练）",
+     "url": "https://raw.githubusercontent.com/laoshan-song/Awesome-LLM-Interview/main/README.md"
+    }
+   ]
+  },
+  {
+   "id": "multimodal-vlm",
+   "skill": "多模态大模型架构（CLIP / BLIP / LLaVA / Qwen-VL）",
+   "category": "multimodal",
+   "importance": 5,
+   "demandCompanies": [
+    "阿里",
+    "字节",
+    "腾讯",
+    "商汤",
+    "阶跃星辰"
+   ],
+   "evidence": "淘天多模态一面几乎全是多模态八股：介绍 CLIP、BLIP 的三个损失函数与数据清洗、BLIP2/BLIP3 改进、Qwen-VL 的三个训练流程、Q-Former 复杂 Adaptor 与 LLaVA 简单 MLP 的优劣对比；字节 Seed 视觉智能方向主打“多模态预训练新范式”",
+   "howToProve": "能画出视觉编码器-连接器-LLM 的信息流，说清每个连接器方案的设计动机与代价；能复述 Qwen-VL 三阶段训练各阶段冻结/解冻了什么",
+   "learnCost": "3-4 周",
+   "sources": [
+    {
+     "title": "大模型面经 - 淘天（搜推智能产品事业部-多模态大模型）",
+     "url": "https://blog.csdn.net/weixin_45768638/article/details/145885586"
+    },
+    {
+     "title": "字节跳动 Seed 2027 届大模型人才校招启动（含实习）",
+     "url": "https://seed.bytedance.com/zh/blog/bytedance-seed-2027-foundation-model-campus-recruitment-is-now-open-internships-included"
+    },
+    {
+     "title": "Awesome-LLM-Interview README（笔记目录：Transformer/RLHF/DPO/LoRA/KV Cache/MoE/分布式训练）",
+     "url": "https://raw.githubusercontent.com/laoshan-song/Awesome-LLM-Interview/main/README.md"
+    }
+   ]
+  },
+  {
+   "id": "vision-language-connector",
+   "skill": "视觉-语言对齐与连接器设计（Q-Former vs MLP 投影）",
+   "category": "multimodal",
+   "importance": 4,
+   "demandCompanies": [
+    "阿里",
+    "字节",
+    "商汤"
+   ],
+   "evidence": "淘天一面第 8 题：“视觉编码器和 LLM 连接时，使用 BLIP2 中 Q-Former 那种复杂的 Adaptor 好还是 LLaVA 中简单的 MLP 好，说说各自的优缺点”；阿里云多模态面经问“看过什么别的 SOTA 模型的 ref image 注入方式，有什么优劣”",
+   "howToProve": "能给出参数量、训练成本、对齐能力三个维度的对比表，并结合自己的项目说明选型理由",
+   "learnCost": "1-2 周",
+   "sources": [
+    {
+     "title": "大模型面经 - 淘天（搜推智能产品事业部-多模态大模型）",
+     "url": "https://blog.csdn.net/weixin_45768638/article/details/145885586"
+    },
+    {
+     "title": "阿里云多模态大模型暑期实习（已oc）",
+     "url": "https://www.nowcoder.com/feed/main/detail/c2e2058a1cb24c7ca5e21f32826179d8"
+    }
+   ]
+  },
+  {
+   "id": "contrastive-clip-loss",
+   "skill": "对比学习与 CLIP 损失（InfoNCE、温度系数）",
+   "category": "multimodal",
+   "importance": 4,
+   "demandCompanies": [
+    "阿里",
+    "商汤",
+    "阶跃星辰"
+   ],
+   "evidence": "淘天一面“介绍一下 CLIP”，二面又问“介绍一下 CLIP，还了解什么其他的对比学习方法”；Awesome-LLM-Interview 将多模态大模型（VLM）与 GPT-4o/InternVL 架构、视觉编码器对比列为独立专题",
+   "howToProve": "能手写对称 InfoNCE 损失，解释温度系数 τ 的作用与负样本数量的影响",
+   "learnCost": "3-5 天",
+   "sources": [
+    {
+     "title": "大模型面经 - 淘天（搜推智能产品事业部-多模态大模型）",
+     "url": "https://blog.csdn.net/weixin_45768638/article/details/145885586"
+    },
+    {
+     "title": "Awesome-LLM-Interview README（笔记目录：Transformer/RLHF/DPO/LoRA/KV Cache/MoE/分布式训练）",
+     "url": "https://raw.githubusercontent.com/laoshan-song/Awesome-LLM-Interview/main/README.md"
+    }
+   ]
+  },
+  {
+   "id": "dit-flow-matching",
+   "skill": "生成式模型：Diffusion / DiT / Flow Matching / AdaLN 时间注入",
+   "category": "generative",
+   "importance": 5,
+   "demandCompanies": [
+    "阿里",
+    "快手",
+    "字节",
+    "地平线",
+    "MiniMax"
+   ],
+   "evidence": "阿里云多模态面经八股包含“DiT 的框架流程，如何时间注入，讲一讲 AdaLN”“讲一下 flow Matching，原理，优势”“有哪些常见的蒸馏方法”；快手可灵一面问“了解 GAE 和 Diffusion model 嘛”；地平线世界模型团队核心关注点之一即“基于扩散/DiT 的物理世界模拟，长时序一致性建模”",
+   "howToProve": "能讲清 DDPM 前向/反向过程、为什么 DiT 用 AdaLN-Zero、flow matching 相比 diffusion 的路径与训练目标差异",
+   "learnCost": "3-4 周",
+   "sources": [
+    {
+     "title": "阿里云多模态大模型暑期实习（已oc）",
+     "url": "https://www.nowcoder.com/feed/main/detail/c2e2058a1cb24c7ca5e21f32826179d8"
+    },
+    {
+     "title": "9.18快手可灵策略梯度岗一面",
+     "url": "https://www.nowcoder.com/discuss/933402920173699072"
+    },
+    {
+     "title": "地平线具身智能实验室，招世界模型实习生！",
+     "url": "https://www.shenlanxueyuan.com/news/detail/91"
+    }
+   ]
+  },
+  {
+   "id": "normalization",
+   "skill": "归一化与激活：LayerNorm / RMSNorm / SwiGLU",
+   "category": "foundation",
+   "importance": 5,
+   "demandCompanies": [
+    "阿里",
+    "美团",
+    "腾讯",
+    "字节"
+   ],
+   "evidence": "阿里云面经八股：“现在为什么大家都用 RMSNorm 而不是 LayerNorm”；美团二面第 2、3 题要求写出 RMSNorm 与 LayerNorm 的公式对比、SwiGLU 公式；Awesome-LLM-Interview 在“主流模型架构对比（LLaMA/Qwen/DeepSeek）”中单列 MLA、RMSNorm、SwiGLU",
+   "howToProve": "能写出两者公式并说明 RMSNorm 去掉均值中心化后节省的计算与数值行为差异；能解释 SwiGLU 相比 ReLU/GELU FFN 的参数配比调整（如 8/3 d）",
+   "learnCost": "2-3 天",
+   "sources": [
+    {
+     "title": "阿里云多模态大模型暑期实习（已oc）",
+     "url": "https://www.nowcoder.com/feed/main/detail/c2e2058a1cb24c7ca5e21f32826179d8"
+    },
+    {
+     "title": "美团大模型算法二面-秋招面经",
+     "url": "https://www.nowcoder.com/feed/main/detail/e72d861f57c1499393be6651f8611177"
+    },
+    {
+     "title": "Awesome-LLM-Interview README（笔记目录：Transformer/RLHF/DPO/LoRA/KV Cache/MoE/分布式训练）",
+     "url": "https://raw.githubusercontent.com/laoshan-song/Awesome-LLM-Interview/main/README.md"
+    }
+   ]
+  },
+  {
+   "id": "position-encoding",
+   "skill": "位置编码（RoPE / ALiBi / 外推）",
+   "category": "foundation",
+   "importance": 5,
+   "demandCompanies": [
+    "字节",
+    "腾讯",
+    "DeepSeek",
+    "阿里"
+   ],
+   "evidence": "Awesome-LLM-Interview 设“位置编码（RoPE / ALiBi / sinusoidal）”专题并补充 RoPE/ALiBi 论文与外推方案对比；2026 届大模型算法岗实习面经仓库把“手撕 RoPE”列为核心考点之一",
+   "howToProve": "能手写 RoPE 的旋转实现并解释相对位置性质；能说出 NTK/YaRN 等外推方案解决的问题",
+   "learnCost": "3-5 天",
+   "sources": [
+    {
+     "title": "Awesome-LLM-Interview README（笔记目录：Transformer/RLHF/DPO/LoRA/KV Cache/MoE/分布式训练）",
+     "url": "https://raw.githubusercontent.com/laoshan-song/Awesome-LLM-Interview/main/README.md"
+    },
+    {
+     "title": "LLM-Algorithm-Intern-Guide：2026届大模型算法岗实习面经（含手撕 PPO/RoPE/Transformer、RLHF 核心与八股文）",
+     "url": "https://github.com/Junvate/LLM-Algorithm-Intern-Guide"
+    }
+   ]
+  },
+  {
+   "id": "kv-cache",
+   "skill": "KV-Cache 原理、显存计算与优化（GQA/MQA/PagedAttention/MLA）",
+   "category": "inference",
+   "importance": 5,
+   "demandCompanies": [
+    "字节",
+    "腾讯",
+    "DeepSeek",
+    "美团"
+   ],
+   "evidence": "DeepSeek 笔试题六专门考“KV 缓存压缩原理与内存占用计算”，要求先写标准公式再写 MLA/GQA/量化如何改变公式，并给出一亿 token 的具体量级估算；Awesome-LLM-Interview 设 KV Cache 专题含 Prefill/Decode 图、显存公式、GQA/PagedAttention",
+   "howToProve": "能现场推导 M_KV = B×T×L×H_kv×d_h×2×b 并代入一组真实配置算出 GiB；能解释 GQA 如何降低 H_kv",
+   "learnCost": "1 周",
+   "sources": [
+    {
+     "title": "2026-07-26_DeepSeek_大模型算法岗笔试面经分享（含完整答案）",
+     "url": "https://api-cdn.nowcoder.com/discuss/913482312753418240"
+    },
+    {
+     "title": "Awesome-LLM-Interview README（笔记目录：Transformer/RLHF/DPO/LoRA/KV Cache/MoE/分布式训练）",
+     "url": "https://raw.githubusercontent.com/laoshan-song/Awesome-LLM-Interview/main/README.md"
+    }
+   ]
+  },
+  {
+   "id": "flashattention",
+   "skill": "FlashAttention / 推理加速（在线 softmax、融合内核）",
+   "category": "inference",
+   "importance": 5,
+   "demandCompanies": [
+    "字节",
+    "腾讯",
+    "DeepSeek",
+    "阿里"
+   ],
+   "evidence": "Awesome-LLM-Interview 设“推理加速（Flash Attention / vLLM / 投机采样）”专题并补充 FlashAttention 原论文图与 TTFT/TPOT 诊断维度；DeepSeek 笔试第四题要求讲 PagedAttention 原理与投机解码工程实现（含 rejection sampling 保持目标分布）",
+   "howToProve": "能解释分块计算 + 在线 softmax 如何把注意力显存从 O(S^2) 降到 O(S)；能说明 FlashAttention 不改变数学结果、只改变 IO",
+   "learnCost": "1 周",
+   "sources": [
+    {
+     "title": "Awesome-LLM-Interview README（笔记目录：Transformer/RLHF/DPO/LoRA/KV Cache/MoE/分布式训练）",
+     "url": "https://raw.githubusercontent.com/laoshan-song/Awesome-LLM-Interview/main/README.md"
+    },
+    {
+     "title": "2026-07-26_DeepSeek_大模型算法岗笔试面经分享（含完整答案）",
+     "url": "https://api-cdn.nowcoder.com/discuss/913482312753418240"
+    }
+   ]
+  },
+  {
+   "id": "lora-peft",
+   "skill": "LoRA / QLoRA 及参数高效微调（PEFT）",
+   "category": "post-training",
+   "importance": 5,
+   "demandCompanies": [
+    "阿里",
+    "腾讯",
+    "美团",
+    "字节",
+    "快手"
+   ],
+   "evidence": "腾讯二面直接问“LoRA 的原理，A 和 B 两个矩阵怎么初始化，有了解过其他的初始化方法吗”；美团二面第 10 题“为什么 LoRA 能够 work，除了 LoRA 还了解哪些微调方法”，并追问 FLUX 中 LoRA 起了什么作用；淘天一面也问 LoRA 微调原理；阿里云面经同样有“LoRA 微调的原理”",
+   "howToProve": "能写出 W = W0 + BA 与缩放 α/r，解释 B 初始化为 0 的理由，并给出自己微调的 rank/lr/目标模块选择依据",
+   "learnCost": "3-5 天",
+   "sources": [
+    {
+     "title": "腾讯-混元大模型面经-华5硕",
+     "url": "https://www.nowcoder.com/feed/main/detail/c002e91fda6c44dabe2db9ac79a6ccba"
+    },
+    {
+     "title": "美团大模型算法二面-秋招面经",
+     "url": "https://www.nowcoder.com/feed/main/detail/e72d861f57c1499393be6651f8611177"
+    },
+    {
+     "title": "大模型面经 - 淘天（搜推智能产品事业部-多模态大模型）",
+     "url": "https://blog.csdn.net/weixin_45768638/article/details/145885586"
+    },
+    {
+     "title": "阿里云多模态大模型暑期实习（已oc）",
+     "url": "https://www.nowcoder.com/feed/main/detail/c2e2058a1cb24c7ca5e21f32826179d8"
+    }
+   ]
+  },
+  {
+   "id": "distributed-training",
+   "skill": "分布式训练（ZeRO 三阶段 / FSDP / Megatron / DeepSpeed）",
+   "category": "infra",
+   "importance": 5,
+   "demandCompanies": [
+    "腾讯",
+    "字节",
+    "美团",
+    "华为"
+   ],
+   "evidence": "腾讯二面专问“ZeRO-1、ZeRO-2、ZeRO-3 三个模式的区别”，并追问“用 ZeRO-3 微调 Qwen2-72B，每一张卡占用的显存大概是多少，估算一下为什么占这么多”；美团二面第 11 题问“如何使用 deepspeed 进行分布式训练，脚本是你自己写的吗”；Awesome-LLM-Interview 设数据并行/模型并行与显存优化技巧两篇专章",
+   "howToProve": "能画出 ZeRO-1/2/3 分别切分优化器状态、梯度、参数的示意图，并用参数+梯度+优化器状态+激活的公式估算单卡显存",
+   "learnCost": "2-3 周",
+   "sources": [
+    {
+     "title": "腾讯-混元大模型面经-华5硕",
+     "url": "https://www.nowcoder.com/feed/main/detail/c002e91fda6c44dabe2db9ac79a6ccba"
+    },
+    {
+     "title": "美团大模型算法二面-秋招面经",
+     "url": "https://www.nowcoder.com/feed/main/detail/e72d861f57c1499393be6651f8611177"
+    },
+    {
+     "title": "Awesome-LLM-Interview README（笔记目录：Transformer/RLHF/DPO/LoRA/KV Cache/MoE/分布式训练）",
+     "url": "https://raw.githubusercontent.com/laoshan-song/Awesome-LLM-Interview/main/README.md"
+    }
+   ]
+  },
+  {
+   "id": "moe",
+   "skill": "MoE 架构、路由、负载均衡与通信开销",
+   "category": "infra",
+   "importance": 4,
+   "demandCompanies": [
+    "腾讯",
+    "DeepSeek",
+    "字节"
+   ],
+   "evidence": "腾讯一面问“为什么大家都开始探索 MoE 架构，MoE 相比 Dense 有什么好处”；DeepSeek 笔试第三、八题要求计算 MoE 的 All-to-All 通信量与容量因子，并推导无辅助损失的专家偏置负载均衡机制",
+   "howToProve": "能写出 V_comm ≈ 2Tkdb(1-1/P) 并说明延迟项与带宽项谁主导；能解释偏置用于 Top-k 选择但不改组合权重的原因",
+   "learnCost": "1-2 周",
+   "sources": [
+    {
+     "title": "腾讯-混元大模型面经-华5硕",
+     "url": "https://www.nowcoder.com/feed/main/detail/c002e91fda6c44dabe2db9ac79a6ccba"
+    },
+    {
+     "title": "2026-07-26_DeepSeek_大模型算法岗笔试面经分享（含完整答案）",
+     "url": "https://api-cdn.nowcoder.com/discuss/913482312753418240"
+    }
+   ]
+  },
+  {
+   "id": "quantization",
+   "skill": "量化（INT8/INT4、GPTQ/AWQ/SmoothQuant）",
+   "category": "inference",
+   "importance": 4,
+   "demandCompanies": [
+    "腾讯",
+    "字节",
+    "华为"
+   ],
+   "evidence": "Awesome-LLM-Interview 设“量化（INT8 / INT4 / GPTQ / AWQ）”专题，补充 AWQ 论文图、GPTQ/AWQ/SmoothQuant 论文与工具链；百度视觉技术部面经基础知识部分问“量化/剪枝”",
+   "howToProve": "能说明权重量化与激活量化的难点差异、per-channel 与 per-group 的取舍，并给出精度-吞吐实测数据",
+   "learnCost": "1-2 周",
+   "sources": [
+    {
+     "title": "Awesome-LLM-Interview README（笔记目录：Transformer/RLHF/DPO/LoRA/KV Cache/MoE/分布式训练）",
+     "url": "https://raw.githubusercontent.com/laoshan-song/Awesome-LLM-Interview/main/README.md"
+    },
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    }
+   ]
+  },
+  {
+   "id": "decode-strategy",
+   "skill": "解码策略（Greedy / Beam / Top-k / Top-p / 温度）",
+   "category": "inference",
+   "importance": 4,
+   "demandCompanies": [
+    "字节",
+    "腾讯",
+    "快手",
+    "阿里"
+   ],
+   "evidence": "Awesome-LLM-Interview 设“解码策略（Greedy / Beam / Sampling）”专题并补充 Nucleus Sampling 论文图与参数联调建议；快手可灵、阿里云多模态面经均涉及生成模型采样相关问题",
+   "howToProve": "能手写 top-k 与 nucleus 采样并解释温度如何改变分布熵；能说明 beam search 的长度归一化与退化问题",
+   "learnCost": "2-3 天",
+   "sources": [
+    {
+     "title": "Awesome-LLM-Interview README（笔记目录：Transformer/RLHF/DPO/LoRA/KV Cache/MoE/分布式训练）",
+     "url": "https://raw.githubusercontent.com/laoshan-song/Awesome-LLM-Interview/main/README.md"
+    },
+    {
+     "title": "9.18快手可灵策略梯度岗一面",
+     "url": "https://www.nowcoder.com/discuss/933402920173699072"
+    },
+    {
+     "title": "阿里云多模态大模型暑期实习（已oc）",
+     "url": "https://www.nowcoder.com/feed/main/detail/c2e2058a1cb24c7ca5e21f32826179d8"
+    }
+   ]
+  },
+  {
+   "id": "training-diagnostics",
+   "skill": "训练诊断与调参（收敛判断、梯度消失/爆炸、显存与吞吐）",
+   "category": "engineering",
+   "importance": 5,
+   "demandCompanies": [
+    "阿里",
+    "腾讯",
+    "美团",
+    "字节"
+   ],
+   "evidence": "阿里云面经八股连续三问：“如何判断模型是否收敛”“如果训练时梯度消失或者爆炸，你怎么解决”“如何系统判断是否训练完成，特别是在视频生成模型中”；美团二面追问“训练一个 Step 需要多久”“一开始 Reward 出现大幅度震荡是为什么”",
+   "howToProve": "准备一份“loss 曲线 + 梯度范数 + 学习率 + 显存/吞吐”的诊断清单，并绑定自己做过的具体案例与数字",
+   "learnCost": "1-2 周",
+   "sources": [
+    {
+     "title": "阿里云多模态大模型暑期实习（已oc）",
+     "url": "https://www.nowcoder.com/feed/main/detail/c2e2058a1cb24c7ca5e21f32826179d8"
+    },
+    {
+     "title": "美团大模型算法二面-秋招面经",
+     "url": "https://www.nowcoder.com/feed/main/detail/e72d861f57c1499393be6651f8611177"
+    }
+   ]
+  },
+  {
+   "id": "optimizer-adamw",
+   "skill": "优化器（Adam vs AdamW）与学习率调度",
+   "category": "foundation",
+   "importance": 4,
+   "demandCompanies": [
+    "阿里",
+    "腾讯",
+    "美团"
+   ],
+   "evidence": "阿里云面经八股：“Adam 和 AdamW 的原理，有什么改进”；美团一面（CV 方向汇总面经）问“如何让 adam 算法收敛速度变慢”；AI 算法实习面经中提到面试官会追问“学习率怎么样”“训练了多久”",
+   "howToProve": "能写出 Adam 一阶/二阶矩更新式并说明 AdamW 把 weight decay 从梯度中解耦的原因",
+   "learnCost": "2-3 天",
+   "sources": [
+    {
+     "title": "阿里云多模态大模型暑期实习（已oc）",
+     "url": "https://www.nowcoder.com/feed/main/detail/c2e2058a1cb24c7ca5e21f32826179d8"
+    },
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    },
+    {
+     "title": "日薪千元的AI实习生，在焦虑什么？",
+     "url": "https://www.jiemian.com/article/15087508.html"
+    }
+   ]
+  },
+  {
+   "id": "generative-video",
+   "skill": "视频生成与长时序一致性（VAE/DiT/时序建模）",
+   "category": "generative",
+   "importance": 5,
+   "demandCompanies": [
+    "快手",
+    "字节",
+    "地平线",
+    "阿里"
+   ],
+   "evidence": "字节 Seed 校招文案点名“GenMedia 大模型”“Seedance 2.0 预训练架构攻坚，大规模 Scaling 算法”；快手可灵为独立团队主做视频生成；地平线世界模型团队要求“长时序一致性建模”；阿里云面经问“如何系统判断是否训练完成，特别是在视频生成模型中”",
+   "howToProve": "能说明视频 VAE 的时空压缩比、patch 化后序列长度爆炸问题及应对（分块/分层/稀疏注意力）",
+   "learnCost": "3-4 周",
+   "sources": [
+    {
+     "title": "字节跳动 Seed 2027 届大模型人才校招启动（含实习）",
+     "url": "https://seed.bytedance.com/zh/blog/bytedance-seed-2027-foundation-model-campus-recruitment-is-now-open-internships-included"
+    },
+    {
+     "title": "9.18快手可灵策略梯度岗一面",
+     "url": "https://www.nowcoder.com/discuss/933402920173699072"
+    },
+    {
+     "title": "地平线具身智能实验室，招世界模型实习生！",
+     "url": "https://www.shenlanxueyuan.com/news/detail/91"
+    },
+    {
+     "title": "阿里云多模态大模型暑期实习（已oc）",
+     "url": "https://www.nowcoder.com/feed/main/detail/c2e2058a1cb24c7ca5e21f32826179d8"
+    }
+   ]
+  },
+  {
+   "id": "world-model",
+   "skill": "世界模型（未来预测、闭环仿真、Sim2Real）",
+   "category": "world-model",
+   "importance": 5,
+   "demandCompanies": [
+    "地平线",
+    "小鹏",
+    "字节",
+    "上海AI Lab"
+   ],
+   "evidence": "地平线具身智能实验室招聘帖明确列出四个核心方向：自动驾驶/机器人世界模型（大规模场景生成、未来预测、闭环仿真与强化学习）、视频生成模型、3D 场景重建与生成（NeRF/3DGS/深度估计/视频到 4D）、空间智能与具身世界模型（物理推理、Sim2Real 泛化）；小鹏公开招聘“Research Intern（世界模型）”岗位",
+   "howToProve": "能说明世界模型与视频生成模型的区别（动作条件、闭环 rollout、误差累积），并给出一个可验证的预测评测方案",
+   "learnCost": "4-6 周",
+   "sources": [
+    {
+     "title": "地平线具身智能实验室，招世界模型实习生！",
+     "url": "https://www.shenlanxueyuan.com/news/detail/91"
+    },
+    {
+     "title": "【实习生】Research Intern（世界模型）（小鹏汽车校招岗位页）",
+     "url": "https://xiaopeng.jobs.feishu.cn/campus/position/7688175893932558633/detail"
+    }
+   ]
+  },
+  {
+   "id": "embodied-vla",
+   "skill": "具身智能 / VLA（视觉-语言-动作）与模仿学习",
+   "category": "embodied",
+   "importance": 5,
+   "demandCompanies": [
+    "字节",
+    "华为",
+    "具身创业公司",
+    "地平线"
+   ],
+   "evidence": "字节 Seed 校招列“具身智能：通用机器人操作大模型、数据算法与强化学习”；GitHub 上已有成体系的具身面试题库（VLA-Handbook/question-bank、embodied-interview-qa）；行业统计称 2026 年 VLA 从“加分项”变为“必选项”；国聘平台有具身智能基础模型与操作算法实习岗位",
+   "howToProve": "能讲清 VLA 的数据采集（遥操作/真机/仿真）、动作空间表示（离散 token vs 连续 chunking）与评测协议",
+   "learnCost": "4-6 周",
+   "sources": [
+    {
+     "title": "字节跳动 Seed 2027 届大模型人才校招启动（含实习）",
+     "url": "https://seed.bytedance.com/zh/blog/bytedance-seed-2027-foundation-model-campus-recruitment-is-now-open-internships-included"
+    },
+    {
+     "title": "VLA-Handbook/question-bank：具身智能/VLA 面试题库",
+     "url": "https://github.com/sou350121/VLA-Handbook/tree/main/question-bank"
+    },
+    {
+     "title": "embodied-interview-qa：具身智能高频面试题库",
+     "url": "https://github.com/WinstonJQ/embodied-interview-qa"
+    },
+    {
+     "title": "我扒了29家具身智能公司的2359个岗位，告诉你他们在招什么样的人",
+     "url": "https://zhuanlan.zhihu.com/p/2068994452434182343"
+    }
+   ]
+  },
+  {
+   "id": "3d-reconstruction",
+   "skill": "3D 重建与生成（NeRF / 3DGS / 深度估计 / 4D）",
+   "category": "generative",
+   "importance": 4,
+   "demandCompanies": [
+    "地平线",
+    "商汤",
+    "字节"
+   ],
+   "evidence": "地平线世界模型团队核心关注问题之一为“3D 场景重建与生成：NeRF、3DGS、深度估计、从视频到 4D 场景的构建与理解”；商汤公开设有“顶尖实习生-空间智能与视觉推理方向”",
+   "howToProve": "能说明 3DGS 相比 NeRF 在渲染速度与优化上的差异，并给出自己的重建质量指标（PSNR/SSIM/LPIPS）",
+   "learnCost": "3-4 周",
+   "sources": [
+    {
+     "title": "地平线具身智能实验室，招世界模型实习生！",
+     "url": "https://www.shenlanxueyuan.com/news/detail/91"
+    },
+    {
+     "title": "商汤科技校园招聘岗位（顶尖实习生-空间智能与视觉推理 / 大模型算法实习生-多模态基模型）",
+     "url": "https://hr.sensetime.com/top/position/7661941515421763890/detail"
+    }
+   ]
+  },
+  {
+   "id": "agent-engineering",
+   "skill": "Agent 系统与工具调用（Harness / 记忆 / 上下文工程 / MCP）",
+   "category": "agent",
+   "importance": 4,
+   "demandCompanies": [
+    "上海AI Lab",
+    "字节",
+    "小红书",
+    "腾讯"
+   ],
+   "evidence": "上海 AI Lab Agent 算法岗一面覆盖 Agent 系统架构、Reward 设计、全模态意图识别、SFT 数据工程；小红书面经反问环节专门问“产品 Agent 智能化方向的探索落地”；Awesome-LLM-Interview 设 Agent 与工具调用、Agent 框架与 MCP 协议两个专题（含 LangGraph/AutoGen/OpenAI Agents SDK/MCP/A2A）",
+   "howToProve": "能画出含规划-工具-记忆-评测四层的 Agent 架构，并给出可量化的效果评测方法（含开放式任务的评测方案）",
+   "learnCost": "3-4 周",
+   "sources": [
+    {
+     "title": "大模型实习模拟面试面经：上海AILab Agent算法岗校招一面深度复盘",
+     "url": "https://blog.csdn.net/2402_84764726/article/details/157993865"
+    },
+    {
+     "title": "小红书多模态算法日常实习面经",
+     "url": "https://www.nowcoder.com/feed/main/detail/af39cddf1c2d40738269b866cb7bc776"
+    },
+    {
+     "title": "Awesome-LLM-Interview README（笔记目录：Transformer/RLHF/DPO/LoRA/KV Cache/MoE/分布式训练）",
+     "url": "https://raw.githubusercontent.com/laoshan-song/Awesome-LLM-Interview/main/README.md"
+    }
+   ]
+  },
+  {
+   "id": "rag-systems",
+   "skill": "RAG / 检索增强（分块、混合检索、Rerank、评测）",
+   "category": "engineering",
+   "importance": 3,
+   "demandCompanies": [
+    "字节",
+    "上海AI Lab",
+    "百度"
+   ],
+   "evidence": "字节 Agent 秋招二面大段追问 RAG 分块逻辑（按标题结构划分、父子块召回、chunk 大小与边界重叠的具体数值处理）；Awesome-LLM-Interview 设 RAG 检索增强生成、GraphRAG 与高级 RAG、生产 RAG 排障指南三篇",
+   "howToProve": "能说清 chunk size 选择、父子块聚合、Hybrid Search + Rerank 的收益，并给出召回率/忠实度的评测集构建方法",
+   "learnCost": "2-3 周",
+   "sources": [
+    {
+     "title": "Awesome-LLM-Interview README（笔记目录：Transformer/RLHF/DPO/LoRA/KV Cache/MoE/分布式训练）",
+     "url": "https://raw.githubusercontent.com/laoshan-song/Awesome-LLM-Interview/main/README.md"
+    }
+   ]
+  },
+  {
+   "id": "evaluation",
+   "skill": "模型评测体系（Benchmark / LLM-as-Judge / lm-eval-harness）",
+   "category": "engineering",
+   "importance": 4,
+   "demandCompanies": [
+    "阿里",
+    "字节",
+    "腾讯",
+    "上海AI Lab"
+   ],
+   "evidence": "阿里云面经场景题与八股涉及“模型选型时是否做定性定量对比 ab test”“客观数据验证性能”；AI 实习受访者描述工作即“后训练和评测：捞 Bad Case、判断是理解错题、推理过程出错还是格式不符”；Awesome-LLM-Interview 设评估框架与 Harness 专题（MTEB、lm-eval-harness、OpenCompass）",
+   "howToProve": "能设计包含客观 benchmark + 内部测试集 + 人评/LLM 评判的三层评测，并说明各自局限",
+   "learnCost": "1-2 周",
+   "sources": [
+    {
+     "title": "阿里云多模态大模型暑期实习（已oc）",
+     "url": "https://www.nowcoder.com/feed/main/detail/c2e2058a1cb24c7ca5e21f32826179d8"
+    },
+    {
+     "title": "日薪千元的AI实习生，在焦虑什么？",
+     "url": "https://www.jiemian.com/article/15087508.html"
+    },
+    {
+     "title": "Awesome-LLM-Interview README（笔记目录：Transformer/RLHF/DPO/LoRA/KV Cache/MoE/分布式训练）",
+     "url": "https://raw.githubusercontent.com/laoshan-song/Awesome-LLM-Interview/main/README.md"
+    }
+   ]
+  },
+  {
+   "id": "data-engineering",
+   "skill": "预训练/后训练数据工程（清洗、去重、配比、合成）",
+   "category": "engineering",
+   "importance": 4,
+   "demandCompanies": [
+    "腾讯",
+    "字节",
+    "阿里",
+    "美团"
+   ],
+   "evidence": "腾讯三面问“在微调 Qwen 的时候，数据是怎么构造的，有用到什么数据清洗方法吗，数据配比是怎么做的”；淘天一面要求讲 BLIP 的数据是怎样清洗的；Awesome-LLM-Interview 设预训练数据处理专题（清洗、去重、配比，FineWeb/Dolma/Datatrove）",
+   "howToProve": "能给出自己的数据流水线（去重策略、质量过滤规则、配比消融实验）与对应指标变化",
+   "learnCost": "2-3 周",
+   "sources": [
+    {
+     "title": "腾讯-混元大模型面经-华5硕",
+     "url": "https://www.nowcoder.com/feed/main/detail/c002e91fda6c44dabe2db9ac79a6ccba"
+    },
+    {
+     "title": "大模型面经 - 淘天（搜推智能产品事业部-多模态大模型）",
+     "url": "https://blog.csdn.net/weixin_45768638/article/details/145885586"
+    },
+    {
+     "title": "Awesome-LLM-Interview README（笔记目录：Transformer/RLHF/DPO/LoRA/KV Cache/MoE/分布式训练）",
+     "url": "https://raw.githubusercontent.com/laoshan-song/Awesome-LLM-Interview/main/README.md"
+    }
+   ]
+  },
+  {
+   "id": "coding-interview",
+   "skill": "算法手撕与数据结构（二分/DP/滑动窗口/单调栈/并查集）",
+   "category": "coding",
+   "importance": 5,
+   "demandCompanies": [
+    "字节",
+    "腾讯",
+    "阿里",
+    "快手",
+    "美团",
+    "华为"
+   ],
+   "evidence": "多份面经一致指出字节“每一面都有 coding”、快手“比较重视 coding”、拼多多“比较重视 coding”；小红书手撕为基础二分；腾讯混元手撕括号生成、最长无重复子串、零钱兑换 I/II；快手可灵手撕为非 hot100 的 DP/记忆化搜索；阿里云手撕包含非 hot100 滑动窗口与扎气球最少箭数",
+   "howToProve": "保证 30 分钟内 bug-free 写出边界正确的二分与 DP；准备 2-3 道非 hot100 的 DP/记忆化搜索题以应对“反套路”考察",
+   "learnCost": "4-8 周",
+   "sources": [
+    {
+     "title": "小红书多模态算法日常实习面经",
+     "url": "https://www.nowcoder.com/feed/main/detail/af39cddf1c2d40738269b866cb7bc776"
+    },
+    {
+     "title": "腾讯-混元大模型面经-华5硕",
+     "url": "https://www.nowcoder.com/feed/main/detail/c002e91fda6c44dabe2db9ac79a6ccba"
+    },
+    {
+     "title": "9.18快手可灵策略梯度岗一面",
+     "url": "https://www.nowcoder.com/discuss/933402920173699072"
+    },
+    {
+     "title": "阿里云多模态大模型暑期实习（已oc）",
+     "url": "https://www.nowcoder.com/feed/main/detail/c2e2058a1cb24c7ca5e21f32826179d8"
+    },
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    }
+   ]
+  },
+  {
+   "id": "paper-communication",
+   "skill": "论文讲解与科研表达能力（2min/5min 概括、动机与贡献）",
+   "category": "soft",
+   "importance": 5,
+   "demandCompanies": [
+    "华为",
+    "商汤",
+    "旷视",
+    "字节",
+    "腾讯"
+   ],
+   "evidence": "20 家企业 70 场面试汇总面经的第一条技术面流程即“讲论文/项目（要能够可长可短，很多时候面试官可能会要求 2min/5min 概括）”；华为二面要求“按照面试官的思路讲论文（注重方法，不看 motivation 和工作贡献）”；商汤/旷视多轮面试几乎全程围绕论文",
+   "howToProve": "准备 1min/3min/10min 三个版本的论文自述，并预判“为什么这样做、有没有别的方案、失败案例”三类追问",
+   "learnCost": "1-2 周",
+   "sources": [
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    },
+    {
+     "title": "华为诺亚方舟实习offer记录",
+     "url": "https://www.nowcoder.com/discuss/353156334143086592"
+    }
+   ]
+  },
+  {
+   "id": "cpp-python-eng",
+   "skill": "工程语言与工具（Python/PyTorch、C++、Linux、脚本自写能力）",
+   "category": "engineering",
+   "importance": 3,
+   "demandCompanies": [
+    "腾讯",
+    "美团",
+    "商汤",
+    "百度"
+   ],
+   "evidence": "美团二面第 12、13 题问“知道什么 Linux 命令”“用过 C++、Java 吗”；商汤/旷视面经提到“问我 C++ 我也不会”；百度视觉技术部手写旋转框 NMS 时“面试官鼓励用 C++ 实现”",
+   "howToProve": "能独立写出可复现的训练脚本与数据加载器，熟悉分布式启动命令、显存排查命令（nvidia-smi、py-spy 等）",
+   "learnCost": "2-4 周",
+   "sources": [
+    {
+     "title": "美团大模型算法二面-秋招面经",
+     "url": "https://www.nowcoder.com/feed/main/detail/e72d861f57c1499393be6651f8611177"
+    },
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    },
+    {
+     "title": "实习算法岗血泪面经，商汤，旷世，阿里，字节跳动",
+     "url": "https://www.wondercv.com/community/11273.html"
+    }
+   ]
+  },
+  {
+   "id": "math-probability",
+   "skill": "数理基础（概率题、反向传播推导、信息论视角）",
+   "category": "foundation",
+   "importance": 4,
+   "demandCompanies": [
+    "腾讯",
+    "商汤",
+    "拼多多",
+    "美团"
+   ],
+   "evidence": "腾讯四面要求“推导一下神经网络反向传播的过程”并做一道排列组合概率题；商汤二面有智力题与物理题（a^b 与 b^a、100 盏灯）；拼多多三面有会议成功概率题；字节三面有轮流抛硬币胜率题",
+   "howToProve": "每天 1-2 道概率题保持手感；能手推两层网络的反向传播与 CE+softmax 的梯度",
+   "learnCost": "2-3 周",
+   "sources": [
+    {
+     "title": "腾讯-混元大模型面经-华5硕",
+     "url": "https://www.nowcoder.com/feed/main/detail/c002e91fda6c44dabe2db9ac79a6ccba"
+    },
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    }
+   ]
+  }
+ ],
+ "interviewProcess": [
+  {
+   "company": "字节跳动（Seed / 多模态 / 智能创作）",
+   "stage": "技术面（多为一轮或两轮）",
+   "duration": "60-90 分钟",
+   "format": "自我介绍 5% + 项目/论文深挖 40% + 基础知识（大模型/CV/ML）30% + 手撕代码 25%（面经一致指出字节每一面都有 coding）",
+   "typicalQuestions": [
+    "讲一篇你最印象深刻的论文，细节会被反复追问",
+    "手撕：多头自注意力 / 括号生成 / 最长无重复子串 / 零钱兑换",
+    "手写交叉熵的反向传播；BN 的参数量",
+    "BN 训练与测试为什么不一样；类别不平衡怎么处理",
+    "交叉熵公式（多标签分类怎么办）",
+    "概率题：两人轮流抛硬币，先抛者胜率",
+    "MoE 相比 Dense 有什么好处，为什么大家都在探索 MoE",
+    "LoRA 的原理，A/B 矩阵怎么初始化，和全量微调的对比"
+   ],
+   "tips": [
+    "字节面试节奏快，很多人是一面当晚、二面次日、三面（HR）紧接着，务必提前准备好所有材料",
+    "论文必须能 2min/5min 两档概括，且能回答“motivation 是什么、有没有别的方案”",
+    "手撕不限于 hot100，会有面试官自创题，重点看边界与代码规范"
+   ],
+   "sources": [
+    {
+     "title": "字节跳动 Seed 2027 届大模型人才校招启动（含实习）",
+     "url": "https://seed.bytedance.com/zh/blog/bytedance-seed-2027-foundation-model-campus-recruitment-is-now-open-internships-included"
+    },
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    },
+    {
+     "title": "腾讯-混元大模型面经-华5硕",
+     "url": "https://www.nowcoder.com/feed/main/detail/c002e91fda6c44dabe2db9ac79a6ccba"
+    },
+    {
+     "title": "字节seed一面（前端组，含手撕形式参考）",
+     "url": "https://www.nowcoder.com/feed/main/detail/a3ba705bba5b4ca99010bc6317ef2709"
+    },
+    {
+     "title": "LLM-Algorithm-Intern-Guide：2026届大模型算法岗实习面经（含手撕 PPO/RoPE/Transformer、RLHF 核心与八股文）",
+     "url": "https://github.com/Junvate/LLM-Algorithm-Intern-Guide"
+    }
+   ]
+  },
+  {
+   "company": "腾讯（TEG 混元大模型 - 对齐方向）",
+   "stage": "一面",
+   "duration": "约 90 分钟",
+   "format": "自我介绍+实习/论文 35% + 大模型八股 40% + 手撕代码 25%（两道题）",
+   "typicalQuestions": [
+    "Qwen 和 DeepSeek 有什么区别",
+    "为什么大家都开始探索 MoE 架构，MoE 相比 Dense 有什么好处",
+    "有没有全量微调过，有没有对比过 LoRA 与全量微调的性能表现",
+    "讲一下大模型训练和推理的流程，SFT 和 RLHF 的作用分别是什么",
+    "RLHF 中目前主流的强化学习算法有哪几个，写一下损失函数的表达式",
+    "手撕：22. 括号生成",
+    "手撕：多头自注意力"
+   ],
+   "tips": [
+    "一面八股非常多且细，且要写两道代码题，时间很紧，八股必须做到能写公式而不是只说不写"
+   ],
+   "sources": [
+    {
+     "title": "腾讯-混元大模型面经-华5硕",
+     "url": "https://www.nowcoder.com/feed/main/detail/c002e91fda6c44dabe2db9ac79a6ccba"
+    }
+   ]
+  },
+  {
+   "company": "腾讯（TEG 混元大模型 - 对齐方向）",
+   "stage": "二面",
+   "duration": "约 60 分钟",
+   "format": "结合实习工程的深度追问 70% + 手撕 30%",
+   "typicalQuestions": [
+    "ZeRO-1、ZeRO-2、ZeRO-3 三个模式的区别",
+    "用 DeepSpeed ZeRO-3 微调 Qwen2-72B，每张卡占用显存大概是多少，估算一下为什么占这么多",
+    "除了 DeepSpeed，还用过什么优化方法",
+    "LoRA 的原理，A 和 B 两个矩阵怎么初始化，有了解过其他初始化方法吗",
+    "对 RLHF 了解的多吗",
+    "手撕：3. 无重复字符的最长子串"
+   ],
+   "tips": [
+    "二面是“从你写过的东西引出问题”，所以简历上写的每一个技术栈都要能算清楚资源账（显存/吞吐/卡数）"
+   ],
+   "sources": [
+    {
+     "title": "腾讯-混元大模型面经-华5硕",
+     "url": "https://www.nowcoder.com/feed/main/detail/c002e91fda6c44dabe2db9ac79a6ccba"
+    }
+   ]
+  },
+  {
+   "company": "腾讯（TEG 混元大模型 - 对齐方向）",
+   "stage": "三面",
+   "duration": "约 60 分钟",
+   "format": "对齐专题深挖 70% + 数据与方案复盘 20% + 手撕 10%",
+   "typicalQuestions": [
+    "在微调 Qwen 的时候，数据是怎么构造的，用了什么数据清洗方法，数据配比怎么做",
+    "讲一下 RLHF 的流程，为什么 SFT 之后还要做 RLHF，只用 SFT 可以吗",
+    "知道哪些强化学习算法，除了 PPO 和 DPO 呢",
+    "DeepSeek 用的 GRPO 相比于 GPT 的 PPO 做了哪些改进",
+    "开放题：对目前大模型的发展有什么看法",
+    "手撕：322. 零钱兑换 / 518. 零钱兑换 II"
+   ],
+   "tips": [
+    "三面聚焦对齐，考得最深；没做过 RLHF 也要能讲清三阶段流程与各自的失败模式"
+   ],
+   "sources": [
+    {
+     "title": "腾讯-混元大模型面经-华5硕",
+     "url": "https://www.nowcoder.com/feed/main/detail/c002e91fda6c44dabe2db9ac79a6ccba"
+    }
+   ]
+  },
+  {
+   "company": "腾讯（TEG 混元大模型 - 对齐方向）",
+   "stage": "四面",
+   "duration": "约 60 分钟",
+   "format": "系统视角串讲 50% + 数学基础 50%（无八股）",
+   "typicalQuestions": [
+    "推导一下神经网络反向传播的过程",
+    "一道排列组合的概率题",
+    "开放题：你觉得大模型目前还有哪些可以改进的点",
+    "把简历上的工作串起来问整体逻辑"
+   ],
+   "tips": [
+    "四面更看重思维和基础，八股不再是重点，数理推导要能手写"
+   ],
+   "sources": [
+    {
+     "title": "腾讯-混元大模型面经-华5硕",
+     "url": "https://www.nowcoder.com/feed/main/detail/c002e91fda6c44dabe2db9ac79a6ccba"
+    }
+   ]
+  },
+  {
+   "company": "阿里巴巴（淘天 搜推智能产品事业部 - 多模态大模型）",
+   "stage": "一面",
+   "duration": "约 60 分钟",
+   "format": "自我介绍+项目 25% + 多模态八股 60% + 手撕 15%",
+   "typicalQuestions": [
+    "介绍一下 CLIP",
+    "了解 LoRA 吗，LoRA 微调的原理是什么",
+    "了解哪些多模态大模型，简要介绍几个",
+    "BLIP 的三个损失函数分别是什么，数据是怎样清洗的",
+    "BLIP2 相对于 BLIP 有哪些改进，BLIP3 又有哪些改进",
+    "Qwen-VL 的三个训练流程分别是什么，有什么作用",
+    "视觉编码器和 LLM 连接时，Q-Former 复杂 Adaptor 好还是 LLaVA 简单 MLP 好",
+    "代码：实现多头自注意力"
+   ],
+   "tips": [
+    "一面“比较常规，几乎都是八股”，但面试官最看重“各个模型设计的动机”"
+   ],
+   "sources": [
+    {
+     "title": "大模型面经 - 淘天（搜推智能产品事业部-多模态大模型）",
+     "url": "https://blog.csdn.net/weixin_45768638/article/details/145885586"
+    }
+   ]
+  },
+  {
+   "company": "阿里巴巴（淘天 - 多模态大模型）",
+   "stage": "二面",
+   "duration": "约 60 分钟",
+   "format": "项目动机 20% + 大模型八股 65% + 手撕 15%",
+   "typicalQuestions": [
+    "Transformer 编码器和解码器的注意力有什么区别，为什么除以 sqrt(d_k)",
+    "Qwen 相比于原始 Transformer 有哪些结构上的改动",
+    "了解 RLHF 吗，DPO 和 PPO 有什么区别，Loss 是什么样的，各自优缺点",
+    "介绍一下 CLIP，还了解什么其他的对比学习方法",
+    "开放题：目前多模态大模型最大的问题是什么",
+    "代码：1143. 最长公共子序列"
+   ],
+   "tips": [
+    "二面难度大于一面，除八股外加了知识面广度与开放题"
+   ],
+   "sources": [
+    {
+     "title": "大模型面经 - 淘天（搜推智能产品事业部-多模态大模型）",
+     "url": "https://blog.csdn.net/weixin_45768638/article/details/145885586"
+    }
+   ]
+  },
+  {
+   "company": "阿里巴巴（淘天 - 多模态大模型）",
+   "stage": "三面",
+   "duration": "约 40 分钟",
+   "format": "项目详聊 40% + 行业脉络 40% + 聊天（职业规划）20%",
+   "typicalQuestions": [
+    "大模型这一路是怎么发展过来的（Transformer → BERT → GPT → LLaMA → Qwen → o1 推理模型）",
+    "平常有尝试过训练过大模型吗，规模小一点的也没关系",
+    "职业规划"
+   ],
+   "tips": [
+    "三面是加面的大老板面，氛围轻松，但会横向考察你对行业脉络的理解"
+   ],
+   "sources": [
+    {
+     "title": "大模型面经 - 淘天（搜推智能产品事业部-多模态大模型）",
+     "url": "https://blog.csdn.net/weixin_45768638/article/details/145885586"
+    }
+   ]
+  },
+  {
+   "company": "阿里云（多模态大模型暑期实习）",
+   "stage": "一面 / 二面 / 三面（连续流程）",
+   "duration": "每轮约 45-60 分钟",
+   "format": "简历与实习细节拷打 40% + 场景题 15% + 生成式八股 30% + 手撕 15%",
+   "typicalQuestions": [
+    "你负责了什么，用了多少张卡，学习率怎么样，训练了多久，用了多少数据，数据怎么准备的，显存占用怎么样",
+    "场景题：有一个数字人模型，想训练成只生成一个人的，可以怎么做",
+    "你看过什么别的 SOTA 模型的 ref image 注入方式，有什么优劣",
+    "如何判断模型是否收敛；梯度消失或爆炸怎么解决",
+    "如何系统判断是否训练完成，特别是在视频生成模型中",
+    "有哪些常见的蒸馏方法",
+    "DiT 的框架流程，如何时间注入，讲一讲 AdaLN",
+    "讲一下 flow matching，原理与优势",
+    "现在为什么大家都用 RMSNorm 而不是 LayerNorm",
+    "Adam 和 AdamW 的原理，有什么改进",
+    "手撕：二叉树的右视图 / 非 hot100 的滑动窗口 / 扎破所有气球的最少箭数"
+   ],
+   "tips": [
+    "阿里会问“用了多少张卡、显存占用多少”，必须把自己训练过的每个实验的资源账算清楚",
+    "注意在线测评（笔试测评）成绩也会影响结果，有面经作者称因测评不高而在 HR 面前极度焦虑",
+    "该面经时间线：3.18 投递 → 3.23 一面 → 3.25 二面 → 4.3 三面 → 4.13 HR 面 → 4.21 offer"
+   ],
+   "sources": [
+    {
+     "title": "阿里云多模态大模型暑期实习（已oc）",
+     "url": "https://www.nowcoder.com/feed/main/detail/c2e2058a1cb24c7ca5e21f32826179d8"
+    }
+   ]
+  },
+  {
+   "company": "美团（大模型算法）",
+   "stage": "二面",
+   "duration": "约 60 分钟",
+   "format": "后训练八股 70% + 工程与框架 20% + 产出评价 10%",
+   "typicalQuestions": [
+    "Qwen 与传统 Transformer 相比有什么结构上的改进",
+    "RMSNorm 相较于 LayerNorm 有什么优势，公式是什么；SwiGLU 的公式是什么",
+    "GRPO 的公式是什么，这样做为什么更好；GRPO 为什么要做 clip",
+    "KL 散度的公式是什么，为什么要用 KL 散度",
+    "LLM 的损失函数是什么，给你一个 10w 的词表，计算 loss 值",
+    "为什么你要用 GRPO，结果比之前好多少，显存开销多大，训练一个 step 需要多久",
+    "奖励函数如何设置的，为什么；有没有想过为什么一开始 Reward 出现大幅度震荡",
+    "Post-Training 的工作机制，为什么要做三阶段训练，如何从 V3 到 R1",
+    "为什么 LoRA 能够 work，除了 LoRA 还了解哪些微调方法",
+    "后训练用的哪个框架，如何使用 deepspeed 进行分布式训练，脚本是你自己写的吗",
+    "知道什么 Linux 命令；用过 C++、Java 吗",
+    "如何去评价你工作的产出和质量",
+    "FLUX 的工作原理，LoRA 在这个地方起到了什么作用"
+   ],
+   "tips": [
+    "这是一份典型的高密度后训练八股清单，建议按题号逐条准备成可背诵的公式+一句话结论"
+   ],
+   "sources": [
+    {
+     "title": "美团大模型算法二面-秋招面经",
+     "url": "https://www.nowcoder.com/feed/main/detail/e72d861f57c1499393be6651f8611177"
+    }
+   ]
+  },
+  {
+   "company": "百度（文心一言 大模型算法）",
+   "stage": "一面",
+   "duration": "约 60 分钟",
+   "format": "对齐与推理能力开放题 90% + 项目 10%（几乎没有传统 CV 八股）",
+   "typicalQuestions": [
+    "PPO 与 GRPO 的区别，分别介绍优势与缺点",
+    "DPO 对齐训练的曲线是怎么样的，正例的概率会提升吗",
+    "DeepSeek-R1 不仅推理能力好，文采能力也很好，如何让模型的文采能力也很好",
+    "DPO 如何解决回答过长的问题，除了正则",
+    "为什么现在大家都在关注大模型的推理能力（reasoning）",
+    "对于一个 base model，如何增强大模型的 reasoning 能力",
+    "模型选型时是否做定性定量对比 AB test，客观数据验证文心性能不好了吗",
+    "DPO 除了长度问题还有其他问题吗，reward hacking？都没有奖励模型了"
+   ],
+   "tips": [
+    "文心一面全是开放题，靠背书答不出来，需要有自己的技术判断；无手撕记录"
+   ],
+   "sources": [
+    {
+     "title": "百度文心一言大模型算法实习一面",
+     "url": "https://www.nowcoder.com/feed/main/detail/1c01b2eaeb9c46e48c2b67f498bb7f3d"
+    }
+   ]
+  },
+  {
+   "company": "快手（可灵 策略梯度岗）",
+   "stage": "一面",
+   "duration": "约 60 分钟",
+   "format": "论文与实习深挖 50% + RL/生成式八股 35% + 手撕 15%",
+   "typicalQuestions": [
+    "对两篇论文和实习经历深挖：做了什么、怎么做的、难点是什么、如何解决",
+    "详细介绍一下几种主流的强化学习算法，并解释他们的区别",
+    "了解 GAE 和 Diffusion model 吗",
+    "RLVF 是什么",
+    "GRPO 算法具体有什么问题",
+    "手撕：是一个非 hot100 的题，切分披萨数（DP 或 dfs+记忆化搜索）"
+   ],
+   "tips": [
+    "面试官主动告知可灵是快手新独立团队、刚起步、工作强度较大（单休+加班），接受前务必确认"
+   ],
+   "sources": [
+    {
+     "title": "9.18快手可灵策略梯度岗一面",
+     "url": "https://www.nowcoder.com/discuss/933402920173699072"
+    }
+   ]
+  },
+  {
+   "company": "小红书（智能创作 多模态算法日常实习）",
+   "stage": "一面",
+   "duration": "约 60 分钟",
+   "format": "项目深挖 40% + 对齐算法对比与深问 45% + 手撕 10% + 反问 5%",
+   "typicalQuestions": [
+    "围绕大模型、Agent、强化学习项目经历深挖细节、技术选型复盘、难点攻坚",
+    "系统阐述 PPO、DPO、GRPO 三种主流对齐算法的核心原理、适用场景与优劣差异",
+    "详细讲解广义优势估计 GAE 的原理、作用以及超参 λ、γ 的物理意义",
+    "对比蒙特卡洛（MC）、时序差分（TD）两种回报估计方式的偏差、方差、适用场景差异",
+    "GAE 如何在 MC 与 TD 之间做偏差-方差权衡，为什么是 PPO 工业标配",
+    "手撕：基础二分查找代码手写，考察边界条件、循环写法、终止逻辑熟练度"
+   ],
+   "tips": [
+    "手撕看似简单（二分），评论区一致认为“二分这种反而最怕边界写炸”，务必练到零失误",
+    "反问环节可问团队的日常与产品 Agent 智能化落地情况"
+   ],
+   "sources": [
+    {
+     "title": "小红书多模态算法日常实习面经",
+     "url": "https://www.nowcoder.com/feed/main/detail/af39cddf1c2d40738269b866cb7bc776"
+    }
+   ]
+  },
+  {
+   "company": "商汤科技（CV / 多模态基模型）",
+   "stage": "零面 + 多轮技术面",
+   "duration": "40-120 分钟不等",
+   "format": "讲论文 70% + 智力题/物理题 20% + 开放题 10%",
+   "typicalQuestions": [
+    "讲你觉得最有理论深度的一篇论文；问喜欢的工作类型",
+    "常用的目标检测算法，one-stage 与 two-stage 的区别",
+    "比赛中如何解决样本不平衡，用了什么训练技巧，为什么能起作用",
+    "MobileNet / ShuffleNet 具体结构，如何降低计算量（给一个 DW 卷积实例算降低了多少）",
+    "模型剪枝的方法与具体细节",
+    "SE 模块介绍",
+    "智力题：a^b 和 b^a 谁大",
+    "智力题：100 盏灯，第 i 个学生切换 i 的倍数的开关，第 100 个学生进入后还有多少盏灯亮着",
+    "物理题：分析天宫一号中宇航员的受力"
+   ],
+   "tips": [
+    "商汤“好像很喜欢问物理题，我好多同学都被问了”（面经原话）；准备 2-3 道经典智力题即可覆盖大部分变体"
+   ],
+   "sources": [
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    },
+    {
+     "title": "商汤科技校园招聘岗位（顶尖实习生-空间智能与视觉推理 / 大模型算法实习生-多模态基模型）",
+     "url": "https://hr.sensetime.com/top/position/7661941515421763890/detail"
+    }
+   ]
+  },
+  {
+   "company": "旷视科技（CV 算法实习）",
+   "stage": "一面（技术）",
+   "duration": "约 35 分钟",
+   "format": "项目介绍 20% + CV 基础广度问答 70% + 计算题 10%",
+   "typicalQuestions": [
+    "FCN 结构介绍，上采样的具体操作",
+    "空洞卷积原理，DeepLab v1/v2 的改进",
+    "focal loss 介绍，Lovász loss 数学原理",
+    "一道题：计算卷积操作的浮点计算量",
+    "介绍 RPN 的原理",
+    "MobileNet",
+    "U-Net 的缺点，最新的改进版本有没有看过（U-Net++）",
+    "何恺明最新的文章读过吗，能不能讲讲"
+   ],
+   "tips": [
+    "旷视非常看重“深度+广度”，答不上最新改进会被直接评价“知识面不够宽”；后续轮次几乎全程讲论文"
+   ],
+   "sources": [
+    {
+     "title": "实习算法岗血泪面经，商汤，旷世，阿里，字节跳动",
+     "url": "https://www.wondercv.com/community/11273.html"
+    },
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    }
+   ]
+  },
+  {
+   "company": "华为（诺亚方舟实验室）",
+   "stage": "投递 → 笔试 → 一面 → 二面 → offer",
+   "duration": "笔试 2 小时；面试约 60 分钟",
+   "format": "笔试：一道算法题 + 一道深度学习框架题（两小时，线下做）；面试：围绕做过什么、想做什么，顺着项目问基础知识和发散性点子",
+   "typicalQuestions": [
+    "围绕项目问基础知识和发散性点子",
+    "design pattern（面经中提到被问到，作者直呼“觉得不对了”）",
+    "如何安装 pytorch"
+   ],
+   "tips": [
+    "每次面试都是两位面试官轮流提问",
+    "有用户提到官网流程为“两轮 coding → 业务面试 → 学术报告 → HR 面试 → 综合面试”，与面经作者的流程不同，说明部门差异大",
+    "时间线参考（2020 年贴）：3.18 投递 → 3.25 约面 → 4.3 笔试 → 4.10 二面 → 4.17 offer"
+   ],
+   "sources": [
+    {
+     "title": "华为诺亚方舟实习offer记录",
+     "url": "https://www.nowcoder.com/discuss/353156334143086592"
+    }
+   ]
+  },
+  {
+   "company": "DeepSeek（大模型算法岗）",
+   "stage": "笔试",
+   "duration": "题量大、研究型大题（具体时长未披露）",
+   "format": "全是大题/推导题，共 8 题：手写 MHA、DPO 完整训练流程推导、MoE 通信开销与负载不均衡分析、推理加速底层实现（PagedAttention + 投机解码）、DSpark 推理加速框架机制推导、KV 缓存压缩原理与内存占用计算、多模态视觉原语推理框架数学建模、DeepSeek MoE 无辅助损失负载均衡机制推导",
+   "typicalQuestions": [
+    "手写完整的 Multi-Head Attention，不能只写框架",
+    "DPO 的完整训练流程推导，从数据准备到梯度更新",
+    "MoE 模型的通信开销计算和负载不均衡问题分析",
+    "推理加速的底层实现（vLLM 的 PagedAttention 原理、投机解码的工程实现）",
+    "KV 缓存压缩原理与内存占用计算",
+    "MoE 的无辅助损失负载均衡机制推导"
+   ],
+   "tips": [
+    "答题要求写公式推导而不是背结论；注意题目明确强调“具体版本号、参数规模或单卡数字，都应以公开模型配置和可复现实验为准”",
+    "建议准备 KV Cache 标准显存公式并会代入真实配置算 GiB"
+   ],
+   "sources": [
+    {
+     "title": "2026-07-26_DeepSeek_大模型算法岗笔试面经分享（含完整答案）",
+     "url": "https://api-cdn.nowcoder.com/discuss/913482312753418240"
+    }
+   ]
+  },
+  {
+   "company": "上海人工智能实验室（Agent 算法岗）",
+   "stage": "校招一面",
+   "duration": "未披露",
+   "format": "Agent 系统架构 + Reward 设计 + 全模态意图识别 + SFT 数据工程 四大块",
+   "typicalQuestions": [
+    "Agent 系统架构设计",
+    "Reward 设计",
+    "全模态意图识别",
+    "SFT 数据工程"
+   ],
+   "tips": [
+    "社区讨论称上海 AI Lab 大模型算法岗“竞争太激烈”，建议提前准备 Agent 系统的完整闭环叙述"
+   ],
+   "sources": [
+    {
+     "title": "大模型实习模拟面试面经：上海AILab Agent算法岗校招一面深度复盘",
+     "url": "https://blog.csdn.net/2402_84764726/article/details/157993865"
+    }
+   ]
+  },
+  {
+   "company": "地平线（具身智能实验室 世界模型团队）",
+   "stage": "投递 → 技术面",
+   "duration": "未披露",
+   "format": "研究经历与论文为主；邮件投递需按指定标题格式",
+   "typicalQuestions": [
+    "世界模型/视频生成/3D 重建/强化学习/VLM 方向的研究经历",
+    "顶会论文的动机、方法与结果",
+    "实习周期与每周投入天数（要求至少 4 个月、每周 4 天以上）"
+   ],
+   "tips": [
+    "明确要求 2026 年及以后毕业的硕士/博士在读；有 CVPR/ICCV/ECCV/NeurIPS/ICLR/RSS/CoRL/ICRA 一作论文或投稿者优先"
+   ],
+   "sources": [
+    {
+     "title": "地平线具身智能实验室，招世界模型实习生！",
+     "url": "https://www.shenlanxueyuan.com/news/detail/91"
+    }
+   ]
+  },
+  {
+   "company": "通用算法岗（跨公司汇总：技术面基本流程）",
+   "stage": "技术面通用结构",
+   "duration": "各公司 45-120 分钟",
+   "format": "自我介绍 → 讲论文/项目（可长可短，常要求 2min/5min 概括）→ 实习经历 → 基础知识（领域知识/ML 概率信息论/编程语言）→ coding（可选）→ 反问",
+   "typicalQuestions": [
+    "自我介绍；讲论文与项目",
+    "领域基础知识 + 机器学习/概率论/信息论",
+    "Coding（字节、快手、拼多多、快手尤其重视）",
+    "反问环节"
+   ],
+   "tips": [
+    "来自 20 家企业 70+ 场面试的汇总，可作为技术面通用模板按模块准备"
+   ],
+   "sources": [
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    }
+   ]
+  },
+  {
+   "company": "通用算法岗（跨公司汇总：HR / HRBP 面）",
+   "stage": "HR 面",
+   "duration": "20-40 分钟",
+   "format": "结构化行为面 + 择业动机",
+   "typicalQuestions": [
+    "职业规划",
+    "遇到的困难（解决的/放弃的）",
+    "有没有“打破规则”的经历（频繁被问）",
+    "择业考虑因素（基本一定会问）",
+    "有没有其他在谈的企业（基本一定会问）",
+    "如果排序的话，本公司在你心中可以排到第几名",
+    "最有成就感/最遗憾/坚持最久的事情",
+    "团队合作的问题",
+    "你周围的人怎么评价你（频繁被问）"
+   ],
+   "tips": [
+    "“打破规则经历”“周围人怎么评价你”出现频率高，建议各准备一个 STAR 故事"
+   ],
+   "sources": [
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    }
+   ]
+  }
+ ],
+ "handWrittenCoding": [
+  {
+   "id": "mha-implementation",
+   "title": "手写 Multi-Head Self-Attention",
+   "difficulty": "medium",
+   "frequency": 5,
+   "topics": [
+    "transformer",
+    "attention"
+   ],
+   "prompt": "实现一个多头自注意力模块：输入 [B, S, d_model]，头数 H，支持因果 mask 与 padding mask，返回 [B, S, d_model]。要求写全张量形状变换、缩放点积、掩码与输出投影。",
+   "keyPoints": [
+    "Q/K/V 线性投影后 reshape 成 [B,H,S,dh] 并转置",
+    "scores = QK^T / sqrt(dh)，除以 sqrt(dh) 控制点积方差，避免 softmax 饱和",
+    "因果 mask 用 tril，padding mask 用 -inf 填充；两者广播形状不同不能混用",
+    "合并头之前要 contiguous()，否则 view 会报错",
+    "Cross-Attention 时 Q 的长度可以与 K/V 不同"
+   ],
+   "pitfalls": [
+    "忘记除以 sqrt(dh) 或写成 sqrt(d_model)",
+    "直接用 -1e9 而不是 finfo.min，fp16 下会出现 nan",
+    "transpose 后未 contiguous 就 view，导致形状错乱",
+    "把序列长度写死，Cross-Attention 时崩"
+   ],
+   "referenceSolution": "import math, torch\nfrom torch import nn\n\nclass MultiHeadAttention(nn.Module):\n    def __init__(self, d_model, num_heads, dropout=0.0):\n        super().__init__()\n        assert d_model % num_heads == 0\n        self.d_model, self.h = d_model, num_heads\n        self.dh = d_model // num_heads\n        self.q, self.k, self.v = (nn.Linear(d_model, d_model) for _ in range(3))\n        self.o = nn.Linear(d_model, d_model)\n        self.drop = nn.Dropout(dropout)\n\n    def forward(self, x, attn_mask=None, is_causal=False):\n        B, S, _ = x.shape\n        # [B,S,D] -> [B,H,S,dh]\n        def split(t):\n            return t.view(B, S, self.h, self.dh).transpose(1, 2)\n        q, k, v = split(self.q(x)), split(self.k(x)), split(self.v(x))\n        scores = q @ k.transpose(-2, -1) / math.sqrt(self.dh)   # [B,H,S,S]\n        if is_causal:\n            causal = torch.tril(torch.ones(S, S, dtype=torch.bool, device=x.device))\n            scores = scores.masked_fill(~causal, torch.finfo(scores.dtype).min)\n        if attn_mask is not None:\n            scores = scores.masked_fill(~attn_mask, torch.finfo(scores.dtype).min)\n        w = torch.softmax(scores.float(), dim=-1).to(scores.dtype)\n        out = self.drop(w) @ v                                       # [B,H,S,dh]\n        out = out.transpose(1, 2).contiguous().view(B, S, self.d_model)\n        return self.o(out)\n",
+   "sources": [
+    {
+     "title": "腾讯-混元大模型面经-华5硕",
+     "url": "https://www.nowcoder.com/feed/main/detail/c002e91fda6c44dabe2db9ac79a6ccba"
+    },
+    {
+     "title": "大模型面经 - 淘天（搜推智能产品事业部-多模态大模型）",
+     "url": "https://blog.csdn.net/weixin_45768638/article/details/145885586"
+    },
+    {
+     "title": "2026-07-26_DeepSeek_大模型算法岗笔试面经分享（含完整答案）",
+     "url": "https://api-cdn.nowcoder.com/discuss/913482312753418240"
+    }
+   ]
+  },
+  {
+   "id": "flashattention-concept",
+   "title": "FlashAttention 的在线 softmax 分块实现",
+   "difficulty": "hard",
+   "frequency": 4,
+   "topics": [
+    "attention",
+    "inference",
+    "numerical"
+   ],
+   "prompt": "不落地 S×S 注意力矩阵，实现分块注意力：按 K/V 块迭代，用 running max 与 running sum 在线归一化。解释它为什么把显存从 O(S^2) 降到 O(S)。",
+   "keyPoints": [
+    "核心是 online softmax：每来一个新块就用新的 max 重标定历史累加项",
+    "alpha = exp(m_old - m_new) 用来修正已累积的 out 和 l",
+    "结果与标准注意力在数学上等价（除浮点误差），只是改变了 IO 与显存峰值",
+    "分块大小受 SRAM 限制，需要 tune"
+   ],
+   "pitfalls": [
+    "忘记对历史 out/l 乘 alpha 修正，结果全错",
+    "把 exp 直接在大数上做导致溢出",
+    "以为 FlashAttention 能降低计算量（FLOPs 不变）"
+   ],
+   "referenceSolution": "# FlashAttention 概念实现：分块 + 在线 softmax，不落地 SxS 矩阵\ndef flash_attention_concept(q, k, v, block=128):\n    \"\"\"q,k,v: [S, d]；返回 [S, d]。\n    核心：用 running max m 和 running sum l 在线归一化，避免存 O(S^2) 注意力矩阵。\n    \"\"\"\n    import math, torch\n    S, d = q.shape\n    scale = 1.0 / math.sqrt(d)\n    out = torch.zeros_like(q)\n    m = torch.full((S,), -float(\"inf\"), device=q.device)   # running max\n    l = torch.zeros((S,), device=q.device)                 # running denom\n    for j in range(0, S, block):\n        kj, vj = k[j:j + block], v[j:j + block]            # 只载入一个 K/V 块\n        s = (q @ kj.T) * scale                             # [S, Bk]\n        m_new = torch.maximum(m, s.max(dim=-1).values)\n        p = torch.exp(s - m_new[:, None])                  # 用新 max 重标定\n        alpha = torch.exp(m - m_new)                        # 修正历史累加项\n        l = l * alpha + p.sum(dim=-1)\n        out = out * alpha[:, None] + p @ vj\n        m = m_new\n    return out / l[:, None]\n",
+   "sources": [
+    {
+     "title": "Awesome-LLM-Interview README（笔记目录：Transformer/RLHF/DPO/LoRA/KV Cache/MoE/分布式训练）",
+     "url": "https://raw.githubusercontent.com/laoshan-song/Awesome-LLM-Interview/main/README.md"
+    },
+    {
+     "title": "2026-07-26_DeepSeek_大模型算法岗笔试面经分享（含完整答案）",
+     "url": "https://api-cdn.nowcoder.com/discuss/913482312753418240"
+    }
+   ]
+  },
+  {
+   "id": "layernorm-rmsnorm",
+   "title": "手写 LayerNorm 与 RMSNorm",
+   "difficulty": "easy",
+   "frequency": 4,
+   "topics": [
+    "normalization",
+    "transformer"
+   ],
+   "prompt": "实现 LayerNorm 与 RMSNorm 的前向，并说明现在大模型为什么普遍用 RMSNorm 而不是 LayerNorm。",
+   "keyPoints": [
+    "LayerNorm: (x-mean)/sqrt(var+eps)*g+b；RMSNorm: x/sqrt(mean(x^2)+eps)*g",
+    "RMSNorm 去掉均值中心化与 bias，少一次 reduce 与减法，kernel 更简单、更快",
+    "var 用 unbiased=False（有偏方差），与 PyTorch 默认一致",
+    "RMSNorm 保留缩放参数 g，但通常不需要 bias"
+   ],
+   "pitfalls": [
+    "LayerNorm 用 unbiased=True 导致与框架数值不一致",
+    "RMSNorm 忘记加 eps 导致除零",
+    "把 RMSNorm 写成除以 sqrt(var) 而不是 sqrt(mean(x^2))"
+   ],
+   "referenceSolution": "import torch\nfrom torch import nn\n\nclass RMSNorm(nn.Module):\n    \"\"\"y = x / sqrt(mean(x^2) + eps) * g\"\"\"\n    def __init__(self, d, eps=1e-6):\n        super().__init__()\n        self.eps = eps\n        self.g = nn.Parameter(torch.ones(d))\n\n    def forward(self, x):\n        rms = torch.rsqrt(x.pow(2).mean(dim=-1, keepdim=True) + self.eps)\n        return x * rms * self.g\n\n\nclass LayerNormManual(nn.Module):\n    \"\"\"y = (x - mean) / sqrt(var + eps) * g + b\"\"\"\n    def __init__(self, d, eps=1e-5):\n        super().__init__()\n        self.eps = eps\n        self.g = nn.Parameter(torch.ones(d))\n        self.b = nn.Parameter(torch.zeros(d))\n\n    def forward(self, x):\n        mu = x.mean(dim=-1, keepdim=True)\n        var = x.var(dim=-1, keepdim=True, unbiased=False)\n        return (x - mu) / torch.sqrt(var + self.eps) * self.g + self.b\n",
+   "sources": [
+    {
+     "title": "阿里云多模态大模型暑期实习（已oc）",
+     "url": "https://www.nowcoder.com/feed/main/detail/c2e2058a1cb24c7ca5e21f32826179d8"
+    },
+    {
+     "title": "美团大模型算法二面-秋招面经",
+     "url": "https://www.nowcoder.com/feed/main/detail/e72d861f57c1499393be6651f8611177"
+    },
+    {
+     "title": "Awesome-LLM-Interview README（笔记目录：Transformer/RLHF/DPO/LoRA/KV Cache/MoE/分布式训练）",
+     "url": "https://raw.githubusercontent.com/laoshan-song/Awesome-LLM-Interview/main/README.md"
+    }
+   ]
+  },
+  {
+   "id": "kv-cache-memory",
+   "title": "KV-Cache 显存计算与 GQA 优化",
+   "difficulty": "medium",
+   "frequency": 5,
+   "topics": [
+    "inference",
+    "memory"
+   ],
+   "prompt": "给定 L=80 层、H_kv=8 个 KV 头、d_h=128、上下文 T=10^6、FP16、batch=1，计算标准 MHA 的 KV Cache 字节数；并说明 GQA/MQA/MLA/量化分别如何改变这个公式。",
+   "keyPoints": [
+    "标准公式 M = B·T·L·H_kv·d_h·2·b（最后的 2 对应 K 和 V）",
+    "代入得 80×10^6×8×128×2×2 ≈ 3.2768×10^11 bytes ≈ 305.2 GiB",
+    "GQA/MQA 降低 H_kv；量化降低 b；MLA 把每 token 每层缓存换成维度 d_c 的共享 latent 加 d_r 的解耦 RoPE key",
+    "要区分 GB 与 GiB，且 scale/zero-point 等元数据也要计入显存"
+   ],
+   "pitfalls": [
+    "把模型总参数量当成 KV Cache 大小的依据",
+    "漏掉最后的 ×2",
+    "混淆 GB 与 GiB（327.68e9 bytes ≈ 305.2 GiB 而不是 327.68 GiB）"
+   ],
+   "referenceSolution": "def kv_cache_bytes(B, T, L, H_kv, d_h, bytes_per_elem=2):\n    \"\"\"标准 MHA 的 KV Cache 字节数：B*T*L*H_kv*d_h*2(K和V)*bytes。\"\"\"\n    return B * T * L * H_kv * d_h * 2 * bytes_per_elem\n\nif __name__ == \"__main__\":\n    n = kv_cache_bytes(1, 10**6, 80, 8, 128, 2)\n    print(n, \"bytes =\", n / 1024**3, \"GiB\")   # 327680000000 bytes = 305.18 GiB\n",
+   "sources": [
+    {
+     "title": "2026-07-26_DeepSeek_大模型算法岗笔试面经分享（含完整答案）",
+     "url": "https://api-cdn.nowcoder.com/discuss/913482312753418240"
+    },
+    {
+     "title": "Awesome-LLM-Interview README（笔记目录：Transformer/RLHF/DPO/LoRA/KV Cache/MoE/分布式训练）",
+     "url": "https://raw.githubusercontent.com/laoshan-song/Awesome-LLM-Interview/main/README.md"
+    }
+   ]
+  },
+  {
+   "id": "rope-implementation",
+   "title": "手写 RoPE 旋转位置编码",
+   "difficulty": "medium",
+   "frequency": 4,
+   "topics": [
+    "position",
+    "transformer"
+   ],
+   "prompt": "实现 RoPE 的 cos/sin 缓存与作用函数（相邻两维一组），并解释它为什么具有相对位置性质。",
+   "keyPoints": [
+    "inv_freq = 1/(base^(2i/d))，base 常取 10000",
+    "把最后一维按奇偶拆成两组，做二维旋转 [x1*cos - x2*sin, x1*sin + x2*cos]",
+    "点积只依赖相对位置差 (m-n)，因此天然编码相对位置",
+    "外推需要 NTK/YaRN 等插值改造"
+   ],
+   "pitfalls": [
+    "奇偶拆分方式与实现不一致（相邻 vs 前后半）导致与预训练权重不匹配",
+    "忘记 cos/sin 需要广播到 [1,1,S,dh/2]",
+    "把 base 写死导致长上下文外推失败"
+   ],
+   "referenceSolution": "import torch\n\ndef build_rope_cache(seq_len, dim, base=10000.0, device=\"cpu\"):\n    \"\"\"预计算 cos/sin，形状 [seq_len, dim//2]（相邻两维一组）。\"\"\"\n    inv_freq = 1.0 / (base ** (torch.arange(0, dim, 2, device=device).float() / dim))\n    t = torch.arange(seq_len, device=device).float()\n    freqs = torch.outer(t, inv_freq)          # [S, dim/2]\n    return freqs.cos(), freqs.sin()\n\n\ndef apply_rope(x, cos, sin):\n    \"\"\"x: [B, H, S, dh]，dh 为偶数。返回旋转后的张量。\"\"\"\n    x1, x2 = x[..., 0::2], x[..., 1::2]        # 偶数维、奇数维\n    c, s = cos[None, None], sin[None, None]    # 广播到 [1,1,S,dh/2]\n    o1 = x1 * c - x2 * s\n    o2 = x1 * s + x2 * c\n    out = torch.stack([o1, o2], dim=-1)        # [..., dh/2, 2]\n    return out.flatten(-2)\n",
+   "sources": [
+    {
+     "title": "Awesome-LLM-Interview README（笔记目录：Transformer/RLHF/DPO/LoRA/KV Cache/MoE/分布式训练）",
+     "url": "https://raw.githubusercontent.com/laoshan-song/Awesome-LLM-Interview/main/README.md"
+    },
+    {
+     "title": "LLM-Algorithm-Intern-Guide：2026届大模型算法岗实习面经（含手撕 PPO/RoPE/Transformer、RLHF 核心与八股文）",
+     "url": "https://github.com/Junvate/LLM-Algorithm-Intern-Guide"
+    }
+   ]
+  },
+  {
+   "id": "lora-implementation",
+   "title": "手写 LoRA 层（含初始化细节）",
+   "difficulty": "easy",
+   "frequency": 4,
+   "topics": [
+    "peft",
+    "post-training"
+   ],
+   "prompt": "实现一个 LoRA 包装的 Linear 层：冻结原权重 W0，注入低秩 BA 增量并乘以 alpha/r 缩放；说明 A、B 的初始化方式。",
+   "keyPoints": [
+    "A 用 kaiming/正态初始化，B 初始化为 0 —— 保证训练开始时增量恒为 0，不破坏预训练模型",
+    "缩放系数为 alpha/r（alpha 常取 2r）",
+    "原权重 requires_grad=False，只训练 A、B",
+    "推理时可把 BA 合并回 W0（merge and unload）以消除额外延迟"
+   ],
+   "pitfalls": [
+    "B 也随机初始化，导致起始 loss 爆炸",
+    "忘记乘 alpha/r，等效学习率错",
+    "合并权重时忘记乘缩放系数"
+   ],
+   "referenceSolution": "import math, torch\nimport torch.nn as nn\n\nclass LoRALinear(nn.Module):\n    \"\"\"W_eff = W0 + (alpha/r) * B @ A ，其中 A ~ kaiming，B 初始化为 0。\"\"\"\n    def __init__(self, base: nn.Linear, r=8, alpha=16, dropout=0.0):\n        super().__init__()\n        self.base = base\n        for p in self.base.parameters():\n            p.requires_grad = False          # 冻结原始权重\n        self.r, self.scaling = r, alpha / r\n        self.A = nn.Parameter(torch.empty(r, base.in_features))\n        self.B = nn.Parameter(torch.zeros(base.out_features, r))  # 关键：B 初始化为 0\n        nn.init.kaiming_uniform_(self.A, a=math.sqrt(5))\n        self.drop = nn.Dropout(dropout)\n\n    def forward(self, x):\n        out = self.base(x)\n        delta = self.drop(x) @ self.A.T @ self.B.T * self.scaling\n        return out + delta\n",
+   "sources": [
+    {
+     "title": "腾讯-混元大模型面经-华5硕",
+     "url": "https://www.nowcoder.com/feed/main/detail/c002e91fda6c44dabe2db9ac79a6ccba"
+    },
+    {
+     "title": "美团大模型算法二面-秋招面经",
+     "url": "https://www.nowcoder.com/feed/main/detail/e72d861f57c1499393be6651f8611177"
+    },
+    {
+     "title": "大模型面经 - 淘天（搜推智能产品事业部-多模态大模型）",
+     "url": "https://blog.csdn.net/weixin_45768638/article/details/145885586"
+    }
+   ]
+  },
+  {
+   "id": "dpo-loss",
+   "title": "手写 DPO 损失（含 completion 对数概率）",
+   "difficulty": "medium",
+   "frequency": 5,
+   "topics": [
+    "rlhf",
+    "post-training"
+   ],
+   "prompt": "实现 DPO 损失：给定 policy/reference 对 chosen 与 rejected 的 token 级 logprob，计算 log-ratio、margin 与损失；说明为什么参考模型的 log-prob 必须只累加 completion 部分。",
+   "keyPoints": [
+    "先算序列对数概率：对 completion 位置做 log_softmax gather 后求和，prompt 与 padding 不能算进去",
+    "L = -log sigmoid( beta * [ (log pi_w - log ref_w) - (log pi_l - log ref_l) ] )",
+    "梯度系数为 -beta*sigma(-z)：margin 已经很大时样本梯度自然变小",
+    "只有 policy 反传，reference 冻结"
+   ],
+   "pitfalls": [
+    "把 prompt token 也算进 logprob，导致 loss 尺度错误",
+    "对 reference 也反传，或忘记 detach",
+    "忽略长度偏置（长回答 logprob 更负）导致偏好被长度主导"
+   ],
+   "referenceSolution": "import torch\nimport torch.nn.functional as F\n\ndef sequence_logprob(logits, labels, mask):\n    \"\"\"logits:[B,S,V] labels:[B,S] mask:[B,S]（1=参与 loss 的 completion 位置）。\n    返回每个样本 completion 部分的对数概率之和。\"\"\"\n    logp = F.log_softmax(logits, dim=-1)\n    tok = logp.gather(-1, labels.unsqueeze(-1)).squeeze(-1)   # [B,S]\n    return (tok * mask).sum(dim=-1)\n\n\ndef dpo_loss(policy_w, ref_w, policy_l, ref_l, beta=0.1):\n    \"\"\"policy_* / ref_* 均为 sequence_logprob 的输出([B])。\n    L = -log sigmoid( beta * [ (log pi_w - log ref_w) - (log pi_l - log ref_l) ] )\n    \"\"\"\n    logits = beta * ((policy_w - ref_w) - (policy_l - ref_l))\n    loss = -F.logsigmoid(logits).mean()\n    # 便于监控：隐式 reward margin 与偏好准确率\n    with torch.no_grad():\n        margin = (logits / beta)\n        acc = (margin > 0).float().mean()\n    return loss, {\"margin\": margin.mean().item(), \"pref_acc\": acc.item()}\n",
+   "sources": [
+    {
+     "title": "2026-07-26_DeepSeek_大模型算法岗笔试面经分享（含完整答案）",
+     "url": "https://api-cdn.nowcoder.com/discuss/913482312753418240"
+    },
+    {
+     "title": "百度文心一言大模型算法实习一面",
+     "url": "https://www.nowcoder.com/feed/main/detail/1c01b2eaeb9c46e48c2b67f498bb7f3d"
+    },
+    {
+     "title": "大模型面经 - 淘天（搜推智能产品事业部-多模态大模型）",
+     "url": "https://blog.csdn.net/weixin_45768638/article/details/145885586"
+    }
+   ]
+  },
+  {
+   "id": "gae-and-grpo",
+   "title": "手写 GAE 与 GRPO 目标函数",
+   "difficulty": "hard",
+   "frequency": 5,
+   "topics": [
+    "rl",
+    "post-training"
+   ],
+   "prompt": "实现 GAE 的优势估计（含 gamma/lambda），并实现 GRPO 的组内相对优势与带 clip 的替代目标函数。",
+   "keyPoints": [
+    "delta_t = r_t + gamma*V_{t+1} - V_t；A_t = delta_t + gamma*lambda*A_{t+1}",
+    "GRPO 用同一 prompt 采样一组 G 个回答，优势 = (r - group_mean)/group_std，因此不需要 critic",
+    "替代目标 L = -min(ratio*A, clip(ratio,1-eps,1+eps)*A)，clip 防止单步更新过大",
+    "lambda 在 MC（lambda=1）与 TD（lambda=0）之间做偏差-方差权衡，这是 PPO 工业标配的原因"
+   ],
+   "pitfalls": [
+    "GAE 递推方向写反（应从后往前）",
+    "忘记 next value 在序列末尾置 0",
+    "GRPO 组内归一化时 std 未加 eps，全同奖励时除零",
+    "忘记 ratio 是 pi_theta/pi_old 而不是 pi_theta/pi_ref"
+   ],
+   "referenceSolution": "import torch\n\ndef gae(rewards, values, gamma=0.99, lam=0.95):\n    \"\"\"rewards/values: [T] 一维序列；返回 advantages[T] 与 returns[T]。\n    delta_t = r_t + gamma*V_{t+1} - V_t\n    A_t = delta_t + gamma*lam*A_{t+1}\n    \"\"\"\n    T = len(rewards)\n    adv = torch.zeros(T)\n    last = 0.0\n    for t in reversed(range(T)):\n        next_v = values[t + 1] if t + 1 < T else 0.0\n        delta = rewards[t] + gamma * next_v - values[t]\n        last = delta + gamma * lam * last\n        adv[t] = last\n    return adv, adv + values\n\n\ndef grpo_objective(ratio, adv, eps=0.2, beta=0.0, ref_ratio=None):\n    \"\"\"GRPO 的替代目标（组内归一化优势，无 critic）：\n    L = -min( ratio*A, clip(ratio, 1-eps, 1+eps)*A )  ，可选 KL 惩罚项。\n    ratio = pi_theta(y|x) / pi_old(y|x)；adv 由同组 G 个样本的 reward 做 (r-mean)/std 得到。\n    \"\"\"\n    unclipped = ratio * adv\n    clipped = torch.clamp(ratio, 1 - eps, 1 + eps) * adv\n    loss = -torch.min(unclipped, clipped).mean()\n    if beta and ref_ratio is not None:\n        # k3 估计器形式的 KL 惩罚（此处为简化示意）\n        loss = loss + beta * (ratio - ref_ratio).mean()\n    return loss\n\n\ndef group_relative_advantage(rewards, group_size):\n    \"\"\"rewards: [B] 且 B = num_groups * group_size；组内 (r - mean)/std。\"\"\"\n    r = rewards.view(-1, group_size)\n    mean = r.mean(dim=1, keepdim=True)\n    std = r.std(dim=1, keepdim=True) + 1e-4\n    return ((r - mean) / std).view(-1)\n",
+   "sources": [
+    {
+     "title": "小红书多模态算法日常实习面经",
+     "url": "https://www.nowcoder.com/feed/main/detail/af39cddf1c2d40738269b866cb7bc776"
+    },
+    {
+     "title": "9.18快手可灵策略梯度岗一面",
+     "url": "https://www.nowcoder.com/discuss/933402920173699072"
+    },
+    {
+     "title": "美团大模型算法二面-秋招面经",
+     "url": "https://www.nowcoder.com/feed/main/detail/e72d861f57c1499393be6651f8611177"
+    },
+    {
+     "title": "2026-07-26_DeepSeek_大模型算法岗笔试面经分享（含完整答案）",
+     "url": "https://api-cdn.nowcoder.com/discuss/913482312753418240"
+    }
+   ]
+  },
+  {
+   "id": "ddpm-sampling",
+   "title": "手写 DDPM 采样循环",
+   "difficulty": "medium",
+   "frequency": 4,
+   "topics": [
+    "diffusion",
+    "generative"
+   ],
+   "prompt": "实现 DDPM 的反向采样循环：用模型预测噪声 eps_theta，按闭式后验均值公式迭代，并在 t>0 时注入方差。",
+   "keyPoints": [
+    "alpha_t = 1 - beta_t；alpha_bar_t = prod(alpha_s)",
+    "x_{t-1} = (x_t - beta_t/sqrt(1-alpha_bar_t) * eps_theta) / sqrt(alpha_t)",
+    "t>0 时加上 sigma_t*z，sigma_t = sqrt(beta_t)（简化版 DDPM）",
+    "t=0 不再加噪；训练时 t 均匀采样并构造 x_t = sqrt(alpha_bar)*x_0 + sqrt(1-alpha_bar)*eps"
+   ],
+   "pitfalls": [
+    "alpha_bar 用错（写成 sum 而不是 cumprod）",
+    "时间步 t 的 dtype 传给 embedding 层时报错（需 long）",
+    "忘记 t=0 不加噪声",
+    "把 DDIM（确定性）与 DDPM（随机）的更新混用"
+   ],
+   "referenceSolution": "import torch\n\ndef ddpm_sample(model, shape, betas, device=\"cpu\"):\n    \"\"\"最简 DDPM 采样（DDIM 类似，只是换成确定性更新）。\n    betas: [T]；alpha_bar_t = prod_{s<=t}(1-beta_s)\n    x_{t-1} = 1/sqrt(alpha_t) * (x_t - (beta_t/sqrt(1-alpha_bar_t)) * eps_theta) + sigma_t * z\n    \"\"\"\n    betas = betas.to(device)\n    alphas = 1.0 - betas\n    alpha_bar = torch.cumprod(alphas, dim=0)\n    x = torch.randn(shape, device=device)\n    for t in reversed(range(len(betas))):\n        ab, a, b = alpha_bar[t], alphas[t], betas[t]\n        t_batch = torch.full((shape[0],), t, device=device, dtype=torch.long)\n        eps = model(x, t_batch)                      # 预测噪声\n        mean = (x - b / torch.sqrt(1 - ab) * eps) / torch.sqrt(a)\n        if t > 0:\n            sigma = torch.sqrt(b)\n            x = mean + sigma * torch.randn_like(x)\n        else:\n            x = mean\n    return x\n",
+   "sources": [
+    {
+     "title": "阿里云多模态大模型暑期实习（已oc）",
+     "url": "https://www.nowcoder.com/feed/main/detail/c2e2058a1cb24c7ca5e21f32826179d8"
+    },
+    {
+     "title": "9.18快手可灵策略梯度岗一面",
+     "url": "https://www.nowcoder.com/discuss/933402920173699072"
+    },
+    {
+     "title": "地平线具身智能实验室，招世界模型实习生！",
+     "url": "https://www.shenlanxueyuan.com/news/detail/91"
+    }
+   ]
+  },
+  {
+   "id": "clip-contrastive-loss",
+   "title": "手写 CLIP 对称对比损失（InfoNCE）",
+   "difficulty": "easy",
+   "frequency": 4,
+   "topics": [
+    "multimodal",
+    "contrastive"
+   ],
+   "prompt": "实现 CLIP 的图像-文本对称对比损失，并说明温度系数（logit scale）的作用与负样本数量的影响。",
+   "keyPoints": [
+    "先对两个模态的 embedding 做 L2 归一化，logits = logit_scale * I @ T^T",
+    "两个方向各做一次 cross_entropy（图找文、文找图）再取平均",
+    "logit_scale 可学习（初始 1/0.07 的对数），它决定 softmax 的尖锐程度",
+    "batch 内负样本数 = B-1，batch 越大对比信号越强（这也是 CLIP 需要大 batch 的原因）"
+   ],
+   "pitfalls": [
+    "忘记归一化导致点积受模长影响",
+    "只算一个方向（无对称）",
+    "把 logit_scale 写成普通浮点数而不是可学习参数（或忘记取 exp）"
+   ],
+   "referenceSolution": "import torch\nimport torch.nn.functional as F\n\ndef clip_loss(image_emb, text_emb, logit_scale, labels=None):\n    \"\"\"对称 InfoNCE。image_emb/text_emb: [B, d]，已 L2 归一化。\n    logit_scale = exp(logit_scale_param) 即 1/tau。\"\"\"\n    logits = logit_scale * image_emb @ text_emb.t()          # [B,B]\n    if labels is None:\n        labels = torch.arange(logits.size(0), device=logits.device)\n    loss_i = F.cross_entropy(logits, labels)                 # 图 -> 文\n    loss_t = F.cross_entropy(logits.t(), labels)             # 文 -> 图\n    return (loss_i + loss_t) / 2\n",
+   "sources": [
+    {
+     "title": "大模型面经 - 淘天（搜推智能产品事业部-多模态大模型）",
+     "url": "https://blog.csdn.net/weixin_45768638/article/details/145885586"
+    },
+    {
+     "title": "Awesome-LLM-Interview README（笔记目录：Transformer/RLHF/DPO/LoRA/KV Cache/MoE/分布式训练）",
+     "url": "https://raw.githubusercontent.com/laoshan-song/Awesome-LLM-Interview/main/README.md"
+    }
+   ]
+  },
+  {
+   "id": "iou-nms",
+   "title": "手写 IoU 与 NMS",
+   "difficulty": "medium",
+   "frequency": 5,
+   "topics": [
+    "cv",
+    "detection"
+   ],
+   "prompt": "实现 numpy 版 NMS：输入 boxes [N,4] 与 scores，按分数降序，抑制 IoU 大于阈值的框；并说明旋转框 NMS 与 soft-NMS 的区别。",
+   "keyPoints": [
+    "先算面积，再按分数降序排序",
+    "用 np.maximum/np.minimum 算交集的宽高并 clip(0) 保证非负",
+    "IoU = inter / (area_i + area_rest - inter + eps)",
+    "每轮保留最高分框，其余按 IoU 阈值筛掉",
+    "旋转框需要先算多边形交（如 shapely/C++ 实现），soft-NMS 用连续权重衰减而不是直接删除"
+   ],
+   "pitfalls": [
+    "交集宽高为负未 clip",
+    "忘记 eps 导致除零",
+    "原地修改数组导致索引错乱",
+    "忽略 +1 像素约定（取决于坐标系定义，需与 GT 一致）"
+   ],
+   "referenceSolution": "import numpy as np\n\ndef nms(boxes, scores, iou_thr=0.5):\n    \"\"\"boxes: [N,4] 格式 (x1,y1,x2,y2)；scores: [N]；返回保留索引列表。\"\"\"\n    x1, y1, x2, y2 = boxes[:, 0], boxes[:, 1], boxes[:, 2], boxes[:, 3]\n    areas = (x2 - x1).clip(0) * (y2 - y1).clip(0)\n    order = scores.argsort()[::-1]\n    keep = []\n    while order.size > 0:\n        i = order[0]\n        keep.append(int(i))\n        if order.size == 1:\n            break\n        rest = order[1:]\n        xx1 = np.maximum(x1[i], x1[rest]); yy1 = np.maximum(y1[i], y1[rest])\n        xx2 = np.minimum(x2[i], x2[rest]); yy2 = np.minimum(y2[i], y2[rest])\n        w = (xx2 - xx1).clip(0); h = (yy2 - yy1).clip(0)\n        inter = w * h\n        iou = inter / (areas[i] + areas[rest] - inter + 1e-9)\n        order = rest[iou <= iou_thr]   # 保留 IoU 低于阈值的\n    return keep\n",
+   "sources": [
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    },
+    {
+     "title": "实习算法岗血泪面经，商汤，旷世，阿里，字节跳动",
+     "url": "https://www.wondercv.com/community/11273.html"
+    }
+   ]
+  },
+  {
+   "id": "binary-search",
+   "title": "手写二分查找（含四种边界写法）",
+   "difficulty": "easy",
+   "frequency": 5,
+   "topics": [
+    "binary-search",
+    "coding"
+   ],
+   "prompt": "实现标准二分查找（找到返回下标，找不到返回 -1），并说明左闭右闭与左闭右开两种写法的循环条件与 mid 更新差异；再实现“查找第一个 >= target 的位置”。",
+   "keyPoints": [
+    "左闭右闭 [l,r]：while l<=r，r=mid-1 / l=mid+1",
+    "左闭右开 [l,r)：while l<r，r=mid / l=mid+1",
+    "mid = l + (r-l)//2 避免溢出",
+    "lower_bound：循环结束后 l 即第一个 >= target 的位置",
+    "这是小红书多模态实习的手撕原题，考察边界、循环写法与终止逻辑熟练度"
+   ],
+   "pitfalls": [
+    "mid 更新写错导致死循环（如恒用 mid=(l+r)//2 配 r=mid）",
+    "循环条件与区间定义不一致",
+    "返回值在找不到时返回了 l 而不是 -1（需明确题目约定）"
+   ],
+   "referenceSolution": "def binary_search(nums, target):\n    \"\"\"标准二分，返回下标或 -1。\"\"\"\n    l, r = 0, len(nums) - 1          # 左闭右闭\n    while l <= r:\n        mid = l + (r - l) // 2\n        if nums[mid] == target:\n            return mid\n        if nums[mid] < target:\n            l = mid + 1\n        else:\n            r = mid - 1\n    return -1\n\n\ndef lower_bound(nums, target):\n    \"\"\"返回第一个 >= target 的下标（可能等于 len）。\"\"\"\n    l, r = 0, len(nums)              # 左闭右开\n    while l < r:\n        mid = l + (r - l) // 2\n        if nums[mid] < target:\n            l = mid + 1\n        else:\n            r = mid\n    return l\n",
+   "sources": [
+    {
+     "title": "小红书多模态算法日常实习面经",
+     "url": "https://www.nowcoder.com/feed/main/detail/af39cddf1c2d40738269b866cb7bc776"
+    },
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    }
+   ]
+  },
+  {
+   "id": "max-subarray-monotonic-stack",
+   "title": "最大子数组和 + 单调栈（每日温度）",
+   "difficulty": "medium",
+   "frequency": 4,
+   "topics": [
+    "dp",
+    "monotonic-stack"
+   ],
+   "prompt": "实现 lc53 最大子数组和（Kadane，DP 视角）与 lc739 每日温度（单调递减栈）；说明两者的状态定义与不变量。",
+   "keyPoints": [
+    "Kadane：dp[i] = max(nums[i], dp[i-1]+nums[i])，可用滚动变量优化到 O(1) 空间",
+    "单调栈存下标，栈内对应温度单调递减；遇到更高温度就弹栈并记录距离",
+    "两个都是 O(n) 单遍扫描，区别在于是否保序结构"
+   ],
+   "pitfalls": [
+    "Kadane 初值设为 0 导致全负数数组返回 0（应为 max(nums)）",
+    "单调栈存值而不是下标，无法计算距离",
+    "每日温度忘记最后留在栈里的位置填 0"
+   ],
+   "referenceSolution": "def max_subarray(nums):\n    \"\"\"lc53：Kadane 算法，O(n)/O(1)。\"\"\"\n    best = cur = nums[0]\n    for x in nums[1:]:\n        cur = max(x, cur + x)\n        best = max(best, cur)\n    return best\n\n\ndef daily_temperatures(temps):\n    \"\"\"lc739：单调递减栈，栈中保存下标。\"\"\"\n    res = [0] * len(temps)\n    stack = []                      # 存下标，对应温度严格递减\n    for i, t in enumerate(temps):\n        while stack and temps[stack[-1]] < t:\n            j = stack.pop()\n            res[j] = i - j\n        stack.append(i)\n    return res\n",
+   "sources": [
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    }
+   ]
+  },
+  {
+   "id": "kmp",
+   "title": "手写 KMP 字符串匹配",
+   "difficulty": "hard",
+   "frequency": 4,
+   "topics": [
+    "string",
+    "coding"
+   ],
+   "prompt": "实现 KMP：先构造 next 数组（最长相等前后缀），再在主串中线性匹配；说明为什么复杂度是 O(n+m) 而不是 O(n*m)。",
+   "keyPoints": [
+    "next[i] 表示 p[0..i] 的最长相等前后缀长度（不含自身）",
+    "失配时用 j = next[j-1] 回退，主串指针 i 不回退",
+    "匹配成功后也要回退 j 以支持重叠匹配",
+    "构造 next 本身是 O(m)，匹配是 O(n)，主串指针永不回退"
+   ],
+   "pitfalls": [
+    "next 数组定义用“含自身”还是“不含自身”混用",
+    "失配时写成 j = next[j] 导致越界或死循环",
+    "忘记空串判断"
+   ],
+   "referenceSolution": "def build_next(p: str):\n    \"\"\"next[i] = p[0..i] 的最长相等前后缀长度（不含自身）。\"\"\"\n    nxt = [0] * len(p)\n    j = 0\n    for i in range(1, len(p)):\n        while j > 0 and p[i] != p[j]:\n            j = nxt[j - 1]\n        if p[i] == p[j]:\n            j += 1\n        nxt[i] = j\n    return nxt\n\n\ndef kmp_search(s: str, p: str):\n    \"\"\"返回 p 在 s 中所有出现的起始下标，O(n+m)。\"\"\"\n    if not p:\n        return []\n    nxt, j, res = build_next(p), 0, []\n    for i, ch in enumerate(s):\n        while j > 0 and ch != p[j]:\n            j = nxt[j - 1]\n        if ch == p[j]:\n            j += 1\n        if j == len(p):\n            res.append(i - len(p) + 1)\n            j = nxt[j - 1]\n    return res\n",
+   "sources": [
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    }
+   ]
+  },
+  {
+   "id": "union-find",
+   "title": "手写并查集（路径压缩 + 按秩合并）",
+   "difficulty": "medium",
+   "frequency": 4,
+   "topics": [
+    "dsu",
+    "graph"
+   ],
+   "prompt": "实现并查集并支持连通分量计数；用并查集解 lc200 岛屿数量，说明路径压缩与按秩合并各自的复杂度贡献。",
+   "keyPoints": [
+    "find 用路径减半或完全压缩，均摊近似 O(alpha(n))",
+    "union 按秩/按大小合并避免退化成链",
+    "维护 count 变量即可 O(1) 得到连通分量数",
+    "岛屿问题把二维坐标映射到一维 id，只与左、上邻居 union 即可"
+   ],
+   "pitfalls": [
+    "只写路径压缩不写按秩合并仍然可以，但只写按秩合并不压缩会退化",
+    "二维转一维时行列写反",
+    "岛屿计数忘记排除非 '1' 的格子"
+   ],
+   "referenceSolution": "class DSU:\n    \"\"\"路径压缩 + 按秩（大小）合并，近似 O(alpha(n))。\"\"\"\n    def __init__(self, n):\n        self.p = list(range(n))\n        self.rank = [0] * n\n        self.count = n                      # 连通分量个数\n\n    def find(self, x):\n        while self.p[x] != x:\n            self.p[x] = self.p[self.p[x]]    # 路径减半\n            x = self.p[x]\n        return x\n\n    def union(self, a, b):\n        ra, rb = self.find(a), self.find(b)\n        if ra == rb:\n            return False\n        if self.rank[ra] < self.rank[rb]:\n            ra, rb = rb, ra\n        self.p[rb] = ra\n        if self.rank[ra] == self.rank[rb]:\n            self.rank[ra] += 1\n        self.count -= 1\n        return True\n\n\ndef num_islands(grid):\n    \"\"\"岛屿数量（lc200）用并查集实现：把每个 '1' 与左/上邻居 union。\"\"\"\n    if not grid or not grid[0]:\n        return 0\n    R, C = len(grid), len(grid[0])\n    dsu = DSU(R * C)\n    ones = 0\n    for r in range(R):\n        for c in range(C):\n            if grid[r][c] != \"1\":\n                continue\n            ones += 1\n            for dr, dc in ((0, -1), (-1, 0)):\n                nr, nc = r + dr, c + dc\n                if 0 <= nr < R and 0 <= nc < C and grid[nr][nc] == \"1\":\n                    dsu.union(r * C + c, nr * C + nc)\n    # 连通分量数 = 并查集中仍以 '1' 为根的集合数\n    roots = {dsu.find(r * C + c) for r in range(R) for c in range(C) if grid[r][c] == \"1\"}\n    return len(roots)\n",
+   "sources": [
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    }
+   ]
+  },
+  {
+   "id": "batchnorm",
+   "title": "手写 BatchNorm2d（训练/推理行为差异）",
+   "difficulty": "medium",
+   "frequency": 4,
+   "topics": [
+    "normalization",
+    "cv"
+   ],
+   "prompt": "实现 BatchNorm2d：训练时用 batch 统计量并更新 running stats，推理时用 running stats；更新 running_var 时要用无偏估计。",
+   "keyPoints": [
+    "训练用 batch 维度 (0,2,3) 上的 mean/var；推理用 running_mean/running_var",
+    "running_var 用无偏估计（无偏 = 有偏 * n/(n-1)），因为要作为总体方差的无偏估计",
+    "这是训练与测试行为不一样的根本原因（batch 大小会影响推理结果如果误用 batch 统计）",
+    "BN 参数量 = 2C（gamma 与 beta），不是 2CHW"
+   ],
+   "pitfalls": [
+    "推理时仍用 batch 统计，导致单样本推理结果异常",
+    "忘记 no_grad 更新 buffer",
+    "running_var 用了有偏估计导致与框架不一致",
+    "答参数量时算成 2CHW"
+   ],
+   "referenceSolution": "import torch\nfrom torch import nn\n\nclass BatchNorm2dManual(nn.Module):\n    \"\"\"训练：用 batch 统计量并更新 running stats；推理：用 running stats。\"\"\"\n    def __init__(self, num_features, eps=1e-5, momentum=0.1):\n        super().__init__()\n        self.eps, self.momentum = eps, momentum\n        self.g = nn.Parameter(torch.ones(num_features))\n        self.b = nn.Parameter(torch.zeros(num_features))\n        self.register_buffer(\"rm\", torch.zeros(num_features))   # running mean\n        self.register_buffer(\"rv\", torch.ones(num_features))    # running var\n\n    def forward(self, x):                                       # x: [B,C,H,W]\n        if self.training:\n            dims = (0, 2, 3)\n            mu = x.mean(dim=dims)\n            var = x.var(dim=dims, unbiased=False)\n            with torch.no_grad():\n                n = x.numel() / x.size(1)\n                unbiased = var * n / (n - 1)\n                self.rm.mul_(1 - self.momentum).add_(self.momentum * mu)\n                self.rv.mul_(1 - self.momentum).add_(self.momentum * unbiased)\n        else:\n            mu, var = self.rm, self.rv\n        shape = (1, -1, 1, 1)\n        xhat = (x - mu.view(shape)) / torch.sqrt(var.view(shape) + self.eps)\n        return xhat * self.g.view(shape) + self.b.view(shape)\n",
+   "sources": [
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    },
+    {
+     "title": "阿里云多模态大模型暑期实习（已oc）",
+     "url": "https://www.nowcoder.com/feed/main/detail/c2e2058a1cb24c7ca5e21f32826179d8"
+    }
+   ]
+  },
+  {
+   "id": "softmax-stable",
+   "title": "数值稳定的 Softmax 与 Log-Softmax",
+   "difficulty": "easy",
+   "frequency": 5,
+   "topics": [
+    "numerical",
+    "foundation"
+   ],
+   "prompt": "实现数值稳定的 softmax 与 log_softmax，说明为什么必须先减最大值，以及 log_softmax 为什么不能写成 log(softmax(x))。",
+   "keyPoints": [
+    "先减 max 防止 exp 上溢；分母加极小量防止下溢除零",
+    "log_softmax 用 log-sum-exp 技巧：x - m - log(sum(exp(x-m)))，避免先算出极小概率再取 log 导致 -inf",
+    "很多框架的 cross_entropy 内部就是 fused log_softmax + nll，比自己写 softmax 再 log 更稳更快",
+    "fp16 下要特别小心 inf/nan"
+   ],
+   "pitfalls": [
+    "直接 exp 大数导致 inf/inf = nan",
+    "log(softmax(x)) 在概率下溢到 0 时得到 -inf",
+    "忘记 keepdim 导致广播错误"
+   ],
+   "referenceSolution": "import torch\n\ndef softmax_stable(x, dim=-1):\n    \"\"\"减去 max 防止 exp 上溢；再用 sum 归一化防止下溢导致除零。\"\"\"\n    x = x - x.max(dim=dim, keepdim=True).values\n    e = torch.exp(x)\n    return e / (e.sum(dim=dim, keepdim=True) + 1e-12)\n\n\ndef log_softmax_stable(x, dim=-1):\n    \"\"\"log-sum-exp 技巧：log softmax = x - m - log(sum(exp(x - m)))\"\"\"\n    m = x.max(dim=dim, keepdim=True).values\n    z = x - m\n    return z - torch.log(torch.exp(z).sum(dim=dim, keepdim=True))\n",
+   "sources": [
+    {
+     "title": "2026-07-26_DeepSeek_大模型算法岗笔试面经分享（含完整答案）",
+     "url": "https://api-cdn.nowcoder.com/discuss/913482312753418240"
+    },
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    }
+   ]
+  },
+  {
+   "id": "top-k-top-p-sampling",
+   "title": "手写 Top-k 与 Top-p（Nucleus）采样",
+   "difficulty": "medium",
+   "frequency": 5,
+   "topics": [
+    "decoding",
+    "generative"
+   ],
+   "prompt": "实现 top-k 采样与 nucleus（top-p）采样，并说明温度缩放如何影响分布熵；解释为什么 top-p 比固定 top-k 更自适应。",
+   "keyPoints": [
+    "top-k：取第 k 大作为阈值，小于阈值的置 -inf 后重新 softmax",
+    "top-p：按概率降序累加，保留累计概率首次超过 p 的最小集合（注意含边界元素），再归一化采样",
+    "温度 T：logits/T，T→0 退化为贪心，T 增大分布更平坦",
+    "top-p 的候选集大小随分布锐利程度自适应，top-k 固定"
+   ],
+   "pitfalls": [
+    "top-p 的边界处理写成 cum > p 而不是 cum - prob > p，导致多保留一个 token",
+    "过滤后忘记重新归一化",
+    "对 -inf 做 softmax 产生 nan（应保证至少保留一个 token）"
+   ],
+   "referenceSolution": "import torch\n\ndef top_k_sampling(logits, k=50, temperature=1.0):\n    \"\"\"logits: [B, V]；返回采样出的 token id [B]。\"\"\"\n    logits = logits / temperature\n    v, _ = torch.topk(logits, k, dim=-1)\n    thresh = v[..., -1, None]\n    logits = logits.masked_fill(logits < thresh, -float(\"inf\"))\n    probs = torch.softmax(logits, dim=-1)\n    return torch.multinomial(probs, num_samples=1).squeeze(-1)\n\n\ndef top_p_sampling(logits, p=0.9, temperature=1.0):\n    \"\"\"nucleus sampling：按累计概率保留最小集合，再在其上重新归一化采样。\"\"\"\n    logits = logits / temperature\n    probs = torch.softmax(logits, dim=-1)\n    sorted_probs, sorted_idx = torch.sort(probs, dim=-1, descending=True)\n    cum = sorted_probs.cumsum(dim=-1)\n    # 保留累计概率首次达到 p 的位置（含该位置）\n    mask = cum - sorted_probs > p\n    sorted_probs = sorted_probs.masked_fill(mask, 0.0)\n    sorted_probs = sorted_probs / sorted_probs.sum(dim=-1, keepdim=True)\n    choice = torch.multinomial(sorted_probs, num_samples=1)\n    return sorted_idx.gather(-1, choice).squeeze(-1)\n",
+   "sources": [
+    {
+     "title": "Awesome-LLM-Interview README（笔记目录：Transformer/RLHF/DPO/LoRA/KV Cache/MoE/分布式训练）",
+     "url": "https://raw.githubusercontent.com/laoshan-song/Awesome-LLM-Interview/main/README.md"
+    },
+    {
+     "title": "9.18快手可灵策略梯度岗一面",
+     "url": "https://www.nowcoder.com/discuss/933402920173699072"
+    }
+   ]
+  },
+  {
+   "id": "beam-search",
+   "title": "手写 Beam Search（含长度归一化）",
+   "difficulty": "hard",
+   "frequency": 4,
+   "topics": [
+    "decoding",
+    "generative"
+   ],
+   "prompt": "实现 beam search：每步为 beam 中的每条序列扩展 top-k 候选，按累计对数概率排序保留 beam 条；说明为什么要做长度归一化以及 beam search 的退化问题。",
+   "keyPoints": [
+    "用累计 logprob（对数域相加）而不是概率相乘，避免下溢",
+    "score 需按长度归一化（score / len^penalty），否则偏向短句",
+    "每条 beam 要维护自己的 KV cache 与 finished 标记；已结束的序列要单独存起来并保留其分数",
+    "beam search 在开放式生成上容易退化为重复/空洞文本，因此聊天模型常用采样而不是 beam"
+   ],
+   "pitfalls": [
+    "忘记长度归一化导致输出过短",
+    "所有 beam 共享同一份 KV cache",
+    "结束时未把 finished 序列纳入最终候选"
+   ],
+   "referenceSolution": "import torch\nimport torch.nn.functional as F\n\n@torch.no_grad()\ndef beam_search(model, input_ids, beam=4, max_new=32, eos_id=None, length_penalty=0.6):\n    \"\"\"教学版 beam search。\n    关键点：只做一次编码；对每个 batch 展开 beam；用累计 logprob（长度归一化）排序；\n    每条 beam 维护自己的 KV cache 与 finished 标记。\n    \"\"\"\n    B = input_ids.size(0)\n    beams = [(input_ids, 0.0, False)] * B    # 简化：仅演示单条样本逻辑\n    seq, score, finished = input_ids, 0.0, False\n    for _ in range(max_new):\n        logits = model(seq)[:, -1]                      # [1, V]\n        logp = F.log_softmax(logits, dim=-1)\n        cand_scores, cand_ids = logp.topk(beam, dim=-1)\n        # 实际实现需要在此对 beam 做合并 + 按长度归一化 score / len^penalty 排序\n        best = cand_ids[0, 0].item()\n        seq = torch.cat([seq, torch.tensor([[best]], device=seq.device)], dim=1)\n        if eos_id is not None and best == eos_id:\n            break\n    return seq\n",
+   "sources": [
+    {
+     "title": "Awesome-LLM-Interview README（笔记目录：Transformer/RLHF/DPO/LoRA/KV Cache/MoE/分布式训练）",
+     "url": "https://raw.githubusercontent.com/laoshan-song/Awesome-LLM-Interview/main/README.md"
+    }
+   ]
+  },
+  {
+   "id": "cross-entropy-backward",
+   "title": "手写交叉熵与反向传播",
+   "difficulty": "medium",
+   "frequency": 5,
+   "topics": [
+    "loss",
+    "foundation"
+   ],
+   "prompt": "手写交叉熵损失（含多标签情形），并推导 dL/dlogits = softmax(logits) - onehot(target) 这一结论。",
+   "keyPoints": [
+    "CE = -log softmax(logits)[target]，框架里用 fused log_softmax + nll",
+    "多标签分类用 BCEWithLogits，不用 softmax+CE",
+    "反向传播结论：dL/dlogits = softmax(logits) - onehot（mean 归约时再除以 N）",
+    "字节、爱奇艺等面经反复出现‘交叉熵公式’与‘手写交叉熵反向传播’"
+   ],
+   "pitfalls": [
+    "多标签场景误用 softmax",
+    "mean 归约时忘记除以 batch size",
+    "混淆 log_softmax 与 log(softmax)"
+   ],
+   "referenceSolution": "import torch\nimport torch.nn.functional as F\n\ndef cross_entropy_manual(logits, targets, reduction=\"mean\"):\n    \"\"\"logits:[N,C] targets:[N]（类别索引）。CE = -log softmax(logits)[target]\"\"\"\n    log_probs = F.log_softmax(logits, dim=-1)\n    loss = -log_probs.gather(1, targets.unsqueeze(1)).squeeze(1)\n    if reduction == \"mean\":\n        return loss.mean()\n    if reduction == \"sum\":\n        return loss.sum()\n    return loss\n\n\ndef binary_cross_entropy_manual(logits, targets):\n    \"\"\"多标签分类用：每个类别独立 sigmoid；等价于 softmax+CE 在多标签场景不适用。\"\"\"\n    return F.binary_cross_entropy_with_logits(logits, targets.float())\n\n# 反向传播直觉（面试常被追问）：\n# dL/dlogits = softmax(logits) - onehot(target)，再除以 N（mean 时）\n",
+   "sources": [
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    },
+    {
+     "title": "2026-07-26_DeepSeek_大模型算法岗笔试面经分享（含完整答案）",
+     "url": "https://api-cdn.nowcoder.com/discuss/913482312753418240"
+    }
+   ]
+  },
+  {
+   "id": "dataloader",
+   "title": "手写 Dataset / DataLoader / collate_fn",
+   "difficulty": "medium",
+   "frequency": 4,
+   "topics": [
+    "engineering",
+    "pytorch"
+   ],
+   "prompt": "实现一个变长文本 Dataset、collate_fn（padding + attention_mask + label 置 -100）以及按长度分桶的 Sampler，说明为什么需要分桶。",
+   "keyPoints": [
+    "collate_fn 中 pad 到本 batch 最长而不是全局最长",
+    "labels 的 padding 位置必须置 -100（cross_entropy 的 ignore_index）",
+    "attention_mask 用 1/0 标记有效位置",
+    "分桶（bucket）按长度排序成批，显著减少 padding 浪费、提升吞吐",
+    "面试延伸：num_workers 与 pin_memory 如何影响吞吐"
+   ],
+   "pitfalls": [
+    "pad 到全局最大长度导致大量无效计算",
+    "忘记给 labels 加 -100，导致 loss 被 padding 污染",
+    "分桶后忘记在每个 bucket 内 shuffle，破坏随机性"
+   ],
+   "referenceSolution": "import random\nfrom torch.utils.data import Dataset, DataLoader, Sampler\n\nclass MyDataset(Dataset):\n    def __init__(self, samples, tokenizer, max_len=512):\n        self.samples, self.tok, self.max_len = samples, tokenizer, max_len\n\n    def __len__(self):\n        return len(self.samples)\n\n    def __getitem__(self, idx):\n        s = self.samples[idx]\n        ids = self.tok(s[\"text\"], truncation=True, max_length=self.max_len)[\"input_ids\"]\n        return {\"input_ids\": ids, \"label\": s[\"label\"]}\n\n\ndef collate_fn(batch, pad_id=0):\n    \"\"\"关键：变长序列要 pad 到本 batch 最长，并生成 attention_mask；labels 侧 padding 置 -100。\"\"\"\n    maxlen = max(len(b[\"input_ids\"]) for b in batch)\n    input_ids, attn, labels = [], [], []\n    for b in batch:\n        ids = b[\"input_ids\"]\n        pad = maxlen - len(ids)\n        input_ids.append(ids + [pad_id] * pad)\n        attn.append([1] * len(ids) + [0] * pad)\n        labels.append(ids + [-100] * pad)\n    return {\"input_ids\": input_ids, \"attention_mask\": attn, \"labels\": labels}\n\n\nclass BucketSampler(Sampler):\n    \"\"\"按长度分桶，减少 padding 浪费（面试可讲：等长采样 + 桶内 shuffle）。\"\"\"\n    def __init__(self, lengths, batch_size, shuffle=True):\n        order = sorted(range(len(lengths)), key=lambda i: lengths[i])\n        self.batches = [order[i:i + batch_size] for i in range(0, len(order), batch_size)]\n        self.shuffle = shuffle\n\n    def __iter__(self):\n        bs = self.batches[:]\n        if self.shuffle:\n            random.shuffle(bs)\n        for b in bs:\n            yield from b\n\n    def __len__(self):\n        return sum(len(b) for b in self.batches)\n",
+   "sources": [
+    {
+     "title": "腾讯-混元大模型面经-华5硕",
+     "url": "https://www.nowcoder.com/feed/main/detail/c002e91fda6c44dabe2db9ac79a6ccba"
+    },
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    }
+   ]
+  },
+  {
+   "id": "sliding-window",
+   "title": "滑动窗口（最长无重复子串 / 最小覆盖子串）",
+   "difficulty": "medium",
+   "frequency": 4,
+   "topics": [
+    "sliding-window",
+    "coding"
+   ],
+   "prompt": "实现 lc3 最长无重复字符子串与 lc76 最小覆盖子串，说明窗口收缩的不变量。",
+   "keyPoints": [
+    "lc3 用哈希表记录字符最后出现位置，左指针跳到 last[ch]+1",
+    "lc76 用 need/have 计数与 missing 变量，missing==0 时收缩窗口找最小",
+    "两者都是 O(n)，每个字符最多进出窗口各一次"
+   ],
+   "pitfalls": [
+    "lc3 未判断 last[ch] >= left，导致左指针回退",
+    "lc76 收缩时更新 need 的顺序写错（先减后加）",
+    "lc76 返回空串的条件判断遗漏"
+   ],
+   "referenceSolution": "from collections import Counter\n\ndef length_of_longest_substring(s: str) -> int:\n    \"\"\"无重复字符的最长子串（lc3）：滑动窗口 + 哈希表，O(n)。\"\"\"\n    left = 0\n    last = {}\n    best = 0\n    for right, ch in enumerate(s):\n        if ch in last and last[ch] >= left:\n            left = last[ch] + 1\n        last[ch] = right\n        best = max(best, right - left + 1)\n    return best\n\n\ndef min_window(s: str, t: str) -> str:\n    \"\"\"最小覆盖子串（lc76）：need/have 计数 + 收缩窗口。\"\"\"\n    need, missing = Counter(t), len(t)\n    left, best = 0, (0, float(\"inf\"))\n    for right, ch in enumerate(s):\n        if need[ch] > 0:\n            missing -= 1\n        need[ch] -= 1\n        while missing == 0:\n            if right - left < best[1] - best[0]:\n                best = (left, right)\n            need[s[left]] += 1\n            if need[s[left]] > 0:\n                missing += 1\n            left += 1\n    return \"\" if best[1] == float(\"inf\") else s[best[0]:best[1] + 1]\n",
+   "sources": [
+    {
+     "title": "阿里云多模态大模型暑期实习（已oc）",
+     "url": "https://www.nowcoder.com/feed/main/detail/c2e2058a1cb24c7ca5e21f32826179d8"
+    },
+    {
+     "title": "腾讯-混元大模型面经-华5硕",
+     "url": "https://www.nowcoder.com/feed/main/detail/c002e91fda6c44dabe2db9ac79a6ccba"
+    }
+   ]
+  },
+  {
+   "id": "transformer-block",
+   "title": "手写 Transformer Block（pre-LN vs post-LN）",
+   "difficulty": "hard",
+   "frequency": 5,
+   "topics": [
+    "transformer",
+    "structure"
+   ],
+   "prompt": "组装一个完整 Transformer Block：多头注意力 + SwiGLU FFN，各带残差与 RMSNorm。说明 pre-LN 与 post-LN 的排布差异及其对深层训练稳定性的影响，并解释为什么现代 LLM（GPT/LLaMA）几乎全用 pre-LN + final LN。",
+   "keyPoints": [
+    "pre-LN：x = x + Attn(Norm(x))，恒等通路让梯度直达底层；post-LN：x = Norm(x + Attn(x))，深层梯度连乘不稳",
+    "post-LN 必须 warmup；pre-LN 需要 final LN 补输出规整",
+    "FFN 是知识存储（key-value memory），d_ff=4d；SwiGLU 用 gate⊙up→down，d_ff=8d/3 保持参数量",
+    "注意力做 token 间信息路由，FFN 做逐 token 非线性计算——两者分工不同",
+    "现代清单：RMSNorm + SwiGLU + RoPE + GQA +（可选）并行 block"
+   ],
+   "pitfalls": [
+    "pre/post 写混：pre 是 Norm 在子层内，post 是残差外",
+    "忘 final LN——pre-LN 架构输出量级靠它稳定",
+    "SwiGLU 把 gate⊙up 写成相加",
+    "残差保存错：写成 x = Norm(x) + f(x) 就破坏了恒等通路",
+    "以为 residual 可选——没有残差的深栈不可训练"
+   ],
+   "referenceSolution": "def block(x):\n    # pre-LN\n    h = rmsnorm(x, g1)\n    x = x + mha(h, h, h)          # 因果掩码 + W_o\n    h = rmsnorm(x, g2)\n    gate = silu(h @ Wg)\n    up = h @ Wu\n    x = x + (gate * up) @ Wd      # SwiGLU FFN\n    return x\n# 最终输出前：logits = head(rmsnorm(x, g_f))",
+   "answerOutline": "先画两条数据通路（子层/恒等）→ 讲 pre/post 的梯度差异（24 层一维近似：pre 增益>1，post 每层 0.93 指数衰减）→ 落码 → FFN 容量账 → 现代变体清单",
+   "sources": [
+    {
+     "title": "Attention Is All You Need（原始 post-LN 结构）",
+     "url": "https://arxiv.org/abs/1706.03762"
+    },
+    {
+     "title": "On Layer Normalization in the Transformer Architecture（pre/post 梯度分析）",
+     "url": "https://arxiv.org/abs/2002.04745"
+    },
+    {
+     "title": "GLU Variants Improve Transformer（SwiGLU）",
+     "url": "https://arxiv.org/abs/2002.05202"
+    }
+   ]
+  }
+ ],
+ "writtenExam": [
+  {
+   "id": "deepseek-mha-full",
+   "title": "手写完整的 Multi-Head Attention，不能只写框架",
+   "type": "编程",
+   "difficulty": "medium",
+   "prompt": "DeepSeek 大模型算法岗笔试第一题：手写完整的 Multi-Head Attention。题目明确要求“不能只写四个线性层”，需要把张量形状、缩放点积、掩码语义、数值稳定性和输出投影都讲清楚。",
+   "answerOutline": [
+    "先写形状约定：X∈R^{B×S×d_model}，头数 H，d_h=d_model/H",
+    "Q=XW_Q, K=XW_K, V=XW_V，形状均为 [B,S,d_model]；拆头并转置为 [B,H,S,d_h]",
+    "A=softmax(QK^T/sqrt(d_h)+M)，O=AV",
+    "除以 sqrt(d_h) 是为控制点积方差，避免 logits 随维度增大使 Softmax 饱和、梯度变小",
+    "合并头要 contiguous 后再 view；因果 Mask 与 Padding Mask 的形状和广播规则不能混为一谈",
+    "Cross-Attention 时 Q 的长度可与 K/V 不同；GQA/MQA/RoPE/FlashAttention 是对 QKV 组织和内核的优化，不改变数学骨架"
+   ],
+   "sources": [
+    {
+     "title": "2026-07-26_DeepSeek_大模型算法岗笔试面经分享（含完整答案）",
+     "url": "https://api-cdn.nowcoder.com/discuss/913482312753418240"
+    }
+   ]
+  },
+  {
+   "id": "deepseek-dpo-derivation",
+   "title": "DPO 的完整训练流程推导（从数据准备到梯度更新）",
+   "type": "场景题",
+   "difficulty": "hard",
+   "prompt": "DeepSeek 笔试第二题：推导 DPO 的完整训练流程。要点不是“把语言模型当成奖励模型”，而是从 KL 约束下的最优策略形式中消去显式奖励模型，得到只依赖偏好对数概率的目标。",
+   "answerOutline": [
+    "数据为三元组 (x, y_w, y_l)，π_ref 为冻结的 SFT 模型",
+    "从 KL 正则化目标 max E[r] - β·KL(π||π_ref) 出发，最优策略 π* ∝ π_ref·exp(r/β)",
+    "反解隐式奖励 r(x,y)=β·log(π*/π_ref)+β·log Z(x)，Bradley-Terry 模型中两个回答的 β·log Z(x) 相互抵消",
+    "得 L_DPO=-log σ(β[(log π_θ(y_w|x)/π_ref(y_w|x))-(log π_θ(y_l|x)/π_ref(y_l|x))])",
+    "序列对数概率只累加 completion 部分的 token 条件概率，不能把 prompt 与 padding 算进去",
+    "训练流程：清洗偏好对 → 冻结参考模型做 teacher forcing → 只对策略反传 → AdamW 更新 → 独立偏好/事实性/安全集评测",
+    "梯度系数 -βσ(-z)：未拉开时梯度大，margin 已大时样本梯度自然变小",
+    "DPO 无需在线 rollout、奖励模型或 PPO，但依赖高质量偏好数据；注意长度偏置与 IPO/KTO/ORPO 的适用边界"
+   ],
+   "sources": [
+    {
+     "title": "2026-07-26_DeepSeek_大模型算法岗笔试面经分享（含完整答案）",
+     "url": "https://api-cdn.nowcoder.com/discuss/913482312753418240"
+    }
+   ]
+  },
+  {
+   "id": "deepseek-moe-comm",
+   "title": "MoE 模型的通信开销计算与负载不均衡分析",
+   "type": "场景题",
+   "difficulty": "hard",
+   "prompt": "DeepSeek 笔试第三题：分析 MoE 的计算量与通信量，给出 All-to-All 载荷与通信时间的估算式，并说明如何度量与缓解负载不均衡。",
+   "answerOutline": [
+    "计算侧：每个专家接收 token 数 ≈ Tk/E，专家为标准两层 FFN 时单 token 矩阵乘开销与 d×d_ff 成正比；MoE 通过只激活少数专家降低每 token 计算量，但路由/All-to-All/专家权重驻留/负载倾斜会吞掉收益",
+    "通信侧：EP 中 dispatch 与 combine 两次 All-to-All，均匀负载下单程有效载荷 V_one-way ≈ Tkdb(1-1/P)，总载荷 V_comm ≈ 2Tkdb(1-1/P)",
+    "延迟带宽模型：T_comm ≈ α·N_collective + V_comm/BW_eff；小 batch 时延迟项突出，大 batch 时带宽与负载倾斜更关键",
+    "必须加上的额外开销：路由索引、padding、元数据、协议头、拓扑非均匀",
+    "负载不均衡三个指标：专家接收 token 数的均值/最大值、变异系数 std(load)/mean(load)、因 capacity 溢出被丢弃或重路由的 token 比例",
+    "capacity C=ceil(c·Tk/E)，c 太小丢 token、太大浪费显存与通信",
+    "缓解手段：辅助负载均衡损失、专家偏置控制、容量约束、随机路由、动态 batching、拓扑感知放置",
+    "要区分训练时路由均衡与推理时服务均衡（后者还要看真实排队时间与通信路径）"
+   ],
+   "sources": [
+    {
+     "title": "2026-07-26_DeepSeek_大模型算法岗笔试面经分享（含完整答案）",
+     "url": "https://api-cdn.nowcoder.com/discuss/913482312753418240"
+    }
+   ]
+  },
+  {
+   "id": "deepseek-inference-accel",
+   "title": "推理加速的底层实现：PagedAttention 与投机解码",
+   "type": "场景题",
+   "difficulty": "hard",
+   "prompt": "DeepSeek 笔试第四题：讲清 vLLM 的 PagedAttention 原理与投机解码的工程实现，并说明两者可以结合但不是同一个算法。",
+   "answerOutline": [
+    "PagedAttention：KV Cache 切成固定大小 block，block table 把逻辑 block 映射到不连续的物理显存 block，新 token 只分配需要的 page，结束按引用计数回收，共享前缀可 Copy-on-Write",
+    "本质是把“连续大数组”变成操作系统式分页地址空间：降低碎片、提高并发显存利用率、支持 continuous batching 与 prefix caching",
+    "注意：它不改变注意力理论复杂度，也不减少每 token 的 KV 字节数；收益来自更高可服务并发与更少浪费",
+    "投机解码：草稿模型自回归生成 γ 个候选，目标模型一次前向并行验证；贪心可逐位置接受，随机采样必须用基于目标/草稿分布的 rejection sampling 并做修正采样",
+    "期望接受长度 E[L] ≈ Σ_{j=1..γ} Π_{i=1..j} p_i；加速比还要除以草稿、验证、调度的总时间",
+    "工程难点：tokenizer/位置编码兼容、验证阶段复用与回滚 paged KV、接受长度变化时避免无效显存写入、连续 batching 下候选长度不同、低接受率时退化、量化/张量并行/prefix cache 下的正确性",
+    "现代实现还包括 n-gram、EAGLE、Medusa、半自回归草稿器；判断标准始终是‘草稿成本是否小于它节省的串行步数’"
+   ],
+   "sources": [
+    {
+     "title": "2026-07-26_DeepSeek_大模型算法岗笔试面经分享（含完整答案）",
+     "url": "https://api-cdn.nowcoder.com/discuss/913482312753418240"
+    }
+   ]
+  },
+  {
+   "id": "deepseek-kv-cache-calc",
+   "title": "KV 缓存压缩原理与内存占用计算",
+   "type": "场景题",
+   "difficulty": "hard",
+   "prompt": "DeepSeek 笔试第六题：写出 KV Cache 的标准显存公式，说明 MLA/GQA/量化如何改变公式，并给出一组具体配置的量级估算。注意题目强调具体版本号与参数规模应以公开模型配置和可复现实验为准。",
+   "answerOutline": [
+    "标准 MHA：M_KV = B×T×L×H_kv×d_h×2×b（最后的 2 对应 K 和 V）",
+    "GQA/MQA 降低 H_kv；量化降低 b；MLA 用每 token 每层维度 d_c 的共享 latent 加 d_r 的解耦 RoPE key",
+    "压缩后 M ≈ B×T×L×(d_c+d_r)×b",
+    "示例：L=80、H_kv=8、d_h=128、T=10^6、FP16、B=1 → 80×10^6×8×128×2×2 = 3.2768×10^11 bytes ≈ 305.2 GiB",
+    "反推压缩率必须知道层数、KV 维度、缓存精度、是否分页、是否把 workspace 与权重算入显存、GB 还是 GiB",
+    "仅凭“模型有多少参数”无法推出 KV Cache 大小",
+    "联合预算维度：显存、带宽、重建 FLOPs、质量损失"
+   ],
+   "sources": [
+    {
+     "title": "2026-07-26_DeepSeek_大模型算法岗笔试面经分享（含完整答案）",
+     "url": "https://api-cdn.nowcoder.com/discuss/913482312753418240"
+    }
+   ]
+  },
+  {
+   "id": "deepseek-moe-bias",
+   "title": "DeepSeek MoE 的无辅助损失负载均衡机制推导",
+   "type": "场景题",
+   "difficulty": "hard",
+   "prompt": "DeepSeek 笔试第八题：推导“无辅助损失”的负载均衡机制。要点不是取消均衡控制，而是把均衡从主损失中的可学习惩罚项，改成路由器外部的专家偏置反馈。",
+   "answerOutline": [
+    "设原始路由分数 s_{t,i}，专家偏置 b_i；路由选择用 softmax/线性后的 s̃=s+b 做 Top-k",
+    "关键细节：偏置影响 Top-k 选择，但专家组合权重仍使用未加偏置的原始分数并归一化",
+    "统计窗口内专家 i 接收 token 数 c_i，平均负载 c̄=(1/E)Σc_i",
+    "离散更新 b_i ← b_i - γ·sign(c_i - c̄)；或按比例反馈并 clip 到 [b_min, b_max]",
+    "偏置按 batch 或固定 token 窗口更新，不逐 token 更新（否则路由抖动）",
+    "与辅助损失相比：不会把均衡目标直接加入语言建模损失，减少主任务梯度干扰；代价是引入非梯度控制回路（γ、窗口、上下界、同步延迟都要调）",
+    "评估指标：负载变异系数、token 丢弃率、All-to-All 时间、训练损失、验证效果与下游质量"
+   ],
+   "sources": [
+    {
+     "title": "2026-07-26_DeepSeek_大模型算法岗笔试面经分享（含完整答案）",
+     "url": "https://api-cdn.nowcoder.com/discuss/913482312753418240"
+    }
+   ]
+  },
+  {
+   "id": "deepseek-visual-primitive",
+   "title": "多模态视觉原语推理框架的数学建模",
+   "type": "场景题",
+   "difficulty": "hard",
+   "prompt": "DeepSeek 笔试第七题：为“视觉原语”（point/box/mask/polygon）推理框架建立数学建模，说明如何把文本 token 与几何原语统一到一个混合序列的生成问题中。",
+   "answerOutline": [
+    "定义视觉原语集合 P={point(u,v), box(u1,v1,u2,v2), mask, polygon, ...}，坐标归一化到 [0,1] 且约束 u1≤u2、v1≤v2",
+    "输出空间为文本 token 空间 V 与原语空间 P 的并集，模型生成混合序列 z=(z_1..z_n)，p(z|I,x)=Π p(z_t|I,x,z_<t)",
+    "实现方式：把原语离散化为特殊 token + 坐标 bin（如 [BOX, x1, y1, x2, y2]），或使用连续坐标分布/专用 grounding head",
+    "联合损失 L = L_text + λ_coord·L_coord + λ_geom·L_geom + λ_ground·L_ground（点/框可用 L1、Smooth L1、IoU/GIoU）",
+    "价值：把“左上角的红色物体”变成可计算的引用，可比较中心坐标、IoU、包含关系与相对方向，比语言指代更可验证",
+    "三个难点：坐标误差沿引用链传播（需要量化校准与不确定性表示）；文本 token 与几何 token 概率空间/损失尺度不同（λ 需验证集校准）；必须有语法约束与合法性校验（防越界、反向框）"
+   ],
+   "sources": [
+    {
+     "title": "2026-07-26_DeepSeek_大模型算法岗笔试面经分享（含完整答案）",
+     "url": "https://api-cdn.nowcoder.com/discuss/913482312753418240"
+    }
+   ]
+  },
+  {
+   "id": "baidu-dpo-curve",
+   "title": "DPO 对齐训练的曲线形态与正例概率是否提升",
+   "type": "场景题",
+   "difficulty": "medium",
+   "prompt": "百度文心一言大模型算法实习一面第 2 题：“DPO 对齐训练的曲线是怎么样的，正例的概率会提升吗？”这是一道需要区分“chosen 的绝对概率”与“chosen 相对 rejected 的 margin”的分析题。",
+   "answerOutline": [
+    "DPO 优化的是 chosen 与 rejected 的对数概率差（margin），而不是无条件最大化 chosen 的绝对概率",
+    "训练早期 margin 快速上升；由于 β 与参考模型的 KL 约束，chosen 与 rejected 的概率可能同时下降，只要前者下降得更慢",
+    "因此“正例概率一定提升”是错误直觉：应监控 margin（隐式 reward）、偏好准确率、KL 漂移与长度分布",
+    "配套追问：DPO 如何解决回答过长（长度归一化/正则/长度惩罚），以及 DPO 是否还有 reward hacking 问题"
+   ],
+   "sources": [
+    {
+     "title": "百度文心一言大模型算法实习一面",
+     "url": "https://www.nowcoder.com/feed/main/detail/1c01b2eaeb9c46e48c2b67f498bb7f3d"
+    }
+   ]
+  },
+  {
+   "id": "baidu-reasoning-enhance",
+   "title": "如何为 base model 增强 reasoning 能力",
+   "type": "场景题",
+   "difficulty": "hard",
+   "prompt": "百度文心一面开放题：“对于一个 base model，如何增强大模型的 reasoning 能力？”“为什么现在大家都在关注大模型的推理能力？”",
+   "answerOutline": [
+    "数据侧：构造带长思维链的冷启动 SFT 数据、可验证的数学/代码题、拒绝采样筛选数据",
+    "后训练侧：RLVR（规则/答案校验奖励）+ GRPO 等算法；PRM（过程奖励模型）与 ORM 的取舍",
+    "推理时计算扩展（test-time compute）：长思维链、自一致性投票、搜推结合、best-of-n",
+    "评测侧：数学/代码 benchmark + 内部评测集 + 长度与幻觉的联合监控",
+    "回答“为什么关注 reasoning”：它是当前 scaling 之后最明确的性能增长轴，且可验证奖励容易构造，工程上闭环最快",
+    "结合 DeepSeek-R1 的 V3→R1 路径说明冷启动、RL、拒绝采样与再 SFT 的顺序"
+   ],
+   "sources": [
+    {
+     "title": "百度文心一言大模型算法实习一面",
+     "url": "https://www.nowcoder.com/feed/main/detail/1c01b2eaeb9c46e48c2b67f498bb7f3d"
+    },
+    {
+     "title": "Awesome-LLM-Interview README（推理时计算扩展 Test-Time Compute 专题）",
+     "url": "https://raw.githubusercontent.com/laoshan-song/Awesome-LLM-Interview/main/README.md"
+    }
+   ]
+  },
+  {
+   "id": "aliyun-digital-human-scenario",
+   "title": "场景题：把数字人模型训练成只生成同一个人",
+   "type": "场景题",
+   "difficulty": "hard",
+   "prompt": "阿里云多模态大模型暑期实习一面场景题：“如果我目前有一个数字人的模型，我想训练成只生成一个人的，可以怎么做？”并追问“你看过什么别的 SOTA 模型的 ref image 注入方式，有什么优劣？”",
+   "answerOutline": [
+    "明确目标：从通用人像生成收敛到单一个体（identity-specific），关键是身份一致性而不是单纯画质",
+    "数据侧：该个体的小规模高质量多视角/多表情素材，配比中混入少量通用数据防止过拟合与崩坏",
+    "注入方式对比（面试官期待的追问点）：Cross-Attention 注入（如 IP-Adapter 类）、Adapter/ControlNet 类旁路注入、Reference-only 直接拼接、以及 DiT 中把 ref 作为额外 token",
+    "各方案优劣：Cross-Attention 兼容性好但身份相似度有限；ControlNet 类控制强但参数量与推理成本高；直接拼接简单但会改变序列长度与注意力分布",
+    "训练策略：LoRA/DreamBooth 类轻量微调 vs 全量微调；冻结哪些模块",
+    "防止语言漂移/概念泄漏：正则化数据集 + 早停 + 人工评估身份相似度（可用人脸识别模型打分）"
+   ],
+   "sources": [
+    {
+     "title": "阿里云多模态大模型暑期实习（已oc）",
+     "url": "https://www.nowcoder.com/feed/main/detail/c2e2058a1cb24c7ca5e21f32826179d8"
+    }
+   ]
+  },
+  {
+   "id": "aliyun-video-convergence",
+   "title": "如何系统判断视频生成模型是否训练完成",
+   "type": "场景题",
+   "difficulty": "hard",
+   "prompt": "阿里云面经八股：“如何系统判断是否训练完成，特别是在视频生成模型中？”以及“如何判断模型是否收敛”“梯度消失或爆炸怎么解决”。",
+   "answerOutline": [
+    "收敛信号分层：训练侧（loss/梯度范数/参数更新范数不再下降，EMA 与 raw 权重差距）、验证侧（FVD/PSNR/SSIM/LPIPS、帧间一致性）、任务侧（人评/偏好模型打分）",
+    "视频特有的问题：单帧指标好不代表时序一致；需要单指标拆成空间质量与时间一致性两组",
+    "梯度消失/爆炸的诊断与处置：梯度裁剪、混合精度下的 loss scaling、检查初始化与归一化位置、降低学习率/加 warmup、检查数据里是否有异常样本",
+    "必须警惕“指标涨了但视觉变差”的评价器过拟合；用独立测试集 + 少量人评交叉验证",
+    "停止条件：连续 N 次验证指标无提升 + 人评无改善，而不是仅看训练 loss"
+   ],
+   "sources": [
+    {
+     "title": "阿里云多模态大模型暑期实习（已oc）",
+     "url": "https://www.nowcoder.com/feed/main/detail/c2e2058a1cb24c7ca5e21f32826179d8"
+    }
+   ]
+  },
+  {
+   "id": "meituan-reward-shock",
+   "title": "为什么 GRPO 训练一开始 Reward 会大幅震荡",
+   "type": "场景题",
+   "difficulty": "hard",
+   "prompt": "美团大模型算法二面：“奖励函数如何设置的，为什么？有没有想过为什么一开始 Reward 出现大幅度震荡？GRPO 是否一定有效，还有什么解决方法？”",
+   "answerOutline": [
+    "初期策略分布与奖励尺度不匹配：采样分布还没收敛，组内方差大，优势估计噪声大",
+    "奖励函数本身的问题：奖励尺度未归一化、稀疏奖励、多个奖励项权重失衡、格式奖励与正确性奖励冲突",
+    "KL 惩罚与 β 设置：β 太小导致策略漂移过快、甚至 reward hacking；β 太大则学不动",
+    "训练设置：学习率/warmup、batch 与 group size、clip 范围、是否做长度归一化",
+    "排查手段：分别监控奖励各分项、生成样本的多样性与长度、KL 曲线、优势分布的标准差",
+    "替代方案：DAPO/Dr.GRPO 类改进、过程奖励、拒绝采样 + SFT 迭代、提高数据质量而非纯堆 RL",
+    "结论：GRPO 不是一定有效，先确认奖励信号是否可信，再谈算法选型"
+   ],
+   "sources": [
+    {
+     "title": "美团大模型算法二面-秋招面经",
+     "url": "https://www.nowcoder.com/feed/main/detail/e72d861f57c1499393be6651f8611177"
+    }
+   ]
+  },
+  {
+   "id": "meituan-ce-vocab-calc",
+   "title": "10w 词表的交叉熵损失值计算",
+   "type": "选择题",
+   "difficulty": "medium",
+   "prompt": "美团大模型算法二面第 6 题：“LLM 的损失函数是什么？给你一个 10w 的词表，计算出事的损失值。”考察对 CE 量级、均匀分布与随机初始化 loss 的直觉。",
+   "answerOutline": [
+    "LLM 预训练损失为 token 级交叉熵（下一 token 预测），等价于序列 token 平均负对数似然",
+    "若模型输出均匀分布、词表大小 V=100000，则单 token loss = ln(V) ≈ 11.51 nats（约 16.6 bits）",
+    "这解释了训练初期 loss 会稳定落在 ln(V) 附近，是可用的 sanity check",
+    "若用平均而非求和、以及 mask 的处理（ignore_index=-100）会影响最终数值",
+    "延伸：loss 与困惑度 PPL=exp(loss) 的关系；loss 下降 0.1 在业务上的意义需要用下游评测确认"
+   ],
+   "sources": [
+    {
+     "title": "美团大模型算法二面-秋招面经",
+     "url": "https://www.nowcoder.com/feed/main/detail/e72d861f57c1499393be6651f8611177"
+    }
+   ]
+  },
+  {
+   "id": "youzan-hmm-lora-exam",
+   "title": "AI 岗笔试综合题：RNN/HMM/强化学习/LoRA/激活函数",
+   "type": "选择",
+   "difficulty": "medium",
+   "prompt": "牛客用户记录的“联想 ai 岗笔试”结构：20 道单选 + 1 道编程 + 1 道 AI coding。选择涉及算法题补充代码、RNN、HMM、强化学习、LoRA、SQL、激活函数、简单排序；编程题面试者用贪心但只通过 18% 用例；AI coding 首次遇到，需要自己指定关键约束。",
+   "answerOutline": [
+    "选择覆盖面：传统 ML（HMM/激活函数/排序）+ 大模型（LoRA/强化学习）+ 工程（SQL）",
+    "编程题注意“能过 18% 用例”说明贪心不成立，应考虑 DP 或需要处理边界与数据范围",
+    "AI coding 题型：需要给 AI 明确约束（输入输出、边界、复杂度），而不是让它自由发挥",
+    "备考建议：不要只准备大模型八股，传统 ML 与基础算法仍会出现在笔试选择题里"
+   ],
+   "sources": [
+    {
+     "title": "联想ai岗笔试（牛客动态）",
+     "url": "https://www.nowcoder.com/discuss/930982833005293568"
+    }
+   ]
+  },
+  {
+   "id": "ali-array-sampling",
+   "title": "概率题：按给定概率多次有放回采样，如何做到常数时间",
+   "type": "编程",
+   "difficulty": "hard",
+   "prompt": "阿里机器学习二面编程题（面经原文）：有包含很多样本数据的数组，对这些数进行多次有放回采样，每个数有自己的采样概率（存在另一数组，总概率为 1），问怎么实现这个采样过程。面试官说存在常数时间的做法。",
+   "answerOutline": [
+    "朴素做法：每次采样扫一遍概率数组做前缀和，O(N)",
+    "二分做法：预处理前缀和，每次采样二分定位，O(log N)",
+    "常数时间做法：别名方法（Alias Method）—— 预处理构造两张长度 N 的表（概率表 prob、别名表 alias），预处理 O(N)，单次采样 O(1)",
+    "构造思路：把每个概率乘以 N，分成小于 1 的“小”桶与大于 1 的“大”桶，用小桶补满大桶并按需转移剩余概率",
+    "采样时先生成 [0,N) 的均匀整数与 [0,1) 的均匀实数，按 prob[i] 决定取 i 还是 alias[i]",
+    "验证：构造后每列总概率为 1；注意浮点误差与总概率归一化"
+   ],
+   "sources": [
+    {
+     "title": "实习算法岗血泪面经，商汤，旷世，阿里，字节跳动",
+     "url": "https://www.wondercv.com/community/11273.html"
+    }
+   ]
+  },
+  {
+   "id": "bytedance-coin-probability",
+   "title": "概率题：两人轮流抛硬币，先抛者的胜率",
+   "type": "选择",
+   "difficulty": "easy",
+   "prompt": "字节三面概率题（面经原文）：两个人轮流抛硬币，抛到正面获胜，反面给对方。先抛的人胜率是多少？",
+   "answerOutline": [
+    "设先抛者胜率为 p，则 p = 1/2 + (1/2)(1/2)p（先抛没中、后抛也没中，局面回到先抛者）",
+    "解得 p = (1/2)/(1 - 1/4) = 2/3",
+    "这是经典的马尔可夫/递归概率题，同类变体有掷骰子、摸球、开门问题",
+    "准备建议：掌握“状态回到起点”的方程列法即可覆盖大部分变体"
+   ],
+   "sources": [
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    }
+   ]
+  },
+  {
+   "id": "sensetime-lamp-puzzle",
+   "title": "智力题：100 盏灯与 100 个学生（完全平方数）",
+   "type": "选择",
+   "difficulty": "medium",
+   "prompt": "商汤二面智力题（面经原文）：一个房间有 100 盏灯（全关），编号 1-100 的开关控制；100 个学生依次进入，第 i 个学生切换所有 i 的倍数的开关。问第 100 个学生进入后还有多少盏灯亮着？",
+   "answerOutline": [
+    "灯 k 被切换的次数 = k 的约数个数",
+    "只有完全平方数的约数个数为奇数，因此最终亮着的是 1,4,9,...,100 共 10 盏",
+    "这是商汤偏爱的智力题风格（同场还问 a^b 与 b^a 谁大、天宫一号中宇航员受力分析）",
+    "应对建议：准备 3-5 道经典智力题 + 基础物理题，商汤会连续追问"
+   ],
+   "sources": [
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    }
+   ]
+  },
+  {
+   "id": "kuaishou-pizza-dp",
+   "title": "手撕：切分披萨数（DP / dfs + 记忆化搜索）",
+   "type": "编程",
+   "difficulty": "hard",
+   "prompt": "快手可灵策略梯度岗一面手撕题：非 hot100 的“切分披萨数”，可用 DP 或 dfs + 记忆化搜索。",
+   "answerOutline": [
+    "先明确“切 n 刀最多分成多少块”的经典结论与递推关系，把问题形式化为 f(n) = f(n-1) + n（每新增一刀最多被已有 n-1 条线切成 n 段）",
+    "若题目带约束（如每次必须切在已有块上、有最大刀数限制），则转为区间 DP / 记忆化搜索",
+    "写记忆化时明确状态：(剩余待切次数, 当前块数) 或 (区间) 与返回值语义",
+    "注意边界：n=0 → 1 块；n 很大时用数学闭式解 O(1) 避免超时",
+    "面试官关注的是你能不能先澄清题意，再给递推式，最后写代码——而不是直接背题"
+   ],
+   "sources": [
+    {
+     "title": "9.18快手可灵策略梯度岗一面",
+     "url": "https://www.nowcoder.com/discuss/933402920173699072"
+    }
+   ]
+  },
+  {
+   "id": "aliyun-three-easy-tasks",
+   "title": "手撕三连：二叉树右视图 / 滑动窗口 / 扎气球最少箭数",
+   "type": "编程",
+   "difficulty": "medium",
+   "prompt": "阿里云多模态大模型暑期实习手撕：1) 二叉树的右视图；2) 非 hot100 的滑动窗口；3) 扎破所有气球的最少箭数（lc452，区间贪心）。",
+   "answerOutline": [
+    "二叉树右视图：BFS 层序遍历取每层最后一个节点（或 DFS 先右后左记录每层第一个访问到的）",
+    "滑动窗口：明确窗口内维护的量与收缩条件；注意面试官会用“非 hot100”的变形版本",
+    "扎气球最少箭数：按区间右端点排序，贪心地在每个区间的右端点射箭，能覆盖则跳过，O(n log n)",
+    "三题的共同点是都要在写之前先说清不变量与复杂度"
+   ],
+   "sources": [
+    {
+     "title": "阿里云多模态大模型暑期实习（已oc）",
+     "url": "https://www.nowcoder.com/feed/main/detail/c2e2058a1cb24c7ca5e21f32826179d8"
+    }
+   ]
+  },
+  {
+   "id": "tencent-coin-change",
+   "title": "手撕：零钱兑换 I / II（完全背包两类问法）",
+   "type": "编程",
+   "difficulty": "medium",
+   "prompt": "腾讯混元三面手撕（面试官原题）：322. 零钱兑换 与 518. 零钱兑换 II。考察“最少硬币数”与“组合数”两类完全背包的循环顺序差异。",
+   "answerOutline": [
+    "322 最少硬币数：dp[j] = min(dp[j], dp[j-coin]+1)，外层遍历硬币或金额都可，dp 初始化为 inf，dp[0]=0",
+    "518 组合数：必须外层遍历硬币、内层遍历金额（正序），否则会重复计数；dp[0]=1",
+    "对比说明：为什么组合数问题外层必须是物品——因为这样保证每种组合只被按固定顺序计入一次",
+    "延伸：若要求排列数则反过来（外层金额、内层硬币）",
+    "边界：无法凑出时 322 返回 -1；金额为 0 时返回 0 或 1（取决于题意）"
+   ],
+   "sources": [
+    {
+     "title": "腾讯-混元大模型面经-华5硕",
+     "url": "https://www.nowcoder.com/feed/main/detail/c002e91fda6c44dabe2db9ac79a6ccba"
+    }
+   ]
+  },
+  {
+   "id": "tencent-backprop-derivation",
+   "title": "推导神经网络反向传播过程 + 排列组合概率题",
+   "type": "场景题",
+   "difficulty": "medium",
+   "prompt": "腾讯混元四面（不考八股、偏思维与基础）：“推导一下神经网络反向传播的过程”，外加一道排列组合的概率题。",
+   "answerOutline": [
+    "以两层 MLP 为例写出前向：z1=W1x+b1, a1=σ(z1), z2=W2a1+b2, L=CE(softmax(z2), y)",
+    "反向：dL/dz2 = softmax(z2) - onehot(y)；dL/dW2 = (dL/dz2)·a1^T；dL/da1 = W2^T·(dL/dz2)；再乘激活导数 σ'(z1)",
+    "强调链式法则的维度对齐（每个梯度与对应参数同形状）与计算图视角",
+    "排列组合概率题：先明确样本空间与是否等概率、是否有放回，再列式",
+    "面试官提示的答题节奏：先写符号定义，再写公式，最后用一组具体维度验证"
+   ],
+   "sources": [
+    {
+     "title": "腾讯-混元大模型面经-华5硕",
+     "url": "https://www.nowcoder.com/feed/main/detail/c002e91fda6c44dabe2db9ac79a6ccba"
+    }
+   ]
+  },
+  {
+   "id": "doubao-agent-multiagent-design",
+   "title": "场景题：多智能体架构设计（为什么 1 主 + 3 子而不是 4 个）",
+   "type": "场景题",
+   "difficulty": "medium",
+   "prompt": "字节 AI 数据运营实习生（自动化方向）一面（含 Agent 项目追问）：介绍多智能体项目的背景与要解决的问题、为什么选择这样的架构、为什么是一个主智能体带 3 个子智能体而不是 4 个、为什么不是串行、如何让不同 Agent 的边界清晰、你的校验是什么、评测工作如何做。",
+   "answerOutline": [
+    "先说清问题背景与失败模式（为什么单 Agent 不够：上下文超限、职责混淆、可观测性差）",
+    "主-子架构的动机：主 Agent 负责规划与路由，子 Agent 各自收敛到一个确定性子任务，便于分别评测与替换",
+    "为什么是 3 个而不是 4 个：按任务分解的最小完备集合，多一个会引入路由歧义与额外延迟——必须给出量化理由",
+    "为什么不是串行：串行会放大误差累积与延迟；并行需要解决结果冲突合并",
+    "边界清晰：为每个子 Agent 定义输入输出 schema 与拒答条件（而非靠 prompt 口头约束）",
+    "校验：结构化输出校验 + 规则校验 + 交叉验证（第二个 Agent 复核）",
+    "评测：构建含标准答案的任务集 + 无标准答案场景用 LLM-as-Judge/人评，并给出可复现的评测流程"
+   ],
+   "sources": [
+    {
+     "title": "字节跳动 AI数据运营实习生（自动化方向）一面面经",
+     "url": "https://www.nowcoder.com/discuss/932604724463882240"
+    }
+   ]
+  },
+  {
+   "id": "bytedance-rag-chunking",
+   "title": "场景题：RAG 分块策略与父子块召回（含具体数值处理）",
+   "type": "场景题",
+   "difficulty": "medium",
+   "prompt": "字节 Agent 秋招二面大段追问 RAG 分块：Markdown 文档的分块逻辑是怎样的？是否先按标题结构划分模块再拆小 chunk？检索时召回小 chunk 再补充对应父模块吗？相邻块是否重合？如果一段内容有 1000 个 token、chunk size 为 400，最后剩余 200 如何处理，是否会向前补充内容凑成 400？",
+   "answerOutline": [
+    "分层分块：先按标题层级切模块（保留语义边界），再在模块内按 token 数切 chunk，并保存 parent_id 便于父块回填",
+    "父子块检索：用小 chunk 提升召回精度，命中后返回其父块以补足上下文",
+    "重叠策略：相邻 chunk 设 overlap（如 10-20%）防止答案被切断；但要说明 overlap 会带来重复召回与去重成本",
+    "1000 token / chunk 400 的具体处理：剩余 200 可（a）单独成块，（b）向前补齐到 400 造成重叠，（c）并入前一块。需说明选择依据（是否允许块超长、是否强调边界完整）",
+    "追问准备：大部分 chunk 是否接近设定大小、很少触发回填逻辑——面试官在考察你是否真的看过自己系统的分块统计分布",
+    "评测：召回率/命中率 + 端到端答案质量的联合评估"
+   ],
+   "sources": [
+    {
+     "title": "字节 Agent 秋招二面",
+     "url": "https://www.nowcoder.com/discuss/932657562825027584"
+    }
+   ]
+  },
+  {
+   "id": "huawei-framework-exam",
+   "title": "华为诺亚笔试：算法题 + 深度学习框架题（线下 2 小时）",
+   "type": "编程",
+   "difficulty": "medium",
+   "prompt": "华为诺亚方舟实习笔试形式（面经原文）：两道题，一道考察算法，一道考察深度学习框架，两小时，线下做。",
+   "answerOutline": [
+    "算法题按常规笔试准备即可（数组/字符串/DP/二分）",
+    "深度学习框架题通常考察：手写某模块的前向/反向、自定义 Dataset/collate、混合精度与梯度累积、显存与算子行为",
+    "注意是线下 2 小时，需适应无 IDE 提示的环境",
+    "面试环节会顺着项目问基础知识与发散性点子，甚至会问 design pattern 与“如何安装 pytorch”这类工程细节"
+   ],
+   "sources": [
+    {
+     "title": "华为诺亚方舟实习offer记录",
+     "url": "https://www.nowcoder.com/discuss/353156334143086592"
+    }
+   ]
+  },
+  {
+   "id": "jd-agentic-rl-longhorizon",
+   "title": "场景题：用强化学习让模型完成长程任务",
+   "type": "场景题",
+   "difficulty": "hard",
+   "prompt": "京东人才计划实习生（北大 AI 博士，研究方向 Agentic RL）自述工作：主要做“怎么通过强化学习，让模型完成长程任务”；工作方式是先和负责人讨论方向，再自己搭训练环境、调整算法、训练、看结果、汇报。",
+   "answerOutline": [
+    "长程任务的核心难点：奖励稀疏与延迟、信用分配（credit assignment）困难、环境与工具调用的不确定性",
+    "常见做法：过程奖励/子目标分解、环境造数据与自博弈、轨迹级优势估计、课程学习与任务难度递进",
+    "工程难点：先要把可复现的训练环境搭出来（该实习生明确提到“一开始没有跑代码、训练模型的环境，就得先搭出来”）",
+    "评测：长程任务必须有可自动判定的成功信号，否则无法做 RL",
+    "汇报节奏参考：每周与直属负责人汇报一次，每月向更高一级负责人汇报一次"
+   ],
+   "sources": [
+    {
+     "title": "日薪千元的AI实习生，在焦虑什么？（北大 AI 博士生访谈）",
+     "url": "https://www.jiemian.com/article/15087508.html"
+    }
+   ]
+  }
+ ],
+ "salaryBands": [
+  {
+   "company": "字节跳动",
+   "role": "技术类实习生（含算法）",
+   "daily": "500 元/天起（2026 年初由 400 元/天上调，涨幅 25%）",
+   "monthly": "按 21.75 工作日约 10.9k 元/月（不含房补）",
+   "period": "2026 年初调整，媒体报道口径",
+   "note": "招聘网站信息显示元旦后字节技术类实习生日薪从 400 元涨到 500 元；产品类从 200 元翻倍到 500 元；运营、设计等岗位同步上调至 350 元",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "实习生涨价了（21财经/投资界）",
+     "url": "https://m.21jingji.com/article/20260807/herald/19034354bed0bfd967d75d2e90b1815f.html"
+    }
+   ]
+  },
+  {
+   "company": "字节跳动（TopSeed / 顶尖计划）",
+   "role": "顶尖算法实习生",
+   "daily": "报道口径“一天 2000 元、上不封顶”（TopSeed 早期）",
+   "monthly": "约 43k 元/月（按 21.75 天估算，仅为量级参考）",
+   "period": "受访者回顾（报道 2026-09）",
+   "note": "该数字来自在多家大厂基模团队实习过的受访者程远的回顾，属第二手回忆，且明确说明“真正能拿到 2000 元以上的依然只是极少数”。不可当作普适待遇",
+   "confidence": "low",
+   "sources": [
+    {
+     "title": "日薪千元的AI实习生，在焦虑什么？",
+     "url": "https://www.jiemian.com/article/15087508.html"
+    }
+   ]
+  },
+  {
+   "company": "腾讯",
+   "role": "研发实习生（含算法）",
+   "daily": "约 600 元/天（月薪 11000 元 + 房补 2000 元，合计 13000 元/月）",
+   "monthly": "13000 元/月（含房补）",
+   "period": "2026 年五一后调整，媒体报道口径",
+   "note": "报道称腾讯重点向研发岗位倾斜，月薪相比去年 7500 元的 base 涨幅接近 50%；按 21.75 工作日折算日薪约 598 元",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "实习生涨价了（21财经/投资界）",
+     "url": "https://m.21jingji.com/article/20260807/herald/19034354bed0bfd967d75d2e90b1815f.html"
+    }
+   ]
+  },
+  {
+   "company": "腾讯（青云计划 · 混元 AI 团队）",
+   "role": "顶尖人才计划实习生",
+   "daily": "媒体口径“实习月薪可高达十万”（未折算日薪，属顶尖计划个例）",
+   "monthly": "报道最高口径 10 万元/月",
+   "period": "2026 年媒体报道口径",
+   "note": "属青云计划/顶尖人才口径，非普适；仅作为天花板参考，不能作为预期薪资",
+   "confidence": "low",
+   "sources": [
+    {
+     "title": "实习生涨价了（21财经/投资界）",
+     "url": "https://m.21jingji.com/article/20260807/herald/19034354bed0bfd967d75d2e90b1815f.html"
+    }
+   ]
+  },
+  {
+   "company": "阿里巴巴 淘天集团",
+   "role": "算法 / AI 研发 / AI 产品实习生",
+   "daily": "500 元/天",
+   "monthly": "按 21.75 工作日约 10.9k 元/月",
+   "period": "2027 届实习招聘（2026-03-18 启动）",
+   "note": "官方招聘消息，来源为新浪科技报道的淘天集团口径；同批 T-star 顶尖人才计划为 2000 元/天",
+   "confidence": "high",
+   "sources": [
+    {
+     "title": "淘天开启2027届实习生招聘：技术类占比超9成，算法/AI研发等岗位日薪达500元",
+     "url": "https://finance.sina.cn/tech/2026-03-18/detail-inhrmihh4677569.d.html"
+    }
+   ]
+  },
+  {
+   "company": "阿里巴巴 淘天集团（T-star）",
+   "role": "T-star 顶尖人才计划实习生",
+   "daily": "2000 元/天",
+   "monthly": "约 43.5k 元/月（按 21.75 天估算）",
+   "period": "2027 届实习招聘（2026-03-18 启动）",
+   "note": "官方招聘消息口径，T-star 全称“顶尖人才 T-Star 计划”，面向全球招募顶尖技术领军人才，属极少数名额",
+   "confidence": "high",
+   "sources": [
+    {
+     "title": "淘天开启2027届实习生招聘：技术类占比超9成，算法/AI研发等岗位日薪达500元",
+     "url": "https://finance.sina.cn/tech/2026-03-18/detail-inhrmihh4677569.d.html"
+    }
+   ]
+  },
+  {
+   "company": "小红书（人才项目）",
+   "role": "顶尖算法实习生",
+   "daily": "3500 元/天",
+   "monthly": "约 76k 元/月（按 21.75 天估算）",
+   "period": "2026 年媒体报道口径",
+   "note": "媒体报道“小红书的人才项目，为顶尖算法实习生开出 3500 元一天的价码”，属顶尖计划个例，非普适日常实习待遇",
+   "confidence": "low",
+   "sources": [
+    {
+     "title": "实习生涨价了（21财经/投资界）",
+     "url": "https://m.21jingji.com/article/20260807/herald/19034354bed0bfd967d75d2e90b1815f.html"
+    }
+   ]
+  },
+  {
+   "company": "京东（人才计划）",
+   "role": "AI 方向人才计划实习生（Agentic RL）",
+   "daily": "受访者口述“日薪超过 1500 元”，一人一薪",
+   "monthly": "约 32.6k 元/月（按 21.75 天估算，仅为量级参考）",
+   "period": "2026 年 9 月报道（受访者在职期间）",
+   "note": "北大 AI 方向博士生受访自述：一人一薪、日薪超过 1500 元（具体数字不便透露）；另提供免费人才公寓（两名人才计划实习生合住约 100 平方米）、餐补每餐 20 元、晚餐免费。属人才计划口径",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "日薪千元的AI实习生，在焦虑什么？（北大 AI 博士生访谈）",
+     "url": "https://www.jiemian.com/article/15087508.html"
+    }
+   ]
+  },
+  {
+   "company": "头部互联网公司（大模型后训练方向，受访者未具名）",
+   "role": "大模型后训练算法实习生",
+   "daily": "约 1200 元/天",
+   "monthly": "约 26k 元/月（按 21.75 天估算）",
+   "period": "2026 年（受访时为研二）",
+   "note": "C9 计算机硕士受访自述：无顶会论文，之前两段算法实习，去年同类岗位只有 400-500 元/天，今年翻倍到约 1200 元/天；他强调“同一个团队里有人比我低，也有人比我高。真正做核心算法、论文比较强的博士，一天两三千元也不是完全没有”",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "日薪千元的AI实习生，在焦虑什么？（C9 计算机硕士访谈）",
+     "url": "https://www.jiemian.com/article/15087508.html"
+    }
+   ]
+  },
+  {
+   "company": "金融科技公司（受访者未具名）",
+   "role": "算法实习生",
+   "daily": "1000+ 元/天（入职 1000 元，中间涨过一次）",
+   "monthly": "约 21.8k 元/月（按 21.75 天估算）",
+   "period": "2026 年（受访时入职半年）",
+   "note": "清华工科硕士受访自述：公司对所有实习生一视同仁，算法岗与开发岗一个标准，价格不是谈出来的；公司管饭、打车报销、不打卡。同时他提到投头部大模型公司简历阶段就被筛（“他们更看重对口论文”）",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "日薪千元的AI实习生，在焦虑什么？（清华工科硕士访谈）",
+     "url": "https://www.jiemian.com/article/15087508.html"
+    }
+   ]
+  },
+  {
+   "company": "字节 / 腾讯 / 阿里等大厂（AI 核心业务，博士生）",
+   "role": "AI 核心业务博士生实习",
+   "daily": "5000-6000 元/天（媒体转述）",
+   "monthly": "约 108k-130k 元/月（按 21.75 天估算）",
+   "period": "2026 年媒体报道（转述“据多家媒体披露”）",
+   "note": "原文明确标注为“据多家媒体披露”，属转述而非一手证实；文中同时提到“一名 00 后研究生以实习生身份领着 5000 元的日薪”，转正年薪可到 300 万。可信度较低，仅作天花板参考",
+   "confidence": "low",
+   "sources": [
+    {
+     "title": "日薪千元的AI实习生，在焦虑什么？",
+     "url": "https://www.jiemian.com/article/15087508.html"
+    }
+   ]
+  },
+  {
+   "company": "大厂（普通 AI 实习，非人才计划）",
+   "role": "普通 AI 方向实习生",
+   "daily": "500-1000 元/天，并附带房补",
+   "monthly": "约 10.9k-21.8k 元/月（按 21.75 天估算）",
+   "period": "2026 年媒体报道（转述）",
+   "note": "同一篇报道中的转述口径；报道同时强调“普通 AI 实习生和人才计划实习生，薪资差距很大”，不要把极少数最高薪当成普遍待遇",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "日薪千元的AI实习生，在焦虑什么？",
+     "url": "https://www.jiemian.com/article/15087508.html"
+    }
+   ]
+  },
+  {
+   "company": "行业整体（大模型算法侧）",
+   "role": "大模型算法实习生（HR 视角）",
+   "daily": "“普遍行情已经是 3000 到 5000 元一天”（HR 受访口径）",
+   "monthly": "约 65k-109k 元/月（按 21.75 天估算）",
+   "period": "2026 年 8 月报道",
+   "note": "拥有 10 年大厂与头部模型厂 HR 经验的受访者陈川的说法，且他同时强调该行情主要对应能做大模型核心研发的在校博士（估算清北浙大等头部高校几届加起来可能也只有四五百人）。与普通算法的 400-500 元/天有巨大差距，引用时务必标注语境",
+   "confidence": "low",
+   "sources": [
+    {
+     "title": "实习生涨价了（21财经/投资界，HR 访谈）",
+     "url": "https://m.21jingji.com/article/20260807/herald/19034354bed0bfd967d75d2e90b1815f.html"
+    }
+   ]
+  },
+  {
+   "company": "AI 独角兽（MiniMax / 月之暗面）",
+   "role": "实习生（激励形式）",
+   "daily": "未披露统一日薪",
+   "monthly": "未披露",
+   "period": "2026 年 8 月报道",
+   "note": "媒体报道“AI 独角兽 Minimax 和月之暗面，开始向实习生授予期权”；另提及 3D 生成公司 Meshy AI 打出“年薪百万”招募实习生并号称上不封顶。均为媒体口径，未获官方证实",
+   "confidence": "low",
+   "sources": [
+    {
+     "title": "实习生涨价了（21财经/投资界）",
+     "url": "https://m.21jingji.com/article/20260807/herald/19034354bed0bfd967d75d2e90b1815f.html"
+    }
+   ]
+  },
+  {
+   "company": "字节跳动（Seed 体系）",
+   "role": "优秀实习生（长期激励）",
+   "daily": "官方未披露日薪；公开文案写明“符合条件的应届生与优秀实习生有机会获得豆包股”",
+   "monthly": "未披露",
+   "period": "2027 届校招（2026-04-01 发布）",
+   "note": "官方口径只承诺“薪酬极具竞争力”与豆包股机会，未给数字；其中逻辑是“越早加入，越有机会共享业务巨大增值空间”",
+   "confidence": "high",
+   "sources": [
+    {
+     "title": "字节跳动 Seed 2027 届大模型人才校招启动（含实习）",
+     "url": "https://seed.bytedance.com/zh/blog/bytedance-seed-2027-foundation-model-campus-recruitment-is-now-open-internships-included"
+    }
+   ]
+  },
+  {
+   "company": "行业整体（涨幅与趋势）",
+   "role": "AI 行业实习薪资趋势",
+   "daily": "未给统一数字；受访者称“去年 400-500 元/天，今年同类岗位翻倍到 1200 元/天”",
+   "monthly": "未给统一数字",
+   "period": "2025 → 2026 对比",
+   "note": "多篇报道与访谈交叉印证薪资快速上涨，但同时有一致信号表明市场在降温：受访者提到“今年不少团队 HC 明显减少，有的甚至从 100 个砍到 50 个”“招聘要求看起来没怎么变，实际门槛却提高了，去年一篇论文一段实习也许就够，今年还要求论文、实习和岗位方向高度匹配”",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "日薪千元的AI实习生，在焦虑什么？",
+     "url": "https://www.jiemian.com/article/15087508.html"
+    },
+    {
+     "title": "实习生涨价了（21财经/投资界）",
+     "url": "https://m.21jingji.com/article/20260807/herald/19034354bed0bfd967d75d2e90b1815f.html"
+    }
+   ]
+  }
+ ],
+ "confidenceSummary": {
+  "wellEvidenced": [
+   "面试考察点与八股清单：有 8+ 家公司的逐轮面经全文（腾讯混元四轮、淘天三轮、阿里云多轮、美团二面、百度文心一面、快手可灵一面、小红书一面、商汤/旷视/华为诺亚、字节多轮汇总），问题原文可逐条核对，可信度高",
+   "手撕/笔试题目：来自真实面经原文（多头自注意力、括号生成、二分、零钱兑换、切分披萨数、NMS、二叉树右视图、扎气球最少箭数）以及 DeepSeek 笔试 8 道大题的完整答案，可信度高",
+   "淘天 2027 届实习薪资（算法/AI 500 元/天、T-star 2000 元/天）：来自新浪科技对官方招聘消息的报道，属官方口径，confidence=high",
+   "字节 Seed 2027 届校招的届别定义、方向划分、工作地点、豆包股激励：来自 Seed 官方博客，confidence=high",
+   "地平线世界模型实习的方向要求、顶会偏好、实习时长（≥4 个月、每周 4 天以上）：来自招聘方发布的招聘帖原文，confidence=high",
+   "招聘季节性与时间线：牛客 27/28 届实习时间线帖给出分阶段窗口（5-8 月暑期主战场、9-12 月最佳窗口、1-2 月春节捡漏、3-4 月神仙打架、5-6 月二次捡漏），与多份面经时间戳一致"
+  ],
+  "thinOrSecondHand": [
+   "智谱、月之暗面、MiniMax、阶跃星辰、上海 AI Lab、小鹏、PICO：只取到岗位页入口/招聘项目标题或单篇复盘标题，未拿到完整 JD 正文与多轮面经，confidence=low",
+   "薪资天花板类数字（字节 TopSeed 2000 元/天、小红书 3500 元/天、腾讯青云月薪十万、博士生 5000-6000 元/天、HR 口径“普遍 3000-5000 元/天”）：全部为媒体转述或受访者回忆，且原文反复强调“极少数人”“不要把最高薪当普适待遇”，confidence=low",
+   "京东人才计划的 1500+ 元/天：单一受访者口述且明确说“具体数字不便透露”，confidence=medium",
+   "华为诺亚的面试流程：引用的面经为 2020 年，且评论区显示官网流程与作者经历不同，时效性差，引用时需注意年份",
+   "商汤岗位详情页：抓取时返回 404，只能验证岗位入口与标题，未能验证 JD 正文",
+   "字节部分岗位页（多模态算法实习生-智能创作、视频生成算法实习生、多模态交互-PICO）为前端渲染，抓取未取到正文，只能验证 URL 与标题存在",
+   "GitHub 面试仓库（Awesome-LLM-Interview、LLM-Algorithm-Intern-Guide、llm_interview_note、VLA-Handbook、embodied-interview-qa）：仓库标题与目录页可验证，但部分仓库正文页抓取失败（raw.githubusercontent 连接失败），因此作为“考点存在性”的证据而非逐条内容证据"
+  ],
+  "methodNotes": [
+   "所有 sources 均为本次实际访问过的 URL（web_search 返回的链接 + web_fetch 成功获取内容的页面）。未访问成功的页面仅用于验证 URL 与标题存在，并在对应条目的 notes/confidence 中说明",
+   "本次调研共执行 19 次 web_search（中英文混合）与 30+ 次 web_fetch",
+   "凡数字类事实均标注来源与 confidence；不确定或第二手的数字一律降级为 low/medium 并在 note 中写明转述性质",
+   "没有编造任何 URL、薪资数字或公司要求；凡未取证的条目均显式写明“未获取到”"
+  ]
+ }
+}

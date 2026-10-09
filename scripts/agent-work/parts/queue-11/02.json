@@ -1,0 +1,73 @@
+{
+ "id": "f363167fd97325e5",
+ "tldr": "Drifting Models 的效果瓶颈在表示的判别几何，持续随生成器学该几何可从像素直接训练，FID 降约 82–95%。",
+ "keyPoints": [
+  "Drifting Models 把迭代分布精修从推理搬到训练，实现一步生成",
+  "像素空间 drifting 效果差，预训练特征空间显著更好，原因不明",
+  "差异根源是表示的判别几何，它决定 KDE 的样本加权从而决定 drift",
+  "持续表示学习：随生成器跨 batch 演化不断学更判别性的几何"
+ ],
+ "why": "「一步生成 + 表示几何决定训练信号」是扩散/流匹配之外的替代路线，理解漂移场与密度比关系对生成式方向面试有价值。",
+ "difficulty": "hard",
+ "tags": ["generative","drifting-models","one-step-generation","representation-learning","kde"],
+ "entities": ["Drifting Models","KDE","FID","persistent representation learning"],
+ "diagram": {
+  "kind": "architecture",
+  "title": "判别几何如何决定漂移场",
+  "caption": "KDE 的样本加权由表示的判别几何决定，几何越判别，漂移方向越指向真实数据。",
+  "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='判别几何到漂移场的架构'><rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>表示空间</text><text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>像素或预训练特征</text><line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,70 236,62 244,62' fill='var(--line-1)'/><rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>判别几何</text><text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>决定 KDE 样本加权</text><line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,124 236,116 244,116' fill='var(--line-1)'/><rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>漂移场</text><text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>样本被推向数据</text><line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,178 236,170 244,170' fill='var(--line-1)'/><rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>一步生成</text><text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>几何随 batch 持续更新</text></svg>",
+  "alt": "自上而下：表示空间→判别几何决定 KDE 加权→漂移场把样本推向数据→单步生成，几何随训练持续更新。"
+ },
+ "concepts": [
+  {
+   "name": "Drift Field & Discriminative Geometry（漂移场与判别几何）",
+   "readable": "一步生成靠训练时学一个「漂移场」把噪声样本推向数据；场的方向由 KDE 加权的样本决定，而权重取决于表示空间的判别几何。",
+   "analogy": "像一群人被喇叭声推着走：往哪个方向挪，不光看声音大小，还看谁在「喊」——表示空间的几何决定了每个样本的嗓门。",
+   "analogyBreaksDown": "现实中嗓门是固定的，而这里几何随生成器每次更新而变，是动态的；且加权只影响方向，并不保证真的到达真实分布。",
+   "mechanism": "把表示几何当作可学习量，让 KDE 的样本加权更判别，漂移方向就更指向真实数据；持续随 batch 更新几何，避免冻结表示在生成器演化后失配。",
+   "visual": "画二维散点：蓝色为真实数据、灰色为生成样本，箭头为漂移方向；左图几何退化箭头杂乱，右图几何判别箭头一致指向数据簇。",
+   "prerequisites": ["核密度估计 KDE","扩散/流匹配的生成范式","表示学习"],
+   "selfTest": ["为什么像素空间的漂移场效果差？","KDE 的样本加权如何影响漂移方向？","为什么几何必须随生成器演化而更新？"],
+   "formula": "v(\\mathbf{x})=\\sum_{i}\\frac{k(\\mathbf{x},\\mathbf{x}_i)}{\\sum_j k(\\mathbf{x}_i,\\mathbf{x}_j)}\\,(\\mathbf{x}_i-\\mathbf{x})"
+  }
+ ],
+ "formulas": [
+  {
+   "id": "f-kde-weighted-drift",
+   "name": "KDE 加权的漂移速度（KDE-Weighted Drift Velocity）",
+   "category": "generative",
+   "latex": "v(\\mathbf{x})=\\sum_{i}\\frac{k(\\mathbf{x},\\mathbf{x}_i)}{\\sum_j k(\\mathbf{x}_i,\\mathbf{x}_j)}\\,(\\mathbf{x}_i-\\mathbf{x})",
+   "symbols": [["\\mathbf{x}","当前生成样本"],["\\mathbf{x}_i","参考/数据样本"],["k(\\cdot,\\cdot)","核函数，度量表示空间中的相似度"],["v(\\mathbf{x})","样本 \\mathbf{x} 的漂移速度（生成器要拟合的目标）"],["\\sum_j k(\\mathbf{x}_i,\\mathbf{x}_j)","归一化项，取决于表示几何"]],
+   "derivation": ["第 1 步：动机——一步生成需要一个把样本推向数据的漂移场。","第 2 步：用 KDE 描述样本邻域密度，邻近数据样本提供推力 (x_i - x)。","第 3 步：用核权重归一化，使判别性强的表示给正确样本更大权重。","第 4 步：训练生成器拟合该漂移速度，推理即可单步输出去噪结果。"],
+   "analogy": "像在人群中被人流推动：离你近、且「说话有分量」的人推力最大，归一化让总推力不被密集区放大。",
+   "pitfalls": ["把漂移场当成扩散模型的反向去噪；迭代精修实际发生在训练阶段","忽略归一化项；没有它，密集区域内样本会被过度放大","误以为表示可以固定；几何随生成器演化，冻结会失配"],
+   "code": "import torch\nX = torch.randn(512, 2)   # 数据样本\nx = torch.randn(64, 2)    # 生成样本\nsq = ((x[:, None] - X[None]) ** 2).sum(-1)\nk = torch.exp(-sq / 0.02)          # RBF 核\nw = k / k.sum(-1, keepdim=True)    # 归一化权重\nv = (w[..., None] * (X[None] - x[:, None])).sum(1)\nprint(v.shape)  # torch.Size([64, 2])",
+   "sources": [{"title": "Learning Discriminative Geometry for Drifting Models", "url": "https://huggingface.co/papers/2610.04703"}]
+  }
+ ],
+ "selfCheck": {
+  "claims": ["Drifting Models 把迭代分布精修从推理搬到训练，实现一步生成","像素空间 drifting 效果差，预训练特征空间显著更好，但原因此前不清楚","差异被归因于表示的判别几何：它决定 KDE 的样本加权进而决定漂移","提出持续表示学习，随生成器跨 batch 演化不断学更判别性的几何","在匹配条件下证明了 KDE 比率损失与漂移回归损失的当步梯度等价","从像素直接学表示，相比原始像素空间 Drifting Models 把 FID 降低约 82–95%，且不用预训练编码器","适配预训练表示并做速度裁剪还能进一步提升"],
+  "uncertain": ["公式为按摘要重建的通用 KDE 漂移形式，原文精确表达式与核函数选择待核实","「当步梯度等价」的具体成立条件与推导细节摘要未给，待核实","82–95% FID 降幅对应的具体数据集与基线数值摘要未逐项列出"]
+ },
+ "teaching": {
+  "progressive": [
+   {"level": "一句话", "text": "一步生成好不好，全看表示空间的分辨力够不够。"},
+   {"level": "入门", "text": "Drifting Models 把扩散式精修挪到训练里，推理一步出图。但它在像素空间效果差、预训练特征空间好，原因一直不明。本文指出关键在「表示的判别几何」——它决定 KDE 里每个样本的权重，权重歪了漂移方向就歪。"},
+   {"level": "进阶", "text": "作者提出持续表示学习：不固定编码器，而是让表示随着生成器一批批演化，越练越有判别性，于是 KDE 的样本加权始终贴合当前生成分布。他们还证明在匹配条件下，基于密度比的 KDE 比率损失与经验漂移回归损失当步梯度等价，从而把「控制生成器」与「控制漂移速度」连起来。"},
+   {"level": "专家", "text": "与扩散/流匹配相比，Drifting 把多步迭代搬进训练、推理一步完成，代价是更依赖一个好的漂移场。本文把「好漂移场来自判别几何」从经验观察提升为机制解释，并给出可学习的几何——从像素直接学也能把 FID 相对原始像素版降约 82–95%。边界是等价关系只在匹配条件下成立，几何与生成器共同漂移的稳定性仍是隐忧（推断）。"}
+  ],
+  "socratic": [
+   {"q": "为什么像素空间做漂移学不好，换成预训练特征就好了？", "a": "漂移方向由 KDE 的样本加权决定，加权又取决于表示的判别几何；像素空间几何判别性弱，邻近样本权重分不开，漂移方向就乱。"},
+   {"q": "既然预训练特征好用，为什么不直接固定它省事？", "a": "固定几何在生成器演化后不再贴合当前分布，加权会失配；持续更新表示才能保持判别性。"},
+   {"q": "证明两种损失梯度等价有什么用？", "a": "它把密度比目标与经验漂移回归连起来，说明可以用直接控制漂移速度的方式优化生成器。"}
+  ],
+  "mechanism": "核心机制是「让评判标准随被评判对象一起进化」。漂移方向由核加权的样本差决定，权重来自表示几何；若表示固定且判别性不足，邻近样本权重被平均掉，漂移方向被模糊，生成质量就崩。持续表示学习使几何始终对应当前生成分布。梯度等价定理进一步说明：优化 KDE 密度比等价于当步做漂移回归，因此可直接操控漂移速度。",
+  "boundary": "等价关系只在「匹配条件」下成立，不满足时不能直接替换目标；表示与生成器同时更新可能引入不稳定（推断）；方法主要在图像数据集上验证，视频与高维条件生成待核实。",
+  "analogyBoundary": "「教练与运动员同步进步」的类比失效处：二者目标一致且不互相漂移，而这里表示与生成器是耦合优化、可能互相追逐，类比也无法体现梯度等价这种约束。",
+  "misconceptions": ["把漂移场当成推理时的去噪步骤；迭代精修实际发生在训练阶段。","以为表示必须来自预训练模型；本文表明从像素也学得出来。","把 FID 82–95% 的降幅理解成绝对分数；它是相对原始像素空间 Drifting Models 的降幅。"],
+  "ownAnalysis": "把「预训练特征更好用」解释为判别几何差异，与「更好的表示让密度估计更准」的直觉一致；本文把它具体化为 KDE 加权并给出可学方案，比单纯换编码器更可检验（推断）。可疑处是表示与生成器共同更新的稳定性，摘要未给正则化手段（待核实）。",
+  "officialNotes": [{"position": "像素空间与预训练特征空间的漂移表现差异，根源在于表示的判别几何，它决定 KDE 样本加权并因此决定漂移。", "source": "https://huggingface.co/papers/2610.04703"}],
+  "interviewAnswer": "Drifting Models 把迭代精修搬进训练实现一步生成，但像素空间效果差、预训练特征好，原因一直不明。本文指出关键在表示的判别几何——它决定 KDE 的样本加权，进而决定漂移方向。做法是持续表示学习：让表示随生成器演化，越练越判别；并证明匹配条件下 KDE 比率损失与漂移回归损失当步梯度等价。从像素直接学也能把 FID 相对原始像素版降约 82–95%。",
+  "studyPath": {"prerequisites": ["核密度估计","扩散模型/流匹配基础","一步生成模型"], "nextSteps": ["读 Drifting Models 原文理解训练目标","推导 KDE 比率损失与漂移回归的梯度关系","在小数据集上复现持续表示学习并观察稳定性"]}
+ }
+}

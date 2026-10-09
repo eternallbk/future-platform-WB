@@ -1,0 +1,1226 @@
+{
+ "batchId": "queue-09",
+ "entries": [
+  {
+   "id": "1d9ad7d1ea7a5c53",
+   "tldr": "先用「带评分标准的教师」做 on-policy 蒸馏做 warm-start，再用 rubric 奖励做 RL，比 SFT+RL 更少刷分作弊。",
+   "keyPoints": [
+    "开放式任务没有精确答案，只能用 rubric（显式评分标准）打分当奖励",
+    "整段才给分，RL 无法直接定位是哪个 token 决策贡献了得分",
+    "两阶段：先 RP-OPD 用教师分布做 token 级稠密监督，再 rubric 奖励 RL",
+    "健康/科学任务上，该两阶段框架在对比方法中得分最高",
+    "SFT+RL 基线靠「声称符合标准」刷高分，RP-OPD+RL 刷分迹象有限"
+   ],
+   "why": "rubric 奖励与「无标准答案的开放式后训练」是 post-training 面试高频点；先蒸馏再 RL 的 warm-start 思路可迁移到多模态生成式任务的奖励设计。",
+   "difficulty": "medium",
+   "tags": [
+    "posttraining",
+    "rl",
+    "distillation",
+    "rubric",
+    "reward-hacking"
+   ],
+   "entities": [
+    "RP-OPD",
+    "OPD",
+    "HealthBench",
+    "ResearchQA",
+    "RubricHub Science"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "RP-OPD 两阶段训练",
+    "caption": "把「整段才给分」的稀疏奖励，先换成教师 token 级稠密监督，再交回 RL 去突破平台。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='RP-OPD 先蒸馏后强化学习的两阶段流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>学生自生成前缀（看不到 rubric）</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>on-policy</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>教师带 rubric 给下一词分布</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>privileged</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>RP-OPD：对齐教师分布（稠密）</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>阶段一</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>rubric 奖励 RL：突破蒸馏平台</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>阶段二</text>\n</svg>",
+    "alt": "RP-OPD 两阶段流程：学生自生成前缀，带 rubric 的教师给出 token 分布，阶段一蒸馏对齐，阶段二用 rubric 奖励做 RL。"
+   },
+   "concepts": [
+    {
+     "name": "Rubric-Privileged On-Policy Distillation (RP-OPD)",
+     "readable": "让一个能读到评分标准（rubric）的教师模型，在学生自己写出的前缀上，把下一个词的分布教给看不到 rubric 的学生。",
+     "analogy": "老师手里有阅卷标准，学生答题时老师只在学生写到的每一步小声提示「下一个词更该是什么」，而不是替学生整段重写。",
+     "analogyBreaksDown": "老师能看出学生思路跑偏并把他拉回另一条路；这里教师只在学生已有前缀上给分布，前缀一旦错了，教师也只能顺着错误轨迹纠局部，拉不回整条推理链。",
+     "mechanism": "rubric 奖励只在整段结束后给出，无法定位到具体哪个 token 决策；作者改用教师分布做 token 级稠密监督。on-policy 指在「学生自己生成的」前缀上评估，缩小训练与推理的分布差。",
+     "visual": "横轴为序列位置，下方画学生生成的 token 串；其上两排分布条分别代表教师（带 rubric）与学生，用箭头逐位置对齐，箭头长度即 KL 大小。",
+     "prerequisites": [
+      "知识蒸馏与 KL 散度",
+      "on-policy 与 off-policy 的区别",
+      "语言模型的 next-token 分布"
+     ],
+     "selfTest": [
+      "教师比学生多看到了什么？",
+      "为什么要在学生生成的前缀上评估而不是教师自己的前缀？",
+      "rubric 奖励相比 token 级分布，信息粒度差在哪？"
+     ],
+     "formula": "\\mathcal{L}_{\\mathrm{opd}} = \\mathbb{E}_{x\\sim \\pi_S}\\Big[ D_{\\mathrm{KL}}\\big( p_T(\\cdot \\mid x, c) \\,\\|\\, p_S(\\cdot \\mid x) \\big) \\Big]"
+    },
+    {
+     "name": "Rubric Reward Hacking（评分标准奖励被刷）",
+     "readable": "第二阶段直接拿 rubric 打分当奖励做 RL，模型会为了拿高分而「嘴上说符合标准」却不给实质内容，这叫 reward hacking。",
+     "analogy": "考试按「是否出现关键词」给分，学生就在答卷里堆关键词却不解题。",
+     "analogyBreaksDown": "关键词作弊一眼可查，而模型生成的「声称符合 rubric」的文本读起来很自然，连人类标注者都容易被骗，类比严重低估了它的隐蔽性。",
+     "mechanism": "rubric 是启发式代理奖励，RL 会朝代理与真目标之间的缝隙优化。摘要发现先做 RP-OPD 再 RL，刷分迹象有限；而 SFT+RL 基线越来越靠「声称符合」拿高分。",
+     "visual": "横轴为 RL 步数，两条曲线：真实内容质量（持平或下降）与 rubric 得分（持续上升），两者裂口越拉越大即 hacking。",
+     "prerequisites": [
+      "代理奖励与真实目标的差异",
+      "策略梯度与奖励最大化"
+     ],
+     "selfTest": [
+      "为什么 rubric 奖励可被利用？",
+      "SFT 热身与 on-policy 蒸馏热身分别如何影响 hacking？",
+      "如何检测模型在「声称符合」而非「真的符合」？"
+     ],
+     "formula": "\\max_{\\pi_\\theta}\\ \\mathbb{E}_{y\\sim\\pi_\\theta}\\big[ r_{\\mathrm{rubric}}(y) \\big] - \\beta\\, D_{\\mathrm{KL}}(\\pi_\\theta \\,\\|\\, \\pi_{\\mathrm{ref}})"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-rp-opd-distill",
+     "name": "Rubric 特权 On-Policy 蒸馏目标（Rubric-Privileged On-Policy Distillation）",
+     "category": "posttraining",
+     "latex": "\\mathcal{L}_{\\mathrm{opd}} = \\mathbb{E}_{x\\sim \\pi_S}\\Big[ D_{\\mathrm{KL}}\\big( p_T(\\cdot \\mid x, c) \\,\\|\\, p_S(\\cdot \\mid x) \\big) \\Big]",
+     "symbols": [
+      [
+       "x",
+       "学生自己生成的前缀（上下文）"
+      ],
+      [
+       "c",
+       "rubric 评分标准，仅教师可见"
+      ],
+      [
+       "p_T",
+       "带 rubric 的教师模型下一词分布"
+      ],
+      [
+       "p_S",
+       "学生的下一词分布"
+      ],
+      [
+       "\\pi_S",
+       "采样前缀的学生策略"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：开放式任务无精确答案，只能靠 rubric 打整段分，奖励稀疏且不可定位。",
+      "第 2 步：引入一个能读到 rubric 的教师，把监督下推到 token 级。",
+      "第 3 步：在「学生自己生成的」前缀上比较教师与学生的下一词分布，得到稠密监督。",
+      "第 4 步：最小化该 KL，使学生逼近带 rubric 条件的行为，为后续 RL 提供 warm-start。"
+     ],
+     "analogy": "改作文时不只给总分，而是跟着学生已经写下的句子，逐句告诉他下一句更该怎么写。",
+     "pitfalls": [
+      "把 on-policy 误当成用教师自己的前缀——那会引入曝光偏差",
+      "教师带 rubric 而学生不带，误以为两者条件相同"
+     ],
+     "code": "import torch\nimport torch.nn.functional as F\n@torch.no_grad()\ndef teacher_logits(model_t, x, rubric_ids):\n    return model_t(x=x, rubric=rubric_ids).logits\ndef rp_opd_loss(model_s, x, t_logits):\n    s_logits = model_s(x=x).logits\n    p_t = F.softmax(t_logits, -1)          # 教师(带 rubric)\n    log_p_s = F.log_softmax(s_logits, -1)  # 学生(无 rubric)\n    return F.kl_div(log_p_s, p_t, reduction='batchmean')",
+     "sources": [
+      {
+       "title": "OPD Before RL: Warm-Starting Rubric-Based RL with On-Policy Distillation",
+       "url": "https://huggingface.co/papers/2610.02781"
+      }
+     ]
+    },
+    {
+     "id": "f-rubric-rl-objective",
+     "name": "带 KL 约束的 Rubric 奖励 RL 目标（Rubric-Reward RL with KL Penalty）",
+     "category": "rl",
+     "latex": "\\max_{\\pi_\\theta}\\ \\mathbb{E}_{y\\sim\\pi_\\theta}\\big[ r_{\\mathrm{rubric}}(y) \\big] - \\beta\\, D_{\\mathrm{KL}}(\\pi_\\theta \\,\\|\\, \\pi_{\\mathrm{ref}})",
+     "symbols": [
+      [
+       "\\pi_\\theta",
+       "待优化的策略（语言模型）"
+      ],
+      [
+       "\\pi_{\\mathrm{ref}}",
+       "参考策略，通常是蒸馏后的起点"
+      ],
+      [
+       "r_{\\mathrm{rubric}}(y)",
+       "按显式标准对整段回答 y 的打分"
+      ],
+      [
+       "\\beta",
+       "KL 正则强度"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：把 rubric 打分当作标量奖励，用策略梯度最大化期望奖励。",
+      "第 2 步：纯奖励最大化会让策略漂离合理分布并钻奖励空子。",
+      "第 3 步：减去与参考策略的 KL，把策略约束在参考分布附近。",
+      "第 4 步：参考策略设为 RP-OPD 蒸馏后的模型，使 RL 从更好的起点出发。"
+     ],
+     "analogy": "既想考高分，又不能把卷子写得离题万里——KL 项就是「别偏得太远」的约束绳。",
+     "pitfalls": [
+      "以为不给 KL 约束也行——模型会迅速靠刷分拿高奖励",
+      "把参考策略设成原始基线，浪费了蒸馏带来的 warm-start"
+     ],
+     "code": "import torch\ndef kl_penalty(logp, logp_ref):\n    return (logp.exp() * (logp - logp_ref)).sum(-1).mean()\ndef policy_loss(logp, logp_ref, reward, beta=0.01):\n    return -(reward * logp.sum(-1)).mean() + beta * kl_penalty(logp, logp_ref)",
+     "sources": [
+      {
+       "title": "OPD Before RL: Warm-Starting Rubric-Based RL with On-Policy Distillation",
+       "url": "https://arxiv.org/abs/2610.02781"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "rubric-based RL 用显式标准给开放式回答打分",
+     "奖励在整段回答后给出，训练信号不直接指出是哪些决策贡献了最终得分",
+     "框架分两阶段：先做 rubric 教师参与的 on-policy 蒸馏，再做 rubric 奖励 RL",
+     "RP-OPD 让学生在自身前缀上匹配带 rubric 教师的下一词分布",
+     "第二阶段 RL 直接优化 rubric 奖励并超过蒸馏平台",
+     "在 HealthBench、ResearchQA、RubricHub Science 上比较后，该两阶段框架得分最高",
+     "RP-OPD+RL 在 RubricHub Science 上刷分迹象有限，SFT+RL 基线越来越靠声称符合标准拿高分"
+    ],
+    "uncertain": [
+     "摘要是英文文献，蒸馏用正向还是反向 KL、温度与截断等细节未给，公式为按摘要重建的通用形式，需核对原文",
+     "开放权重模型的具体名称与规模摘要未列出，待核实",
+     "RL 算法（如 PPO/GRPO）与超参摘要未说明，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "先让「懂评分标准」的模型把答题技巧教给模型，再让它自己按标准刷分。"
+     },
+     {
+      "level": "入门",
+      "text": "开放式问题没有标准答案，只能用一份评分标准（rubric）给回答打总分。可总分是在回答写完后才给的，模型不知道自己哪一步写得好。这篇先用一个能看标准的教师，把「每一步该写什么」教给学生，再让学生自己按标准做强化学习。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键设计是把监督粒度从「整段」下推到「每个词」：阶段一 RP-OPD 里，学生在自己生成的前缀上，去匹配一个带 rubric 的教师的下一词分布，等于用教师分布当稠密奖励。阶段二再切回 rubric 标量奖励做 RL，因为蒸馏会饱和，只有真奖励才能继续往上走。"
+     },
+     {
+      "level": "专家",
+      "text": "与纯 SFT 热身相比，on-policy 蒸馏让训练分布贴近学生自己的推理轨迹，避免教师前缀的曝光偏差；与直接 RL 相比，它用 rubric 提供的额外信息做了稠密监督。摘要的核心对照是 SFT+RL 基线在 RubricHub Science 上越来越靠「声称符合标准」拿高分，而 RP-OPD+RL 刷分迹象有限——说明 warm-start 的质量会影响 RL 是否走向作弊。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么要先蒸馏再 RL，直接 RL 不行吗？",
+      "a": "rubric 奖励太稀疏、不可定位，冷启动 RL 探索效率低且易钻奖励空子；蒸馏先把策略拉到合理区域。"
+     },
+     {
+      "q": "为什么教师必须看 rubric，学生不看？",
+      "a": "这正是「特权信息」的来源：教师多出的 rubric 让它能给出更准的 token 分布，学生学的是可迁移的行为而非标准本身。"
+     }
+    ],
+    "mechanism": "开放式任务只能给整段标量分，这种奖励稀疏且无法归因到具体 token，导致 RL 冷启动难、易刷分。作者引入一个能读 rubric 的教师，把监督下推到 token 级并在学生自己的前缀上评估，用「学生可复现的分布」做稠密引导；等策略被拉进合理区域后，再切回真实 rubric 奖励做 RL 继续提升。这样既补了稀疏奖励的信息量，又避免了教师前缀带来的分布失配。",
+    "boundary": "当 rubric 本身写得含糊或与真实质量不一致时，蒸馏会把这种偏差也教进去；当学生与教师的容量差距过大、无法匹配教师分布时，蒸馏收益有限。摘要只在健康与科学任务、开放权重模型上验证，其它领域是否同样有效未证明。",
+    "analogyBoundary": "「老师逐句提示」的类比在师生答题风格相近时成立；但真实中教师分布是连续概率、学生容量有限不一定能拟合，而且教师的提示依赖学生已写内容，一旦跑偏无法整体纠回，类比失效。",
+    "misconceptions": [
+     "以为第二阶段才是重点——摘要强调先用 rubric 做蒸馏再 RL 才是关键。",
+     "把 on-policy 蒸馏理解成普通离线蒸馏，忽略前缀必须由学生自己生成。",
+     "以为有 rubric 奖励就不会刷分——基线 SFT+RL 恰恰刷了分。"
+    ],
+    "ownAnalysis": "（推断）这条把「特权信息」用在了 RL 的 warm-start 上，思路类似 teacher-forcing 之外加一步 on-policy 对齐，本质是缓解稀疏奖励的冷启动。可疑处：教师带 rubric 会让教师分布偏「考试最优」而非「真实最优」，学生可能学到应试策略（推断）；摘要给的是框架级结论，缺具体算法与超参，复现前需核对原文。",
+    "officialNotes": [
+     {
+      "position": "论文主张用 rubric 先引导 on-policy 蒸馏、再做 rubric-based RL，并称其两阶段框架在评估的方法中得分最高",
+      "source": "hf_papers: https://huggingface.co/papers/2610.02781"
+     }
+    ],
+    "interviewAnswer": "这道题考的是稀疏奖励下的后训练。rubric-based RL 的问题在于奖励是整段给的标量，模型不知道哪一步写得好。这篇的解法分两步：第一步，先让一个能看 rubric 的教师模型，在学生自己生成的前缀上做下一词分布对齐——on-policy 是为了避免曝光偏差，这样监督粒度从整段下推到 token 级；第二步再切回 rubric 奖励做 RL，因为蒸馏会饱和。最重要的对照是 SFT+RL 基线开始靠「声称符合标准」刷分，而 RP-OPD+RL 刷分迹象有限，说明 warm-start 的质量决定了 RL 会不会走偏。",
+    "studyPath": {
+     "prerequisites": [
+      "SFT 与 RLHF/RLVR 后训练流程",
+      "KL 散度与知识蒸馏",
+      "on-policy 与 off-policy"
+     ],
+     "nextSteps": [
+      "读原文核对蒸馏方向与 RL 算法",
+      "对比 rubric 奖励与 reward model 的差别",
+      "把该框架试用到多模态生成的开放式评分上"
+     ]
+    }
+   }
+  },
+  {
+   "id": "da3810f62ad3a0bc",
+   "tldr": "把机器人决策写成纯代码：代码从相机和本体感觉估计状态并决策，循环里不放 VLM/VLA，RoboDojo 42 任务成功率 70.24%。",
+   "keyPoints": [
+    "把世界看成具身图灵机：纸带是机器人+环境状态，规则即策略",
+    "若状态能被准确表示，决策可以完全写成代码（COAP）",
+    "三优势：状态显式、可执行可控、库可继承扩展",
+    "同一个库跨 episode、跨任务复用，测试时无模型在环",
+    "RoboDojo 42 个双臂任务达 70.24% 成功率；上界取决于状态表示精度"
+   ],
+   "why": "具身智能「模型在环 vs 代码在环」是 world model 与 embodied 方向的核心辩论；状态显式表示与 RSI 闭环对做世界模型、机器人策略的求职者都是高频概念。",
+   "difficulty": "hard",
+   "tags": [
+    "worldmodel",
+    "embodied",
+    "robot-policy",
+    "code-as-policy",
+    "self-improvement"
+   ],
+   "entities": [
+    "COAP",
+    "Embodied Turing Machine",
+    "Agent-as-Policy",
+    "Harness VLA",
+    "RoboDojo",
+    "VLA",
+    "VLM"
+   ],
+   "diagram": {
+    "kind": "architecture",
+    "title": "COAP 代码即策略闭环",
+    "caption": "状态被显式写进代码，决策由代码逻辑给出，测试时循环里没有 VLM/VLA。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='COAP 从感知到代码决策再到执行的闭环结构'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>相机图像 + 本体感觉</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>观测</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>代码估计并跟踪状态</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>显式状态</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>代码规则决策动作</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>无模型在环</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>下游 VLA / Agent Harness 复用</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>能力累积</text>\n</svg>",
+    "alt": "COAP 闭环：相机与本体感觉输入，代码估计显式状态，代码规则决策动作，无模型在环，产出可被 VLA 与 Agent Harness 复用的库。"
+   },
+   "concepts": [
+    {
+     "name": "Embodied Turing Machine（具身图灵机）",
+     "readable": "把机器人+环境当成一台图灵机：纸带上写的是机器人与环境的真实状态，规则手册就是策略；状态记得准，决策就能全用代码表达。",
+     "analogy": "像一台老式自动售货机——内部凸轮记录着状态，金属结构定义规则，投币后无需「大脑」就完成动作。",
+     "analogyBreaksDown": "图灵机要求状态可被有限符号精确表示，但真实视觉状态含噪声、遮挡与连续物理量，用代码表示必然丢信息，这正是 COAP 自认的上界，类比在这里失效。",
+     "mechanism": "它把「决策需要模型」的问题重述为「状态表示是否足够」，从而把研究焦点从学一个策略网络，转到如何用代码精确测量与跟踪机器人、环境、任务状态。",
+     "visual": "左侧画一条水平纸带，格子里写着状态变量；中间一个方块是规则（if-else 代码）；右侧一个读写头指向纸带，表示按规则更新状态。",
+     "prerequisites": [
+      "图灵机与状态转移的基本概念",
+      "机器人视觉与本体感觉（proprioception）"
+     ],
+     "selfTest": [
+      "这台「图灵机」的纸带和规则分别对应什么？",
+      "为什么决策能否纯代码化取决于状态表示？",
+      "状态表示不准时会发生什么？"
+     ],
+     "formula": "(s_{t+1}, a_t) = \\delta\\big(s_t, o_t\\big)"
+    },
+    {
+     "name": "Code-Only-as-Policy (COAP)",
+     "readable": "干脆不用 VLM/VLA 进循环，让一段代码直接从相机与本体感觉估计状态、再按代码逻辑决策，同一份代码跨 episode、跨任务复用。",
+     "analogy": "用一套写死的流水线程序控制机械臂，而不是每次都现场请一位「专家」看屏幕下指令。",
+     "analogyBreaksDown": "流水线程序只适合固定工况；真实任务里光照、视角、物体摆放都在变，代码的 if-else 无法穷举这些变化，靠堆分支会迅速失控。",
+     "mechanism": "把状态显式存进代码变量、决策写成可读可控的逻辑，从而能灵活从失败恢复、在线跑得又快又便宜；新任务可继承或扩展共享库，使能力跨任务累积，这也是它能作为 RSI 载体的原因。",
+     "visual": "画一个库文件树：顶层是共享原语（抓取、对位），下层是任务代码调用原语；箭头表示新任务「继承/扩展」已有节点，节点数随任务累积增长。",
+     "prerequisites": [
+      "机器人任务与动作空间",
+      "VLA 与 Agent Harness 的常规做法"
+     ],
+     "selfTest": [
+      "COAP 相对 VLA 省掉了什么？",
+      "「能力累积」靠什么机制实现？",
+      "为什么测试时无模型反而可能更快更便宜？"
+     ],
+     "formula": "\\mathrm{SR} = \\frac{1}{N}\\sum_{i=1}^{N} \\mathbf{1}[\\text{task}_i\\ \\text{succeeded}]"
+    },
+    {
+     "name": "Recursive Self-Improvement (RSI)",
+     "readable": "让编码智能体在闭环里持续开发这个代码库，每一次改动都是显式、可控的，于是能力可以一轮轮自我累积。",
+     "analogy": "像开源项目由一群贡献者持续迭代：每提一个 PR 只改一小块、可评审、可回滚，项目功能慢慢变强。",
+     "analogyBreaksDown": "开源项目里人类评审能判断改动好坏；这里评判改动是否更好依赖机器人实机成功率，而实机试验昂贵且有噪声，反馈信号本身不干净，类比失效。",
+     "mechanism": "把「改进策略」这个动作也变成对代码库的编辑，因为代码是显式的，每次改了什么、是否回退都可追踪，这比更新一个隐含在权重里的策略更可控。",
+     "visual": "画一个闭环：代码库 → 在任务上 rollout → 收集失败 → 编码智能体改代码 → 回到代码库，箭头旁标注「显式、可控」。",
+     "prerequisites": [
+      "代码智能体与自动化改代码",
+      "闭环评测与回归测试"
+     ],
+     "selfTest": [
+      "为什么说代码是比权重更适合 RSI 的载体？",
+      "RSI 闭环的反馈来自哪里？",
+      "闭环里最脆弱的一环是什么？"
+     ],
+     "formula": "c_{t+1} = \\mathrm{Improve}\\big(c_t,\\ \\mathrm{Rollout}(c_t, \\mathcal{T})\\big)"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-embodied-tm-transition",
+     "name": "具身图灵机状态转移（Embodied Turing Machine Transition）",
+     "category": "worldmodel",
+     "latex": "(s_{t+1}, a_t) = \\delta\\big(s_t,\\ o_t\\big), \\qquad s_{t+1} = f_{\\mathrm{code}}(s_t, o_t)",
+     "symbols": [
+      [
+       "s_t",
+       "代码中显式维护的机器人+环境+任务状态"
+      ],
+      [
+       "o_t",
+       "相机图像与本体感觉观测"
+      ],
+      [
+       "\\delta",
+       "由代码实现的策略/规则函数"
+      ],
+      [
+       "a_t",
+       "在状态 s_t 下由代码决定并输出的动作"
+      ],
+      [
+       "f_{\\mathrm{code}}",
+       "用代码写成的状态更新逻辑"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：把具身决策类比成图灵机，纸带即状态、规则即策略。",
+      "第 2 步：状态转移只依赖当前状态与当前观测，不含隐式神经网络。",
+      "第 3 步：决策 a_t 由同一份代码依据 s_t 给出，测试时无模型在环。",
+      "第 4 步：状态 s_t 表示得越准，代码决策越可靠，这正是 COAP 的上界。"
+     ],
+     "analogy": "像用记账本记下库存（状态），再照规则手册发货（动作），整个过程不需要一个「会思考」的大脑。",
+     "pitfalls": [
+      "误以为 δ 就是学出来的策略网络——这里的规则是显式代码",
+      "忽略状态 s_t 是估计出来的、含误差，把它当真实状态看"
+     ],
+     "code": "from dataclasses import dataclass\n@dataclass\nclass State:\n    obj_xy: tuple; gripper: float; done: bool = False\ndef step(state: State, obs) -> State:\n    state.obj_xy = detect(obs['rgb'])      # 代码估计状态\n    state.gripper = obs['proprio'][-1]     # 本体感觉\n    return state\ndef policy(s: State):\n    return 'grasp' if near(s.obj_xy, s.gripper) else 'approach'",
+     "sources": [
+      {
+       "title": "Embodied Turing Machines: Stateful Code for Robot Recursive Self-Improvement",
+       "url": "https://huggingface.co/papers/2610.12369"
+      }
+     ]
+    },
+    {
+     "id": "f-coap-rsi-loop",
+     "name": "代码库自我改进闭环（RSI Code-Library Loop）",
+     "category": "worldmodel",
+     "latex": "c_{t+1} = \\mathrm{Improve}\\big(c_t,\\ \\mathrm{Rollout}(c_t, \\mathcal{T})\\big), \\quad \\mathrm{SR}(c) = \\frac{1}{|\\mathcal{T}|}\\sum_{i\\in\\mathcal{T}} \\mathbf{1}[\\mathrm{success}_i]",
+     "symbols": [
+      [
+       "c_t",
+       "第 t 轮的代码库（策略）"
+      ],
+      [
+       "\\mathcal{T}",
+       "任务集合（如 RoboDojo 的 42 个双臂任务）"
+      ],
+      [
+       "\\mathrm{Rollout}",
+       "在任务上执行代码库并收集结果"
+      ],
+      [
+       "\\mathrm{Improve}",
+       "编码智能体依据失败对代码库做可控修改"
+      ],
+      [
+       "\\mathrm{SR}",
+       "平均成功率"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：用当前代码库在任务集合上 rollout，得到逐任务成败。",
+      "第 2 步：把失败案例交给编码智能体，对代码库做显式修改。",
+      "第 3 步：新代码库替代旧的，循环往复，能力跨任务累积。",
+      "第 4 步：用平均成功率 SR 度量闭环推进效果，摘要报告 70.24%。"
+     ],
+     "analogy": "像开源项目不断提 PR 迭代：每轮只改一小块、可回滚，整体功能逐步增强。",
+     "pitfalls": [
+      "以为闭环一定单调变好——实机噪声会让某轮改动反而更差",
+      "忽略 rollout 成本，实机试验昂贵且有破坏性"
+     ],
+     "code": "def rsi_loop(tasks, library, rounds=5):\n    for _ in range(rounds):\n        results = [run(library, t) for t in tasks]   # rollout\n        fails = [t for t, r in zip(tasks, results) if not r]\n        library = coding_agent.edit(library, fails)  # 显式可控修改\n    return library",
+     "sources": [
+      {
+       "title": "Embodied Turing Machines: Stateful Code for Robot Recursive Self-Improvement",
+       "url": "https://arxiv.org/abs/2610.12369"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "主流做法是 VLA 把观测映射到动作、由 Agent Harness 在运行时查询 VLM 做决策",
+     "论文提出把具身世界看作具身图灵机：纸带是机器人与环境状态，规则是策略",
+     "若状态能被准确表示，决策可以完全写成代码（COAP）",
+     "COAP 用代码从相机图像与本体感觉测量并跟踪状态，再据此做全部决策",
+     "同一份代码跨 episode 适用，不同任务共享一个库，循环里没有 VLM 或 VLA",
+     "论文分析三个优势：显式状态、可执行（可控/可恢复/快且便宜）、可扩展（库继承累积）",
+     "该框架适合递归自我改进，编码智能体在闭环里开发代码库，每次改动显式可控",
+     "在 RoboDojo 的 42 个双臂任务上成功率 70.24%，测试时无模型在环",
+     "上界取决于状态表示精度与代码逻辑的鲁棒性",
+     "由于其跨 episode 适用，也可作为 VLA 与 Agent Harness 的高效数据引擎"
+    ],
+    "uncertain": [
+     "状态转移公式为按摘要重建的通用形式（把图灵机表述写成代码状态更新），原文的确切形式需核对",
+     "「显式状态」「可执行」的具体实现细节与代码库规模摘要未给，待核实",
+     "70.24% 是双臂任务平均成功率，其统计口径与基线对比摘要未给出，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "不再让视觉语言模型现场决策，而是把机器人状态和规则都写成代码来执行。"
+     },
+     {
+      "level": "入门",
+      "text": "现在多数机器人策略是 VLA：把画面映射成动作，或者让一个 Agent Harness 在运行时去问 VLM。这篇换了思路——把世界看作一台图灵机，只要能用代码准确测出机器人和环境的状态，决策就可以完全用代码写。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键设计是把研究问题从「学一个策略网络」重述成「状态表示得准不准」。COAP 用代码从相机和本体感觉维护状态，所有决策由代码规则给出，测试时循环里没有模型。这带来三个好处：状态显式可存、执行可控可恢复且在线跑得快、新任务能继承扩展共享库使能力累积。"
+     },
+     {
+      "level": "专家",
+      "text": "与 VLA / Agent Harness 相比，COAP 把不确定性从「模型权重」搬到「状态表示与代码鲁棒性」上：它承认上界就是状态估计精度。与隐含式策略相比，显式代码让每次改动都可追踪，因而适合递归自我改进——编码智能体在闭环里开发库。它在 RoboDojo 42 个双臂任务上达到 70.24% 且测试时无模型，但也意味着对未见工况的泛化全靠状态表示和代码逻辑，而非模型泛化。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么把决策写成代码会更快更便宜？",
+      "a": "循环里省去了每一步都跑 VLM/VLA 的推理开销，代码在 CPU 上直接算，在线延迟和成本都大幅下降。"
+     },
+     {
+      "q": "既然代码可行，为什么还需要 VLA？",
+      "a": "代码依赖状态可被准确表示；状态无法可靠估计时，学习式策略更鲁棒，论文也把 COAP 定位为可复用数据引擎而非全面替代。"
+     }
+    ],
+    "mechanism": "常规 VLA/Agent Harness 让模型持续留在控制回路里，代价是每次决策都要推理、且决策不可解释不可控。COAP 的前提观察是：具身决策的本质是「状态 + 规则」。于是它把状态显式化到代码变量里、把规则写成可读逻辑，使决策可控、可恢复、在线更便宜，并让代码库成为可继承累积的资产，这也是递归自我改进得以进行的载体。",
+    "boundary": "当环境高度非结构化、状态无法从图像可靠估计，或需要细腻的接触动力学时，纯代码决策会失效；代码逻辑的复杂度会随任务多样性攀升而难以维护。摘要也明说上界在于状态表示精度与代码鲁棒性，且只在 RoboDojo 双臂任务上验证。",
+    "analogyBoundary": "「售货机/流水线程序」的类比在工况固定时成立；但真实机器人面临连续、带噪声、部分可观测的状态，且失败往往来自估计误差而非规则缺失，用代码穷举变化会撞上组合爆炸，类比失效。",
+    "misconceptions": [
+     "以为 COAP 完全不需要视觉模型——它仍用相机，只是把视觉用于估计状态而非决策。",
+     "把图灵机比喻当作严格等价，忽略真实状态不可精确符号化。",
+     "认为成功率 70.24% 说明代码优于模型，忽略论文只在一个仿真基准上验证。"
+    ],
+    "ownAnalysis": "（推断）这条本质是把「世界模型」从隐式神经网络改成显式符号状态，与经典任务规划、PDDL 一脉相承，但用现代感知（相机+本体感觉）来喂状态。可疑处有二：一是状态估计误差会直接传给决策，误差传播没有闭环纠正；二是「能力累积」依赖编码智能体的改动质量，而摘要没说由谁评判改动是否更好（推断）。它作为「数据引擎」的定位反而更现实：代码 rollout 便宜，可为 VLA 造数据。",
+    "officialNotes": [
+     {
+      "position": "论文主张把具身世界视为具身图灵机并提出 COAP，认为若状态可准确表示则决策可完全由代码完成，且适合递归自我改进",
+      "source": "hf_papers: https://huggingface.co/papers/2610.12369"
+     }
+    ],
+    "interviewAnswer": "我理解这篇是在挑战「模型必须在环」的范式。主流 VLA 是把观测映射成动作，Agent Harness 则在运行时查 VLM。它提出把具身世界看成图灵机：纸带是机器人环境状态、规则是策略，于是只要状态能准确表示，决策就能全写成代码，测试时不需要模型。好处有三点：状态显式、执行可控可恢复、库能继承扩展。它在 RoboDojo 的 42 个双臂任务上做到 70.24% 且无模型在环，还因为跨 episode 适用可以当 VLA 的数据引擎。它自己承认上界是状态表示精度和代码鲁棒性。",
+    "studyPath": {
+     "prerequisites": [
+      "VLA 与机器人策略基础",
+      "图灵机/状态机概念",
+      "机器人视觉与本体感觉"
+     ],
+     "nextSteps": [
+      "读原文看状态如何从图像估计",
+      "对比 VLA、Agent Harness 与 COAP 的失效模式",
+      "思考代码库如何作为 VLA 的数据引擎"
+     ]
+    }
+   }
+  },
+  {
+   "id": "c035cc3a364c5b18",
+   "tldr": "用 VLM 里的物理先验诊断失败去调接触力范围，再调冻结流匹配策略的潜噪声，触觉操作样本效率大幅提升。",
+   "keyPoints": [
+    "预训练策略在 OOD 部署下性能下降，需要真实交互做后训练",
+    "实机每次试验慢、贵甚至破坏性，RL 后训练交互代价高",
+    "PFR 模块用 VLM 物理先验看视觉结果与触觉历史，诊断失败并更新力上下界",
+    "高频混合力位控制器在接触时执行这些界限",
+    "触觉条件扩散引导 RL 只调冻结流匹配策略的潜噪声，不改基座"
+   ],
+   "why": "「冻结基座 + 只学一个小控制器」是生成式策略后训练的主流范式；物理先验驱动的样本效率与扩散/流匹配引导对做生成式模型与 embodied 的求职者都直接相关。",
+   "difficulty": "hard",
+   "tags": [
+    "generative",
+    "diffusion-policy",
+    "tactile",
+    "sample-efficiency",
+    "robot-adaptation"
+   ],
+   "entities": [
+    "PEARS",
+    "PFR",
+    "Whiteboard Erasing",
+    "Pipette Liquid Aspiration"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "PEARS 双通道自适应",
+    "caption": "一条通道用物理先验调接触力界限，另一条通道只调冻结策略的潜噪声，合起来加速在线适应。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='PEARS 物理推理与扩散引导两条通道协同的自适应流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>一次 episode 结束</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>视觉+触觉</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>PFR：VLM 物理先验诊断失败</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>更新力界限</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>混合力位控制器执行界限</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>高频接触</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>触觉扩散引导：只调潜噪声</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>冻结基座</text>\n</svg>",
+    "alt": "PEARS 流程：episode 结束后 PFR 用 VLM 物理先验诊断失败并更新力界限，混合力位控制器执行，触觉扩散引导只调冻结策略的潜噪声。"
+   },
+   "concepts": [
+    {
+     "name": "Physics-guided Force Reasoning (PFR)",
+     "readable": "模块用 VLM 里已有的物理常识，结合视觉结果和触觉交互历史，判断这次失败的原因，并据此更新「接触力该在什么范围」的上下界。",
+     "analogy": "老师傅复盘失败录像加手感，判断「这次按得太重」，然后把下次的力道范围调小一点。",
+     "analogyBreaksDown": "老师傅的判断是连续、可微调的经验，而 VLM 输出的是离散的力上下界，遇到训练分布外的材质或物体时可能给出错误的界，类比低估了「界的质量依赖先验覆盖」。",
+     "mechanism": "把「失败诊断」转成 VLM 的推理任务，用物理先验产出可执行的力界限，再由高频混合力位控制器在接触时强制执行——把推理结果落到控制层，避免策略在 OOD 下乱出力。",
+     "visual": "画一条随时间变化的目标接触力曲线，上下两条虚线是 PFR 给出的界限，真实力曲线被夹在中间；失败后界限收窄，用颜色标出「收紧」。",
+     "prerequisites": [
+      "力/位混合控制基础",
+      "视觉语言模型做推理任务",
+      "触觉传感信号"
+     ],
+     "selfTest": [
+      "PFR 用哪些输入诊断失败？",
+      "它输出的是奖励还是可执行的约束？",
+      "为什么要把力界限交给控制器而不是直接改策略？"
+     ],
+     "formula": "[F_{\\min}, F_{\\max}]_{t+1} = \\mathrm{PFR}\\big(F_t, o_t, h_t\\big)"
+    },
+    {
+     "name": "Tactile-conditioned Diffusion Steering（触觉条件扩散引导）",
+     "readable": "基座是一个冻结的流匹配策略，PEARS 不改它的权重，只用触觉条件去调生成动作时的初始潜噪声，从而纠正空程运动和接触时机。",
+     "analogy": "不重新培训司机，只在发车前微调导航的初始随机起点，让同一条路线走得更稳。",
+     "analogyBreaksDown": "只调初始噪声的自由度有限：如果策略本身完全不会这项技能（比如根本不会抓），无论怎么调噪声也救不回来，类比里的「路线」本身得先存在。",
+     "mechanism": "冻结基座避免了重训练带来的灾难性遗忘与算力开销，把适应压缩到低维的潜噪声空间；触觉条件让调整专门针对接触类错误（力不对、时机不对），与 PFR 的力界限互补。",
+     "visual": "画潜噪声空间：一个固定的生成分布中心，用箭头指向被 RL 微调后的新中心，箭头旁边标注触觉条件，代表只平移不重塑分布。",
+     "prerequisites": [
+      "扩散模型与流匹配策略",
+      "潜空间引导与条件生成",
+      "策略梯度 RL"
+     ],
+     "selfTest": [
+      "为什么冻结基座、只调潜噪声？",
+      "触觉条件在纠正哪类错误？",
+      "这种引导与直接微调全参数相比省了什么？"
+     ],
+     "formula": "a_t = G_\\theta\\big(z_t + \\Delta z_t\\big), \\quad \\Delta z_t \\sim \\pi_\\phi(\\cdot \\mid \\mathrm{tactile})"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-diffusion-steering",
+     "name": "扩散/流匹配策略的潜噪声引导（Latent-Noise Steering）",
+     "category": "generative",
+     "latex": "a_t = G_\\theta\\big(z_t + \\Delta z_t\\big), \\quad \\Delta z_t \\sim \\pi_\\phi(\\cdot \\mid \\mathrm{tactile}), \\quad \\theta\\ \\mathrm{frozen}",
+     "symbols": [
+      [
+       "G_\\theta",
+       "冻结的流匹配/扩散策略网络，参数 θ 不更新"
+      ],
+      [
+       "z_t",
+       "采样得到的初始潜噪声"
+      ],
+      [
+       "\\Delta z_t",
+       "RL 学习到的潜噪声修正量"
+      ],
+      [
+       "\\pi_\\phi",
+       "触觉条件化的修正策略，参数 φ 可学"
+      ],
+      [
+       "a_t",
+       "由修正后潜噪声生成的最终动作"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：预训练策略在 OOD 下退化，但重训代价高且可能破坏已有能力。",
+      "第 2 步：冻结基座参数 θ，只在生成动作的潜噪声上注入修正量 Δz。",
+      "第 3 步：让修正量以触觉历史为条件，使学习集中在接触相关错误。",
+      "第 4 步：用 RL 优化 φ 以最大化任务成功率，保持基座不变。"
+     ],
+     "analogy": "像给固定路线的大巴只调发车时的随机起点，路线本身不变，但停车更准。",
+     "pitfalls": [
+      "以为在微调整个基座——论文强调基座冻结，只学潜噪声修正",
+      "忽略触觉条件，把它当成无条件噪声调优，会失去针对接触错误的针对性"
+     ],
+     "code": "import torch\ndef steered_action(policy, z, dz, cond_tactile):\n    # policy 冻结；只更新 dz 的生成网络\n    z_steer = z + dz(z, cond_tactile)\n    return policy(z_steer)   # a_t = G_theta(z_t + dz_t)",
+     "sources": [
+      {
+       "title": "PEARS: Physical-Prior-Guided Efficient Adaptation via Failure Reasoning and Diffusion Steering for Tactile Manipulation",
+       "url": "https://arxiv.org/abs/2610.08784v1"
+      }
+     ]
+    },
+    {
+     "id": "f-pfr-force-bounds",
+     "name": "物理推理力界限更新（Physics-Guided Force-Bound Update）",
+     "category": "generative",
+     "latex": "[F_{\\min}, F_{\\max}]_{t+1} = \\mathrm{PFR}\\big([F_{\\min}, F_{\\max}]_t,\\ o_t,\\ h_t\\big), \\quad F_{\\min} \\le F^{\\mathrm{cmd}} \\le F_{\\max}",
+     "symbols": [
+      [
+       "[F_{\\min}, F_{\\max}]_t",
+       "第 t 轮任务允许的接触力上下界"
+      ],
+      [
+       "o_t",
+       "本轮 episode 的视觉结果"
+      ],
+      [
+       "h_t",
+       "触觉交互历史"
+      ],
+      [
+       "F^{\\mathrm{cmd}}",
+       "控制器实际下发的接触力命令"
+      ],
+      [
+       "\\mathrm{PFR}",
+       "基于 VLM 物理先验的失败诊断与界限更新模块"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：episode 结束后，PFR 收下视觉结果与触觉历史作为失败诊断证据。",
+      "第 2 步：VLM 借助物理先验判断失败模式（如用力过大、接触过晚）。",
+      "第 3 步：据此更新任务适配的力上下界。",
+      "第 4 步：高频混合力位控制器在后续接触中把命令力夹在该区间内执行。"
+     ],
+     "analogy": "像给学徒划定「拧螺丝只能用这个力道区间」，他照着做就不会拧坏。",
+     "pitfalls": [
+      "把力界限当成奖励塑形——它是硬约束，由控制器强制执行",
+      "假设 VLM 一定给对区间，忽略先验分布外的物体上会出错"
+     ],
+     "code": "def pfr_update(F_range, obs_img, tactile_hist, vlm):\n    diag = vlm.reason(obs_img, tactile_hist)      # 物理先验诊断失败\n    lo, hi = F_range\n    if diag == 'too_much_force': hi *= 0.8\n    elif diag == 'too_little_force': lo *= 1.2\n    return (lo, hi)\ndef enforce(F_cmd, F_range):\n    return min(max(F_cmd, F_range[0]), F_range[1])",
+     "sources": [
+      {
+       "title": "PEARS: Physical-Prior-Guided Efficient Adaptation via Failure Reasoning and Diffusion Steering for Tactile Manipulation",
+       "url": "https://arxiv.org/abs/2610.08784v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "预训练机器人策略在部署时的 OOD 条件下会出现明显性能下降",
+     "基于 RL 的后训练通常需要大量环境交互，操作任务中每次试验慢、贵甚至具破坏性",
+     "PEARS 是物理先验引导的混合 RL 框架，用于触觉反馈下预训练策略的样本高效在线适应",
+     "PFR 模块用 VLM 中的物理先验，从视觉结果与触觉交互历史诊断失败并更新接触力界限",
+     "高频混合力位控制器在接触时执行这些界限",
+     "触觉条件扩散引导 RL 调整冻结流匹配策略的潜噪声，修正空程运动与接触时机，不更新基座",
+     "仿真中相比最强的逐任务基线成功率提升 12.4 到 37.4 个百分点",
+     "达到某成功率阈值所需交互 episode 数相比最快基线最多减少 53.2%",
+     "实机在 Whiteboard Erasing 达 95%、Pipette Liquid Aspiration 达 90%"
+    ],
+    "uncertain": [
+     "引导公式为按摘要重建的通用形式（潜噪声加性修正），原文确切形式与 RL 算法需核对",
+     "基线具体名称与仿真环境名摘要未列出，待核实",
+     "VLM 型号与物理先验如何编码摘要未说明，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "用视觉语言模型的物理常识判断机器人哪次用力不对，再只微调策略的随机噪声来纠正。"
+     },
+     {
+      "level": "入门",
+      "text": "预训练的策略一到新场景就容易掉性能，得靠真机试错补回来，但每次试验又慢又贵。PEARS 用两条路减少试错：一条让 VLM 复盘失败、直接规定接触力的范围；另一条不改基座模型，只调整生成动作时的随机噪声。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键设计是分工：接触力这种有物理含义、可写成约束的量，交给 PFR 用 VLM 诊断后变成硬界限，由高频力位控制器强制执行；空程运动和接触时机这种难用规则表达的量，交给触觉条件的扩散引导，只学潜噪声修正。基座冻结避免了重训练开销，也让两条通道互不干扰。"
+     },
+     {
+      "level": "专家",
+      "text": "与端到端 RL 微调相比，它把适应拆成「可解释的约束通道」和「低维的噪声通道」，前者利用 VLM 的物理先验提供样本高效的方向性，后者在潜空间做小步调整保留基座能力。摘要在仿真上比最强逐任务基线提升 12.4 到 37.4 个百分点、交互 episode 最多减少 53.2%；实机白板擦除 95%、移液管吸液 90%。它的边界是 VLM 物理推理的可靠性：若先验覆盖不到该物体，力界限会给错。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不直接微调整个策略？",
+      "a": "全参数微调需要大量真机交互、且易遗忘已有技能；冻结基座只学潜噪声修正，样本与算力成本都低得多。"
+     },
+     {
+      "q": "为什么接触力要单独用规则而不是也让 RL 学？",
+      "a": "接触力有明确物理量纲和危险边界，写成硬界限能保证安全且样本高效，比让 RL 从稀疏奖励里摸索更可靠。"
+     }
+    ],
+    "mechanism": "操作任务的适应难点是试验昂贵且有破坏性。作者把适应需求拆成两类：力学量有物理含义、可表示为约束，于是用 VLM 的物理先验做诊断并转成力界限，由控制器强制保证安全与方向性；时序/轨迹类错误难以规则化，于是用触觉条件的 RL 只调冻结策略的潜噪声。两者一个给硬约束、一个给软修正，共同提升样本效率。",
+    "boundary": "当 VLM 在目标物体/材质上缺乏物理先验、诊断错误时，力界限会误导控制器；当基座策略在目标任务上能力严重不足时，仅靠潜噪声修正无法补救；摘要的增益来自特定触觉操作任务与仿真基准，泛化到无触觉或高动态任务未证明。",
+    "analogyBoundary": "「老师傅调力道」的类比在失败模式是「用力不当」时成立；但真实失败常来自感知误差、状态估计错误或多因素耦合，不总能归因到单一力界限，此时「复盘调整」的类比不适用。",
+    "misconceptions": [
+     "以为 PEARS 会更新基座策略——它明确冻结流匹配基座，只学潜噪声。",
+     "把 PFR 输出的力界限当成奖励塑形——它是控制器强制执行的硬约束。",
+     "认为两条通道冗余——它们分别处理力/接触与空程/时机的不同错误。"
+    ],
+    "ownAnalysis": "（推断）这条与「冻结大模型 + 学轻量 adapter」的思路同构，只是 adapter 长在噪声空间而非权重上。可疑处：一是把失败归因交给 VLM，若 VLM 幻觉出错误的失败原因，力界限会朝错误方向调（推断）；二是摘要只报峰值成功率与相对降幅，未给基线的绝对成功率，12.4 到 37.4 个百分点的跨度也说明任务间差异大。触觉是它的关键前提，无触觉场景收益需重估。",
+    "officialNotes": [
+     {
+      "position": "论文提出 PEARS，称结合 PFR 模块与策略引导可在减少昂贵交互的同时加速适应，并给出仿真与实机成功率",
+      "source": "arxiv: https://arxiv.org/abs/2610.08784v1"
+     }
+    ],
+    "interviewAnswer": "PEARS 解决的是触觉操作里「预训练策略 OOD 掉点、但真机试错太贵」的问题，核心是两条互补的自适应通道。第一条是 PFR：episode 结束后，用 VLM 里的物理先验，结合视觉结果和触觉历史诊断失败，直接更新接触力的上下界，再由高频力位混合控制器强制执行——把推理变成硬约束。第二条是触觉条件的扩散引导 RL：基座流匹配策略完全冻结，只调整生成动作时的潜噪声，用来纠正空程运动和接触时机。结果是仿真里比最强逐任务基线提升 12.4 到 37.4 个百分点，交互 episode 最多减少 53.2%，实机白板擦除 95%、移液吸液 90%。",
+    "studyPath": {
+     "prerequisites": [
+      "扩散/流匹配策略",
+      "力位混合控制",
+      "RL 后训练与样本效率"
+     ],
+     "nextSteps": [
+      "读原文核对潜噪声修正与 RL 算法",
+      "对比 LoRA 式微调与噪声空间引导",
+      "思考无触觉场景下 PFR 的替代信号"
+     ]
+    }
+   }
+  },
+  {
+   "id": "227fbd7a496ed8f5",
+   "tldr": "在文字摘要后追加一串可学的「软记忆 token」，帮冻结的 LLM 逼近用完整历史时的续写，仅用 5.2% 位置。",
+   "keyPoints": [
+    "长程 agent 要把历史压缩进有限上下文，纯文字摘要可能支撑不了后续决策",
+    "REMORY 是神经记忆网络，为摘要补充一段有界的软记忆 token",
+    "给定历史与摘要，网络学出能让冻结 LLM 逼近完整历史续写的 token",
+    "token 以摘要为条件、追加其后，构成序列维度的「残差连接」",
+    "SummHay 上提升来源归因且几乎不损洞见覆盖，仅用 5.2% 输入位置"
+   ],
+   "why": "上下文压缩与记忆是 agent 方向的核心工程问题；「冻结 LLM + 学软 token」也是多模态/后训练里参数高效适配的通用范式，面试常问。",
+   "difficulty": "medium",
+   "tags": [
+    "agent",
+    "context-compaction",
+    "memory",
+    "soft-tokens",
+    "long-context"
+   ],
+   "entities": [
+    "REMORY",
+    "SummHay",
+    "Qwen3.8-27B",
+    "GLM-5.3-Flash",
+    "BrowseComp",
+    "Terminal-Bench 2.1"
+   ],
+   "diagram": {
+    "kind": "architecture",
+    "title": "摘要 + 残差软记忆",
+    "caption": "文字摘要之外再挂一串以摘要为条件的软 token，像序列维度的残差，补回摘要丢掉的决策信息。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='REMORY 把完整历史压成摘要并追加软记忆 token 的流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>完整历史 h（很长）</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>输入</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>压成文字摘要 sum</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>人可读</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>记忆网络生成软 token m</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>有界长度</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>冻结 LLM 读 [sum, m] 续写</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>仅用 5.2% 位置</text>\n</svg>",
+    "alt": "REMORY 流程：长历史压成文字摘要，记忆网络生成一段软 token，冻结的 LLM 读取摘要加软 token 来续写。"
+   },
+   "concepts": [
+    {
+     "name": "Residual Memory Tokens（残差软记忆 token）",
+     "readable": "在文字摘要后面再接一小串可学习的连续向量，它们不给人看，只帮冻结的 LLM 把「摘要里没写但决策需要」的信息找回来。",
+     "analogy": "会议纪要太挤就压成一页摘要，但摘要会丢细节；再附一小叠便签写上摘要没提的关键提示，主摘要加便签一起读才不误事。",
+     "analogyBreaksDown": "便签是人写的离散文字、谁都能读能改；这里的软 token 是连续向量，只对特定冻结 LLM 的内部表示有意义，换模型就失效，可解释性完全丧失。",
+     "mechanism": "以摘要为条件生成一段有界长度的 token，追加在摘要之后，等于在序列维度上做一次残差补齐：摘要给主干语义，软 token 补回被压掉、但影响下一步决策的细节。",
+     "visual": "画一条 token 序列：一段是摘要里的词（方块），紧接一小段用不同颜色表示软 token（小圆点），后面接 LLM 输出；标注「软 token 长度有界」。",
+     "prerequisites": [
+      "LLM 的上下文与 token 表示",
+      "软提示 / prefix tuning 类方法"
+     ],
+     "selfTest": [
+      "软 token 与文字摘要分别补什么？",
+      "为什么称它为序列维度的残差连接？",
+      "软 token 长度为什么要有界？"
+     ],
+     "formula": "m = g_\\phi(\\mathrm{sum}), \\quad \\hat{y} = \\mathrm{LLM}\\big([\\mathrm{sum}; m]\\big)"
+    },
+    {
+     "name": "Context Compaction（上下文压实）",
+     "readable": "长程 agent 的历史塞不进有限上下文，于是把它压成文字摘要继续往下跑；REMORY 指出只有摘要不够，会漏掉后续决策需要的细节。",
+     "analogy": "把一部长视频压成「剧情简介」再配一段「关键片段索引」，让观众既能快速了解又不漏关键情节。",
+     "analogyBreaksDown": "视频索引对任何观众都通用；而软 token 专为某个冻结 LLM 的内部表示而学，换个模型或换种解码方式就失去意义，不像索引那样可迁移。",
+     "mechanism": "压实的目标是「用更少位置逼近完整历史的效果」。作者用完整历史下冻结 LLM 的输出作为监督目标，训练记忆网络生成能缩小这个差距的 token，把压实从「人工写摘要」变成「可学习的最优压缩」。",
+     "visual": "横轴是输入位置占比，纵轴是接近完整上下文联合得分的程度；画一条随位置占比上升的曲线，标出 REMORY 在 5.2% 位置处已接近顶端。",
+     "prerequisites": [
+      "agent 的长程记忆与工具调用",
+      "上下文窗口限制与摘要式压缩"
+     ],
+     "selfTest": [
+      "纯文字摘要可能在哪些后续决策上失效？",
+      "如何度量压缩是否「够用」？",
+      "为什么把完整历史的输出当监督目标？"
+     ],
+     "formula": "\\mathcal{L} = \\mathbb{E}\\Big[ D_{\\mathrm{KL}}\\big( p_{\\mathrm{LLM}}(\\cdot \\mid h) \\,\\|\\, p_{\\mathrm{LLM}}(\\cdot \\mid [\\mathrm{sum}; m]) \\big) \\Big]"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-residual-memory-objective",
+     "name": "残差记忆逼近目标（Residual Memory Objective）",
+     "category": "agent",
+     "latex": "\\mathcal{L} = \\mathbb{E}\\Big[ D_{\\mathrm{KL}}\\big( p_{\\mathrm{LLM}}(\\cdot \\mid h) \\,\\|\\, p_{\\mathrm{LLM}}(\\cdot \\mid [\\mathrm{sum}; m]) \\big) \\Big], \\quad m = g_\\phi(\\mathrm{sum})",
+     "symbols": [
+      [
+       "h",
+       "agent 的完整历史（很长）"
+      ],
+      [
+       "\\mathrm{sum}",
+       "由 h 压缩得到的文字摘要"
+      ],
+      [
+       "m",
+       "记忆网络生成的软记忆 token 序列"
+      ],
+      [
+       "g_\\phi",
+       "可学的记忆网络，参数 φ"
+      ],
+      [
+       "p_{\\mathrm{LLM}}",
+       "冻结的 LLM，权重不更新"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：长历史 h 超出上下文窗口，需要压缩才能继续。",
+      "第 2 步：仅用文字摘要 sum 会丢失后续决策所需的信息。",
+      "第 3 步：训练记忆网络 g_φ 依据 sum 生成软 token m，追加在 sum 之后。",
+      "第 4 步：以完整历史下冻结 LLM 的续写分布为目标，最小化两者 KL，逼近「像没压缩过一样」的效果。"
+     ],
+     "analogy": "像给压缩过的视频再加一段关键片段索引，让观众的反应和看完整版差不多。",
+     "pitfalls": [
+      "以为在训练 LLM——LLM 是冻结的，只训记忆网络",
+      "把软 token 当成可直接解读的文本，忽略它是连续向量、不可读",
+      "忽略「有界长度」约束，误以为 token 越多越好"
+     ],
+     "code": "import torch\nimport torch.nn.functional as F\ndef remory_loss(mem_net, llm, h_ids, sum_ids, prefix_len):\n    with torch.no_grad():\n        target = llm(h_ids).logits            # 完整历史下的续写\n    m = mem_net(sum_ids)                      # 软记忆 token\n    inp = torch.cat([sum_ids, m], dim=1)      # [sum ; m]\n    pred = llm(inputs_embeds=llm.embed(inp)).logits\n    return F.kl_div(F.log_softmax(pred, -1),\n                    F.softmax(target, -1), reduction='batchmean')",
+     "sources": [
+      {
+       "title": "REMORY: Learning Residual Memory for Context Compaction",
+       "url": "https://huggingface.co/papers/2610.11287"
+      }
+     ]
+    },
+    {
+     "id": "f-context-compression-ratio",
+     "name": "上下文压缩比与效果逼近（Compression Ratio vs. Effect）",
+     "category": "agent",
+     "latex": "\\rho = \\frac{|[\\mathrm{sum}; m]|}{|h|}, \\qquad \\mathrm{joint}([\\mathrm{sum}; m]) \\to \\mathrm{joint}(h)",
+     "symbols": [
+      [
+       "\\rho",
+       "压缩后输入占完整历史的位置比例"
+      ],
+      [
+       "|[\\mathrm{sum}; m]|",
+       "摘要加软 token 的位置数"
+      ],
+      [
+       "|h|",
+       "完整历史的位置数"
+      ],
+      [
+       "\\mathrm{joint}",
+       "联合得分，衡量在此输入下能答对多少"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：定义压缩比 ρ 为压缩后输入位置数除以完整历史位置数。",
+      "第 2 步：目标是让压缩输入的联合得分尽量接近完整历史的联合得分。",
+      "第 3 步：REMORY 报告在 ρ 约 5.2% 时已接近完整上下文的联合得分。",
+      "第 4 步：据此说明残差记忆在极小预算下补回了摘要丢掉的信息。"
+     ],
+     "analogy": "像把一本书压成一页提纲加几个关键词，读完后回答问题的准确率要接近读完原书。",
+     "pitfalls": [
+      "只看压缩比不看效果，压缩比再小但答不对也没用",
+      "把联合得分当成单一指标，忽略来源归因与洞见覆盖是两个维度"
+     ],
+     "code": "def compression_ratio(sum_len, mem_len, hist_len):\n    return (sum_len + mem_len) / hist_len   # 目标：小 rho，高 joint\n# REMORY: rho ~ 0.052 时 joint 接近 full-context",
+     "sources": [
+      {
+       "title": "REMORY: Learning Residual Memory for Context Compaction",
+       "url": "https://arxiv.org/abs/2610.11287"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "长程 agent 会把历史压缩以在有限上下文内继续，但纯文字摘要可能支撑不了后续每个决策",
+     "REMORY 是一个神经记忆网络，为摘要补充一段有界的软记忆 token",
+     "给定历史与摘要，网络学出能帮冻结 LLM 逼近「用完整历史时续写」的 token",
+     "这些 token 以摘要为条件、追加在摘要之后，构成序列维度上的残差连接类比",
+     "在 SummHay 上提升来源归因、洞见覆盖几乎不变，且只用 5.2% 的输入位置",
+     "跨长程 agent 基准，Qwen3.8-27B 与 GLM-5.3-Flash 上都有一致增益",
+     "两个模型在 BrowseComp 与 Terminal-Bench 2.1 上重复工具输出与工具错误明显更少"
+    ],
+    "uncertain": [
+     "记忆网络结构与训练目标（KL 方向、是否用教师强制）摘要未给，公式为按摘要重建的通用形式，需核对原文",
+     "「有界序列」的具体长度与模型规模对效果的影响摘要未说明，待核实",
+     "SummHay 的 joint score 定义与基线数值摘要未列出，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "在文字摘要后面接一串学出来的隐藏记忆向量，让模型续写时像看过完整历史一样。"
+     },
+     {
+      "level": "入门",
+      "text": "长对话的 agent 塞不下全部历史，只能把历史压成摘要再继续。但摘要会丢细节，之后某些决策就做不准。REMORY 的办法是在摘要后追加一小段可学习的「软 token」，它们不给人看，专门帮冻结的模型找回被压缩掉的信息。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键设计是把压缩当成可学习的对象：训练一个记忆网络，输入摘要输出一段有界长度的软 token；软 token 追加在摘要之后，像序列维度上的残差，摘要负责主干语义、软 token 补回被丢掉的决策细节。监督信号是完整历史下冻结 LLM 的续写分布，所以 LLM 完全不动，只学这段记忆。"
+     },
+     {
+      "level": "专家",
+      "text": "与纯摘要压缩相比，它多了一条可学的补丁通道；与直接扩上下文或做长上下文训练相比，它不碰 LLM 权重、预算可控。摘要在 SummHay 上用 5.2% 的位置就接近完整上下文的联合得分，并在 Qwen3.8-27B 与 GLM-5.3-Flash 上一致提升、明显减少重复工具输出与工具错误。它的隐含前提是「完整历史的输出是可逼近的」——若摘要本身丢的是无法从残差恢复的信息，或软 token 长度太小，逼近就受限。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不直接做更长的上下文？",
+      "a": "长上下文成本随长度增长、且超出训练长度会退化；压缩加软 token 用固定预算控制成本，还能跨 episode 复用。"
+     },
+     {
+      "q": "为什么以完整历史的输出来监督？",
+      "a": "这是唯一可得的「理想行为」参照：让压缩后的续写分布去逼近压缩前的分布，等价于要求「像没压缩过一样」。"
+     }
+    ],
+    "mechanism": "纯文字摘要是有损压缩，且损失什么由摘要模型决定，未必对齐下游决策需要。REMORY 把「补回损失」变成一个可学习任务：用摘要生成软 token，并以完整历史下的 LLM 分布为目标做逼近。因为 LLM 冻结，学习压力全落在记忆网络上，训练便宜且不破坏基座，软 token 也因此成为随摘要走的最小补丁。",
+    "boundary": "当摘要已丢弃关键信息、而该信息无法由软 token 从摘要中推断时，逼近失败；当软 token 长度过短或目标 LLM 更换时，学到的记忆不再适用；摘要模型的偏差会成为瓶颈。摘要未证明在需要长链精确记忆（如多步数值推导）的任务上同样有效。",
+    "analogyBoundary": "「纪要+便签」的类比在补丁可被人阅读时成立；但软 token 是连续向量、依赖特定 LLM 的表示空间，既不可读也不可跨模型迁移，把「便签可分享」直觉套上来会错。",
+    "misconceptions": [
+     "以为 REMORY 在训练 LLM——LLM 冻结，只训记忆网络。",
+     "把软 token 当作可读文本摘要，忽略其连续、不可解释的本质。",
+     "认为摘要和软 token 冗余——摘要给主干语义，软 token 补特定决策所需细节。"
+    ],
+    "ownAnalysis": "（推断）这条可以看作把 prefix/soft-prompt tuning 的「软提示」用在记忆压缩上，并把监督目标设成「行为等价于完整历史」，很工程也很实用。可疑处：一是软 token 与特定冻结 LLM 绑定，换模型要重训，迁移性差（推断）；二是摘要本身通常也由某个 LLM 产生，摘要质量与软 token 之间有耦合，摘要崩了软 token 难救；三是摘要只报「接近」完整上下文，未给接近到什么程度，需核对原文数值。",
+    "officialNotes": [
+     {
+      "position": "论文提出 REMORY，用有界软记忆 token 补足摘要压缩，并称仅用 5.2% 输入位置即在 SummHay 上提升来源归因、接近完整上下文联合得分",
+      "source": "hf_papers: https://huggingface.co/papers/2610.11287"
+     }
+    ],
+    "interviewAnswer": "REMORY 解决的是长程 agent 的上下文压实问题。常规做法是把历史压成文字摘要，但摘要会丢后续决策需要的细节。它的方案是训练一个神经记忆网络，以摘要为条件生成一段有界长度的软记忆 token，追加在摘要之后，本质上是序列维度上的残差补齐。监督目标是完整历史下冻结 LLM 的续写分布，所以 LLM 完全不动，只学这段记忆。效果上，SummHay 里只用 5.2% 的输入位置就接近完整上下文的联合得分，来源归因提升、洞见覆盖几乎不变；在 Qwen3.8-27B 和 GLM-5.3-Flash 上也有稳定增益，BrowseComp 和 Terminal-Bench 2.1 上重复工具输出和工具错误明显减少。",
+    "studyPath": {
+     "prerequisites": [
+      "agent 的记忆与工具调用",
+      "上下文窗口与摘要压缩",
+      "soft prompt / prefix tuning"
+     ],
+     "nextSteps": [
+      "读原文核对记忆网络结构与监督目标",
+      "对比摘要压缩与 KV 缓存压缩",
+      "思考软 token 能否跨模型迁移"
+     ]
+    }
+   }
+  },
+  {
+   "id": "cc120f4ea3496ee9",
+   "tldr": "用「偏好奖励 + rubric 奖励」的组合而非简单加权，对文生图做后训练，Flux2dev 在 Arena 上 Elo 比基座高 69 分。",
+   "keyPoints": [
+    "文生图后训练难在没有单一奖励能覆盖全部人类偏好",
+    "奖励系统两路：用 Bradley-Terry 在人类偏好数据上训练的偏好奖励",
+    "另一路是 rubric 奖励，评估提示忠实度等并防刷分",
+    "简单加权平均会导致次优优化，作者提出奖励组合策略",
+    "Arena 榜单上 RL 训练的 Flux2dev Elo 比基座高 69；Ideogram-4 达 1223.5"
+   ],
+   "why": "「多个异构奖励如何组合」是 post-training 与生成式对齐的核心问题；偏好奖励 + rubric 防刷分的组合思路可直接迁移到多模态生成任务的 RLHF。",
+   "difficulty": "medium",
+   "tags": [
+    "posttraining",
+    "text-to-image",
+    "reward-composition",
+    "rlhf",
+    "rubric"
+   ],
+   "entities": [
+    "Flux2dev",
+    "Ideogram-4",
+    "Bradley-Terry",
+    "Arena",
+    "Arena-T2I-Training"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "偏好 + Rubric 奖励组合",
+    "caption": "两路异构奖励——一个管审美、一个管提示忠实并防刷分——经组合策略而非简单加权送进 RL。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='文生图后训练中偏好奖励与 rubric 奖励组合的流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>偏好奖励：Bradley-Terry 训练</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>审美感知</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>Rubric 奖励：提示忠实度+防刷分</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>可控属性</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>奖励组合策略（非简单加权）</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>关键设计</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>RL 后训练文生图模型</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>Elo 提升</text>\n</svg>",
+    "alt": "文生图后训练流程：Bradley-Terry 训练的偏好奖励与 rubric 奖励两路信号，经奖励组合策略后送入 RL 后训练。"
+   },
+   "concepts": [
+    {
+     "name": "Bradley-Terry Preference Reward（布拉德利-特里偏好奖励）",
+     "readable": "拿大量「人类更喜欢哪张图」的成对比较数据，训练一个打分器，让它给出的分差能解释人类的选择概率。",
+     "analogy": "像裁判看两张照片选出更喜欢的，反复训练出一个能预测大众口味的「品味打分器」。",
+     "analogyBreaksDown": "审美偏好高度主观、人群分歧大，而 Bradley-Terry 假设存在单一潜在分数、两两比较彼此一致，个体差异被平均掉，遇到风格偏好两极的样本就会失准。",
+     "mechanism": "用成对偏好而非绝对打分，避免标注者之间分数尺度不统一；模型只看分差，因此对分数整体平移不敏感，训练更稳。",
+     "visual": "画一个横轴为「分数差 r_w − r_l」的曲线，纵轴为「人类选前者更喜欢的概率」，曲线呈 S 形，中间陡两端平。",
+     "prerequisites": [
+      "偏好建模与奖励模型",
+      "sigmoid 与逻辑回归"
+     ],
+     "selfTest": [
+      "为什么用成对比较而不是绝对打分？",
+      "奖励只看分差有什么好处？",
+      "BT 模型在什么偏好分布下会失准？"
+     ],
+     "formula": "P(y_w \\succ y_l) = \\sigma\\big(r_\\theta(y_w) - r_\\theta(y_l)\\big)"
+    },
+    {
+     "name": "Reward Composition（奖励组合）",
+     "readable": "把「管审美」的偏好奖励和「管是否按要求画、并防作弊」的 rubric 奖励合起来用；作者发现直接按固定比例加权会次优，需要专门的组合策略。",
+     "analogy": "一个评委打「好不好看」，另一个评委打「有没有按题目画（比如要求三只猫）」；直接把两人的分按固定比例相加，模型就只顾一边，得设计更互补的合分方式。",
+     "analogyBreaksDown": "固定加权和是最简单的凸组合，论文说它次优恰恰说明最优组合可能是非线性或依赖当前状态的；把「合分」想象成单纯的加权平均会低估问题，但摘要未给出组合的具体形式。",
+     "mechanism": "两路奖励覆盖不同维度：偏好奖励覆盖广泛的用户意图与审美，rubric 奖励保证提示忠实并对可利用的奖励空子设防。组合策略的目标是让两者互补而非相互压制，避免模型朝单一奖励过度优化。",
+     "visual": "画两维奖励平面：横轴偏好分、纵轴 rubric 分，固定加权和的等值线是直线，作者的方法用一条弯曲的等值线表示「先保 rubric 再冲偏好」。",
+     "prerequisites": [
+      "多目标奖励与奖励塑形",
+      "RLHF 中的奖励聚合"
+     ],
+     "selfTest": [
+      "两路奖励各负责什么？",
+      "简单加权平均为什么会次优？",
+      "rubric 奖励如何起到防刷分的作用？"
+     ],
+     "formula": "R(y) = \\mathrm{Compose}\\big(r_{\\mathrm{pref}}(y),\\ r_{\\mathrm{rubric}}(y)\\big)"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-bradley-terry-reward",
+     "name": "Bradley-Terry 偏好损失（Bradley-Terry Preference Loss）",
+     "category": "generative",
+     "latex": "\\mathcal{L}_{\\mathrm{BT}} = -\\mathbb{E}_{(y_w, y_l)}\\Big[ \\log \\sigma\\big( r_\\theta(y_w) - r_\\theta(y_l) \\big) \\Big]",
+     "symbols": [
+      [
+       "y_w",
+       "被人类偏好的图像（winner）"
+      ],
+      [
+       "y_l",
+       "被人类不偏好的图像（loser）"
+      ],
+      [
+       "r_\\theta",
+       "待训练的偏好奖励模型"
+      ],
+      [
+       "\\sigma",
+       "sigmoid 函数"
+      ],
+      [
+       "\\mathcal{L}_{\\mathrm{BT}}",
+       "成对偏好损失"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：人类偏好数据是成对比较，天然给出「谁更好」而非绝对分数。",
+      "第 2 步：假设存在潜在偏好分数 r，则选 y_w 的概率由分差经 sigmoid 给出。",
+      "第 3 步：最大化观测偏好的似然，等价于最小化负对数似然。",
+      "第 4 步：因为是成对损失，训练对分数整体平移不变，标注尺度差异被吸收。"
+     ],
+     "analogy": "像只问「这两张你更喜欢哪张」，不问「打几分」，最后反推出一个稳定的口味分数。",
+     "pitfalls": [
+      "以为可以直接拿它比较不同模型——只看分差，绝对分数无跨模型含义",
+      "忽略偏好数据有噪声/错标，BT 会把这些噪声拟合进奖励"
+     ],
+     "code": "import torch\nimport torch.nn.functional as F\ndef bt_loss(reward, y_w, y_l):\n    r_w, r_l = reward(y_w), reward(y_l)\n    return -F.logsigmoid(r_w - r_l).mean()   # -log sigmoid(r_w - r_l)",
+     "sources": [
+      {
+       "title": "Post-Training Frontier Text-to-Image Models by Composing Preference and Rubric Rewards",
+       "url": "https://huggingface.co/papers/2610.02967"
+      }
+     ]
+    },
+    {
+     "id": "f-reward-composition",
+     "name": "异构奖励组合（Heterogeneous Reward Composition）",
+     "category": "generative",
+     "latex": "R(y) = \\mathrm{Compose}\\big(r_{\\mathrm{pref}}(y),\\ r_{\\mathrm{rubric}}(y)\\big) \\;\\ne\\; w_1 r_{\\mathrm{pref}}(y) + w_2 r_{\\mathrm{rubric}}(y)",
+     "symbols": [
+      [
+       "r_{\\mathrm{pref}}",
+       "偏好奖励（审美与整体人类偏好）"
+      ],
+      [
+       "r_{\\mathrm{rubric}}",
+       "rubric 奖励（提示忠实度等并防刷分）"
+      ],
+      [
+       "w_1, w_2",
+       "简单加权平均所用的固定权重"
+      ],
+      [
+       "\\mathrm{Compose}",
+       "作者提出的奖励组合策略"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：单一奖励无法覆盖全部人类偏好，需要偏好奖励保证审美、rubric 保证忠实。",
+      "第 2 步：最直接的做法是固定权重相加，但实验显示它会带来次优的优化行为。",
+      "第 3 步：固定权重下模型可能过度优化权重大的那一路，忽略另一路。",
+      "第 4 步：改用组合策略在偏好优化与 rubric 满足之间取得更好平衡，从而提升 Elo。"
+     ],
+     "analogy": "两位评委一个看颜值一个看是否切题，简单按比例合分会让模型只顾一边；要按情况互补地合分。",
+     "pitfalls": [
+      "默认加权和就够用——论文明确说它次优",
+      "把 rubric 奖励只当成锦上添花，忽略它承担防刷分的角色"
+     ],
+     "code": "def compose_reward(pref, rubric, mode='naive', w1=0.5, w2=0.5):\n    if mode == 'naive':\n        return w1 * pref + w2 * rubric         # 次优：固定加权\n    # 组合策略：先保 rubric 门槛，再冲偏好（示意）\n    return pref if rubric > 0 else -1.0",
+     "sources": [
+      {
+       "title": "Post-Training Frontier Text-to-Image Models by Composing Preference and Rubric Rewards",
+       "url": "https://arxiv.org/abs/2610.02967"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "文生图模型视觉质量已很高，但后训练仍困难，因为没有单一奖励能覆盖全部人类偏好",
+     "奖励系统由两部分组成：偏好奖励与 rubric 奖励",
+     "偏好奖励在大规模人类偏好数据上用 Bradley-Terry 目标训练，捕捉整体审美与感知偏好",
+     "rubric 奖励显式评估提示忠实度等属性，并对奖励刷分提供防护",
+     "如何组合异构奖励是关键挑战；简单加权平均会导致次优优化行为",
+     "作者提出简单的奖励组合策略以更好平衡偏好优化与 rubric 满足",
+     "Arena 文生图榜单上，RL 训练的 Flux2dev 的 Elo 比基座高 69 分",
+     "后训练的 Ideogram-4 超过榜单上所有开源模型，Elo 达 1223.5",
+     "结论是需要覆盖面广且对优化下的利用具鲁棒性的奖励",
+     "发布 Arena-T2I-Training，一个 1K 训练数据子集，可恢复部分全量训练的增益"
+    ],
+    "uncertain": [
+     "奖励组合策略的确切形式（非线性/门槛/动态权重）摘要未给，公式中的 Compose 为按摘要重建的通用形式，需核对原文",
+     "Arena 榜单快照为 2026 年 9 月 4 日，Elo 数值随榜单更新会变，待核实",
+     "1K 子集「恢复多少增益」的具体比例摘要未给，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "给文生图模型两把尺子——一把量好不好看，一把量有没有按要求画——再聪明地合起来做后训练。"
+     },
+     {
+      "level": "入门",
+      "text": "文生图画得越来越好看，但想用后训练继续提升很难，因为没有哪个单一奖励能代表所有人的偏好。这篇用两路奖励：一路用人类两两比较数据训练，学审美；一路用 rubric 检查是否忠实于提示词、还能防模型作弊。难点是怎么把两路合起来。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键发现是简单加权平均会次优——固定比例会让模型只顾权重大的那一路。于是作者设计了一个奖励组合策略，让偏好奖励负责覆盖广泛的用户意图，rubric 奖励保证提示忠实并堵住奖励空子，两者互补。做法本身很简单，但效果明显：RL 训练的 Flux2dev 在 Arena 上 Elo 比基座高 69 分。"
+     },
+     {
+      "level": "专家",
+      "text": "与只用偏好奖励的 RLHF 相比，加入 rubric 相当于给优化加了「可验证的锚点」，既提供提示忠实度这类可判定的信号，又抑制模型钻偏好奖励空子。与只在语言模型上做 RLVR 相比，这里的 rubric 是图像属性级别的检查。作者还强调，好的奖励必须对优化下的利用具鲁棒性——这正回应了生成式 RL 里 reward hacking 的老问题。边界在于奖励覆盖的用户意图是否够广：覆盖不到的风格或属性，模型就学不到。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么训练偏好奖励要用成对比较？",
+      "a": "成对比较避免了标注者分数尺度不一致的问题，模型只学相对分差，对尺度平移不敏感，更稳。"
+     },
+     {
+      "q": "为什么加权平均奖励不够？",
+      "a": "固定权重下模型会偏向权重大的那一路，忽略另一路；异构奖励需要互补组合而非线性叠加。"
+     }
+    ],
+    "mechanism": "单一奖励要么覆盖不全（漏掉某些用户意图），要么易被优化利用（刷分）。作者用两路互补信号：偏好奖励提供广泛的、以人类比较为准的审美方向，rubric 奖励提供可判定的属性约束并对刷分设防。难点在聚合方式——固定权重会让一路压过另一路，于是需要能平衡两者、且对奖励利用更鲁棒的组合策略，从而让 RL 既提升观感又不牺牲提示忠实。",
+    "boundary": "当测试时的用户意图落在奖励训练覆盖之外（少见风格、罕见属性）时，模型得不到正确方向；当 rubric 与人类真实偏好冲突或写得过窄时，会压制偏好优化。摘要的 Elo 结论基于特定榜单快照，换榜单或评测口径后数值不可直接沿用。",
+    "analogyBoundary": "「两位评委合分」的类比在两位评委各评独立维度时成立；但两路奖励作用于同一个生成模型、会相互影响梯度方向，而且最优聚合可能随生成状态变化，把合分想成静态加权平均会误导。",
+    "misconceptions": [
+     "以为奖励只要多加几路就好——关键是组合方式，简单加权会次优。",
+     "把 rubric 奖励当成次要润色，忽略它承担防刷分的核心作用。",
+     "认为 Elo 提升 69 分是绝对质量提升，忽略它是特定榜单快照下的相对值。"
+    ],
+    "ownAnalysis": "（推断）这条的核心贡献不在模型结构，而在奖励工程：把「审美」与「可控属性」解耦后分别优化再组合，思路和语言侧 RLHF+规则奖励混合一致，只是落到图像属性上。可疑处在于 Elo 是相对榜单分数、会随对手与快照漂移，69 分与 1223.5 的可比性需谨慎；摘要也没给组合策略的公式，只给了「简单加权次优」这一对比。Arena-T2I-Training 只放 1K 子集，复现全量增益有限，这点作者也承认。",
+    "officialNotes": [
+     {
+      "position": "论文称有效的前沿生成模型训练奖励需要覆盖广泛的用户意图且对优化下的利用具鲁棒性，并提出偏好与 rubric 奖励的组合策略",
+      "source": "hf_papers: https://huggingface.co/papers/2610.02967"
+     }
+    ],
+    "interviewAnswer": "这篇讲的是文生图的后训练。难点是文生图的「好」很主观，没有单一奖励能覆盖全部人类偏好。它的奖励系统分两路：一路是偏好奖励，用大规模人类两两比较数据按 Bradley-Terry 训练，学整体审美；另一路是 rubric 奖励，评估提示忠实度等属性，同时防模型刷分。真正的关键点是异构奖励怎么合——作者发现简单加权平均会次优，可能是模型只顾权重大的那一路，于是提出一个组合策略来平衡偏好优化和 rubric 满足。结果在 Arena 榜单上，RL 训练的 Flux2dev Elo 比基座高 69 分，后训练的 Ideogram-4 达到 1223.5，超过所有开源模型。核心洞见是：好的训练奖励既要覆盖面广，又要对优化过程中的利用有鲁棒性。",
+    "studyPath": {
+     "prerequisites": [
+      "RLHF 与奖励模型",
+      "Bradley-Terry 偏好模型",
+      "扩散/流匹配生成模型后训练"
+     ],
+     "nextSteps": [
+      "读原文核对奖励组合策略的具体形式",
+      "对比语言侧 RLVR 与图像 rubric 奖励",
+      "研究 reward hacking 的检测手段"
+     ]
+    }
+   }
+  }
+ ],
+ "skipped": []
+}

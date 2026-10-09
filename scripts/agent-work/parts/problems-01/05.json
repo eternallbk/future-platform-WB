@@ -1,0 +1,137 @@
+{
+  "id": "bbf388bcc19ae05a",
+  "tldr": "排序后固定一个数，左右双指针夹逼找另外两数；跳过重复元素去重，时间 O(n²)、额外空间 O(1)。",
+  "keyPoints": [
+    "先排序，才能用双指针与有序去重",
+    "固定 i，对右侧区间用 l/r 夹逼求和",
+    "和偏小则 l 右移，偏大则 r 左移",
+    "找到解后跳过相邻重复值，避免重复三元组",
+    "答案集不重复，故必须去重而非简单枚举"
+  ],
+  "why": "三数之和是双指针 + 去重的经典组合，字节/美团高频；同类思路可推广到四数之和、最接近的三数之和等面试变体。",
+  "difficulty": "medium",
+  "tags": ["leetcode", "two-pointers", "sorting", "array", "hash-map"],
+  "entities": ["双指针", "排序去重", "三数之和"],
+  "diagram": {
+    "kind": "flow",
+    "title": "三数之和的双指针夹逼",
+    "caption": "枚举最小的那一个数 i 后，l 与 r 从两端夹逼：和小于 0 就右移 l，和大于 0 就左移 r。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='排序数组上固定 i 后，l 与 r 双指针夹逼求和，和偏小右移 l，偏大左移 r'>\n<text x='24' y='28' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>nums 排序后：[-4, -1, -1, 0, 1, 2]</text>\n<rect x='40' y='46' width='60' height='36' rx='6' fill='none' stroke='var(--accent)' stroke-width='1.6'/>\n<text x='70' y='69' font-size='14' text-anchor='middle' fill='currentColor'>-4</text>\n<rect x='106' y='46' width='60' height='36' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='136' y='69' font-size='14' text-anchor='middle' fill='currentColor'>-1</text>\n<rect x='172' y='46' width='60' height='36' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='202' y='69' font-size='14' text-anchor='middle' fill='currentColor'>-1</text>\n<rect x='238' y='46' width='60' height='36' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='268' y='69' font-size='14' text-anchor='middle' fill='currentColor'>0</text>\n<rect x='304' y='46' width='60' height='36' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='334' y='69' font-size='14' text-anchor='middle' fill='currentColor'>1</text>\n<rect x='370' y='46' width='60' height='36' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='400' y='69' font-size='14' text-anchor='middle' fill='currentColor'>2</text>\n<text x='70' y='100' font-size='13' text-anchor='middle' fill='currentColor'>i</text>\n<text x='136' y='100' font-size='13' text-anchor='middle' fill='currentColor'>l →</text>\n<text x='400' y='100' font-size='13' text-anchor='middle' fill='currentColor'>← r</text>\n<text x='24' y='136' font-size='13' text-anchor='start' fill='currentColor'>i 固定在 -1：l 指 -1, r 指 2，和 = 0 → 记 [-1,-1,2]</text>\n<line x1='136' y1='112' x2='200' y2='112' stroke='var(--accent)' stroke-width='1.6'/>\n<polygon points='204,112 196,108 196,116' fill='var(--accent)'/>\n<text x='24' y='170' font-size='13' text-anchor='start' fill='currentColor'>l 右移、r 左移后：l 指 0, r 指 1，和 = 0 → 记 [-1,0,1]</text>\n<text x='24' y='202' font-size='13' text-anchor='start' fill='currentColor'>i 跳到下一个不同的 -1 时跳过，避免重复三元组</text>\n<text x='24' y='228' font-size='13' text-anchor='start' fill='currentColor'>结果：[[-1,-1,2], [-1,0,1]]</text>\n</svg>",
+    "alt": "排序数组 [-4,-1,-1,0,1,2] 上固定 i=-1，l 从 -1 右移、r 从 2 左移，分别命中 [-1,-1,2] 与 [-1,0,1]。"
+  },
+  "concepts": [
+    {
+      "name": "排序 + 双指针夹逼（Sort + Two-Pointer Converging）",
+      "readable": "先把数组排序，枚举一个数 i 作为最小值，剩下两数用左右指针从目标区间的两端夹逼：和偏小就右移左指针，偏大就左移右指针。",
+      "analogy": "在书架上找两本书厚度加起来恰好等于某个值：把书按厚度排好，从最薄和最厚各取一本，厚了就把最厚的换薄一点，薄了就把最薄的换厚一点。",
+      "analogyBreaksDown": "真实书架上换一本是随手一抽，而算法里 l 与 r 只能单向移动；一旦某对组合被跳过就不会回头，正确性完全依赖「数组已排序」这个前提。",
+      "mechanism": "排序后数组具有单调性：固定 i 时，sum = nums[i]+nums[l]+nums[r] 对 l 单调不减、对 r 单调不增。因此可以「和偏小就动 l、和偏大就动 r」而不会漏解，把每个 i 的配对从 O(n²) 降到 O(n)。",
+      "visual": "画一条有序数轴，i 在左端固定不动，l 与 r 分别从 i 右侧的两端相向收拢，每步在一个方框里显示当前三数之和的正负号。",
+      "prerequisites": ["排序", "双指针基础"],
+      "selfTest": ["为什么和小于 0 时只能右移 l、不能左移 r？", "为什么 i 与 l 都要跳过重复值？", "结果为什么天然有序、不需要额外排序？"],
+      "formula": "\\text{if } s < 0:\\ l{+}{+};\\quad \\text{if } s > 0:\\ r{-}{-}"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-3sum-monotonic-shrink",
+      "name": "三数之和的双指针收缩规则（Monotonic Two-Pointer Shrink）",
+      "category": "engineering",
+      "latex": "s = a_{i} + a_{l} + a_{r};\\quad l \\leftarrow l{+}1 \\text{ if } s<0,\\quad r \\leftarrow r{-}1 \\text{ if } s>0",
+      "symbols": [["a", "升序排列后的数组"], ["i", "固定的最小下标"], ["l, r", "区间内左右双指针"], ["s", "当前三数之和"]],
+      "derivation": [
+        "第 1 步：数组升序后，固定 i，则 a_l 越大、a_r 越小，和随之单调变化",
+        "第 2 步：若 s<0，需要增大和，而 r 已在区间右端最大处，只能右移 l",
+        "第 3 步：若 s>0，需要减小和，而 l 已在左端最小处，只能左移 r",
+        "第 4 步：s=0 时记录答案并按值跳过重复；l≥r 时该 i 枚举结束"
+      ],
+      "analogy": "天平两端调平：左边轻了就加左边，右边重了就减右边，方向永远由当前偏向决定。",
+      "pitfalls": ["未排序就套双指针，单调性不成立导致漏解", "找到解后只移动一个指针，陷入重复或死循环", "把去重做在最后用 set，忽略了 O(n²) 的额外开销与无序性"],
+      "code": "nums.sort()\nres = []\nfor i in range(len(nums) - 2):\n    if nums[i] > 0:\n        break\n    if i > 0 and nums[i] == nums[i - 1]:\n        continue\n    l, r = i + 1, len(nums) - 1\n    while l < r:\n        s = nums[i] + nums[l] + nums[r]\n        if s < 0: l += 1\n        elif s > 0: r -= 1\n        else:\n            res.append([nums[i], nums[l], nums[r]])\n            l += 1; r -= 1",
+      "sources": [{"title": "三数之和（LeetCode 15）· 大厂高频手撕题", "url": "https://leetcode.cn/problems/3sum"}]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "该题被记录为字节跳动 187 次、美团 66 次、百度 46 次等合计 465 次",
+      "难度标注为中等；bankTopics 含双指针、哈希表、排序与TopK",
+      "最近一次出现于 2026-10-06"
+    ],
+    "uncertain": [
+      "源 summary 未给题面与示例，statement 与 examples 依 LeetCode 15 惯例重述并自行构造，代码已逐步验证",
+      "本题对「重复三元组」的判定以官方题面为准（本解析按不重复三元组处理）"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "找出数组里所有和为 0 的三个数，答案里不能有重复的三元组。"},
+      {"level": "入门", "text": "三层循环枚举所有三元组太慢。先把数组排序，然后固定第一个数，用左右两个指针在它右边夹逼，找另外两个数；和太小就右移左指针，和太大就左移右指针。"},
+      {"level": "进阶", "text": "排序带来两个好处：一是可以让双指针单调收缩而不漏解，二是重复的数排在一起，跳过相邻相同值就能天然去重。枚举 i 时也要跳过与前一个相同的值，否则会产生重复三元组。"},
+      {"level": "专家", "text": "复杂度 O(n²)：外层枚举 i 是 O(n)，内层双指针每轮共走 O(n)。也可以对每个 i 用哈希表找两数之和，但去重更麻烦且空间 O(n)。排序版额外空间只有排序栈的 O(log n)。面试常把它与四数之和、最接近的三数之和串起来考同一套「排序 + 固定 + 夹逼」骨架。"}
+    ],
+    "socratic": [
+      {"q": "不排序能不能用双指针？", "a": "不能。双指针收缩依赖「数组有序」带来的单调性，无序时和的大小与指针移动方向没有确定关系，会漏解。"},
+      {"q": "去重为什么可以靠跳过相邻相同值实现？", "a": "排序后相同的数紧挨在一起，连续相同值只会产生完全一样的三元组，跳过它们就把重复答案一次性排除。"}
+    ],
+    "mechanism": "关键在于把「三数等于 0」降维成「固定一数后找两数等于其相反数」。排序提供单调解，使两数搜索可以在 O(n) 内完成；同时排序把重复值聚拢，让去重从「哈希集合比对」变成简单的相邻比较。",
+    "boundary": "本题求解集为不重复三元组，若有重复元素会天然产生大量重复候选，因此去重不可省。若题目要求统计所有带下标的三元组个数（允许相同值重复计入），则不能跳重复，需改用计数方案。数值极大时注意整数溢出（Python 无此问题）。",
+    "analogyBoundary": "薄厚两本书的类比默认每本书唯一；而数组中存在相同值会出现多本书厚度一样，算法必须靠「跳过相邻相同值」处理，否则同一组合会被反复计入，这是类比没覆盖的部分。",
+    "misconceptions": ["用三重循环后用 set 去重，既慢又忽略了下标不同但值相同的合法情形", "和等于 0 后只移动一个指针，导致重复或死循环", "把 nums[i]>0 的提前终止条件漏掉，多做无谓枚举"],
+    "ownAnalysis": "它与「两数之和」（LC 1）是同一族的递进：两数之和可用哈希 O(n)，三数之和因需去重与无序集合，排序双指针更简洁。（推断）掌握「排序 + 固定 + 夹逼」后，四数之和只需再加一层循环与剪枝，可视为同一模板的参数化推广。",
+    "officialNotes": [
+      {"position": "LeetCode 15 要求返回不重复的三元组，使其和为 0", "source": "https://leetcode.cn/problems/3sum"}
+    ],
+    "interviewAnswer": "我先对数组排序。外层枚举第一个数 i，如果 nums[i] 大于 0 就可以提前结束，因为它已是最小数，后面不可能凑出 0；如果 nums[i] 和前一个相同就跳过避免重复。内层用左右指针 l、r 在 i 右边夹逼：三数和小于 0 就右移 l，大于 0 就左移 r，等于 0 就记录并按值跳过重复的 l 和 r，再同时收缩。整体 O(n²) 时间，额外空间只有排序开销。",
+    "studyPath": {
+      "prerequisites": ["排序", "双指针", "两数之和（LC 1）"],
+      "nextSteps": ["最接近的三数之和（LC 16）", "四数之和（LC 18）", "三数之和的哈希表解法与去重对比"]
+    }
+  },
+  "problem": {
+    "title": "三数之和",
+    "number": 15,
+    "difficulty": "medium",
+    "statement": "给定整数数组 nums，返回所有和为 0 且下标互不相同的三元组 [nums[i], nums[j], nums[k]]。答案中不能包含重复的三元组（即按值去重）。可以按任意顺序返回结果，但同一组值只能出现一次。数组长度可为 3 及以上。",
+    "examples": [
+      {"input": "nums = [-1,0,1,2,-1,-4]", "output": "[[-1,-1,2],[-1,0,1]]", "why": "排序后双指针找到两组和为 0 的三元组"},
+      {"input": "nums = [0,1,1]", "output": "[]", "why": "不存在和为 0 的三元组"}
+    ],
+    "approach": {
+      "idea": "先排序。枚举第一个数 i，问题化为在 i 右侧找两个数之和等于 -nums[i]，用左右双指针夹逼；排序同时让相邻重复值可被跳过，实现去重。",
+      "steps": [
+        "1. 对 nums 升序排序",
+        "2. 枚举 i 从 0 到 n-3；若 nums[i] > 0 直接结束",
+        "3. 若 i > 0 且 nums[i] == nums[i-1]，跳过（避免重复三元组）",
+        "4. 令 l = i+1，r = n-1，循环当 l < r",
+        "5. 计算 s = nums[i]+nums[l]+nums[r]；s<0 时 l++，s>0 时 r--",
+        "6. s==0 时记录三元组，并按值跳过重复的 l 与 r，再同时收缩"
+      ],
+      "whyItWorks": "排序后固定 i 时，和随 l 增大而单调不减、随 r 减小而单调不增，因此「偏小动 l、偏大动 r」既不会错过任何配对，也不会重复配对。跳过相邻相同值保证每个值组合至多被记录一次。nums[i]>0 时后面都为正，和不可能为 0，可安全提前结束。",
+      "alternatives": [
+        {"name": "哈希表两数之和", "complexity": "O(n²) / O(n)", "when": "不想排序、或需保留原下标语义时；但去重逻辑更繁琐"},
+        {"name": "三重暴力枚举 + set 去重", "complexity": "O(n³) / O(n)", "when": "n 很小、只为快速写出正确基线时"}
+      ]
+    },
+    "solution": {
+      "python": "def threeSum(nums):\n    nums.sort()\n    res, n = [], len(nums)\n    for i in range(n - 2):\n        if nums[i] > 0:\n            break                       # 最小数已 > 0，后面无解\n        if i > 0 and nums[i] == nums[i - 1]:\n            continue                    # 跳过重复的第一个数\n        l, r = i + 1, n - 1\n        while l < r:\n            s = nums[i] + nums[l] + nums[r]\n            if s < 0:\n                l += 1\n            elif s > 0:\n                r -= 1\n            else:\n                res.append([nums[i], nums[l], nums[r]])\n                while l < r and nums[l] == nums[l + 1]:\n                    l += 1              # 跳过重复的第二个数\n                while l < r and nums[r] == nums[r - 1]:\n                    r -= 1              # 跳过重复的第三个数\n                l += 1\n                r -= 1\n    return res",
+      "python_alt": "def threeSum(nums):\n    nums.sort()\n    res = set()\n    for i in range(len(nums) - 2):\n        if nums[i] > 0:\n            break\n        seen = set()                    # 处理 i 时记录出现过的数\n        target = -nums[i]\n        for j in range(i + 1, len(nums)):\n            if target - nums[j] in seen:\n                res.add((nums[i], target - nums[j], nums[j]))\n            seen.add(nums[j])\n    return [list(t) for t in res]",
+      "notes": "主解法用排序 + 双指针，天然去重且无额外集合。两个跳过重复的 while 必须写在 l<r 保护下。提前 break 条件是 nums[i] > 0，注意是严格大于。哈希版虽也 O(n²)，但集合去重更耗时，面试首选双指针版。"
+    },
+    "complexity": {
+      "time": "O(n²)",
+      "space": "O(1)（不含排序与输出）",
+      "why": "外层枚举 i 共 O(n) 次，内层双指针在一次 i 内总共移动 O(n) 步，故整体 O(n²)；原地修改数组，排序栈空间 O(log n)。"
+    },
+    "pitfalls": [
+      "忘记排序就套双指针，单调性不成立导致漏解",
+      "找到解后只移动一个指针，产生重复或死循环",
+      "去重条件写成 nums[i] == nums[i+1]，会漏掉不重复的解"
+    ],
+    "edgeCases": [
+      "全部为 0，应只返回一个 [0,0,0]",
+      "数组长度小于 3，应返回空列表",
+      "存在多组重复值，检验去重是否彻底"
+    ],
+    "interviewTips": "先声明「排序是为了双指针单调性与去重」再动手。写去重时逐处说明：i 跳过与前一个相同、找到解后 l 与 r 各自跳过相同值。跑一个含重复值的小例子验证。若被要求不用排序，再给哈希表版本并解释其去重代价。"
+  }
+}

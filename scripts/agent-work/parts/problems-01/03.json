@@ -1,0 +1,137 @@
+{
+  "id": "ce0ad6ab3e2e154a",
+  "tldr": "求数组中第 K 大元素：快速选择（Quickselect）平均 O(n)、原地；小根堆 O(n log k) 适合流式数据。",
+  "keyPoints": [
+    "第 k 大等价于升序排序中下标 n-k 的元素",
+    "快速选择借用快排划分，每次只递归一侧",
+    "期望时间 O(n)，最坏 O(n²)（可随机选轴缓解）",
+    "小根堆维护 k 个最大元，时间 O(n log k)、空间 O(k)",
+    "本题核心是 TopK，不必完全排序"
+  ],
+  "why": "TopK 是大厂手撕常客，字节/美团高频；快速选择的「只递归一侧」思想在分治与大数据选取题里反复出现。",
+  "difficulty": "medium",
+  "tags": ["leetcode", "sorting", "quickselect", "heap", "divide-and-conquer"],
+  "entities": ["Quickselect", "Heap", "随机化划分"],
+  "diagram": {
+    "kind": "flow",
+    "title": "快速选择只递归一侧",
+    "caption": "快排两侧都递归是 O(n log n)，快速选择每轮只进入含目标下标的那一侧，期望降到 O(n)。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='快速选择：按轴划分数组，只在包含第 k 大下标的一侧继续划分，逐步缩小范围'>\n<text x='24' y='28' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>目标下标 target = n - k = 4</text>\n<rect x='40' y='44' width='80' height='34' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='80' y='66' font-size='13' text-anchor='middle' fill='currentColor'>3 2 1</text>\n<rect x='120' y='44' width='60' height='34' rx='6' fill='none' stroke='var(--accent)' stroke-width='1.6'/>\n<text x='150' y='66' font-size='13' text-anchor='middle' fill='currentColor'>4</text>\n<rect x='180' y='44' width='120' height='34' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='240' y='66' font-size='13' text-anchor='middle' fill='currentColor'>6 5</text>\n<text x='150' y='94' font-size='13' text-anchor='middle' fill='currentColor'>轴就位</text>\n<line x1='270' y1='78' x2='300' y2='104' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='304,108 296,104 302,98' fill='var(--line-1)'/>\n<text x='330' y='100' font-size='13' text-anchor='middle' fill='currentColor'>target 在右侧</text>\n<rect x='260' y='118' width='120' height='34' rx='6' fill='none' stroke='var(--accent)' stroke-width='1.6'/>\n<text x='320' y='140' font-size='13' text-anchor='middle' fill='currentColor'>6 5</text>\n<text x='24' y='176' font-size='13' text-anchor='start' fill='currentColor'>只对这一侧再划分，左侧区间整体丢弃</text>\n<rect x='260' y='190' width='120' height='34' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='320' y='212' font-size='13' text-anchor='middle' fill='currentColor'>5 6 → 下标4=5</text>\n</svg>",
+    "alt": "数组按轴元素划分，目标下标在右侧时只对右侧子区间继续划分，左侧整体丢弃，最终定位到第 k 大元素。"
+  },
+  "concepts": [
+    {
+      "name": "快速选择（Quickselect）",
+      "readable": "借用快排的划分：选一个轴，把数组分成小于/等于/大于轴三段，看目标下标落在哪段，只对那一段继续划分。",
+      "analogy": "在一摞没排序的考卷里找第 5 名的分数：你先随便抽一张当基准，把比它高的和低的各放一堆，看第 5 名在哪堆，只翻那一堆，其余整堆不用管。",
+      "analogyBreaksDown": "现实中你仍要扫完整摞才能分成两堆（每轮都是 O(n)），而且若每次都抽到最极端的分值，会退化成逐张翻找，这正是最坏 O(n²) 的来源。",
+      "mechanism": "快排两边都递归得到全序是 O(n log n)；快速选择每轮只进入含目标下标的一侧，递归深度期望 O(log n)、每层工作量线性，因此总期望时间 O(n)。",
+      "visual": "画一条数组条，正中标记 pivot 与 target 下标，箭头只指向 target 所在的那一半，另一半画成灰色表示丢弃。",
+      "prerequisites": ["快速排序的划分过程", "数组下标与递归"],
+      "selfTest": ["为什么要随机选轴？", "第 k 大对应升序中的哪个下标？", "为什么只递归一侧能把 O(n log n) 降到 O(n)？"],
+      "formula": "T(n) = T(n/2) + O(n) \\Rightarrow T(n) = O(n)"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-quickselect-recurrence",
+      "name": "快速选择的期望复杂度（Expected Time of Quickselect）",
+      "category": "engineering",
+      "latex": "T(n) = T\\left(\\tfrac{n}{2}\\right) + O(n) \\Rightarrow T(n) = O(n)",
+      "symbols": [["T(n)", "规模为 n 时的划分工作量"], ["\\tfrac{n}{2}", "随机轴下目标所在子区间的期望规模"], ["O(n)", "单轮划分扫描整段的代价"]],
+      "derivation": [
+        "第 1 步：单轮划分要扫描整段 n 个元素，代价 O(n)",
+        "第 2 步：随机选轴时目标期望落在约一半规模的子区间里",
+        "第 3 步：递归式 T(n)=T(n/2)+O(n)",
+        "第 4 步：等比求和 n + n/2 + n/4 + ... = 2n，故期望 O(n)"
+      ],
+      "analogy": "每次把要翻的考卷数量砍一半，总工作量是 n 加上它的一半再加上四分之一，收敛到 2n。",
+      "pitfalls": ["把最坏 O(n²) 说成必然，忽略随机化后的期望 O(n)", "误以为第 k 大下标是 k，忽略 n-k 的换算"],
+      "code": "import random\n\ndef kth(nums, target):\n    lo, hi = 0, len(nums) - 1\n    while True:\n        p = nums[random.randint(lo, hi)]\n        i, j = lo, hi\n        while i <= j:\n            while nums[i] < p: i += 1\n            while nums[j] > p: j -= 1\n            if i <= j:\n                nums[i], nums[j] = nums[j], nums[i]\n                i += 1; j -= 1\n        if target <= j: hi = j\n        elif target >= i: lo = i\n        else: return nums[target]",
+      "sources": [{"title": "数组中的第K个最大元素（LeetCode 215）· 大厂高频手撕题", "url": "https://leetcode.cn/problems/kth-largest-element-in-an-array"}]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "该题被记录为字节跳动 205 次、美团 103 次、腾讯 62 次等合计 567 次",
+      "难度标注为中等；bankTopics 为排序与TopK",
+      "最近一次出现于 2026-09-17"
+    ],
+    "uncertain": [
+      "源 summary 未给题面与示例，statement 与 examples 依 LeetCode 215 惯例重述并自行构造，代码已逐步验证",
+      "是否允许多种解法（堆/快速选择/计数）取决于本题默认约束（待核实是否限定 O(n)）"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "在一堆数字里找出第 K 大的那个，不用把整堆排好序。"},
+      {"level": "入门", "text": "把数组按升序排好后，第 k 大就是下标 n-k 的元素。但完全排序要 O(n log n)。快速选择只关心这个下标，每轮划分后只进入它所在的一侧，平均能到 O(n)。"},
+      {"level": "进阶", "text": "划分采用三路（小于/等于/大于轴），随机选轴避免最坏退化。维护一个只有 k 个元素的小根堆也行：堆顶就是当前第 k 大，适合数据流式到达。前者更快但不稳定，后者 O(n log k) 且可在线。"},
+      {"level": "专家", "text": "考点其实是「不必全排序」。快速选择期望 O(n)、最坏 O(n²)（可用中位数的中位数做到确定 O(n)，但常数大）；堆法 O(n log k)、空间 O(k)，当 k 远小于 n 或数据无法一次装入内存时更优。面试一般先给快速选择，再用堆作对比。"}
+    ],
+    "socratic": [
+      {"q": "为什么不直接排序？", "a": "排序把 O(n log n) 花在恢复全序上，而题目只要一个位置，快速选择用划分丢掉无关的一半，平均省到 O(n)。"},
+      {"q": "小根堆为什么大小为 k 而不是 n？", "a": "只需保留当前最大的 k 个元素；堆顶即其中最小者＝整体第 k 大，堆再大就浪费空间与时间。"}
+    ],
+    "mechanism": "快速选择的正确性来自划分不变量：轴就位后，其左侧都比它小、右侧都比它大，因此一旦目标下标等于轴位置即可返回；否则目标只可能在某一侧，另一侧可整体舍弃。每轮 O(n) 且规模期望减半，构成 O(n) 期望。",
+    "boundary": "快速选择最坏 O(n²)，对已排序或对抗性输入（未随机化时）会退化；要求确定性 O(n) 或严格在线（流式）时应用堆法。数据全部不可一次载入内存时，原地快速选择也不适用。",
+    "analogyBoundary": "考卷类比中你能一眼把整摞分成两堆且不花额外工夫，而算法每轮都必须扫描当前整段才能完成划分，最坏情况下抽到极端基准会逐张退化为 O(n²)。",
+    "misconceptions": ["把「第 k 大」当成下标 k 直接取，忽略升序下标应为 n-k", "用大根堆却取堆顶，其实就是最大值而非第 k 大", "声称快速选择稳定为 O(n)，忽略最坏的 O(n²)"],
+    "ownAnalysis": "本题与「前 K 个高频元素」（LC 347）共享同一套 TopK 框架，区别在比较的「大小」来源不同。（推断）面试若追问数据规模与内存，把堆法作为流式场景的答案能体现工程判断；随机化轴是避免最坏退化的常用工程手段。",
+    "officialNotes": [
+      {"position": "LeetCode 215 标记为中等，常见解法为快速选择与堆", "source": "https://leetcode.cn/problems/kth-largest-element-in-an-array"}
+    ],
+    "interviewAnswer": "我首选快速选择。把第 k 大转成升序下标 target=n-k，随机选轴做三路划分；若 target 落在右段就只递归右段，左段整体丢弃，落在左段同理，正好落在轴位置就返回。期望时间 O(n)、原地空间 O(1)。如果面试官偏好稳定或数据是流式的，我会改用大小为 k 的小根堆，时间 O(n log k)、空间 O(k)，堆顶就是第 k 大。",
+    "studyPath": {
+      "prerequisites": ["快速排序与划分", "堆（优先队列）"],
+      "nextSteps": ["前 K 个高频元素（LC 347）", "数据流中的第 K 大元素（LC 703）", "最小的 k 个数（LC 面试题 17.14）"]
+    }
+  },
+  "problem": {
+    "title": "数组中的第K个最大元素",
+    "number": 215,
+    "difficulty": "medium",
+    "statement": "给定整数数组 nums 和整数 k，返回数组中第 k 个最大的元素。注意是「排序后的第 k 个最大」，不是第 k 个不同的元素。数组长度至少为 1 且 k 满足 1 ≤ k ≤ nums.length。要求尽量优于完全排序的复杂度。",
+    "examples": [
+      {"input": "nums = [3,2,1,5,6,4], k = 2", "output": "5", "why": "降序为 6,5,4,...，第二大是 5"},
+      {"input": "nums = [3,2,3,1,2,4,5,5,6], k = 4", "output": "4", "why": "降序前四为 6,5,5,4"}
+    ],
+    "approach": {
+      "idea": "第 k 大即升序排序后下标 n-k 的元素。用快速选择：随机选轴做三路划分，只对含目标下标的子区间继续划分，不做全排序。",
+      "steps": [
+        "1. 计算目标下标 target = len(nums) - k",
+        "2. 在当前区间 [lo, hi] 内随机选一个轴值 pivot",
+        "3. 三路划分：小于 pivot 放左、等于居中、大于放右，得到边界 i、j",
+        "4. 若 target ≤ j，目标在左侧，缩小到 [lo, j]",
+        "5. 若 target ≥ i，目标在右侧，缩小到 [i, hi]",
+        "6. 否则轴元素已就位，返回 nums[target]"
+      ],
+      "whyItWorks": "划分后区间严格满足「左 < 轴 < 右」，轴元素处于其最终排序位置；目标下标若不在轴上，就只能在唯一的一侧，另一侧整体弃用仍正确。反复缩小直到命中，返回值必为第 k 大。",
+      "alternatives": [
+        {"name": "小根堆维护 k 个最大元", "complexity": "O(n log k) / O(k)", "when": "数据流式到达、k 远小于 n 或要求稳定复杂度时"},
+        {"name": "完全排序后取 nums[n-k]", "complexity": "O(n log n) / O(log n)", "when": "n 很小或只想先写一个可跑的正确版本"}
+      ]
+    },
+    "solution": {
+      "python": "import random\n\ndef findKthLargest(nums, k: int) -> int:\n    target = len(nums) - k  # 第 k 大 = 升序下标 n-k\n\n    def quickselect(lo, hi):\n        pivot = nums[random.randint(lo, hi)]\n        i, j = lo, hi\n        while i <= j:\n            while nums[i] < pivot:\n                i += 1\n            while nums[j] > pivot:\n                j -= 1\n            if i <= j:\n                nums[i], nums[j] = nums[j], nums[i]\n                i += 1\n                j -= 1\n        if target <= j:\n            return quickselect(lo, j)\n        if target >= i:\n            return quickselect(i, hi)\n        return nums[target]\n\n    return quickselect(0, len(nums) - 1)",
+      "python_alt": "import heapq\n\ndef findKthLargest(nums, k: int) -> int:\n    heap = []\n    for x in nums:\n        heapq.heappush(heap, x)\n        if len(heap) > k:\n            heapq.heappop(heap)  # 只保留最大的 k 个\n    return heap[0]  # 堆顶即第 k 大",
+      "notes": "三路划分把「等于轴」的段一次性就位，能高效处理大量重复元素。随机选轴避免已排序输入退化。堆法逐元素进出堆，天然支持在线，但注意堆里存的是最大 k 个中的最小者——即答案。"
+    },
+    "complexity": {
+      "time": "O(n) 期望，最坏 O(n²)（堆法 O(n log k)）",
+      "space": "O(1)（堆法 O(k)）",
+      "why": "快速选择每轮 O(n) 划分、期望只递归一半，求和收敛到 O(n)；原地划分不需额外数组。"
+    },
+    "pitfalls": [
+      "下标换算错误：把 target 写成 k 而不是 n-k",
+      "划分边界写成 i<=j 之外，导致死循环或漏元素",
+      "声称快速选择稳定 O(n)，忽略最坏 O(n²)"
+    ],
+    "edgeCases": [
+      "k = 1（找最大）或 k = n（找最小）",
+      "数组中存在大量重复元素",
+      "已完全升序或降序的输入（检验随机轴）"
+    ],
+    "interviewTips": "先口头说明「第 k 大＝升序下标 n-k」，再写三路划分，边写边说随机轴是为了防退化。写完主动补一句堆法及其适用场景（流式、k 小）以示全面。若面试官要求确定 O(n)，可提中位数的中位数算法作为延伸。"
+  }
+}

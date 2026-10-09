@@ -1,0 +1,126 @@
+{
+  "id": "ac3dc2887be5e28e",
+  "tldr": "把标准答案当临时脚手架先帮模型产出更好解，再只把高奖励的模型自产解回灌到无引导设置。",
+  "keyPoints": [
+    "on-policy RL 提升 LLM 推理，但受奖励稀疏限制容易停滞",
+    "既有做法需辅助数据与 RL 任务同格式，常靠强模型拒绝采样",
+    "RGPO 按模型当前能力自适应地使用标准答案 rationale",
+    "把参考解当临时脚手架，而非固定模仿目标",
+    "只把高奖励、模型自产的解回灌到原有无引导设置"
+  ],
+  "why": "RLVR 是后训练最热方向，「奖励稀疏」与「自适应脚手架」是面试高频概念；该法不改数据格式、语言与多模态通用。",
+  "difficulty": "hard",
+  "tags": ["rl", "posttraining", "rlvr", "reward-sparsity", "llm-reasoning"],
+  "entities": ["Rationale-Guided Policy Optimization (RGPO)", "RLVR"],
+  "diagram": {
+    "kind": "flow",
+    "title": "RGPO 四步脚手架流程",
+    "caption": "用标准答案搭临时脚手架产出好解，筛出高奖励的模型自产解后回灌到无引导设置。",
+    "svg": "<svg viewBox='0 0 480 226' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='RGPO 从奖励稀疏瓶颈到回灌无引导设置的四步流程'>\n<rect x='40' y='14' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='38' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>奖励稀疏瓶颈</text>\n<text x='424' y='38' font-size='13' text-anchor='end' fill='currentColor'>难题探不到正确轨迹</text>\n<line x1='240' y1='52' x2='240' y2='60' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,68 236,60 244,60' fill='var(--line-1)'/>\n<rect x='40' y='68' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='92' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>自适应 rationale 脚手架</text>\n<text x='424' y='92' font-size='13' text-anchor='end' fill='currentColor'>按当前能力给引导</text>\n<line x1='240' y1='106' x2='240' y2='114' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,122 236,114 244,114' fill='var(--line-1)'/>\n<rect x='40' y='122' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='146' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>生成并筛高奖励解</text>\n<text x='424' y='146' font-size='13' text-anchor='end' fill='currentColor'>只留模型自产且高奖励</text>\n<line x1='240' y1='160' x2='240' y2='168' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,176 236,168 244,168' fill='var(--line-1)'/>\n<rect x='40' y='176' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='200' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>回灌无引导设置</text>\n<text x='424' y='200' font-size='13' text-anchor='end' fill='currentColor'>保留探索自由</text>\n</svg>",
+    "alt": "四层竖排流程：奖励稀疏瓶颈→自适应 rationale 脚手架→生成并筛高奖励解→回灌无引导设置。"
+  },
+  "concepts": [
+    {
+      "name": "Reward Sparsity（奖励稀疏）",
+      "readable": "在难题上模型几乎探不到正确轨迹，于是几乎拿不到正奖励，梯度信号接近零，训练原地打转。",
+      "analogy": "像在漆黑房间里找钥匙：找不到就完全没有反馈，只能乱撞，很难知道该往哪走。",
+      "analogyBreaksDown": "找钥匙是二值成功；这里奖励还分强弱、且轨迹可以部分正确，稀疏往往表现为「大量样本得分相同」，而不是完全无信号。",
+      "mechanism": "on-policy RL 只从自己采样到的轨迹学，难题上正确轨迹概率极低，组内奖励几乎全相同，优势项趋零，策略更新停滞。缓解方向是引入外部信息（示范、专家痕迹、模型生成解）来提高命中率。",
+      "visual": "横轴训练步、纵轴组内奖励方差；曲线在难题子集上贴近零并长期不动，标出「停滞区」。",
+      "prerequisites": ["策略梯度与优势函数", "RLVR 基本设定", "组内相对优势"],
+      "selfTest": ["为什么难题上梯度会消失？", "奖励稀疏和奖励噪声有何区别？", "为什么不能只加大采样数解决？"],
+      "formula": "\\hat{A}_i=\\frac{R_i-\\mathrm{mean}(R)}{\\mathrm{std}(R)}\\to 0\\ \\ \\mathrm{when}\\ \\mathrm{std}(R)\\to 0"
+    },
+    {
+      "name": "Temporary Rationale Scaffold（临时理由脚手架）",
+      "readable": "标准答案只用来「扶一把」：在引导下让模型生成更好的解，之后只把模型自己产出的高奖励解拿回去训练，不让模型死记标准答案的写法。",
+      "analogy": "像学骑车先用辅助轮，能骑稳后就把辅助轮拆掉，真正练的是自己保持平衡。",
+      "analogyBreaksDown": "辅助轮是物理支撑，拆掉后能力直接保留；这里的「脚手架」是通过上下文注入的，回灌是否真的把能力内化，取决于筛选与优化是否到位。",
+      "mechanism": "不把参考解当固定模仿目标（那会损失探索自由），而是当可撤除的引导：引导阶段提高成功轨迹产出率，再把其中高奖励、模型自产的解回灌到无引导目标里，兼顾降稀疏与保探索，且不要求辅助数据与 RL 任务同格式。",
+      "visual": "两条并行泳道：上排「有脚手架」成功率快速上升；下排「无引导」缓慢上升；箭头从有脚手架的高奖励轨迹流入无引导泳道。",
+      "prerequisites": ["行为克隆与策略梯度的区别", "拒绝采样自训练", "on/off-policy 数据混用"],
+      "selfTest": ["为什么不能直接把标准答案 SFT 进模型？", "为什么只回灌「模型自产」的解？", "脚手架什么时候该撤？"],
+      "formula": "\\mathcal{L}(\\theta)=\\mathbb{E}_{\\tau\\sim\\pi^{\\mathrm{g}}}\\Big[\\mathbb{1}\\big[R(\\tau)\\ge R_0\\big]\\,\\ell\\big(\\pi^{\\mathrm{u}},\\tau\\big)\\Big]"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-rgpo-filtered-transfer",
+      "name": "高奖励筛选回灌目标（Filtered Self-Transfer Objective）",
+      "category": "posttraining",
+      "latex": "\\mathcal{L}(\\theta)=\\mathbb{E}_{\\tau\\sim\\pi_{\\theta}^{\\mathrm{g}}}\\Big[\\mathbb{1}\\big[R(\\tau)\\ge R_0\\big]\\;\\ell\\big(\\pi_{\\theta}^{\\mathrm{u}},\\tau\\big)\\Big]",
+      "symbols": [["\\pi_{\\theta}^{\\mathrm{g}}", "带脚手架（引导）的策略"], ["\\pi_{\\theta}^{\\mathrm{u}}", "无引导的原策略，即回灌目标"], ["R(\\tau)", "轨迹 τ 的奖励"], ["R_0", "高奖励筛选阈值"], ["\\mathbb{1}[\\cdot]", "指示函数，只在达标时为 1"], ["\\ell", "对模型自产轨迹的优化损失"]],
+      "derivation": [
+        "难题上无引导探索极少产出高奖励轨迹，优势项趋零导致停滞。",
+        "用标准答案作为脚手架，让策略在引导下产出更可能成功的轨迹。",
+        "只保留其中高奖励、且由模型自己生成的解，剔除低质量与外部直接给出的轨迹。",
+        "把这些解回灌到无引导策略的优化目标中，从而降低稀疏性又不放弃探索自由。"
+      ],
+      "analogy": "像陪练先喂球帮你找到手感（引导），等你能连续打好球了，就回到真比赛里自己打。",
+      "pitfalls": ["把标准答案当固定模仿目标直接做 SFT，丢掉探索自由、也违背「只回灌模型自产解」的设计", "阈值 R_0 太低会把平庸轨迹也回灌，引入噪声"],
+      "code": "def filtered_transfer(rollouts, R0=1.0):\n    # rollouts: list of (reward, is_model_generated)\n    keep = [(r, ok) for r, ok in rollouts if r >= R0 and ok]\n    return keep  # 仅高奖励、模型自产轨迹用于回灌",
+      "sources": [{"title": "Rationale-Guided Policy Optimization: Learning to Reason with Adaptive Rationale Scaffolding", "url": "https://arxiv.org/abs/2610.07342"}]
+    },
+    {
+      "id": "f-rgpo-adaptive-scaffold",
+      "name": "自适应脚手架强度（Adaptive Scaffolding Strength）",
+      "category": "posttraining",
+      "latex": "\\lambda_t=\\lambda_0\\big(1-\\hat{c}_t\\big)",
+      "symbols": [["\\lambda_t", "第 t 阶段的脚手架（引导）强度"], ["\\lambda_0", "初始强度上限"], ["\\hat{c}_t", "对模型当前能力的估计，取值 0 到 1"]],
+      "derivation": [
+        "能力弱时模型几乎探不到正确轨迹，需要更强的脚手架来提供信号。",
+        "能力增强后若仍强引导，会把模型锁死在参考解写法上，压缩探索空间。",
+        "用当前表现（如成功率）作为能力估计 c_hat_t。",
+        "让引导强度随能力线性衰减，实现「按当前能力自适应」的 rationale 使用。（按摘要重建的通用形式）"
+      ],
+      "analogy": "像教小孩写字：一开始手把手（强引导），字写稳了就只在旁边提醒（弱引导）。",
+      "pitfalls": ["把引导强度设成常数：早期太弱没信号、后期太强掐死探索", "能力估计用常数或单点估计，失去自适应性"],
+      "code": "def scaffold_strength(cap, lam0=1.0):\n    # cap: estimated current capability in [0,1]\n    return lam0 * max(0.0, 1.0 - cap)",
+      "sources": [{"title": "Rationale-Guided Policy Optimization: Learning to Reason with Adaptive Rationale Scaffolding", "url": "https://arxiv.org/abs/2610.07342"}]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "on-policy RL 已成为提升 LLM 推理能力的核心范式",
+      "其效果常受奖励稀疏限制，模型在难题上探不到正确轨迹时优化停滞",
+      "既有缓解方法（off-policy 示范、专家痕迹、模型生成解）通常要求辅助数据与 RL 任务格式一致，常依赖强模型拒绝采样",
+      "RGPO 按模型当前能力自适应利用标准答案 rationale，同时保留探索自由",
+      "RGPO 把参考解当临时脚手架而非固定模仿目标，只把高奖励、模型自产的解回灌到无引导设置",
+      "该设计无需 off-policy 数据与 RL 任务同格式",
+      "在纯语言与视觉语言推理任务上，RGPO 一致优于 RLVR 基线，消融显示自适应 rationale 引导是关键贡献"
+    ],
+    "uncertain": [
+      "两条公式（筛选回灌目标、自适应脚手架强度）摘要未给精确形式，均为按摘要重建的通用形式，需核对原文",
+      "「自适应」的具体判定方式、脚手架的具体注入形式摘要未说明，待核实",
+      "基线 RLVR 的具体实现与视觉语言任务清单摘要未列全，待核实"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "难题做不出来时先给点提示，做出好答案后再只拿自己产出的好解去练。"},
+      {"level": "入门", "text": "强化学习提升大模型推理，但遇到难题模型几乎做不对，拿不到奖励信号，训练就卡住。以前的办法要额外数据、还得和训练任务格式一致。RGPO 换个思路：把标准答案当临时提示帮模型生成更好的解，然后只把模型自己产出的、评分高的解拿回去继续练，答案本身不作为死记的目标。"},
+      {"level": "进阶", "text": "关键是两个设计。一是「按能力自适应」：模型弱时多给提示，强了就把提示撤掉，避免被参考解写法锁死。二是「只回灌模型自产的高奖励解」：先在有提示的情况下提高成功轨迹产出率，再把这些轨迹搬回无引导目标里优化，既缓解稀疏又不丢探索。这样也不需要辅助数据与 RL 任务同格式，纯语言和多模态都能用。"},
+      {"level": "专家", "text": "它的问题定位很清晰：不是奖励函数不好，而是难题上的正确轨迹概率太低导致组内优势趋零。与「用强模型拒绝采样产 SFT 数据」不同，RGPO 的辅助信息只用于提升引导阶段的产出率，最终优化仍落在无引导策略上，因此更接近「先搭脚手架再撤掉」的课程式训练。消融显示自适应引导是增益主因。边界在于标准答案本身不可得或质量存疑时脚手架会误导，且脚手架注入带来的额外推理开销需要权衡。"}
+    ],
+    "socratic": [
+      {"q": "为什么不直接用标准答案做监督微调？", "a": "那等于把参考解当固定模仿目标，模型会去复制答案写法、丢掉探索自由；RGPO 只让它当临时脚手架。"},
+      {"q": "为什么要「只回灌模型自产的解」？", "a": "保证回灌的分布与无引导策略自身一致，避免把外部答案的分布硬塞进策略里造成不匹配。"},
+      {"q": "脚手架为什么必须自适应？", "a": "固定强度两头不讨好：早期太弱仍没信号，后期太强会锁死探索，按当前能力调节才能两头兼顾。"}
+    ],
+    "mechanism": "奖励稀疏的根源是「难题上采样不出成功轨迹」，所以关键不是改奖励，而是先提高成功轨迹的产出率、再把能力内化回无引导策略。RGPO 用标准答案做可撤除的引导（脚手架），只回灌高奖励的模型自产解作为内化载体，并用能力估计调节引导强度。这样既降稀疏，又不把探索锁死在参考解的格式上，也摆脱了辅助数据必须与 RL 任务同格式的约束。",
+    "boundary": "标准答案不可得、噪声大或与评测奖励不一致时，脚手架会把人带偏；引导阶段需额外推理开销；若筛选阈值不当，回灌会引入噪声轨迹。对本身奖励密集、模型已能大量成功的任务，收益有限。",
+    "analogyBoundary": "「辅助轮」类比成立在「能力一旦学会就保留」的假设上；但这里的能力靠回灌强化，若筛选或优化不到位，撤掉脚手架后表现可能回落，类比会高估内化的稳固性。",
+    "misconceptions": [
+      "把 RGPO 当成「用标准答案做 SFT」——参考解只是被撤除的脚手架。",
+      "以为只要给提示就能解决稀疏——关键在于只回灌高奖励的模型自产解。",
+      "认为作者用了更强的外部模型做拒绝采样——摘要强调 RGPO 不依赖这种格式匹配的 off-policy 数据。"
+    ],
+    "ownAnalysis": "最可迁移的是「外部信息做临时引导、最终目标是撤掉引导后的自主能力」（推断），这与蒸馏/课程学习/self-training 的思路一脉相承但更克制：不把教师分布直接搬过来。可疑处：「自适应」只说了按当前能力，但如何避免能力估计被奖励噪声污染、以及回灌后原技能是否遗忘（灾难性遗忘），摘要未展开（待核实）。",
+    "officialNotes": [{"position": "RGPO 按模型当前能力自适应使用 ground-truth rationale，把参考解当临时脚手架，只回灌高奖励的模型自产解到无引导设置；无需 off-policy 数据与 RL 任务同格式；语言与视觉语言任务上一致优于 RLVR 基线", "source": "arxiv: 2610.07342"}],
+    "interviewAnswer": "这篇针对 on-policy RL 训练大模型推理时的奖励稀疏问题：难题上模型探不到正确轨迹，组内优势趋零，训练停滞。已有方法要引入示范或强模型拒绝采样，还要求数据和 RL 任务格式一致。RGPO 的做法是把标准答案当临时脚手架——先按模型当前能力自适应地给 rationale 引导，让它产出更好的解，然后只把其中高奖励、模型自己生成的解回灌到原来的无引导设置里。这样既降稀疏、又不把探索锁死在参考解上，也不需要格式匹配的 off-policy 数据。消融显示自适应引导是增益主因，纯语言和视觉语言任务都优于 RLVR。",
+    "studyPath": {
+      "prerequisites": ["策略梯度与组内相对优势（如 GRPO 类方法）", "RLVR 与可验证奖励设定", "拒绝采样自训练与蒸馏的区别"],
+      "nextSteps": ["读原文确认自适应判定与脚手架注入的精确形式", "在小型推理任务上对比 RLVR 与 RGPO 的组内奖励方差曲线"]
+    }
+  }
+}

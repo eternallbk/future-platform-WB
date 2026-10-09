@@ -1,0 +1,171 @@
+{
+  "id": "ef3c061bcdcc3d1a",
+  "tldr": "在 on-policy 蒸馏的采样阶段引入较弱负策略，把负策略偏好而教师不偏好的 token 持续暴露给教师监督，构成显式负信号。",
+  "keyPoints": [
+    "on-policy 蒸馏让学生在自己 rollout 上取教师 token 级监督",
+    "教师与学生分布重叠少时，纯正监督的学习信号不足",
+    "NP-OPD 在 rollout 阶段引入更低能力的负策略作负参考",
+    "不改蒸馏奖励形式，把负偏好 token 置于教师监督之下",
+    "跨模型规模、生成模式、推理域与多种 OPD 变体均提升"
+  ],
+  "why": "on-policy 蒸馏是后训练核心技能；「rollout 策略本身也是设计变量」这一视角对 RLHF/蒸馏方向实习面试很实用。",
+  "difficulty": "hard",
+  "tags": [
+    "posttraining",
+    "distillation",
+    "on-policy",
+    "rl",
+    "negative-policy"
+  ],
+  "entities": [
+    "NP-OPD",
+    "On-Policy Distillation",
+    "naver-ai"
+  ],
+  "diagram": {
+    "kind": "flow",
+    "title": "NP-OPD 训练流程",
+    "caption": "在采样阶段同时用负策略 rollout，把教师不偏好的 token 也拉进教师监督之下。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='NP-OPD 四步流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>双策略采样（学生 + 负策略）</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>标记负策略偏好 token</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>教师 token 级监督</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>更新学生，使其远离负策略</text>\n</svg>",
+    "alt": "NP-OPD 四步流程：双策略采样、标记负策略偏好 token、教师 token 级监督、更新学生使其远离负策略。"
+  },
+  "concepts": [
+    {
+      "name": "On-Policy Distillation（在线策略蒸馏）",
+      "readable": "学生先自己生成答案，再由更强教师逐步打分，学生按 token 级分数对齐教师分布。",
+      "analogy": "像学生先自己做题，老师对着他每一步批注该往哪改，而不是让他背标准答案。",
+      "analogyBreaksDown": "师生批注是离散自然语言反馈，这里是逐 token 分布对齐；教师分布可能处处很平，批注就退化成自言自语。",
+      "mechanism": "用学生 rollout 缓解训练与推理的分布错配，再用教师在每 token 位置的前向 KL 拉近学生分布，即 on-policy 数据加教师监督。",
+      "visual": "一条 token 时间轴，学生 token 为实心方块，每块上方画从学生分布指向教师分布的箭头，长度代表对齐差距。",
+      "prerequisites": [
+        "知识蒸馏与 KL 散度",
+        "自回归模型 rollout 采样"
+      ],
+      "selfTest": [
+        "on-policy 的「on」是谁的分布？",
+        "为何用学生 rollout 而非固定数据集？",
+        "逐 token 对齐与序列级蒸馏差在哪？"
+      ],
+      "formula": "\\mathcal{L}_{\\mathrm{OPD}} = \\mathbb{E}_{y \\sim \\pi_{\\theta}}\\left[ \\sum_{t} D_{\\mathrm{KL}}\\left( p_{T}(\\cdot \\mid x, y_{<t}) \\,\\|\\, p_{\\theta}(\\cdot \\mid x, y_{<t}) \\right) \\right]"
+    },
+    {
+      "name": "Negative-Policy Rollout（负策略 rollout）",
+      "readable": "额外用一个更差的模型生成答案，把「差模型更偏好、教师更不偏好」的 token 挑出来，仍交给教师纠正。",
+      "analogy": "排练时找一个水平明显更差的搭档，凡他偏选而老师不认可的走法，都摆到台面让老师点评。",
+      "analogyBreaksDown": "差搭档的坏习惯未必等于这个学生要避开的；负策略分布奇异时挑出的 token 可能与学生易错点无关，反而加噪。",
+      "mechanism": "负策略在 rollout 阶段引入而非改奖励：对负策略概率超过教师的 token 置指示量并加权，使其始终处于教师监督下，形成显式负信号又不破坏正监督。",
+      "visual": "两条 rollout 序列并排（上学生、下负策略），圈出「负策略概率>教师概率」的位置，再画箭头送回教师监督通道。",
+      "prerequisites": [
+        "on-policy 蒸馏流程",
+        "KL 与 token 概率比较"
+      ],
+      "selfTest": [
+        "NP-OPD 改的是奖励还是 rollout？",
+        "为何仍用教师监督而非负奖励？",
+        "负策略该选多弱？"
+      ],
+      "formula": "w_{t} = \\mathbf{1}\\!\\left[ p_{\\mathrm{neg}}(y_{t} \\mid \\cdot) > p_{T}(y_{t} \\mid \\cdot) \\right]"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-on-policy-distill-kl",
+      "name": "在线策略蒸馏目标",
+      "category": "posttraining",
+      "latex": "\\mathcal{L}_{\\mathrm{OPD}} = \\mathbb{E}_{x,\\, y \\sim \\pi_{\\theta}}\\left[ \\sum_{t} D_{\\mathrm{KL}}\\left( p_{T}(\\cdot \\mid x, y_{<t}) \\,\\|\\, p_{\\theta}(\\cdot \\mid x, y_{<t}) \\right) \\right]",
+      "symbols": [
+        ["\\pi_{\\theta}", "学生策略，也是 rollout 来源"],
+        ["p_{T}", "教师给出的下一 token 分布"],
+        ["p_{\\theta}", "学生给出的下一 token 分布"],
+        ["y \\sim \\pi_{\\theta}", "学生自己采样得到的轨迹"],
+        ["y_{<t}", "第 t 步之前的 token 前缀"]
+      ],
+      "derivation": [
+        "第 1 步：蒸馏目标是让学生逼近更强的教师。",
+        "第 2 步：on-policy 指监督数据来自学生自己的 rollout，缓解分布错配。",
+        "第 3 步：每个 token 位置用前向 KL 对齐学生与教师分布。",
+        "第 4 步：对轨迹求期望、对位置求和得总目标。"
+      ],
+      "analogy": "像学生照自己草稿做笔记，老师每步告诉你「我本来会怎么写」，你逐条改成老师的风格。",
+      "pitfalls": [
+        "把 on-policy 说成用固定离线数据，丢掉分布对齐动机",
+        "混淆前向与反向 KL，二者对模式覆盖行为不同"
+      ],
+      "code": "import torch.nn.functional as F\ndef opd_loss(s_logits, t_logits):\n    lp_s = F.log_softmax(s_logits, -1)\n    p_t = F.softmax(t_logits, -1)\n    return F.kl_div(lp_s, p_t, reduction=\"batchmean\")  # 教师→学生前向 KL",
+      "sources": [
+        {"title": "On-Policy Distillation with Negative-Policy Rollouts", "url": "https://arxiv.org/abs/2610.07874v1"}
+      ]
+    },
+    {
+      "id": "f-negative-policy-opd",
+      "name": "负策略 OPD 目标",
+      "category": "posttraining",
+      "latex": "\\mathcal{L}_{\\mathrm{NP}} = \\mathcal{L}_{\\mathrm{OPD}} + \\lambda\\, \\mathbb{E}_{y \\sim \\pi_{\\mathrm{neg}}}\\left[ \\sum_{t} w_{t}\\, D_{\\mathrm{KL}}\\left( p_{T} \\,\\|\\, p_{\\theta} \\right)_{t} \\right], \\quad w_{t} = \\mathbf{1}\\!\\left[ p_{\\mathrm{neg}}(y_{t}) > p_{T}(y_{t}) \\right]",
+      "symbols": [
+        ["\\pi_{\\mathrm{neg}}", "更低性能的负策略"],
+        ["w_{t}", "负策略概率超过教师时置一的指示量"],
+        ["\\lambda", "负信号权重"],
+        ["p_{\\mathrm{neg}}", "负策略在该位置的 token 概率"]
+      ],
+      "derivation": [
+        "第 1 步：教师与学生分布重叠少时，纯正监督信号不足。",
+        "第 2 步：引入更弱的负策略，采样它偏好而教师不偏好的 token。",
+        "第 3 步：对这些 token 仍施加教师监督，而非改成负奖励。",
+        "第 4 步：负策略只在 rollout 阶段进入，正监督项保持不变。"
+      ],
+      "analogy": "像复习错题：把「你差点选错的方向」挑出来重新对着标准答案订正，而非给错项扣分。",
+      "pitfalls": [
+        "以为它改了蒸馏奖励公式，其实改的是 rollout 策略",
+        "把 w_t 当硬负奖励去最小化，实际仍是教师正监督"
+      ],
+      "code": "import torch.nn.functional as F\ndef np_opd(s_logits, t_logits, n_logits, tok_ids, lam=0.5):\n    ls = F.log_softmax(s_logits, -1); pt = F.softmax(t_logits, -1); pn = F.softmax(n_logits, -1)\n    kl = F.kl_div(ls, pt, reduction=\"none\").sum(-1)      # per-token [B,T]\n    g = tok_ids.unsqueeze(-1)\n    w = (pn.gather(-1, g) > pt.gather(-1, g)).squeeze(-1).float()\n    return kl.mean() + lam * (w * kl).mean()",
+      "sources": [
+        {"title": "On-Policy Distillation with Negative-Policy Rollouts", "url": "https://arxiv.org/abs/2610.07874v1"}
+      ]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "on-policy 蒸馏让学生在自己 rollout 上获得教师 token 级监督",
+      "现有 OPD 改进了蒸馏奖励形式与教师配置，但目标始终是模仿教师",
+      "教师与学生分布重叠有限时，正监督提供的学习信号不足",
+      "NP-OPD 用一个更低性能、更低能力的负策略作负参考补充教师监督",
+      "NP-OPD 在 rollout 阶段引入负策略，而非修改蒸馏奖励公式",
+      "负策略偏好、教师不偏好的 token 被持续置于教师监督下",
+      "NP-OPD 在模型规模、生成模式、推理域与多种 OPD 变体上都提升",
+      "分析显示 NP-OPD 压制负策略偏好的 token 并把学生推离负策略"
+    ],
+    "uncertain": [
+      "负策略构造方式与 λ 取值摘要未给，公式为按摘要重建的通用形式，需核对原文",
+      "「更低能力」的判定标准摘要未说明，待核实"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "蒸馏时再找个更差的模型做陪练，把它偏好的坏 token 挑出来让老师继续纠正。"},
+      {"level": "入门", "text": "on-policy 蒸馏让学生自己写、老师逐步批注。但老师太强、与学生分布重叠少时，全是正面示范会学不动。这篇额外用一个更弱模型生成答案，把坏模型喜欢、老师不喜欢的 token 也纳入教师监督。"},
+      {"level": "进阶", "text": "关键选择是把负策略放在 rollout 阶段而不是改奖励：对学生和负策略两条 rollout 都算教师监督，对「负策略概率>教师概率」的 token 加权，构成显式负信号，同时原正监督项原样保留，不破坏 OPD 稳定性。"},
+      {"level": "专家", "text": "相较只改奖励形式或换教师配置的 OPD 变体，NP-OPD 指出 rollout 策略本身是设计变量：正监督只覆盖学生当前分布，负策略把尚未暴露的坏区域摊开。代价是多一套 rollout 采样开销，λ 与负策略强度需调；摘要称多规模多域一致提升，但未给数值。"}
+    ],
+    "socratic": [
+      {"q": "为什么只有教师的正向监督可能不够？", "a": "当教师分布与学生重叠有限时，好示范落在学生到不了的区域，学生当前轨迹上的梯度信号很弱，学不动。"},
+      {"q": "为什么不干脆把负偏好 token 当负奖励？", "a": "硬负奖励易失稳；作者改为仍用教师监督去纠正这些 token，既显式压坏了负偏好，又保留 OPD 的稳定正监督。"}
+    ],
+    "mechanism": "蒸馏有效性取决于学生当前分布上是否有足够梯度。教师与学生分布重叠少时，正监督只在学生已能到的地方给信号，坏区域从未被触及。作者在 rollout 阶段补一个更弱的负策略，专门采样它偏好而教师不偏好的 token，让这些此前被忽略的位置也进入教师监督，从而在不改损失形式的前提下显式注入负信号。",
+    "boundary": "当负策略与被蒸馏任务几乎无关时，挑出的 token 会变成噪声。若教师与学生本就分布接近，正监督已足够，收益有限却多出采样成本。",
+    "analogyBoundary": "陪练类比在「坏棋就是坏棋、标准答案唯一」时成立；但教师分布对某些 token 可能本身就很平，此时「负策略偏好>教师」只反映相对排序，未必对应真正对错，指示量会误判。",
+    "misconceptions": [
+      "以为方法改了蒸馏奖励公式——它改的是 rollout 策略。",
+      "把负偏好 token 当错误标签做负向优化，破坏训练稳定。"
+    ],
+    "ownAnalysis": "（推断）NP-OPD 与对比学习的「负样本」同源：靠对照放大判别信号，但这里负样本是整条 rollout 且只当采样来源，比嵌入负样本更轻。可疑处在于负策略强度是新超参，太弱挑不出 token、太强会偏离学生易错区；摘要只给定性分析，未给构造细节与数值，需核对原文与 github.com/naver-ai/np-opd。",
+    "officialNotes": [
+      {"position": "通过负策略 rollout 引入负信号可改善 OPD，分析显示它压制负策略偏好的 token 并使学生远离负策略，提示 rollout 策略在 OPD 中扮演重要角色", "source": "arxiv: 2610.07874v1"}
+    ],
+    "interviewAnswer": "on-policy 蒸馏是学生自己 rollout、教师逐 token 给监督。问题是教师太强、分布重叠少时，正监督只在学生已能到的地方有效，坏区域从没被触碰。NP-OPD 不动奖励形式，而是在 rollout 阶段多跑一个更弱的负策略，把「负策略概率高于教师」的 token 标出来仍让教师纠正，于是既有显式负信号又保留原正监督。它跨规模与 OPD 变体都涨，说明 rollout 策略是被忽视的设计变量。",
+    "studyPath": {
+      "prerequisites": ["知识蒸馏与 KL 散度", "自回归 rollout 与策略梯度直觉"],
+      "nextSteps": ["读原文核对负策略构造与 λ", "对比 DPO 里的负样本用法", "把该信号接到 VLM 后训练"]
+    }
+  }
+}

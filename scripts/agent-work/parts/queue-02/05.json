@@ -1,0 +1,118 @@
+{
+  "id": "007283de44a19771",
+  "tldr": "让 LLM agent 在代码骨架上补全物理求解器的 168 题基准，考可执行、视觉保真、物理合理三关。",
+  "keyPoints": [
+    "用求解器生成考 LLM agent 的物理仿真能力",
+    "造 solver 需物理理解 + 数学推导 + 软件实现",
+    "WorldSolver：168 任务，取自 61 篇经典图形学论文，跨 7 个物理域",
+    "每题给固定仿真环境代码骨架，solver 由 agent 补全",
+    "三维评测：执行检查、视觉保真、物理合理性",
+    "前沿 agent 仍难：GPT-5.6-Sol 48.7%、Claude-Opus-5 46.7%"
+  ],
+  "why": "世界模型需要物理可信的动态建模；agentic solver 生成把「让 LLM 理解物理动力学」变成可评测任务。",
+  "difficulty": "hard",
+  "tags": ["agent", "world-model", "physics-simulation", "benchmark", "code-generation"],
+  "entities": ["WorldSolver", "GPT-5.6-Sol", "Claude-Opus-5", "computer graphics"],
+  "diagram": {
+    "kind": "flow",
+    "title": "WorldSolver 基准流程",
+    "caption": "固定仿真环境骨架留给 agent 补全求解器，再按执行/视觉/物理三维评测。",
+    "svg": "<svg viewBox='0 0 480 178' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='WorldSolver 四层流程'>\n<rect x='40' y='14' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='38' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>任务：固定场景 + code scaffold</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='40' y='70' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>agent 补全 solver 实现</text>\n<line x1='240' y1='110' x2='240' y2='118' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,126 236,118 244,118' fill='var(--line-1)'/>\n<rect x='40' y='126' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='150' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>执行 / 视觉保真 / 物理合理性</text>\n</svg>",
+    "alt": "三层流程：固定场景代码骨架→agent 补全求解器→三维评测执行/视觉/物理。"
+  },
+  "concepts": [
+    {
+      "name": "Agentic Solver Generation（agent 式求解器生成）",
+      "readable": "给 agent 一个固定仿真环境的代码骨架，让它补齐「状态如何随时间演化」的求解器，一次考物理理解、数学推导和编程。",
+      "analogy": "像给一栋楼的框架让你补全水电：既要知道水往哪流（物理）、会算流量（数学），还得会施工（写代码）。",
+      "analogyBreaksDown": "水电有统一规范；物理现象跨 7 个域、模型各异（流体、刚体、布料…），没有统一模板，agent 必须按现象选对模型。",
+      "mechanism": "每个任务把场景与仿真环境固定成 code scaffold，只把求解器实现留给 agent；难点集中在「选对物理模型 + 正确推导动力学 + 写出可运行代码」，三维评测分别对应不同失败模式。",
+      "visual": "左侧固定 scaffold 框、右侧 agent 补的 solver 框；下方三条流水线分别输出「能跑」「像」「物理合理」。",
+      "prerequisites": ["数值积分基础", "物理动画/图形学概念", "LLM 代码 agent"],
+      "selfTest": ["为什么要把 scaffold 固定住？", "三维评测各自捕捉哪种失败？", "可执行却不物理合理说明什么？"],
+      "formula": "\\dot{s}=f(s,t),\\quad s_{t+1}=s_t+\\Delta t\\,f(s_t,t)"
+    },
+    {
+      "name": "Tri-axis Evaluation（三维评测）",
+      "readable": "执行检查看能不能跑通、视觉保真看动画像不像、物理合理性看动力学是否符合物理，三关各卡一种问题。",
+      "analogy": "像验收一座桥：能建起来（执行）、外观像设计图（视觉）、承重真达标（物理），三者不能互相替代。",
+      "analogyBreaksDown": "桥梁验收标准明确可测；这里「视觉保真」与「物理合理」都依赖渲染与判定，边界带有主观与实现相关成分。",
+      "mechanism": "执行检查排除语法/运行错误；视觉保真在渲染结果上比对预期动态行为；物理合理性用基于物理的验证检查生成动力学。三者分离使「能跑但不像」或「像但违反物理」都能被单列。",
+      "visual": "三个并列评分条 E/V/P，各自百分比，用颜色标出最弱一维。",
+      "prerequisites": ["物理动画", "渲染/图像相似度", "动力学验证"],
+      "selfTest": ["为什么执行成功不等于物理对？", "视觉保真可能被什么骗过？", "三维取平均会掩盖什么？"],
+      "formula": "\\mathrm{Score}=\\frac{1}{3}\\left(E+V+P\\right)"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-solver-state-evolution",
+      "name": "求解器：状态随时间的演化（Solver as an ODE）",
+      "category": "worldmodel",
+      "latex": "\\dot{s}=f(s,t),\\quad s_{t+1}=s_t+\\Delta t\\,f(s_t,t)",
+      "symbols": [["s", "系统状态（位置/速度等）"], ["f", "动力学右端项（由物理模型决定）"], ["\\Delta t", "时间步长"], ["s_{t+1}", "下一步状态"]],
+      "derivation": ["第 1 步：物理现象都可用状态 s 随时间演化的方程描述。", "第 2 步：右端 f 由选定物理模型（重力、弹性、流体等）给出。", "第 3 步：用数值积分（如显式欧拉）离散推进时间。", "第 4 步：代码实现即把该递推写成可运行求解器。"],
+      "analogy": "像按帧播放动画：每帧根据当前受力算出下一帧的位置。",
+      "pitfalls": ["把积分步长当无关紧要——过大导致不稳定/爆炸", "选错物理模型（如用弹性模型做流体），数值再准也不对", "混淆「能跑」与「物理正确」"],
+      "code": "def step(s, f, dt):\n    return s + dt * f(s)  # 显式欧拉一步",
+      "sources": [{"title": "WorldSolver: Can LLM Agents Simulate the Physical Dynamics via Solver Generation?", "url": "https://arxiv.org/abs/2610.08720v1"}]
+    },
+    {
+      "id": "f-worldsolver-score",
+      "name": "WorldSolver 三维总分（Tri-axis Score）",
+      "category": "agent",
+      "latex": "\\mathrm{Score}=\\frac{1}{3}\\left(\\mathrm{Exec}+\\mathrm{Visual}+\\mathrm{Physical}\\right)",
+      "symbols": [["\\mathrm{Exec}", "执行检查得分"], ["\\mathrm{Visual}", "视觉保真得分"], ["\\mathrm{Physical}", "物理合理性得分"]],
+      "derivation": ["第 1 步：对每个任务分别在三维上评测。", "第 2 步：执行检查——代码能否成功运行。", "第 3 步：视觉保真——渲染是否复现预期动态行为。", "第 4 步：物理合理性——动力学是否有物理依据。", "第 5 步：三维等权平均得总分。"],
+      "analogy": "像三项全能：能跑、像、物理对各占三分之一。",
+      "pitfalls": ["三维等权平均会掩盖某一维极弱", "把执行成功当主要指标，忽略视觉/物理", "跨任务平均隐藏域间差异"],
+      "code": "def score(e, v, p):\n    return (e + v + p) / 3.0",
+      "sources": [{"title": "WorldSolver: Can LLM Agents Simulate the Physical Dynamics via Solver Generation?", "url": "https://arxiv.org/abs/2610.08720v1"}]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "LLM agent 在科学/工程问题求解上日益进步；物理仿真是有挑战又实用的试验台（应用于具身 AI、游戏、电影）",
+      "求解器计算动态系统状态如何随时间演化",
+      "造 solver 需物理理解、数学推导与软件工程三方面能力",
+      "WorldSolver 含 168 个仿真任务，取自 61 篇经典计算机图形学论文，跨 7 个物理域",
+      "每题有固定仿真环境的 code scaffold，solver 实现留给 agent 补全",
+      "三维评测：执行检查、视觉保真、物理合理性",
+      "前沿 agent 产可执行 solver 已难，满足视觉与物理正确更难",
+      "GPT-5.6-Sol 48.7%、Claude-Opus-5 46.7%，相对更好但仍偏低",
+      "代码在 github.com/sirujiang/WorldSolver"
+    ],
+    "uncertain": [
+      "三维评测的精确度量与加权摘要未给，Score 公式为按摘要重建的通用形式，需核对原文",
+      "「物理合理性」验证的具体判据摘要未说明，待核实",
+      "各物理域得分细节摘要未给，待核实"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "考 AI 会不会写物理仿真代码：给骨架让它补求解器，再看跑得通、像不像、合不合理。"},
+      {"level": "入门", "text": "物理仿真要写出「状态随时间怎么变」的求解器，需要同时懂物理、会数学推导、能写代码。WorldSolver 把 168 个图形学经典现象的仿真环境固定成代码骨架，只让 agent 补求解器，再从可执行、视觉保真、物理合理三方面打分。"},
+      {"level": "进阶", "text": "固定 scaffold 是有意为之：把变量隔离到「求解器实现」上，考的就只是物理建模与推导。三维评测分工明确——执行检查抓语法/运行错误，视觉保真抓动态行为不符，物理合理性抓动力学违反物理。这样「能跑但不像」和「像但违背物理」能被分开定位。"},
+      {"level": "专家", "text": "它把「世界模型/物理理解」落成一个可自动判分的代码生成任务：169 题的场景与渲染管线给定，agent 只需补动力学。结果说明前沿 agent 连产出可执行求解器都难，视觉与物理正确更难，GPT-5.6-Sol 与 Claude-Opus-5 也只在 48.7% 与 46.7%。这提示当前 LLM 的「物理直觉」与「把物理写成数值代码」之间仍有明显鸿沟。"}
+    ],
+    "socratic": [
+      {"q": "为什么不直接考物理问答题？", "a": "问答可能靠记忆蒙对；让 agent 写可运行求解器，必须真把动力学公式化成数值代码，且结果可执行可验证。"},
+      {"q": "执行成功为什么不等于物理正确？", "a": "代码能跑只说明语法与流程对；若物理模型选错或推导错，仍会渲染出错误但可运行的动态，需视觉与物理两维才能抓住。"}
+    ],
+    "mechanism": "物理仿真的难点可拆成「选对模型、推对动力学、写成代码」三步。把仿真环境与渲染固定成 scaffold，可把前两步暴露为可观测的代码产物；再用执行、视觉、物理三维分别对应工程、表象、物理三层正确性，使不同失败模式可被单独量化，从而把「理解物理」变成可自动评测的任务。",
+    "boundary": "基准覆盖 7 个物理域、168 个源自图形学论文的现象，未必代表全部物理场景；三维中的视觉保真与物理合理性依赖渲染与判定实现，可能带实现偏置。等权平均也可能掩盖某一维的极端失败。",
+    "analogyBoundary": "「验收桥」类比忽略了：桥梁标准客观统一，而这里的「视觉保真」由渲染对比定义、「物理合理」由验证器定义，判定本身是近似且可被特定写法迎合的。",
+    "misconceptions": [
+      "以为 benchmark 只要代码跑通就给分——还有视觉与物理两维。",
+      "以为 agent 连 scaffold 都要自己写——场景与环境是给定的。",
+      "把 48.7% 当作「接近一半会做」——三维平均，单项可能更低。"
+    ],
+    "ownAnalysis": "把「物理理解」落成「写求解器代码」是巧妙的可自动化设计（推断），与 program synthesis 评测、以及世界模型里「用可执行模型预测动力学」的思路同源。可疑处：物理合理性如何做到客观判定摘要未说，可能依赖参考实现或守恒量检查（推断）；三维等权也可能让「只会跑通」拿到不低的分数。该基准对具身/世界模型方向的直接价值是：它提供了一个衡量模型是否真懂动力学的探针。",
+    "officialNotes": [{"position": "前沿 agent 产出可执行求解器本身已难，满足视觉与物理正确性更难；GPT-5.6-Sol 与 Claude-Opus-5 总分仅 48.7% 与 46.7%", "source": "arxiv: 2610.08720v1"}],
+    "interviewAnswer": "它问 LLM agent 能不能真的做物理仿真。做法是造 WorldSolver 基准：168 个任务取自 61 篇经典图形学论文，跨 7 个物理域，每个任务把场景和仿真环境固定成代码骨架，只留给 agent 补求解器实现。评测三维——执行检查能否跑通、视觉保真动态行为像不像、物理合理性动力学是否站得住。结果显示前沿 agent 连产出可执行求解器都难，视觉和物理正确更难，GPT-5.6-Sol 和 Claude-Opus-5 也只有 48.7% 和 46.7%。对世界模型方向，它是一个衡量模型是否真懂动力学的探针。",
+    "studyPath": {
+      "prerequisites": ["数值积分与动力学基础", "计算机图形学/物理动画常识", "LLM 代码生成 agent"],
+      "nextSteps": ["读原文与代码库 github.com/sirujiang/WorldSolver", "实现一个简单求解器通过执行检查", "思考物理合理性验证如何客观化"]
+    }
+  }
+}

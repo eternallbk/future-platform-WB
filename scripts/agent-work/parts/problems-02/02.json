@@ -1,0 +1,295 @@
+{
+ "id": "74b546c8e2d25647",
+ "tldr": "旋转数组里二分：每轮至少一半有序，先判哪半有序，再看 target 是否落在其值域内来收缩边界。",
+ "keyPoints": [
+  "数组是两段各自升序拼接，切口只有一个",
+  "每轮 nums[lo..mid] 与 nums[mid..hi] 恰有一段有序",
+  "用 nums[lo] <= nums[mid] 判断左半是否有序",
+  "再据 target 是否落在有序段值域内决定收缩方向",
+  "含重复元素（LC81）时相等处要退避一格"
+ ],
+ "why": "字节/微软高频手撕，考的是二分的边界控制与不变量；能否把「重复元素退化」讲清是区分度所在。",
+ "difficulty": "medium",
+ "tags": [
+  "leetcode",
+  "binary-search",
+  "array",
+  "rotate",
+  "edge-cases"
+ ],
+ "entities": [
+  "二分查找",
+  "旋转排序数组",
+  "闭区间二分"
+ ],
+ "diagram": {
+  "kind": "flow",
+  "title": "旋转数组二分：指针收缩",
+  "caption": "nums=[4,5,6,7,0,1,2] 找 0：每轮判断哪半有序，把 target 锁进有序段。",
+  "alt": "在旋转数组 4 5 6 7 0 1 2 中二分查找 0，展示 lo mid hi 三点收缩到下标 4",
+  "svg": "<svg viewBox='0 0 540 208' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='旋转数组二分查找的指针收缩过程'><text x='8' y='36' font-size='13' font-weight='bold' fill='currentColor'>第 1 轮</text><rect x='96' y='20' width='40' height='28' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='116' y='39' font-size='14' text-anchor='middle' fill='currentColor'>4</text><rect x='140' y='20' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='160' y='39' font-size='14' text-anchor='middle' fill='currentColor'>5</text><rect x='184' y='20' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='204' y='39' font-size='14' text-anchor='middle' fill='currentColor'>6</text><rect x='228' y='20' width='40' height='28' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='248' y='39' font-size='14' text-anchor='middle' fill='currentColor'>7</text><rect x='272' y='20' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='292' y='39' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='316' y='20' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='336' y='39' font-size='14' text-anchor='middle' fill='currentColor'>1</text><rect x='360' y='20' width='40' height='28' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='380' y='39' font-size='14' text-anchor='middle' fill='currentColor'>2</text><text x='96' y='64' font-size='13' opacity='0.75' fill='currentColor'>lo0 mid3 hi6；nums[0]=4≤7 → 左半有序 [4..7]</text><text x='8' y='98' font-size='13' font-weight='bold' fill='currentColor'>第 2 轮</text><rect x='96' y='82' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='116' y='101' font-size='14' text-anchor='middle' fill='currentColor'>4</text><rect x='140' y='82' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='160' y='101' font-size='14' text-anchor='middle' fill='currentColor'>5</text><rect x='184' y='82' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='204' y='101' font-size='14' text-anchor='middle' fill='currentColor'>6</text><rect x='228' y='82' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='248' y='101' font-size='14' text-anchor='middle' fill='currentColor'>7</text><rect x='272' y='82' width='40' height='28' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='292' y='101' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='316' y='82' width='40' height='28' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='336' y='101' font-size='14' text-anchor='middle' fill='currentColor'>1</text><rect x='360' y='82' width='40' height='28' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='380' y='101' font-size='14' text-anchor='middle' fill='currentColor'>2</text><text x='96' y='126' font-size='13' opacity='0.75' fill='currentColor'>target=0 不在 [4,7) → lo4；nums[4]=0≤1 → 左半 [0,1] 有序</text><text x='8' y='160' font-size='13' font-weight='bold' fill='currentColor'>命中</text><rect x='96' y='144' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='116' y='163' font-size='14' text-anchor='middle' fill='currentColor'>4</text><rect x='140' y='144' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='160' y='163' font-size='14' text-anchor='middle' fill='currentColor'>5</text><rect x='184' y='144' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='204' y='163' font-size='14' text-anchor='middle' fill='currentColor'>6</text><rect x='228' y='144' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='248' y='163' font-size='14' text-anchor='middle' fill='currentColor'>7</text><rect x='272' y='144' width='40' height='28' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='292' y='163' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='316' y='144' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='336' y='163' font-size='14' text-anchor='middle' fill='currentColor'>1</text><rect x='360' y='144' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='380' y='163' font-size='14' text-anchor='middle' fill='currentColor'>2</text><text x='96' y='188' font-size='13' opacity='0.75' fill='currentColor'>lo=mid=hi=4，nums[4]=0，返回下标 4</text></svg>"
+ },
+ "concepts": [
+  {
+   "name": "旋转数组的两段单调性",
+   "readable": "把一个升序数组在某处切断再交换两段，得到的数组由两个升序段拼成，中间只有一个「掉落点」（前一段的最小值比后一段的最大值还大）。",
+   "analogy": "像把一摞按序排好的牌从中间抽出来放到顶上：整摞看起来乱了，但任意连续一截要么全涨要么全跌。",
+   "analogyBreaksDown": "「只有一个掉落点」只在无重复时严格成立；有重复元素时可能出现 nums[lo]==nums[mid]==nums[hi]，此时无法判断哪半有序，必须退化成线性退避。",
+   "mechanism": "取中点 mid 后，nums[lo..mid] 与 nums[mid..hi] 中必有一段是纯升序（切口只穿越其中一段）。据此把 target 归类到「落在有序段值域内」或「在另一段」，从而每轮砍掉一半。",
+   "visual": "把数组画成一条先升后跳的折线，切口用红色竖线标出；二分区间用方框框住并随每轮缩小。",
+   "prerequisites": [
+    "二分查找",
+    "数组单调性"
+   ],
+   "selfTest": [
+    "[4,5,6,7,0,1,2] 的掉落点在哪两个下标之间？",
+    "为什么每轮至少有一半一定有序？",
+    "有重复元素时 nums[lo]==nums[mid] 能说明什么？"
+   ],
+   "formula": "nums[l] \\le nums[m] \\Rightarrow nums[l..m]\\ \\mathrm{sorted}"
+  },
+  {
+   "name": "二分的循环不变量",
+   "readable": "在 while lo<=hi 的闭区间写法里，不变量是「目标若存在，必落在 [lo, hi] 内」。每次比较 mid 后，用不变量决定把哪半边安全地排除。",
+   "analogy": "像查字典：每次从中缝翻开，确定目标在前半还是后半，把另一半直接合上不再看。",
+   "analogyBreaksDown": "不变量依赖「区间每次真的在缩小」。如果把边界更新写成 lo=mid 而不是 mid±1，区间可能原地不动，循环永不退出——这是二分死循环的经典来源。",
+   "mechanism": "闭区间 [lo,hi] 的循环条件是 lo<=hi；收缩时用 mid-1 / mid+1 保证新区间严格更小，从而保证 O(log n) 轮内收敛。",
+   "visual": "画一条数轴，lo、hi 两个箭头从两端向内夹，mid 落在中间；每轮把一侧箭头跳到 mid±1。",
+   "prerequisites": [
+    "while 与边界更新的对应关系",
+    "整数除法下取整"
+   ],
+   "selfTest": [
+    "闭区间写法为什么用 lo<=hi 而不是 lo<hi？",
+    "若把 hi=mid-1 改成 hi=mid 会发生什么？",
+    "mid 为什么推荐写 lo+(hi-lo)//2？"
+   ],
+   "formula": "T(n) = T(\\lfloor n/2 \\rfloor) + O(1) = O(\\log n)"
+  }
+ ],
+ "formulas": [
+  {
+   "id": "f-bsearch-recurrence",
+   "name": "二分查找递归式（Binary Search Recurrence）",
+   "category": "engineering",
+   "latex": "T(n) = T\\bigl(\\lfloor n/2 \\rfloor\\bigr) + O(1) = O(\\log n)",
+   "symbols": [
+    [
+     "T(n)",
+     "规模 n 的查找耗时"
+    ],
+    [
+     "\\lfloor n/2 \\rfloor",
+     "每轮砍半后的规模"
+    ],
+    [
+     "O(1)",
+     "每轮只做常数次比较"
+    ]
+   ],
+   "derivation": [
+    "每次比较 mid 后，待查区间缩小到左半或右半之一，规模至多 ⌊n/2⌋。",
+    "每层额外代价只有常数次比较，即 O(1)。",
+    "递归深度是 n 反复二分到 1 的次数，约 ⌊log2 n⌋+1。",
+    "展开求和 1+log n，得到 T(n)=O(log n)。"
+   ],
+   "analogy": "像查纸质电话簿：每次从中间翻开，一翻就扔掉一半人名。",
+   "pitfalls": [
+    "区间写成左闭右开却仍用 lo<=hi，漏查最后一个元素",
+    "mid 用 (lo+hi)//2，在定长整型语言里可能溢出",
+    "更新边界写成 lo=mid 导致区间不收缩、死循环"
+   ],
+   "code": "def bsearch(nums, target):\n    lo, hi = 0, len(nums) - 1\n    while lo <= hi:\n        mid = lo + (hi - lo) // 2\n        if nums[mid] == target:\n            return mid\n        if nums[mid] < target:\n            lo = mid + 1\n        else:\n            hi = mid - 1\n    return -1\nprint(bsearch([1, 3, 5, 7], 5))   # 2",
+   "sources": [
+    {
+     "title": "搜索旋转排序数组（LeetCode 33）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/search-in-rotated-sorted-array"
+    }
+   ]
+  },
+  {
+   "id": "f-rotated-ordered-half",
+   "name": "有序半区判定（Ordered Half Test）",
+   "category": "engineering",
+   "latex": "nums[l] \\le nums[m] \\;\\Rightarrow\\; nums[l..m]\\ \\mathrm{sorted}",
+   "symbols": [
+    [
+     "nums[l]",
+     "区间左端点值"
+    ],
+    [
+     "nums[m]",
+     "中点值"
+    ],
+    [
+     "nums[l..m]",
+     "左半段（含中点）"
+    ]
+   ],
+   "derivation": [
+    "旋转只在一个切口处发生，因此数组由两段升序拼接。",
+    "若左端点 ≤ 中点，说明切口不在左半段内部，左半段 [l,m] 整体单调不减。",
+    "否则切口必落在左半段，此时右半段 [m,r] 单调不减。",
+    "据有序段的值域判断 target 是否落在其中，从而决定收缩方向。"
+   ],
+   "analogy": "一段被剪断再接上的尺子：看两头刻度就能立刻判断哪一截还是连续递增的。",
+   "pitfalls": [
+    "用 nums[l] < nums[m] 而非 ≤，当 l==m 时判错",
+    "判断 target 落点用 <= 还是 < 写错，把 nums[m] 重复算进去",
+    "含重复元素时三者相等无法判断，需 lo++/hi--（LC81）"
+   ],
+   "code": "def ordered_left(nums, l, m):\n    return nums[l] <= nums[m]   # True: [l,m] 单调不减\nprint(ordered_left([4, 5, 6, 7, 0, 1, 2], 0, 3))   # True",
+   "sources": [
+    {
+     "title": "搜索旋转排序数组（LeetCode 33）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/search-in-rotated-sorted-array"
+    }
+   ]
+  }
+ ],
+ "selfCheck": {
+  "claims": [
+   "该题被字节跳动考过 161 次、快手 21 次、阿里巴巴 18 次等，共 247 次（摘要原文）。",
+   "难度为中等，最近一次出现于 2026-10-07（摘要原文）。",
+   "给定 nums=[4,5,6,7,0,1,2] 找 0 返回下标 4（示例自验）。"
+  ],
+  "uncertain": [
+   "源摘要只给了频度/公司/难度，未附题面与示例；statement、examples 与解法为按 LeetCode 33 题面补全，已用代码验证。",
+   "示例为自行构造"
+  ]
+ },
+ "teaching": {
+  "progressive": [
+   {
+    "level": "一句话",
+    "text": "数组被转了一下，但总能二分，因为一半一定还是有序的。"
+   },
+   {
+    "level": "入门",
+    "text": "数组由两段升序拼成。取中点后，看左端点与中点的大小，就能判断左半段是否有序；知道哪半有序后，再看目标值在不在那半的值域里，决定往哪半走。"
+   },
+   {
+    "level": "进阶",
+    "text": "关键是用 nums[lo] <= nums[mid] 判定左半有序（注意是 <=）。有序段确定后，用闭区间值域 nums[lo] <= target < nums[mid]（或 nums[mid] < target <= nums[hi]）判断目标是否在内，从而安全砍掉另一半。每轮区间严格缩小，O(log n)。"
+   },
+   {
+    "level": "专家",
+    "text": "和普通二分唯一的差别是「伸缩方向由值域判断而非直接比较」。有重复元素（LC81）时 nums[lo]==nums[mid]==nums[hi] 会让有序判定失效，只能 lo++/hi-- 把这两端退掉，最坏退化到 O(n)。这与「查找最小值」（LC153/154）是同一套旋转结构的两个问法。"
+   }
+  ],
+  "socratic": [
+   {
+    "q": "为什么每轮至少一半一定有序？",
+    "a": "旋转只有一个切口，切口最多穿过 lo..mid 与 mid..hi 中的一段，另一段必然完整且升序。"
+   },
+   {
+    "q": "判定左半有序为什么必须用 <= 而不是 <？",
+    "a": "当区间只剩一个元素时 lo==mid，nums[lo]==nums[mid]，用 < 会判成无序，进而走错分支。"
+   },
+   {
+    "q": "有了重复元素为什么不能照搬？",
+    "a": "当 nums[lo]==nums[mid]==nums[hi] 时，左右都可能有序也可能无序，无法二分，只能退避一格，最坏 O(n)。"
+   }
+  ],
+  "mechanism": "旋转数组的「两段升序」结构保证：任取中点，它的左右两半里必有一半不含切口。二分的作用不是直接比较大小，而是先用端点单调性定位这「有序的一半」，再用有序段的值域判断目标是否落在其中，从而把无解的一半整段排除。整个设计与普通二分同构，只是把「比大小」替换成「先判有序再比值域」。",
+  "boundary": "仅适用于「一个」旋转点的升序数组；多段旋转或不满足两段单调的数据（如随机数组）不适用。有重复元素时最坏退化为 O(n)，若面试要求严格 O(log n) 必须假定元素互异。数组空或长度 1 需要单独兜底。",
+  "analogyBoundary": "「剪断再接的尺子」会让人以为只要看两端就能定位切口——实际二分里我们从不直接知道切口位置，而是靠 mid 与端点的关系间接推断哪半没被切到。类比也没有体现「必须在有序半的值域内才能排除另一半」这一步逻辑。",
+  "misconceptions": [
+   "用 nums[mid] > nums[lo] 判有序，区间只剩一个元素时判错。",
+   "只比较 target 与 nums[mid] 的大小，忘了它可能落在另一段而方向相反。",
+   "以为有重复元素也能保持 O(log n)。"
+  ],
+  "ownAnalysis": "这道题几乎是「二分不变量」的教科书案例。真正容易错的不是思路，而是三类边界：有序判定用 <=、值域判断的开闭区间、以及 lo/hi 更新是否让区间收缩。（推断）面试官常先让你写 LC33，再追问 LC81 重复元素与 LC153 找最小值，本质都是同一套旋转结构；把这三题串起来讲会非常加分。",
+  "officialNotes": [],
+  "interviewAnswer": "我先说明数组是两段升序。每轮取 mid，如果 nums[lo]<=nums[mid]，说明左半有序，此时若 target 落在 [nums[lo], nums[mid]) 就收缩右边界，否则收缩左边界；否则右半有序，镜像处理。循环用闭区间 lo<=hi。时间和空间是 O(log n) 和 O(1)。如果元素可能重复，我会补一句 LC81 时相等要退避，最坏 O(n)。",
+  "studyPath": {
+   "prerequisites": [
+    "闭区间二分写法",
+    "数组单调性",
+    "while 循环不变量"
+   ],
+   "nextSteps": [
+    "做 LC153/154「寻找旋转排序数组中的最小值」，练习找切口",
+    "做 LC81「搜索旋转排序数组 II」，体会重复元素导致的最坏退化",
+    "把 LC33 与普通二分并排写一遍，总结「判有序再比值域」的模板"
+   ]
+  }
+ },
+ "problem": {
+  "title": "搜索旋转排序数组",
+  "number": 33,
+  "difficulty": "medium",
+  "statement": "整数数组 nums 原本按升序排列，且元素互不相同，后在某个未知下标处被旋转（例如 [0,1,2,4,5,6,7] 旋转成 [4,5,6,7,0,1,2]）。给定旋转后的 nums 和目标值 target，若存在返回其下标，否则返回 -1。要求时间复杂度 O(log n)。约束：1 <= nums.length <= 5000。",
+  "examples": [
+   {
+    "input": "nums = [4,5,6,7,0,1,2], target = 0",
+    "output": "4",
+    "why": "0 位于右段的开头",
+    "explanation": "0 位于右段的开头"
+   },
+   {
+    "input": "nums = [4,5,6,7,0,1,2], target = 3",
+    "output": "-1",
+    "why": "3 不在数组中",
+    "explanation": "3 不在数组中"
+   },
+   {
+    "input": "nums = [1], target = 0",
+    "output": "-1",
+    "why": "单元素且不匹配",
+    "explanation": "单元素且不匹配"
+   }
+  ],
+  "approach": {
+   "idea": "旋转数组由两段升序拼接。取中点 mid 后，左半段与右半段中必有一段整体有序。先用端点判断哪半有序，再看 target 是否落在该有序段的值域内：在则收缩到该段，不在则去另一段。每轮排除一半，保持 O(log n)。",
+   "steps": [
+    "置 lo=0、hi=len(nums)-1，用闭区间 while lo<=hi。",
+    "mid=(lo+hi)//2；若 nums[mid]==target 直接返回 mid。",
+    "若 nums[lo] <= nums[mid]（左半有序）：target 在 [nums[lo], nums[mid]) 内则 hi=mid-1，否则 lo=mid+1。",
+    "否则右半有序：target 在 (nums[mid], nums[hi]] 内则 lo=mid+1，否则 hi=mid-1。",
+    "循环结束仍未命中则返回 -1。"
+   ],
+   "whyItWorks": "因为切口只有一个，nums[lo..mid] 与 nums[mid..hi] 里必有一段不含切口、完整升序。在该有序段内可安全用值域比较：target 落在其值域则必在其中（否则在另一段），据此排除掉一定无解的半段。每次区间严格变小，故最多 log n 轮收敛；过程中若某轮命中即返回，正确性由「区间始终包含 target」这一不变量保证。",
+   "alternatives": [
+    {
+     "name": "先找旋转点再普通二分",
+     "complexity": "O(log n)/O(1)",
+     "when": "思路更直观：先二分找最小值下标（切口），再在 target 所在的那段做一次标准二分。"
+    },
+    {
+     "name": "线性扫描",
+     "complexity": "O(n)/O(1)",
+     "when": "只作 baseline；面试要求 O(log n) 时不可用。"
+    },
+    {
+     "name": "允许重复元素（LC81）",
+     "complexity": "最坏 O(n)/O(1)",
+     "when": "nums 含重复值时，nums[lo]==nums[mid]==nums[hi] 处需 lo++/hi-- 退避，最坏退化线性。"
+    }
+   ]
+  },
+  "solution": {
+   "python": "class Solution:\n    def search(self, nums, target):\n        lo, hi = 0, len(nums) - 1\n        while lo <= hi:\n            mid = (lo + hi) // 2\n            if nums[mid] == target:\n                return mid\n            if nums[lo] <= nums[mid]:          # 左半 [lo, mid] 有序\n                if nums[lo] <= target < nums[mid]:\n                    hi = mid - 1\n                else:\n                    lo = mid + 1\n            else:                              # 右半 [mid, hi] 有序\n                if nums[mid] < target <= nums[hi]:\n                    lo = mid + 1\n                else:\n                    hi = mid - 1\n        return -1\n",
+   "python_alt": "# 先二分找旋转点（最小值下标），再在正确的有序段里普通二分\nclass Solution:\n    def search(self, nums, target):\n        lo, hi = 0, len(nums) - 1\n        while lo < hi:                    # 找最小值下标\n            mid = (lo + hi) // 2\n            if nums[mid] > nums[hi]:\n                lo = mid + 1\n            else:\n                hi = mid\n        pivot = lo\n        lo, hi = (pivot, len(nums) - 1) if target <= nums[-1] else (0, pivot - 1)\n        while lo <= hi:\n            mid = (lo + hi) // 2\n            if nums[mid] == target:\n                return mid\n            if nums[mid] < target:\n                lo = mid + 1\n            else:\n                hi = mid - 1\n        return -1\n",
+   "notes": "用闭区间写法（while lo<=hi 配 mid±1）。判定左半有序必须用 <=，否则区间只剩 1 个元素时判错。值域判断要排除 nums[mid] 本身，避免与开头命中判断重复。第二解用 target<=nums[-1] 选择所在段，注意 target 可能小于段内最小值，二分自然返回 -1。"
+  },
+  "complexity": {
+   "time": "O(log n)",
+   "space": "O(1)",
+   "why": "每轮把查找区间缩小一半，最多 log₂n 轮；只用常数个下标变量。"
+  },
+  "pitfalls": [
+   "有序判定写成 nums[lo] < nums[mid]，当 lo==mid 时判成无序走错分支。",
+   "值域判断漏掉或写错开闭（应排除 nums[mid]），导致 mid 被重复计算或漏掉边界元素。",
+   "边界更新写成 lo=mid / hi=mid 而非 mid±1，区间不收缩造成死循环。",
+   "旋转 0 次（已完全有序）时未特判——其实不用特判，代码自然成立，但很多人手动补错。"
+  ],
+  "edgeCases": [
+   "数组只有一个元素。",
+   "旋转 0 次，数组完全升序。",
+   "target 比最小值还小或比最大值还大 → 返回 -1。",
+   "[3,1] 这类长度为 2 的旋转。"
+  ],
+  "interviewTips": "先说结构（两段升序），再写「判有序半区 + 比值域」两步，边写边报 lo/mid/hi。主动提「用 <= 判有序」和「闭区间 mid±1」，这两点是面试官最常盯的。写完补一句：若元素可重复（LC81）需退避、最坏 O(n)，显示你知道边界。"
+ }
+}

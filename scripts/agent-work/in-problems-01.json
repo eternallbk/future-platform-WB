@@ -1,0 +1,251 @@
+{
+ "batchId": "problems-01",
+ "mode": "full",
+ "items": [
+  {
+   "id": "a77b0b38fd1be916",
+   "title": "LRU缓存机制",
+   "category": "coding",
+   "channel": "codetop",
+   "url": "https://leetcode.cn/problems/lru-cache",
+   "sources": [
+    {
+     "url": "https://leetcode.cn/problems/lru-cache",
+     "name": "codetop"
+    }
+   ],
+   "tags": [
+    "leetcode",
+    "手撕",
+    "算法题",
+    "高频面试题",
+    "字节跳动",
+    "腾讯",
+    "阿里巴巴"
+   ],
+   "kind": "problem",
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 367 次、腾讯 193 次、阿里巴巴 99 次、快手 61 次、美团 47 次、百度 33 次（共 896 次）；难度 中等；最近一次出现 2026-09-28",
+   "needsFetch": false,
+   "bankKey": "lc-146",
+   "problemNumber": 146,
+   "examFrequency": 896,
+   "askingCompanies": [
+    "字节跳动",
+    "腾讯",
+    "阿里巴巴",
+    "快手",
+    "美团",
+    "百度"
+   ],
+   "lastAsked": "2026-09-28",
+   "bankTopics": [
+    "哈希表"
+   ],
+   "analysisStatus": "partial",
+   "bankSources": [
+    {
+     "title": "LRU缓存机制（LeetCode 146）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/lru-cache"
+    }
+   ]
+  },
+  {
+   "id": "218d3e48bbac3784",
+   "title": "反转链表",
+   "category": "coding",
+   "channel": "programmercarl",
+   "url": "https://leetcode.cn/problems/reverse-linked-list",
+   "sources": [
+    {
+     "url": "https://programmercarl.com/algo/linked-list/0206-reverse-linked-list.html",
+     "name": "programmercarl"
+    }
+   ],
+   "tags": [
+    "算法题",
+    "题解",
+    "leetcode",
+    "手撕",
+    "algo"
+   ],
+   "kind": "problem",
+   "summary": "反转链表问题通过双指针法和递归法实现指针方向的反转，涉及链表的节点操作和指针更新过程。",
+   "needsFetch": false,
+   "bankKey": "lc-206",
+   "problemNumber": 206,
+   "examFrequency": 721,
+   "askingCompanies": [
+    "字节跳动",
+    "腾讯",
+    "美团",
+    "百度",
+    "快手",
+    "滴滴"
+   ],
+   "lastAsked": "2026-09-21",
+   "bankTopics": [
+    "双指针",
+    "链表"
+   ],
+   "analysisStatus": "partial",
+   "bankSources": [
+    {
+     "title": "206.反转链表 · 题解",
+     "url": "https://programmercarl.com/algo/linked-list/0206-reverse-linked-list.html"
+    },
+    {
+     "title": "反转链表（LeetCode 206）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/reverse-linked-list"
+    }
+   ]
+  },
+  {
+   "id": "ce0ad6ab3e2e154a",
+   "title": "数组中的第K个最大元素",
+   "category": "coding",
+   "channel": "codetop",
+   "url": "https://leetcode.cn/problems/kth-largest-element-in-an-array",
+   "sources": [
+    {
+     "url": "https://leetcode.cn/problems/kth-largest-element-in-an-array",
+     "name": "codetop"
+    }
+   ],
+   "tags": [
+    "leetcode",
+    "手撕",
+    "算法题",
+    "高频面试题",
+    "字节跳动",
+    "美团",
+    "腾讯"
+   ],
+   "kind": "problem",
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 205 次、美团 103 次、腾讯 62 次、百度 46 次、快手 34 次、阿里巴巴 34 次（共 567 次）；难度 中等；最近一次出现 2026-09-17",
+   "needsFetch": false,
+   "bankKey": "lc-215",
+   "problemNumber": 215,
+   "examFrequency": 567,
+   "askingCompanies": [
+    "字节跳动",
+    "美团",
+    "腾讯",
+    "百度",
+    "快手",
+    "阿里巴巴"
+   ],
+   "lastAsked": "2026-09-17",
+   "bankTopics": [
+    "排序与TopK"
+   ],
+   "analysisStatus": "partial",
+   "bankSources": [
+    {
+     "title": "数组中的第K个最大元素（LeetCode 215）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/kth-largest-element-in-an-array"
+    }
+   ]
+  },
+  {
+   "id": "4850800a9f8bfcd8",
+   "title": "K 个一组翻转链表",
+   "category": "coding",
+   "channel": "codetop",
+   "url": "https://leetcode.cn/problems/reverse-nodes-in-k-group",
+   "sources": [
+    {
+     "url": "https://leetcode.cn/problems/reverse-nodes-in-k-group",
+     "name": "codetop"
+    }
+   ],
+   "tags": [
+    "leetcode",
+    "手撕",
+    "算法题",
+    "高频面试题",
+    "字节跳动",
+    "美团",
+    "腾讯"
+   ],
+   "kind": "problem",
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 303 次、美团 68 次、腾讯 39 次、阿里巴巴 23 次、快手 22 次、滴滴 11 次（共 470 次）；难度 困难；最近一次出现 2026-09-16",
+   "needsFetch": false,
+   "bankKey": "lc-25",
+   "problemNumber": 25,
+   "examFrequency": 470,
+   "askingCompanies": [
+    "字节跳动",
+    "美团",
+    "腾讯",
+    "阿里巴巴",
+    "快手",
+    "滴滴"
+   ],
+   "lastAsked": "2026-09-16",
+   "bankTopics": [
+    "链表",
+    "字符串"
+   ],
+   "analysisStatus": "partial",
+   "bankSources": [
+    {
+     "title": "K 个一组翻转链表（LeetCode 25）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/reverse-nodes-in-k-group"
+    }
+   ]
+  },
+  {
+   "id": "bbf388bcc19ae05a",
+   "title": "三数之和",
+   "category": "coding",
+   "channel": "codetop",
+   "url": "https://leetcode.cn/problems/3sum",
+   "sources": [
+    {
+     "url": "https://leetcode.cn/problems/3sum",
+     "name": "codetop"
+    }
+   ],
+   "tags": [
+    "leetcode",
+    "手撕",
+    "算法题",
+    "高频面试题",
+    "字节跳动",
+    "美团",
+    "百度"
+   ],
+   "kind": "problem",
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 187 次、美团 66 次、百度 46 次、快手 34 次、腾讯 34 次、阿里巴巴 29 次（共 465 次）；难度 中等；最近一次出现 2026-10-06",
+   "needsFetch": false,
+   "bankKey": "lc-15",
+   "problemNumber": 15,
+   "examFrequency": 465,
+   "askingCompanies": [
+    "字节跳动",
+    "美团",
+    "百度",
+    "快手",
+    "腾讯",
+    "阿里巴巴"
+   ],
+   "lastAsked": "2026-10-06",
+   "bankTopics": [
+    "双指针",
+    "哈希表",
+    "排序与TopK"
+   ],
+   "analysisStatus": "partial",
+   "bankSources": [
+    {
+     "title": "三数之和（LeetCode 15）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/3sum"
+    },
+    {
+     "title": "第15题. 三数之和 · 题解",
+     "url": "https://programmercarl.com/algo/hash-table/0015-3sum.html"
+    }
+   ]
+  }
+ ]
+}

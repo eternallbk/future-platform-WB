@@ -1,0 +1,310 @@
+{
+ "date": "2026-10-05",
+ "generatedAt": "2026-10-05T20:09:18+08:00",
+ "generatedBy": "collect.py deterministic layer (no LLM required)",
+ "reviewPolicy": {
+  "autoApplicable": [
+   "单个关键词权重 ≤10% 的微调"
+  ],
+  "requiresHumanApproval": [
+   "分类增删改名",
+   "渠道增删与升降级",
+   "评分公式与权重",
+   "去重阈值",
+   "blocklist",
+   "robots.txt 状态变化"
+  ]
+ },
+ "channelHealth": [
+  {
+   "id": "jobs_alibaba",
+   "nameZh": "阿里招聘",
+   "status": "blocked",
+   "streak": 9,
+   "lastError": null,
+   "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+   "escalate": true
+  },
+  {
+   "id": "jobs_bytedance",
+   "nameZh": "字节招聘",
+   "status": "blocked",
+   "streak": 9,
+   "lastError": null,
+   "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+   "escalate": true
+  },
+  {
+   "id": "jobs_minimax",
+   "nameZh": "MiniMax",
+   "status": "blocked",
+   "streak": 9,
+   "lastError": null,
+   "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+   "escalate": true
+  },
+  {
+   "id": "jobs_moonshot",
+   "nameZh": "月之暗面",
+   "status": "blocked",
+   "streak": 9,
+   "lastError": null,
+   "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+   "escalate": true
+  },
+  {
+   "id": "jobs_shailab",
+   "nameZh": "上海 AI Lab",
+   "status": "blocked",
+   "streak": 9,
+   "lastError": null,
+   "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+   "escalate": true
+  },
+  {
+   "id": "jobs_zhipu",
+   "nameZh": "智谱招聘",
+   "status": "blocked",
+   "streak": 9,
+   "lastError": null,
+   "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+   "escalate": true
+  },
+  {
+   "id": "machineheart",
+   "nameZh": "机器之心",
+   "status": "blocked",
+   "streak": 9,
+   "lastError": null,
+   "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+   "escalate": true
+  },
+  {
+   "id": "openreview",
+   "nameZh": "OpenReview",
+   "status": "blocked",
+   "streak": 9,
+   "lastError": null,
+   "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+   "escalate": true
+  },
+  {
+   "id": "reddit",
+   "nameZh": "Reddit",
+   "status": "blocked",
+   "streak": 9,
+   "lastError": null,
+   "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+   "escalate": true
+  },
+  {
+   "id": "rsshub",
+   "nameZh": "RSSHub",
+   "status": "blocked",
+   "streak": 9,
+   "lastError": null,
+   "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+   "escalate": true
+  }
+ ],
+ "coverage": {
+  "categoriesWithItems": [
+   "agent",
+   "coding",
+   "course",
+   "engineering",
+   "exam",
+   "foundation",
+   "generative",
+   "job",
+   "multimodal",
+   "posttraining",
+   "rl",
+   "worldmodel"
+  ],
+  "categoriesEmpty": [],
+  "categoriesQuietThisRun": [
+   "job",
+   "coding",
+   "exam",
+   "course"
+  ],
+  "byCategoryTotal": {
+   "coding": 214,
+   "engineering": 39,
+   "agent": 98,
+   "worldmodel": 48,
+   "posttraining": 75,
+   "rl": 36,
+   "exam": 118,
+   "generative": 47,
+   "foundation": 19,
+   "multimodal": 73,
+   "job": 26,
+   "course": 6
+  },
+  "byCategoryFresh": {
+   "rl": 8,
+   "posttraining": 8,
+   "multimodal": 8,
+   "generative": 6,
+   "worldmodel": 7,
+   "agent": 7,
+   "foundation": 4,
+   "engineering": 2
+  }
+ },
+ "keywordProposals": [],
+ "newChannelProposals": [],
+ "knowledgeQuality": {
+  "byKind": {
+   "paper": 259,
+   "problem": 164,
+   "repo": 157,
+   "notes": 151,
+   "interview": 37,
+   "job": 30,
+   "news": 1
+  },
+  "kindShare": {
+   "paper": 32.4,
+   "problem": 20.5,
+   "repo": 19.6,
+   "notes": 18.9,
+   "interview": 4.6,
+   "job": 3.8,
+   "news": 0.1
+  },
+  "materiality": {
+   "mean": 0.441,
+   "p25": 0.305,
+   "p50": 0.425,
+   "p75": 0.609,
+   "shareBelow035": 38.3
+  },
+  "newsShare": 0.1,
+  "lowSignalShare": 38.3,
+  "offDirectionShare": 3.8,
+  "career": {
+   "interview": 37,
+   "problem": 164,
+   "notes": 151,
+   "job": 26,
+   "offDirection": 30
+  },
+  "directions": {
+   "engineering": {
+    "total": 39,
+    "knowledge": 39,
+    "news": 0,
+    "deepRead": 22
+   },
+   "agent": {
+    "total": 98,
+    "knowledge": 97,
+    "news": 1,
+    "deepRead": 22
+   },
+   "worldmodel": {
+    "total": 48,
+    "knowledge": 48,
+    "news": 0,
+    "deepRead": 36
+   },
+   "posttraining": {
+    "total": 75,
+    "knowledge": 75,
+    "news": 0,
+    "deepRead": 35
+   },
+   "rl": {
+    "total": 36,
+    "knowledge": 36,
+    "news": 0,
+    "deepRead": 26
+   },
+   "generative": {
+    "total": 47,
+    "knowledge": 47,
+    "news": 0,
+    "deepRead": 27
+   },
+   "foundation": {
+    "total": 19,
+    "knowledge": 19,
+    "news": 0,
+    "deepRead": 15
+   },
+   "multimodal": {
+    "total": 73,
+    "knowledge": 73,
+    "news": 0,
+    "deepRead": 31
+   },
+   "course": {
+    "total": 6,
+    "knowledge": 6,
+    "news": 0,
+    "deepRead": 1
+   }
+  }
+ },
+ "channelQualityProposals": [
+  {
+   "id": "jobs_tencent",
+   "totalItems": 29,
+   "newsShare": 0.0,
+   "lowSignalShare": 72.4,
+   "suggestedAction": "降级到 P2，或收窄该渠道的抓取范围（只取高材料性内容）",
+   "reason": "jobs_tencent 的产出里 0.0% 是资讯、72.4% 是低材料性内容，对本工作台的知识积累贡献很低",
+   "requiresHumanApproval": true
+  }
+ ],
+ "kindGapProposals": [],
+ "noiseReport": {
+  "unknownHosts": {
+   "ncompass.tech": 1,
+   "app.mokahr.com": 1,
+   "openpipe.ai": 1
+  },
+  "unknownHostItemShare": 0.004,
+  "newsShare": 0.1,
+  "lowSignalShare": 38.3,
+  "offDirectionShare": 3.8,
+  "career": {
+   "interview": 37,
+   "problem": 164,
+   "notes": 151,
+   "job": 26,
+   "offDirection": 30
+  }
+ },
+ "humanReviewQueue": [
+  "以下渠道已连续 3 轮以上失败，请确认是永久下线还是需要换源：jobs_alibaba(blocked×9)，jobs_bytedance(blocked×9)，jobs_minimax(blocked×9)，jobs_moonshot(blocked×9)，jobs_shailab(blocked×9)，jobs_zhipu(blocked×9)，machineheart(blocked×9)，openreview(blocked×9)，reddit(blocked×9)，rsshub(blocked×9)",
+  "【深读层】【连续 3 轮，需人工决策·已升级】方向闸门偏松：CORE_DIRECTION_TERMS 单命中即得 core_fit=0.5，恰等于 minCoreFitForTechnical，于是「multimodal/多模态」这个词出现一次就能过闸。本轮证据（深读层判 off-direction 跳过 9 条，均为进了队列才被拦下的非方向内容）：queue-11 的 WiFi-CSI 无线感知、ISAC 波束赋形；queue-07 的无线感知/雷达生命体征；queue-13 的 dbx 数据库 GUI 客户端、阿里 Java 后端八股；queue-17 的 TCP/数据库/操作系统八股 4 条。**这是第 3 轮同一问题**。修法只需人工拍板二选一：(a) minCoreFitForTechnical 0.5→0.75；或 (b) 把 multimodal/多模态 从 CORE_DIRECTION_TERMS 降级为宽口径词。",
+  "【深读层】【渠道·可关闭】上一轮报的 hf_blog_rss / hf_papers（Tunnel 502）**本轮已自愈**：hf_papers 产出 24 条、hf_blog_rss 产出 12 条，两条均已从「连续失败」清单移除。结论：那是出口代理的瞬时故障，**不需要换源、不需要修代理**，此条可关闭。",
+  "【深读层】【渠道·需人工决策，连续多轮】仍有 10 个渠道 blocked×9：jobs_alibaba / jobs_bytedance / jobs_minimax / jobs_moonshot / jobs_shailab / jobs_zhipu / machineheart / openreview / reddit / rsshub。按契约**不自动禁用渠道**。请人工确认：永久下线，还是换源/改人工导入。",
+  "【深读层】【需人工决策，连续多轮】论文数超分类上限：posttraining=44 / worldmodel=41 / multimodal=40 / generative=39（上限 maxPapersPerCategory=26）。需要人工决定是否执行 python scripts/prune_items.py --apply。注意该命令会把被删条目写进 blocklist（不会自动回来）。",
+  "【深读层】【新增·需人工决策】公式库 id 碎片化：库内已存在 4 条语义等价的「缩放点积注意力」公式（f-attention / f-scaled-dot-product-attention / f-scaled-dot-product / f-scaled-dot-attention）。本轮又有 2 处深读提案复用了 f-scaled-dot-product-attention（已按去重跳过，未新增重复）。建议人工合并/删除同义公式 id，否则「公式剖析」页会长期出现多条同义公式。",
+  "【深读层】【数据质量·需人工确认】needsFetch 2 条无摘要条目：483764c59e96fd52（GRPO credit assignment，已解析完成）；d235d4d0dd5acd4b（HF 博客 microsoft/thinkingbox，materiality 0.107 / directionFit 0.4，被质量闸门判 skim 因而未深读）。HF 渠道本轮已恢复，如需保留可在下一轮重跑抓取原文。"
+ ],
+ "stats": {
+  "totalItems": 799,
+  "freshThisRun": 50,
+  "channelsRan": 28,
+  "channelsOk": 18
+ },
+ "agentReview": {
+  "generatedAt": "2026-10-05T21:07:49+08:00",
+  "note": "深读层补充：方向闸门连续 3 轮的证据、HF 渠道自愈结论、公式 id 碎片化、needsFetch 状态。",
+  "deepRead": {
+   "queued": 88,
+   "problemBankQueued": 14,
+   "backfillQueued": 14,
+   "entriesFull": 93,
+   "entriesBackfill": 14,
+   "skipped": 9,
+   "skipReason": "off-direction（非方向内容：无线感知 / ISAC / 数据库 GUI / 后端八股）"
+  }
+ }
+}

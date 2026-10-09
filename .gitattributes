@@ -1,0 +1,21 @@
+# Normalise line endings and mark binary assets, so a Windows checkout and a
+# Linux build produce identical files.
+#
+# Why this matters here: the Python writers emit LF explicitly
+# (open(..., newline="\n")), but git's default core.autocrlf on Windows rewrites
+# them to CRLF on checkout, which produced a wall of "LF will be replaced by
+# CRLF" warnings and makes diffs noisy. Pinning LF for text keeps the data files
+# byte-stable between this machine and the published site.
+* text=auto eol=lf
+
+# Generated and binary artifacts: never touch them.
+dist/** -text
+*.png binary
+*.ico binary
+*.jpg binary
+*.woff2 binary
+
+# Large single-line data: no line-ending conversion, no diff noise.
+web/data/items/index.json -text
+web/data/items.json -text
+web/data/state/** -text

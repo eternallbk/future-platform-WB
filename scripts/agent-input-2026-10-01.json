@@ -1,0 +1,1744 @@
+{
+  "date": "2026-10-01",
+  "generatedBy": "daily-agent",
+  "root": "D:\\pythonProject\\DS-daily",
+  "selection": {
+    "basis": "web/data/deep-read-plan.json 的 queue（scripts/plan_deep_read.py 生成：质量闸门 + 每类 2-10 条配额）",
+    "readFrom": "web/data/deep-read-plan.json",
+    "queueSize": 6,
+    "demoScope": {
+      "requested": 6,
+      "ofFullQueue": 116,
+      "note": "scoped subset for a verification run; the full plan is in deep-read-plan.full.json"
+    },
+    "categories": [
+      "paper",
+      "multimodal",
+      "worldmodel",
+      "posttraining",
+      "agent",
+      "rl"
+    ],
+    "channels": [
+      "arxiv"
+    ],
+    "skippedAlreadyEnriched": 12,
+    "note": "只处理 queue 内条目；queue 外条目（含 17:58 第一轮的 12 条）本轮不动。"
+  },
+  "enrichment": [
+    {
+      "id": "9672dc8fe08e75d2",
+      "tldr": "UniAE-MoE 以共享专家 MoE 融合多个音频编码器，靠两阶段指令微调与 TSDS 提升跨域音频理解。",
+      "keyPoints": [
+        "统一音频编码器，用 MoE 建模跨域音频表征。",
+        "整合 Qwen2-Audio 与 Audio-Flamingo 3 的编码器。",
+        "SwiGLU + 共享专家改进编码器，解耦编码器网络。",
+        "两阶段指令微调，更好适配多样下游任务。",
+        "XARES-LLM 得分 0.802 达 SOTA；挑战赛顶级表现。"
+      ],
+      "why": "MoE 融合多编码器 + 两阶段 SFT 是多模态后训练常见配方，面试常追问共享专家作用与路由设计；0.802 提供可对比的量化锚点。",
+      "difficulty": "medium",
+      "tags": [
+        "mixture-of-experts",
+        "audio-encoder",
+        "multimodal",
+        "instruction-tuning",
+        "data-scaling"
+      ],
+      "entities": [
+        "UniAE-MoE",
+        "Qwen2-Audio",
+        "Audio-Flamingo 3",
+        "SwiGLU",
+        "TSDS",
+        "XARES-LLM",
+        "Interspeech 2026 Audio Encoder Capability Challenge"
+      ],
+      "diagram": {
+        "kind": "architecture",
+        "title": "UniAE-MoE 架构与训练流程",
+        "caption": "两个主流音频编码器经 SwiGLU+共享专家的 MoE 融合，再过两阶段指令微调支撑语音/音乐/通用音频理解，TSDS 从数据侧介入。",
+        "svg": "<svg viewBox='0 0 640 280' xmlns='http://www.w3.org/2000/svg'><defs><marker id='ah' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='7' markerHeight='7' orient='auto-start-reverse'><path d='M0,0 L10,5 L0,10 z' fill='currentColor'/></marker></defs><rect x='195' y='16' width='240' height='36' rx='6' fill='none' stroke='var(--accent)' stroke-width='1.5'/><text x='315' y='39' font-size='14' text-anchor='middle' fill='var(--accent)'>TSDS 任务特定数据扩增</text><line x1='315' y1='52' x2='315' y2='87' stroke='var(--line-1)' stroke-width='1.5' marker-end='url(#ah)'/><text x='325' y='76' font-size='13' fill='currentColor'>训练数据侧</text><rect x='20' y='70' width='170' height='48' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='105' y='93' font-size='14' text-anchor='middle' fill='currentColor'>Qwen2-Audio</text><text x='105' y='111' font-size='13' text-anchor='middle' fill='currentColor'>音频编码器</text><rect x='20' y='150' width='170' height='48' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='105' y='173' font-size='14' text-anchor='middle' fill='currentColor'>Audio-Flamingo 3</text><text x='105' y='191' font-size='13' text-anchor='middle' fill='currentColor'>音频编码器</text><polyline points='190,94 208,94 208,140' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><polyline points='190,174 208,174 208,140' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><line x1='208' y1='140' x2='222' y2='140' stroke='var(--line-1)' stroke-width='1.5' marker-end='url(#ah)'/><rect x='225' y='90' width='180' height='100' rx='8' fill='none' stroke='var(--accent)' stroke-width='1.5'/><text x='315' y='124' font-size='14' text-anchor='middle' fill='var(--accent)'>MoE 融合</text><text x='315' y='146' font-size='13' text-anchor='middle' fill='currentColor'>SwiGLU + 共享专家</text><text x='315' y='166' font-size='13' text-anchor='middle' fill='currentColor'>解耦编码器网络</text><line x1='405' y1='140' x2='443' y2='140' stroke='var(--line-1)' stroke-width='1.5' marker-end='url(#ah)'/><rect x='445' y='95' width='175' height='90' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='532' y='132' font-size='14' text-anchor='middle' fill='currentColor'>两阶段指令微调</text><text x='532' y='154' font-size='13' text-anchor='middle' fill='currentColor'>适配多样下游任务</text><line x1='532' y1='185' x2='532' y2='197' stroke='var(--line-1)' stroke-width='1.5' marker-end='url(#ah)'/><rect x='445' y='200' width='175' height='48' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='532' y='222' font-size='14' text-anchor='middle' fill='currentColor'>语音/音乐/通用音频</text><text x='532' y='240' font-size='13' text-anchor='middle' fill='currentColor'>下游统一理解</text><text x='20' y='235' font-size='13' fill='currentColor'>结果：XARES-LLM 0.802（SOTA）</text><text x='20' y='258' font-size='13' fill='currentColor'>Interspeech 2026 音频编码器挑战赛顶级表现</text></svg>",
+        "spec": {
+          "type": "architecture",
+          "nodes": [
+            {
+              "label": "Qwen2-Audio 编码器",
+              "detail": "摘要中被选用的主流音频编码器之一"
+            },
+            {
+              "label": "Audio-Flamingo 3 编码器",
+              "detail": "另一个被整合的编码器，下游能力更强"
+            },
+            {
+              "label": "MoE 融合层",
+              "detail": "SwiGLU 加共享专家，用于解耦各编码器网络"
+            },
+            {
+              "label": "两阶段指令微调",
+              "detail": "让模型更好适配多样下游任务"
+            },
+            {
+              "label": "语音/音乐/通用音频理解",
+              "detail": "统一音频表征的下游理解目标"
+            },
+            {
+              "label": "TSDS",
+              "detail": "任务特定数据缩放，作用于训练数据侧"
+            }
+          ],
+          "edges": [
+            {
+              "from": 0,
+              "to": 2,
+              "label": "编码表征汇入"
+            },
+            {
+              "from": 1,
+              "to": 2,
+              "label": "编码表征汇入"
+            },
+            {
+              "from": 5,
+              "to": 2,
+              "label": "训练数据侧增强"
+            },
+            {
+              "from": 2,
+              "to": 3,
+              "label": "融合后表征"
+            },
+            {
+              "from": 3,
+              "to": 4,
+              "label": "适配下游任务"
+            }
+          ]
+        },
+        "alt": "架构图：Qwen2-Audio 与 Audio-Flamingo 3 两个音频编码器汇入以 SwiGLU 与共享专家实现的 MoE 融合层，再经两阶段指令微调输出语音、音乐与通用音频的下游理解能力，TSDS 从训练数据侧提供增强。"
+      },
+      "concepts": [
+        {
+          "name": "共享专家混合 (Shared-Expert Mixture of Experts)",
+          "readable": "把多个已训好的音频编码器当成不同专家，用一个门控网络按输入挑选或加权混合它们的表征，并额外留一组「共享专家」对所有输入都生效，从而在一个编码器里同时用上多个上游模型的优势。",
+          "analogy": "像球队把几位专长不同的球探报告汇总，由总教练按对手风格决定听谁的；同时总有一位熟悉所有对手的通识教练，他的意见每场都算数。",
+          "analogyBreaksDown": "球探是先独立写好报告再汇总投票，而这里的专家本身就是网络里的层，门控与专家是端到端一起训练的；共享专家也不是「顾问意见」，而是恒定参与计算的网络分支。",
+          "mechanism": "用 SwiGLU 替换专家内部的普通 FFN，并加一组对所有 token 恒定激活的共享专家：共享专家承载跨域共性，路由专家承载领域特化，使融合时各编码器的表征不必挤在同一组参数里，从而达到摘要所说的「解耦编码器网络」。",
+          "visual": "画一个横向门控图：左侧三条输入 token 流（语音/音乐/通用音频），中间一排专家方块，其中一个用 accent 描边并写成「共享专家」、始终点亮；右侧连线粗细表示门控权重大小，最终汇聚成一条输出。",
+          "prerequisites": [
+            "MoE 基本结构（专家、门控、top-k 稀疏激活）",
+            "Transformer FFN 与 SwiGLU/GLU 变体",
+            "音频编码器的输入输出形态（如 Mel 特征到帧级表征）"
+          ],
+          "selfTest": [
+            "共享专家与路由专家在激活模式上的关键区别是什么？",
+            "为什么作者要用共享专家来「解耦」多个编码器网络？",
+            "把普通 FFN 换成 SwiGLU 改变了什么？摘要能证明的部分到哪为止？"
+          ],
+          "formula": "\\mathrm{SwiGLU}(x) = W_2\\big(\\mathrm{Swish}(W_1 x) \\odot W_3 x\\big),\\quad \\mathrm{Swish}(z)=z\\,\\sigma(z)"
+        },
+        {
+          "name": "两阶段指令微调 (Two-Stage Instruction Tuning)",
+          "readable": "把指令微调拆成先后两个阶段来做，目的是让模型更好适配语音、音乐、通用音频等多样下游任务。摘要只说明了「分两阶段」和「为了适配多样任务」，每一阶段具体做什么并未说明。",
+          "analogy": "像先上新兵通用训练营，学会听懂各种口令，再进专业兵种集训，针对具体岗位练专项技能。",
+          "analogyBreaksDown": "军队训练的阶段与考核是人定的且边界清晰；本文两阶段的具体划分、各阶段数据配比摘要都没给，而且微调的目标是拟合任务分布，并不存在一个明确的「结业考核」。",
+          "mechanism": "关键设计是把「适配下游任务」从一步微调拆成两个连续阶段，以缓解多任务一起调时的相互干扰；通常第一段偏通用指令对齐、第二段偏任务特化，但摘要未确认这一分工，需看原文。",
+          "visual": "画一条从左到右的两段式时间轴：第一段用较宽的方块表示覆盖广泛的通用指令数据，第二段用略窄的方块表示任务特化数据；时间轴右端分叉出语音、音乐、通用音频三条箭头指向下游任务。",
+          "prerequisites": [
+            "监督指令微调（SFT）的基本流程",
+            "多任务微调中的任务干扰与灾难性遗忘",
+            "音频-文本指令数据的构造方式"
+          ],
+          "selfTest": [
+            "为什么把指令微调拆成两个阶段，而不是一步到位？",
+            "摘要能说清两阶段各自的内容吗？如果不能，应该去原文的哪部分找？",
+            "两阶段微调与前面的 MoE 融合分别解决什么问题？"
+          ],
+          "formula": ""
+        },
+        {
+          "name": "任务特定数据缩放 (Task-Specific Data Scaling, TSDS)",
+          "readable": "一种在训练数据侧做「按任务调整」的技术：针对不同下游任务改变其训练数据的配比或规模，让模型在不擅长的任务上获得更多训练信号，从而提升 UniAE-MoE 的理解能力。",
+          "analogy": "像备赛复习时按各科薄弱程度重排时间：弱科多刷题、强科少刷，用同样的总复习时间换更高的总分。",
+          "analogyBreaksDown": "复习时间是连续可调且效果立竿见影；TSDS 究竟缩放样本数量、采样权重还是别的维度，摘要没有交代，也不保证总数据量保持不变。",
+          "mechanism": "摘要只给出两点：它是任务特定（task-specific）的数据缩放技术，用来增强 UniAE-MoE 的理解能力。它作用在训练数据侧，与结构侧的 MoE 融合互补；准确的缩放维度与调度策略属摘要外信息。",
+          "visual": "画一张分组柱状图：横轴是任务（语音、音乐、通用音频），纵轴是该任务的采样权重或样本数；每组两根柱子，灰色为 baseline、accent 色为 TSDS 之后，弱任务上的 accent 柱明显更高。",
+          "prerequisites": [
+            "多任务训练中数据混合比例/采样权重的作用",
+            "数据配比对下游指标的影响",
+            "按任务难度调整训练信号的直觉"
+          ],
+          "selfTest": [
+            "TSDS 作用在模型结构侧还是训练数据侧？",
+            "摘要能证明 TSDS 的具体缩放方式吗？",
+            "TSDS 和两阶段指令微调解决的是同一个问题吗？"
+          ],
+          "formula": ""
+        }
+      ],
+      "formulas": [
+        {
+          "id": "f-moe-shared-expert",
+          "name": "共享专家混合层与 SwiGLU 专家（Shared-Expert MoE Layer with SwiGLU Experts）",
+          "category": "multimodal",
+          "glyph": "Σ",
+          "tags": [
+            "moe",
+            "swiglu",
+            "shared-expert",
+            "gating"
+          ],
+          "latex": "\\mathrm{MoE}(x) = x + \\sum_{s=1}^{N_s} \\mathrm{SwiGLU}_s(x) + \\sum_{i \\in \\mathcal{T}(x)} g_i(x)\\,\\mathrm{SwiGLU}_i(x),\\quad g_i(x)=\\frac{\\exp(e_i^{\\top} x)}{\\sum_{j\\in\\mathcal{T}(x)}\\exp(e_j^{\\top} x)},\\quad \\mathrm{SwiGLU}(x)=W_2\\big(\\mathrm{Swish}(W_1x)\\odot W_3x\\big)",
+          "html": "<code>MoE(x) = x + Σ_s SwiGLU_s(x) + Σ_{i∈TopK(x)} g_i(x)·SwiGLU_i(x)，其中 g 只在选中的 top-k 上 softmax，SwiGLU(x)=W2(Swish(W1x)⊙W3x)</code>",
+          "symbols": [
+            [
+              "x",
+              "该层输入表征（一个 token 的隐藏向量），shape 记为 [B, T, d]；摘要未给具体维度"
+            ],
+            [
+              "N_s",
+              "共享专家数量，其输出对所有 token 恒定参与；摘要未给取值"
+            ],
+            [
+              "T(x)",
+              "由门控为 token x 选出的 top-k 路由专家集合"
+            ],
+            [
+              "g_i(x)",
+              "路由专家 i 的门控权重，只在 T(x) 内归一化，∑_{i∈T(x)} g_i(x) = 1"
+            ],
+            [
+              "SwiGLU_i",
+              "第 i 个专家前馈网络，内部为 W1/W3 双投影 + Swish 门控 + W2 输出投影"
+            ],
+            [
+              "σ(·)",
+              "Sigmoid 函数，SwiGLU 中 Swish(z)=z·σ(z) 的门控因子"
+            ]
+          ],
+          "derivation": [
+            "动机：单一 FFN 难以同时承载多个上游音频编码器的异构表征，于是用多个专家并行替代单个 FFN。",
+            "稀疏路由：用 top-k 门控让每个 token 只激活少数路由专家，把参数量与计算量解耦。",
+            "补共享专家：全稀疏路由会把跨域共性也打散，于是加一组对所有 token 都激活的共享专家承载共性知识。",
+            "换成 SwiGLU：用门控线性单元增强单个专家的表达力，配合共享专家使各编码器表征更容易解耦。",
+            "残差相加：把输入 x、共享专家之和与加权路由专家之和相加，得到该层输出。"
+          ],
+          "analogy": "像科室里既有几位「全科医生」对所有病人都接诊，又有专科医生由分诊台按病情叫号；SwiGLU 相当于每位医生先自己筛一遍信息再下结论，而不是把所有信息一股脑塞进一个判断。",
+          "pitfalls": [
+            "把共享专家也算进 top-k 路由竞争：共享专家不参与门控，恒定激活。",
+            "认为门控权重对「所有专家」求和为 1：实际只对选中的 top-k 归一化。",
+            "把 SwiGLU 当普通 ReLU-FFN：它有两个并行线性投影，其中一个过 Swish 后逐元素门控另一个。",
+            "把摘要里的「解耦编码器网络」理解为各编码器完全独立训练：摘要说的是融合时的结构设计。"
+          ],
+          "code": "import torch, torch.nn as nn, torch.nn.functional as F\n\nclass SwiGLU(nn.Module):\n    \"\"\"SwiGLU 专家：W2(Swish(W1x) * W3x)\"\"\"\n    def __init__(self, d, hidden):\n        super().__init__()\n        self.w1 = nn.Linear(d, hidden, bias=False)\n        self.w3 = nn.Linear(d, hidden, bias=False)\n        self.w2 = nn.Linear(hidden, d, bias=False)\n\n    def forward(self, x):\n        return self.w2(F.silu(self.w1(x)) * self.w3(x))\n\nclass SharedExpertMoE(nn.Module):\n    \"\"\"共享专家恒激活 + top-k 路由专家，相加后残差回加。\"\"\"\n    def __init__(self, d, hidden, n_routed=4, n_shared=1, top_k=2):\n        super().__init__()\n        self.top_k = top_k\n        self.router = nn.Linear(d, n_routed, bias=False)\n        self.routed = nn.ModuleList([SwiGLU(d, hidden) for _ in range(n_routed)])\n        self.shared = nn.ModuleList([SwiGLU(d, hidden) for _ in range(n_shared)])\n\n    def forward(self, x):                      # x: [B, T, d]\n        out = x\n        for e in self.shared:                  # 共享专家：所有 token 都走\n            out = out + e(x)\n        logits = self.router(x)                # [B, T, n_routed]\n        w, idx = logits.topk(self.top_k, dim=-1)\n        w = w.softmax(dim=-1)                  # 只在选中的 top-k 上归一化\n        for k in range(self.top_k):            # 逐 slot 聚合（工程上用 scatter/gather）\n            wk = w[..., k:k + 1]               # [B, T, 1]\n            ik = idx[..., k]                   # [B, T]\n            for i, e in enumerate(self.routed):\n                m = (ik == i).unsqueeze(-1).float()   # 命中第 i 个专家的 token\n                out = out + m * wk * e(x)\n        return out\n\nmoe = SharedExpertMoE(d=64, hidden=128)\nprint(moe(torch.randn(2, 5, 64)).shape)   # torch.Size([2, 5, 64])",
+          "sources": [
+            {
+              "title": "UniAE-MoE: A Unified Audio Encoder via Mixture of Experts",
+              "url": "https://arxiv.org/abs/2609.39199v1"
+            }
+          ]
+        }
+      ],
+      "selfCheck": {
+        "claims": [
+          "UniAE-MoE 是一个统一音频编码器，基于 MoE 架构建模跨域音频表征并提升下游理解。",
+          "它调研了主流音频编码器，并整合了其中下游能力更强的 Qwen2-Audio 与 Audio-Flamingo 3 的编码器。",
+          "它用带共享专家的 SwiGLU 改进编码器，以解耦编码器网络。",
+          "它引入两阶段指令微调，让模型更好适配多样下游任务。",
+          "它提出任务特定数据缩放（TSDS）技术来增强自身理解能力。",
+          "在 XARES-LLM 基准上拿到 0.802，达到 state-of-the-art。",
+          "在官方 Interspeech 2026 Audio Encoder Capability Challenge 中获得顶级表现，说明跨音频任务泛化稳健。",
+          "覆盖语音、音乐、通用音频三类域的统一音频理解。"
+        ],
+        "uncertain": [
+          "摘要中的 \\tool 是论文自己的 LaTeX 占位符，指代其系统 UniAE-MoE，本文件按此理解。",
+          "带共享专家的 SwiGLU-MoE 的精确形式（专家数量、top-k 取值、共享专家是否参与门控归一化）摘要未给，公式条目采用该领域标准形式（DeepSeekMoE 式共享专家 + SwiGLU），本文变体的精确形式需看原文。",
+          "两阶段指令微调每一阶段的具体内容、数据构成与训练顺序摘要未说明。",
+          "TSDS 的「数据缩放」具体机制（缩放样本数、采样权重还是其他）与调度策略摘要未说明。",
+          "XARES-LLM 的 0.802 分制、评测细节与对比基线摘要未给，无法判断提升幅度。",
+          "「top-tier performance」在 Interspeech 2026 挑战赛中的具体名次/指标摘要未给。"
+        ]
+      }
+    },
+    {
+      "id": "35bd80f6f875b3e6",
+      "tldr": "把提示优化评分矩阵的行从「实例正确性」换成「正负样本对排序」，列均值即 AUROC，多模态临床诊断上反超准确率配方。",
+      "keyPoints": [
+        "临床数据严重类别不平衡，恒输出多数的模型准确率可超 90% 却无临床价值",
+        "改用 AUROC：无阈值、只看正样本是否排在负样本前、对类别比例不变",
+        "GEPA 等反思式方法用二值正确性矩阵，列均值即 accuracy 并选候选",
+        "Ranking-PE 把每行换成 (正,负) 样本对，格记正样本是否得分更高",
+        "该替换用在 Pareto、反思反馈、最终选择三层，且不增加模型调用"
+      ],
+      "why": "多模态临床/长尾场景里 accuracy 会骗人；面试常问「不平衡数据为什么看 AUROC」「怎么把指标写进优化目标」，这篇给了可复述的答案。",
+      "difficulty": "medium",
+      "tags": [
+        "prompt-optimization",
+        "auroc",
+        "class-imbalance",
+        "multimodal-llm",
+        "evaluation-metric",
+        "pareto-optimization"
+      ],
+      "entities": [
+        "Ranking-PE",
+        "GEPA",
+        "MLLM",
+        "AUROC",
+        "MIMIC",
+        "Qwen3-VL-8B",
+        "MedGemma-4B",
+        "Wilcoxon-Mann-Whitney"
+      ],
+      "diagram": {
+        "kind": "matrix",
+        "title": "准确率矩阵 vs 排序矩阵",
+        "caption": "只把矩阵的行从「实例」换成「正负样本对」，列均值就从 Accuracy 变成 AUROC，而 Pareto 候选选择就发生在这些列均值上。",
+        "svg": "<svg viewBox='0 0 640 280' xmlns='http://www.w3.org/2000/svg'><text x='16' y='24' font-size='14' font-weight='bold' fill='currentColor'>accuracy-based 评分矩阵</text><text x='16' y='44' font-size='13' fill='currentColor'>行=评估实例，格=对该候选是否正确</text><rect x='16' y='58' width='250' height='120' fill='none' stroke='var(--line-1)'/><line x1='16' y1='98' x2='266' y2='98' stroke='var(--line-1)'/><line x1='16' y1='138' x2='266' y2='138' stroke='var(--line-1)'/><line x1='98' y1='58' x2='98' y2='178' stroke='var(--line-1)'/><line x1='182' y1='58' x2='182' y2='178' stroke='var(--line-1)'/><text x='42' y='83' font-size='13' fill='currentColor'>i1</text><text x='42' y='123' font-size='13' fill='currentColor'>i2</text><text x='42' y='163' font-size='13' fill='currentColor'>i3</text><text x='129' y='83' font-size='13' fill='currentColor'>1</text><text x='213' y='83' font-size='13' fill='currentColor'>0</text><text x='129' y='123' font-size='13' fill='currentColor'>0</text><text x='213' y='123' font-size='13' fill='currentColor'>1</text><text x='129' y='163' font-size='13' fill='currentColor'>1</text><text x='213' y='163' font-size='13' fill='currentColor'>1</text><text x='116' y='196' font-size='13' fill='currentColor'>p1</text><text x='200' y='196' font-size='13' fill='currentColor'>p2</text><text x='16' y='218' font-size='13' font-weight='bold' fill='var(--accent)'>列均值 = Accuracy</text><line x1='284' y1='116' x2='336' y2='116' stroke='var(--line-1)'/><polygon points='336,110 348,116 336,122' fill='currentColor'/><text x='286' y='106' font-size='13' fill='currentColor'>按行换</text><text x='374' y='24' font-size='14' font-weight='bold' fill='currentColor'>Ranking-PE 评分矩阵</text><text x='374' y='44' font-size='13' fill='currentColor'>行=正负样本对，格=正样本是否排更高</text><rect x='374' y='58' width='250' height='120' fill='none' stroke='var(--line-1)'/><line x1='374' y1='98' x2='624' y2='98' stroke='var(--line-1)'/><line x1='374' y1='138' x2='624' y2='138' stroke='var(--line-1)'/><line x1='456' y1='58' x2='456' y2='178' stroke='var(--line-1)'/><line x1='540' y1='58' x2='540' y2='178' stroke='var(--line-1)'/><text x='390' y='83' font-size='13' fill='currentColor'>p1</text><text x='390' y='123' font-size='13' fill='currentColor'>p2</text><text x='390' y='163' font-size='13' fill='currentColor'>p3</text><text x='487' y='83' font-size='13' fill='currentColor'>1</text><text x='571' y='83' font-size='13' fill='currentColor'>0</text><text x='487' y='123' font-size='13' fill='currentColor'>1</text><text x='571' y='123' font-size='13' fill='currentColor'>1</text><text x='487' y='163' font-size='13' fill='currentColor'>0</text><text x='571' y='163' font-size='13' fill='currentColor'>1</text><text x='474' y='196' font-size='13' fill='currentColor'>c1</text><text x='558' y='196' font-size='13' fill='currentColor'>c2</text><text x='374' y='218' font-size='13' font-weight='bold' fill='var(--accent)'>列均值 = 经验 AUROC（WMW 恒等式）</text><text x='16' y='242' font-size='13' fill='currentColor'>替换三层：Pareto 支配判定 / 反思 LM 的逐例反馈 / 最终候选选择（不增加模型调用）</text><text x='16' y='264' font-size='13' fill='currentColor'>Pareto 选择就发生在两张矩阵上，分数口径变了，被选中的候选也变了</text></svg>",
+        "spec": {
+          "type": "matrix",
+          "nodes": [
+            {
+              "label": "accuracy-based 评分矩阵（左）",
+              "detail": "行=评估实例 i1..i3；列=候选提示 p1,p2；格=该实例上是否正确（0/1）；列均值 = Accuracy，直接驱动候选选择"
+            },
+            {
+              "label": "Ranking-PE 评分矩阵（右）",
+              "detail": "行=正负样本对 (pos,neg)；列=候选提示 c1,c2；格=候选是否把正样本排得比配对的负样本更高（0/1）；列均值 = 经验 AUROC"
+            },
+            {
+              "label": "替换层级 1：Pareto 支配判定",
+              "detail": "决定 Pareto dominance 的分数矩阵本身换成 pairwise-ordering 行"
+            },
+            {
+              "label": "替换层级 2：反思反馈",
+              "detail": "喂给 reflection LM 的 per-example feedback 也换成对级排序信息"
+            },
+            {
+              "label": "替换层级 3：最终候选选择",
+              "detail": "final candidate selection 用 AUROC 口径而非 accuracy 口径"
+            },
+            {
+              "label": "收益",
+              "detail": "三项替换不增加模型调用、不需要 surrogate loss；MIMIC 三病种上 fine-tuned Qwen3-VL-8B +5.8 AUROC pp、MedGemma-4B +16.2 pp"
+            }
+          ],
+          "edges": [
+            {
+              "from": 0,
+              "to": 1,
+              "label": "把每个正确性行换成 (正,负) 对排序行"
+            },
+            {
+              "from": 1,
+              "to": 2,
+              "label": "列均值 = 经验 AUROC（Wilcoxon-Mann-Whitney 恒等式），据以判 Pareto 支配"
+            },
+            {
+              "from": 1,
+              "to": 3,
+              "label": "同一套排序口径喂给反思 LM 作逐例反馈"
+            },
+            {
+              "from": 1,
+              "to": 4,
+              "label": "同一套排序口径做最终候选选择"
+            },
+            {
+              "from": 2,
+              "to": 5,
+              "label": "三层同口径 -> 选出真正会排序的候选，且不增加模型调用"
+            }
+          ]
+        },
+        "alt": "左右两张评分矩阵对比图：左边 accuracy-based 矩阵行是评估实例、格是预测正确与否、列均值写 Accuracy；右边 Ranking-PE 矩阵行是正负样本对、格是正样本是否被排得更高、列均值写经验 AUROC；下方标注被替换的三层（Pareto 支配判定、反思反馈、最终候选选择）与 MIMIC 上的 AUROC 提升。"
+      },
+      "concepts": [
+        {
+          "name": "排序感知的提示进化 Ranking-Aware Prompt Evolution (Ranking-PE)",
+          "readable": "原本的提示自动进化是按「答对几道题」挑候选提示；它改成按「该给高分的正样本有没有被排在负样本前面」来挑，且这个改动贯穿搜索的每一步。",
+          "analogy": "像选班干部：以前只数「答对几道题」（题目简单时谁都能拿高分），现在改成两两 PK 的擂台赛——把每个病人和另一个病人配成一对，看模型是否给真阳性更高的分，谁的擂台胜率高谁当选。",
+          "analogyBreaksDown": "擂台类比只在两类、分数可比的场景成立；真实临床是多疾病、多亚型、多模态输入，配成对的两个样本可能来自不同分布（不同医院/模态缺失），此时「排序更高」不必然等于临床意义上更可靠，AUROC 也仍是阈值无关的整体量。",
+          "mechanism": "关键设计是「换行不换机制」：把评分矩阵的行从「实例是否答对」换成「(正,负) 对里正样本是否得分更高」，列均值就从 accuracy 变成经验 AUROC；同一口径用于 Pareto 支配、反思反馈与最终选择，不额外调模型、不加代理损失。",
+          "visual": "画一个共享列轴的双栏热力图：横轴都是候选提示（左 p1,p2…；右 c1,c2…），纵轴左边是实例 i1..in、右边是样本对 (pos,neg)；格子用 currentColor 深浅表示 0/1。两栏各在底部画一条柱状/折线，左标 Accuracy、右标 AUROC，中间用粗箭头连起来表示「换行」这一步。",
+          "prerequisites": [
+            "AUROC / ROC 曲线的含义",
+            "类别不平衡下 accuracy 失效的原因",
+            "提示优化与反思式搜索（如 GEPA）的基本流程",
+            "Pareto 支配与多目标选择的基本概念"
+          ],
+          "selfTest": [
+            "为什么把行从实例换成 (正,负) 对之后，列均值就等于 AUROC？",
+            "Ranking-PE 替换的是哪三层？为什么说它没有增加模型调用？",
+            "如果临床数据 95% 是阴性，一个恒输出阴性的模型 accuracy 和 AUROC 各是多少？"
+          ],
+          "formula": "\\mathrm{AUROC} = \\frac{1}{|\\mathcal{P}||\\mathcal{N}|}\\sum_{i \\in \\mathcal{P}}\\sum_{j \\in \\mathcal{N}} \\mathbb{1}[s_i > s_j]"
+        },
+        {
+          "name": "Wilcoxon-Mann-Whitney 恒等式 Wilcoxon-Mann-Whitney Identity",
+          "readable": "不用扫所有阈值画 ROC 再算面积：把所有 (正,负) 样本对拿来比大小，正样本得分更高的比例，就等于 AUROC 的无偏估计。",
+          "analogy": "像高考排名：与其先划一条分数线再看多少人上线（阈值一变结论就变），不如把所有考生两两比较，看正类考生的名次压制了多大比例的负类考生。",
+          "analogyBreaksDown": "它把 AUROC 化简成「成对比较的平均」，代价是丢掉了分数校准信息且计算量按正负样本数乘积增长；当分数大量打平（tie）时「更高」的判定需要约定 0.5 计分，否则等式不成立，而摘要并没有交代这篇论文如何处理 tie。",
+          "mechanism": "价值在于把「阈值无关的排序指标」变成「逐格可平均的矩阵运算」：每格是单个 (正,负) 对的 0/1 结果，列均值天然就是 AUROC，于是同一矩阵既能算指标，又直接充当 Pareto 支配与候选选择的评分，把排序指标塞进既有提示进化流水线。",
+          "visual": "左侧画两条打分分布（正类、负类）叠加，用竖线表示所有可能的阈值；右侧画一个大矩阵/散点格，行是正样本、列是负样本，格色深浅表示「正样本是否得分更高」，再在底部用箭头把「格子的平均值」指到 AUROC 数值上。",
+          "prerequisites": [
+            "ROC 曲线与 AUC 的定义",
+            "指示函数与期望",
+            "tie / 并列得分对排序指标的常见处理"
+          ],
+          "selfTest": [
+            "WMW 恒等式里每个格子统计的是什么量？",
+            "为什么 AUROC 对正负样本比例不敏感，accuracy 却敏感？",
+            "AUROC = 0.5 代表模型有什么性质？"
+          ],
+          "formula": "\\mathrm{AUROC} = \\frac{U}{n_+ n_-},\\quad U = \\sum_{i \\in \\mathcal{P}}\\sum_{j \\in \\mathcal{N}} \\mathbb{1}[s_i > s_j]"
+        }
+      ],
+      "formulas": [
+        {
+          "id": "f-pairwise-auroc-matrix",
+          "name": "成对排序矩阵与经验 AUROC（Pairwise-Ordering Matrix and Empirical AUROC）",
+          "category": "multimodal",
+          "glyph": "≻",
+          "tags": [
+            "auroc",
+            "pairwise-ranking",
+            "wilcoxon-mann-whitney",
+            "class-imbalance"
+          ],
+          "latex": "M_{k,(i,j)} = \\mathbb{1}\\left[s_k(x_i^{+}) > s_k(x_j^{-})\\right],\\quad i \\in \\mathcal{P},\\; j \\in \\mathcal{N}",
+          "html": "<code>AUROC_k = (1/(|P|*|N|)) * sum_{i in P} sum_{j in N} 1[s_k(x_i^+) > s_k(x_j^-)]</code>",
+          "symbols": [
+            [
+              "k",
+              "候选提示的编号（矩阵的列索引），每个候选对应一列"
+            ],
+            [
+              "i, j",
+              "正样本索引与负样本索引，一个 (i,j) 就是一个评估行（pair）"
+            ],
+            [
+              "P, N",
+              "正样本集合与负样本集合，大小分别为 |P|、|N|（摘要未给具体数值）"
+            ],
+            [
+              "s_k(x)",
+              "候选提示 k 让 MLLM 对输入 x 输出的分数（排序用的标量），摘要未说明是否做了归一化"
+            ],
+            [
+              "\\mathbb{1}[·]",
+              "指示函数，括号内条件成立取 1、否则取 0（tie 的处理摘要未说明）"
+            ],
+            [
+              "M_{k,(i,j)}",
+              "排名感知评分矩阵的第 (i,j) 行、第 k 列元素，取值 0/1"
+            ],
+            [
+              "\\mathrm{AUROC}_k",
+              "候选 k 的经验 AUROC，等于第 k 列的平均值，量纲为概率∈[0,1]"
+            ]
+          ],
+          "derivation": [
+            "问题：临床数据严重类别不平衡，accuracy 驱动的提示进化会把「猜多数类」的候选选出来，而这种模型在临床上无用。",
+            "换指标：AUROC 无阈值、只要求把正样本排在负样本之前，并且对类别比例不变，正是想要的排序口径。",
+            "换数据组织：把评分矩阵的每一行从「一个实例是否答对」改成「一个 (正,负) 实例对里正样本是否得分更高」，格值记为 0/1。",
+            "得结论：对这样的 0/1 行取列均值，恰好等于「正样本得分高于配对负样本」的比例，也就是经验 AUROC（Wilcoxon-Mann-Whitney / Mann-Whitney U 统计量的均值形式）。",
+            "接回搜索：这个列均值同时充当 Pareto 支配判据、反思 LM 的逐例反馈口径与最终候选选择口径，因此不需要额外的模型调用或代理损失。"
+          ],
+          "analogy": "像用两两对局取代「答对题数」来排选手名次：不管题目难易与人数比例，只看每一场对局里谁赢，胜率就是实力排名。",
+          "pitfalls": [
+            "把「列均值」当成普通平均就丢掉了关键：它之所以是 AUROC，前提是行已经换成 (正,负) 对，直接对实例正确率矩阵按对分组取均值，与真正的 pairwise 矩阵并不等价。",
+            "tie 的处理：指示函数只给 1/0，分数打平时标准做法按 0.5 计分，否则经验 AUROC 会系统性偏低；论文如何定义 tie 需要核实原文。",
+            "计算与采样成本：配对数 |P|×|N| 随数据量平方增长，工程上通常固定负样本采样量或分批做无偏估计，但摘要未说明具体实现。",
+            "AUROC 只衡量排序、不衡量校准：AUROC 高不代表概率可信，用它的阈值直接做临床决策仍需要另行校准。"
+          ],
+          "code": "import torch\n\ndef ranking_aware_scores(logits, labels):\n    \"\"\"logits/labels: [n_instances]; 返回每个候选一列的排序矩阵与列均值(AUROC)。\n    这里演示单候选的情形，与摘要的 Wilcoxon-Mann-Whitney 恒等式一致。\"\"\"\n    pos = logits[labels == 1]\n    neg = logits[labels == 0]\n    # 成对排序矩阵 M[i, j] = 1[pos_i 得分 > neg_j 得分]\n    M = (pos[:, None] > neg[None, :]).float()\n    # 列均值即经验 AUROC\n    empirical_auroc = M.mean().item()\n    # 等价的向量化写法：U / (n_pos * n_neg)\n    u_statistic = M.sum().item()\n    assert abs(empirical_auroc - u_statistic / (pos.numel() * neg.numel())) < 1e-6\n    return M, empirical_auroc\n\nif __name__ == \"__main__\":\n    logits = torch.tensor([2.0, 0.1, 0.3, -1.0, 1.5, 3.0])  # 模型打分（第 3 个正样本分数偏低）\n    labels = torch.tensor([1, 0, 1, 0, 0, 1])              # 正负标签\n    M, auroc = ranking_aware_scores(logits, labels)\n    print(M)\n    print(\"empirical AUROC =\", round(auroc, 4), \"| shape:\", tuple(M.shape))",
+          "sources": [
+            {
+              "title": "Ranking-Aware Prompt Optimization for Multimodal Clinical Diagnosis",
+              "url": "https://arxiv.org/abs/2609.40361v1"
+            }
+          ]
+        }
+      ],
+      "selfCheck": {
+        "claims": [
+          "MLLM 的适配流程仍以 accuracy 类目标为主（adaptation pipelines remain anchored to accuracy-based objectives）。",
+          "临床数据严重类别不平衡，恒输出多数的预测器准确率可超过 90% 但临床无用。",
+          "论文主张评估与优化 AUROC：无阈值、把正样本排在负样本之前、对类别平衡不变。",
+          "GEPA 等反思式方法用二值评分矩阵：一行一个评估实例、一列一个候选提示，格记录逐实例正确性，列均值即 accuracy 并驱动候选选择。",
+          "Ranking-PE 把每个正确性行替换为 (正,负) 实例对上的 pairwise-ordering 行，格值为 1 表示候选给正样本打分高于配对的负样本。",
+          "该列均值等于经验 AUROC，依据是 Wilcoxon-Mann-Whitney 恒等式。",
+          "该替换应用在提示进化搜索读取的三个层面：决定 Pareto 支配的评分矩阵、给反思 LM 的逐例反馈、最终候选选择。",
+          "替换不增加模型调用、不使用 surrogate loss。",
+          "在 MIMIC 的三个疾病上，accuracy 驱动的提示进化可能损害排序，Ranking-PE 扭转了这一点：相比 accuracy 配方，fine-tuned Qwen3-VL-8B 上 +5.8 AUROC pp、MedGemma-4B 上 +16.2 pp。",
+          "消融表明医学级视觉骨干（vision-encoder-tuned SFT 或医学预训练）是提示搜索无法替代的前提。",
+          "该配方把反思式提示进化从纯文本数据扩展到多模态临床诊断。"
+        ],
+        "uncertain": [
+          "摘要只说格值记「1 if the candidate scores the positive higher than the paired negative」，未交代分数打平（tie）时如何计分；标准做法是按 0.5，本文变体的精确形式需看原文。",
+          "正负样本对如何构造、是否全配对或采样、每个实例参与多少对，摘要未说明。",
+          "候选提示的 scalar score s_k(x) 的具体来源（是 logit、是生成真/假的对数概率、还是别的打分口径）摘要未说明。",
+          "「+5.8 / +16.2 AUROC pp」在不同病种/配置下的分布与方差、baseline 数值本身，摘要未给出。",
+          "三层替换各自的消融增量（哪一层贡献最大）摘要只提到做了消融，未给数字。",
+          "「no extra model calls」的具体含义（是沿用同一批 rollout，还是另有复用方式）需看原文正文确认。",
+          "AUROC 作为搜索目标是不可微的 0/1 计数，摘要明确说没有 surrogate loss，因此具体搜索动力学（只靠 Pareto/离散选择）需看原文。"
+        ]
+      }
+    },
+    {
+      "id": "e36e0b5b2f469a8b",
+      "tldr": "Dream4ACT 把关节配置渲染成多视角 action views，用一个模型统一跨本体视频-动作建模。",
+      "keyPoints": [
+        "共享视觉动作接口：从四个虚拟相机渲染目标关节配置",
+        "用 URDF 正运动学保留各本体特有的铰接几何结构",
+        "masked flow-matching 按掩码切换三种动力学任务",
+        "免训练、URDF 约束的多视角恢复还原可执行动作",
+        "RoboTwin 成功率 88.98%、TriWorldBench 65.66"
+      ],
+      "why": "跨本体动作表征不统一是世界模型与 VLA 的核心卡点；本文把动作搬进图像空间以借用视频先验，面试常被追问。",
+      "difficulty": "hard",
+      "tags": [
+        "world-model",
+        "video-generation",
+        "diffusion-transformer",
+        "flow-matching",
+        "cross-embodiment",
+        "robot-manipulation"
+      ],
+      "entities": [
+        "Dream4ACT",
+        "action views",
+        "URDF forward kinematics",
+        "video autoencoder",
+        "diffusion transformer",
+        "masked flow-matching",
+        "RoboTwin 2.0",
+        "TriWorldBench"
+      ],
+      "diagram": {
+        "kind": "architecture",
+        "title": "Dream4ACT 架构与任务切换",
+        "caption": "关节状态先渲染成 action views，再由一个共享 DiT 按掩码位置切换三种动力学任务，最后免训练恢复成可执行动作。",
+        "svg": "<svg viewBox='0 0 480 200' xmlns='http://www.w3.org/2000/svg'><defs><marker id='ar' markerWidth='7' markerHeight='6' refX='6' refY='3' orient='auto'><polygon points='0 0 7 3 0 6' fill='currentColor'/></marker></defs><rect x='12' y='12' width='456' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-dasharray='4 3'/><text x='20' y='28' font-size='13' fill='currentColor'>动作输入统一：关节状态 → URDF 正运动学 → 四相机 → action views</text><rect x='44' y='36' width='52' height='46' rx='6' fill='none' stroke='currentColor'/><text x='70' y='55' font-size='13' text-anchor='middle' fill='currentColor'>关节状态</text><text x='70' y='69' font-size='13' text-anchor='middle' fill='currentColor'>q 向量</text><line x1='98' y1='59' x2='114' y2='59' stroke='currentColor' stroke-width='1.5' marker-end='url(#ar)'/><rect x='116' y='36' width='52' height='46' rx='6' fill='none' stroke='currentColor'/><text x='142' y='55' font-size='13' text-anchor='middle' fill='currentColor'>URDF FK</text><text x='142' y='69' font-size='13' text-anchor='middle' fill='currentColor'>正运动学</text><line x1='170' y1='59' x2='186' y2='59' stroke='currentColor' stroke-width='1.5' marker-end='url(#ar)'/><rect x='188' y='36' width='52' height='46' rx='6' fill='none' stroke='currentColor'/><text x='214' y='55' font-size='13' text-anchor='middle' fill='currentColor'>四相机</text><text x='214' y='69' font-size='13' text-anchor='middle' fill='currentColor'>多视角渲染</text><line x1='242' y1='59' x2='258' y2='59' stroke='currentColor' stroke-width='1.5' marker-end='url(#ar)'/><rect x='260' y='36' width='52' height='46' rx='6' fill='none' stroke='currentColor'/><text x='286' y='55' font-size='13' text-anchor='middle' fill='currentColor'>action views</text><text x='286' y='69' font-size='13' text-anchor='middle' fill='currentColor'>共享接口</text><line x1='314' y1='59' x2='330' y2='59' stroke='currentColor' stroke-width='1.5' marker-end='url(#ar)'/><rect x='332' y='36' width='52' height='46' rx='6' fill='none' stroke='currentColor'/><text x='358' y='55' font-size='13' text-anchor='middle' fill='currentColor'>video VAE</text><text x='358' y='69' font-size='13' text-anchor='middle' fill='currentColor'>观测共享</text><line x1='386' y1='59' x2='402' y2='59' stroke='currentColor' stroke-width='1.5' marker-end='url(#ar)'/><rect x='404' y='36' width='52' height='46' rx='6' fill='none' stroke='currentColor'/><text x='430' y='55' font-size='13' text-anchor='middle' fill='currentColor'>DiT</text><text x='430' y='69' font-size='13' text-anchor='middle' fill='currentColor'>扩散骨干</text><text x='240' y='94' font-size='13' text-anchor='middle' fill='currentColor'>掩码哪些未来序列 → 切换任务</text><rect x='44' y='102' width='52' height='46' rx='6' fill='none' stroke='currentColor'/><text x='70' y='121' font-size='13' text-anchor='middle' fill='currentColor'>前向动力学</text><text x='70' y='135' font-size='13' text-anchor='middle' fill='currentColor'>预测未来</text><line x1='98' y1='125' x2='114' y2='125' stroke='currentColor' stroke-width='1.5' marker-end='url(#ar)'/><rect x='116' y='102' width='52' height='46' rx='6' fill='none' stroke='currentColor'/><text x='142' y='121' font-size='13' text-anchor='middle' fill='currentColor'>逆向动力学</text><text x='142' y='135' font-size='13' text-anchor='middle' fill='currentColor'>由观测推动作</text><line x1='170' y1='125' x2='186' y2='125' stroke='currentColor' stroke-width='1.5' marker-end='url(#ar)'/><rect x='188' y='102' width='52' height='46' rx='6' fill='none' stroke='currentColor'/><text x='214' y='121' font-size='13' text-anchor='middle' fill='currentColor'>联合生成</text><text x='214' y='135' font-size='13' text-anchor='middle' fill='currentColor'>观测+动作</text><line x1='242' y1='125' x2='258' y2='125' stroke='currentColor' stroke-width='1.5' marker-end='url(#ar)'/><rect x='260' y='102' width='52' height='46' rx='6' fill='none' stroke='currentColor'/><text x='286' y='121' font-size='13' text-anchor='middle' fill='currentColor'>预测 views</text><text x='286' y='135' font-size='13' text-anchor='middle' fill='currentColor'>动作图像</text><line x1='314' y1='125' x2='330' y2='125' stroke='currentColor' stroke-width='1.5' marker-end='url(#ar)'/><rect x='332' y='102' width='52' height='46' rx='6' fill='none' stroke='currentColor'/><text x='358' y='121' font-size='13' text-anchor='middle' fill='currentColor'>多视角恢复</text><text x='358' y='135' font-size='13' text-anchor='middle' fill='currentColor'>免训练</text><line x1='386' y1='125' x2='402' y2='125' stroke='currentColor' stroke-width='1.5' marker-end='url(#ar)'/><rect x='404' y='102' width='52' height='46' rx='6' fill='none' stroke='currentColor'/><text x='430' y='121' font-size='13' text-anchor='middle' fill='currentColor'>可执行动作</text><text x='430' y='135' font-size='13' text-anchor='middle' fill='currentColor'>闭环控制</text><text x='240' y='178' font-size='13' text-anchor='middle' fill='currentColor'>RoboTwin 2.0 成功率 88.98% ｜ TriWorldBench 65.66</text></svg>",
+        "spec": {
+          "type": "architecture",
+          "nodes": [
+            {
+              "label": "关节状态 q",
+              "detail": "目标关节配置向量"
+            },
+            {
+              "label": "URDF 正运动学",
+              "detail": "按本体模型算末端与连杆位姿"
+            },
+            {
+              "label": "四个虚拟相机",
+              "detail": "四路预设视角渲染"
+            },
+            {
+              "label": "action views",
+              "detail": "共享视觉动作接口"
+            },
+            {
+              "label": "共享 video VAE",
+              "detail": "观测与动作共用同一自编码器"
+            },
+            {
+              "label": "扩散 Transformer",
+              "detail": "与观测序列共享同一 DiT"
+            },
+            {
+              "label": "掩码未来序列",
+              "detail": "改变被破坏的未来段即切换任务"
+            },
+            {
+              "label": "前向动力学",
+              "detail": "由当前观测预测未来"
+            },
+            {
+              "label": "逆向动力学",
+              "detail": "由观测序列推动作序列"
+            },
+            {
+              "label": "联合观测-动作生成",
+              "detail": "一次生成观测与动作"
+            },
+            {
+              "label": "预测 action views",
+              "detail": "以图像形式输出的动作"
+            },
+            {
+              "label": "免训练多视角恢复",
+              "detail": "URDF 约束、无学习解码器"
+            },
+            {
+              "label": "可执行动作序列",
+              "detail": "回喂机器人做闭环操作"
+            }
+          ],
+          "edges": [
+            {
+              "from": 0,
+              "to": 1,
+              "label": "输入关节配置"
+            },
+            {
+              "from": 1,
+              "to": 2,
+              "label": "解算铰接位姿"
+            },
+            {
+              "from": 2,
+              "to": 3,
+              "label": "四视角渲染"
+            },
+            {
+              "from": 3,
+              "to": 4,
+              "label": "与观测共享编码"
+            },
+            {
+              "from": 4,
+              "to": 5,
+              "label": "潜空间序列"
+            },
+            {
+              "from": 5,
+              "to": 6,
+              "label": "按掩码做 flow-matching"
+            },
+            {
+              "from": 6,
+              "to": 7,
+              "label": "掩未来观测/动作"
+            },
+            {
+              "from": 6,
+              "to": 8,
+              "label": "掩过去动作"
+            },
+            {
+              "from": 6,
+              "to": 9,
+              "label": "同时掩观测与动作"
+            },
+            {
+              "from": 7,
+              "to": 10,
+              "label": "生成动作 views"
+            },
+            {
+              "from": 8,
+              "to": 10,
+              "label": "输出动作 views"
+            },
+            {
+              "from": 9,
+              "to": 10,
+              "label": "联合输出"
+            },
+            {
+              "from": 10,
+              "to": 11,
+              "label": "多视角反解"
+            },
+            {
+              "from": 11,
+              "to": 12,
+              "label": "恢复关节轨迹"
+            }
+          ]
+        },
+        "alt": "架构图：关节状态经 URDF 正运动学渲染成四个虚拟相机的 action views，送入共享 video VAE 与 DiT，用 masked flow-matching 按掩码切换前向动力学、逆向动力学与联合生成三种任务，预测的 action views 再经免训练、URDF 约束的多视角恢复得到可执行动作。"
+      },
+      "concepts": [
+        {
+          "name": "共享视觉动作接口 Shared Visual Action Interface（action views）",
+          "readable": "把机器人的关节配置用 URDF 正运动学渲染成四个虚拟相机拍到的图像，当成「动作的照片」。这样不同机器人的动作都变成同一种图像格式，能和视频观测共用同一个编码器和生成模型。",
+          "analogy": "像快递统一用同一种标准纸箱：不管里面装的是鞋子还是杯子，分拣线（视频 VAE 和 DiT）都按同一套规格搬运，不用为每种货物单独修一条线。",
+          "analogyBreaksDown": "纸箱只是外壳，内容仍被完整保留；而渲染是有损的——从图像反推关节角存在多解与遮挡，必须靠 URDF 约束和多视角联合求解，这正是本文要额外做恢复机制的原因。",
+          "mechanism": "关节空间动作缺乏图像结构、跨本体维度语义不一致。接口用 URDF 正运动学从四个预设虚拟相机渲染目标关节配置，保留本体铰接几何，又让观测与动作共用同一 video autoencoder 与 diffusion transformer。",
+          "visual": "左侧画一条机器人手臂从初始姿态到目标姿态的关节轨迹，中间画分成四格的一组渲染图（每格一个固定视角，用同一种颜色表示同一连杆，便于跨本体对应），右侧把「关节空间向量」画成一排长短不一的条形，对比图像版本的四格图。",
+          "prerequisites": [
+            "刚体变换与齐次变换矩阵",
+            "URDF 与正运动学（joint/link、末端位姿）",
+            "相机内外参与多视角几何基础",
+            "VAE/扩散模型的潜空间表征概念"
+          ],
+          "selfTest": [
+            "为什么关节空间动作向量难以直接送进视频生成模型？",
+            "action views 为什么能让不同本体共享同一个 VAE 和 DiT？",
+            "相比让模型直接学一个本体专用解码器，这个接口的代价是什么？"
+          ],
+          "formula": "T_{0\\to E}(q)=\\prod_{i\\in\\mathrm{chain}(E)} T_{i-1,i}(q_i)"
+        },
+        {
+          "name": "掩码流匹配 Masked Flow-Matching",
+          "readable": "训练时先把一段未来序列用噪声破坏，再用一个速度场把噪声推回干净数据，但只在被掩码的位置算损失。掩掉哪些位置就决定模型学的是哪种任务：掩未来是前向动力学，掩过去动作是逆向动力学。",
+          "analogy": "同一张合影，每次用不干胶遮住不同的人：遮住后排就练「猜后排长什么样」，遮住前排就练「猜前排是谁」。一个模型练会了补齐所有被遮住的区域。",
+          "analogyBreaksDown": "照片里被遮的人有唯一答案，而动作序列未来并不唯一；本文靠对采样噪声 z 的回归来监督，学的是某条具体插值路径，不会显式覆盖全部未来分布。",
+          "mechanism": "摘要说明：通过变化哪些未来序列被破坏（corrupted），一个联合训练的模型即可支持前向动力学、逆向动力学与联合观测-动作生成三种能力，无需为每个任务单独设头或单独训模型。任务身份由掩码分布而非网络结构决定，因此切换任务只要换采样掩码。",
+          "visual": "横轴画时间步，上面一行是「可见/被破坏」的二值条带（currentColor 实心=可见，var(--accent) 斜纹=被破坏），下面一行是对应潜变量序列：可见位置画成实心方块，被破坏位置画成虚框加噪声点，并用箭头标出只在被破坏位置产生的速度预测。",
+          "prerequisites": [
+            "扩散模型与 flow matching / 连续归一化流",
+            "条件生成与 classifier-free guidance 的基本概念",
+            "序列建模中的自回归与掩码建模（如 MAE、masked prediction）"
+          ],
+          "selfTest": [
+            "同一个模型怎样靠「掩哪些未来序列」切换前向与逆向动力学？",
+            "为什么 flow-matching 需要 x_t=(1-t)x_0+t\\epsilon 这样的插值样本？",
+            "损失只在被掩码位置计算，会漏掉什么监督信号？"
+          ],
+          "formula": "\\mathcal{L}(\\theta)=\\mathbb{E}_{t,x_0,\\epsilon,m}\\Big[\\big\\|m\\odot\\big(v_\\theta(x_t,t)-u_t\\big)\\big\\|_2^2\\Big]"
+        }
+      ],
+      "formulas": [
+        {
+          "id": "f-masked-flow-matching",
+          "name": "掩码流匹配损失（Masked Flow-Matching Loss）",
+          "category": "worldmodel",
+          "glyph": "v",
+          "tags": [
+            "flow-matching",
+            "masked-modeling",
+            "world-model",
+            "video-action"
+          ],
+          "latex": "\\mathcal{L}(\\theta)=\\mathbb{E}_{t\\sim\\mathcal{U}[0,1],\\,x_0\\sim p_{\\mathrm{data}},\\,\\epsilon\\sim\\mathcal{N}(0,I),\\,m\\sim\\mathcal{M}}\\Big[\\big\\|\\,m\\odot\\big(v_\\theta(x_t,t)-u_t\\big)\\big\\|_2^2\\Big],\\quad x_t=(1-t)x_0+t\\epsilon,\\;\\;u_t=\\epsilon-x_0",
+          "symbols": [
+            [
+              "x_0",
+              "干净潜序列，由 action views 与观测经同一 video VAE 编码得到；形状 [B, C, T, H, W]（维度细节待核实）"
+            ],
+            [
+              "\\epsilon",
+              "标准高斯噪声，形状同 x_0"
+            ],
+            [
+              "t",
+              "连续时间步，t∈[0,1]；本式约定 t=0 为干净、t=1 为纯噪声"
+            ],
+            [
+              "x_t",
+              "插值后的带噪潜序列，形状同 x_0"
+            ],
+            [
+              "u_t",
+              "条件流匹配的目标速度场 \\epsilon - x_0；本式等价于标准写作 x_1-x_0 的形式，符号只差一个时间方向约定"
+            ],
+            [
+              "v_\\theta",
+              "扩散 Transformer 预测的速度场，(x_t, t, 条件) → 同形状张量"
+            ],
+            [
+              "m",
+              "掩码张量（0/1），在序列维/帧维上指示哪些位置被破坏；二值形式对应只在 corrupted 位置算损失"
+            ],
+            [
+              "\\mathcal{M}",
+              "掩码采样分布，决定被破坏的是未来观测、过去动作还是两者（本文任务切换的来源；精确采样策略待核实）"
+            ],
+            [
+              "\\odot",
+              "逐元素相乘（Hadamard 积）"
+            ]
+          ],
+          "derivation": [
+            "观察与动作序列形状不同、维度与语义随本体变化，先用共享 video VAE 把它们统一编码成同构的潜序列 x_0（action views 是动作侧输入）。",
+            "取标准高斯噪声 \\epsilon 与随机时间 t，按直线插值 x_t=(1-t)x_0+t\\epsilon 造出带噪样本。",
+            "对这条直线路径求导得到目标速度场 u_t=\\epsilon-x_0，令网络回归该速度即可学到从噪声到数据的常微分方程。",
+            "为覆盖三种动力学任务，引入掩码 m 只在被破坏的位置计算速度误差：m\\odot(v_\\theta-u_t)，可见位置不产生梯度。",
+            "推理时选择不同掩码（掩未来 / 掩过去动作 / 两者都掩）即可用同一网络分别做前向动力学、逆向动力学与联合观测-动作生成。"
+          ],
+          "analogy": "像修一张被贴了不干胶的照片：只要求你把被贴住的地方补成原样（可见部分不算分）。换一批贴纸位置，就相当于换成练「补未来」或「补动作」，模型却始终是同一个。",
+          "pitfalls": [
+            "把掩码理解成 attention mask：这里的 m 是逐位置的损失权重，不改变注意力可见性。",
+            "两者混谈：flow matching 与 diffusion 的噪声调度不同，别把 u_t=\\epsilon-x_0 与 DDPM 的 \\epsilon-prediction 混为一谈。",
+            "以为一个模型能同时生成三种任务就代表共享了全部权重：摘要只说共享 video VAE 与 DiT，是否另有任务相关条件未说明。",
+            "用像素级重建损失的成功反推物理可执行性：摘要未给出关节级精度或力控指标，闭环成功率才是它报告的指标。"
+          ],
+          "code": "import torch, torch.nn as nn\n\nLATENT, VIEWS = 4, 4\n\nclass VideoVAE(nn.Module):\n    \"\"\"占位：观测与 action views 共享的 video autoencoder。\"\"\"\n    def encode(self, x):\n        return x  # x: [B, VIEWS*3, T, H, W] -> z: [B, C, T, H, W]\n\nclass DiT(nn.Module):\n    \"\"\"占位：与观测共享的 diffusion transformer，预测速度场。\"\"\"\n    def __init__(self, ch):\n        super().__init__()\n        self.net = nn.Sequential(nn.Conv3d(ch, ch, 1), nn.SiLU(), nn.Conv3d(ch, ch, 1))\n\n    def forward(self, x_t, t, cond):\n        return self.net(x_t)\n\nvae, dit = VideoVAE(), DiT(VIEWS * 3)\n\n# 掩码决定任务：True = 被破坏(算损失), False = 可见(条件)\nMASK = {\n    'forward_dynamics': lambda B, T: torch.zeros(B, T, dtype=torch.bool).index_fill_(1, torch.arange(T // 2, T), True),\n    'inverse_dynamics': lambda B, T: torch.ones(B, T, dtype=torch.bool).index_fill_(1, torch.arange(0, T // 2), False),\n    'joint_generation': lambda B, T: torch.ones(B, T, dtype=torch.bool),\n}\n\ndef masked_flow_matching_step(views, cond, task='forward_dynamics', seed=0):\n    \"\"\"views: [B, VIEWS*3, T, H, W] 观测与 action views 拼成的序列。\"\"\"\n    g = torch.Generator().manual_seed(seed)\n    x0 = vae.encode(views)\n    B, C, T = x0.shape[0], x0.shape[1], x0.shape[2]\n    eps = torch.randn(x0.shape, generator=g)\n    t = torch.rand(B, 1, 1, 1, 1, generator=g)\n    m = MASK[task](B, T).to(x0.dtype).view(B, 1, T, 1, 1)  # 逐帧 0/1 掩码\n    x_t = (1 - t) * x0 + t * eps   # t=0 干净, t=1 纯噪声\n    u_t = eps - x0                 # 目标速度场\n    v = dit(x_t, t, cond)          # 预测速度场\n    return ((m * (v - u_t)) ** 2).sum() / m.sum().clamp(min=1.0)\n\nloss = masked_flow_matching_step(torch.randn(2, VIEWS * 3, 8, 32, 32), None)\nloss.backward()\nprint(loss.item(), '| grad ok:', dit.net[0].weight.grad is not None)\n",
+          "sources": [
+            {
+              "title": "Dream4ACT: A Shared Visual Action Interface for Multi-Embodiment Video-Action Modeling",
+              "url": "https://arxiv.org/abs/2609.40153v1"
+            }
+          ]
+        }
+      ],
+      "selfCheck": {
+        "claims": [
+          "视频生成模型为具身观测-动作建模提供强时空先验（摘要原句）。",
+          "关节空间动作向量缺乏显式图像空间结构，且维度与语义随本体变化。",
+          "末端执行器可视化不指定机器人执行所需的完整铰接构型。",
+          "Dream4ACT 是面向跨本体联合视频-动作建模的世界模型。",
+          "共享视觉动作接口 action views 用 URDF 正运动学从四个预设虚拟相机渲染目标关节配置。",
+          "该共享视觉表示保留本体特有的铰接几何，并使观测与动作序列共享同一 video autoencoder 与 diffusion transformer。",
+          "通过 masked flow-matching，单一联合训练模型按「哪些未来序列被破坏」支持前向动力学、逆向动力学与联合观测-动作生成。",
+          "提出免训练、URDF 约束的多视角恢复机制，从预测的 action views 还原可执行动作序列，且不含学习的本体专用解码器。",
+          "在 RoboTwin 2.0 上平均成功率 88.98%，在 TriWorldBench 上总分 65.66。",
+          "摘要称该接口支持有效闭环操作与有竞争力的动作条件多视角预测。"
+        ],
+        "uncertain": [
+          "掩码流匹配损失的精确形式（时间方向约定、是否用 x_1-x_0、掩码采样分布与是否加分类器无关引导）需看原文；本条目用该领域标准条件流匹配形式并注明。",
+          "四个虚拟相机的位置/内参是预设还是学习得到，摘要只说 prescribed virtual cameras，需核实。",
+          "action views 的渲染模态（RGB/深度/骨架）、分辨率，以及共享 video VAE 是自训还是冻结复用，摘要未提。",
+          "免训练多视角恢复的具体目标函数（重投影误差还是 URDF 约束优化）与是否需要迭代求解，摘要未提。",
+          "88.98% 与 65.66 的任务划分、评测协议与基线对比表，摘要未给出，需查原文表格。",
+          "概念类比里提到的「反推关节角存在多解与遮挡」「力控指标」等属于多视角几何的通用推断，摘要未陈述，仅作理解辅助，不构成事实断言。"
+        ]
+      }
+    },
+    {
+      "id": "764c0c088c2c1372",
+      "tldr": "联合优化一步流匹配转换模块与轻量内容编码器，零样本语音转换质量更高、推理快约9倍。",
+      "keyPoints": [
+        "一步模型 MeanVoiceFlow 的瓶颈是计算量大的内容编码器",
+        "MeanVoiceFlow2 联合优化流式转换模块与高效内容编码器",
+        "训练用 MeanVoiceFlow 做转换蒸馏 + 真实数据重建",
+        "再加 diffusion-GAN、样本混合与教师引导条件增强",
+        "零样本 VC 感知质量更高，推理约 9 倍加速，说话人相似度相当"
+      ],
+      "why": "一步流匹配+蒸馏+GAN 是生成式后训练的常见组合；9 倍推理加速与联合优化编码器的思路可迁移到 TTS、语音转换与多模态生成部署。",
+      "difficulty": "medium",
+      "tags": [
+        "voice-conversion",
+        "flow-matching",
+        "one-step-generation",
+        "knowledge-distillation",
+        "diffusion-gan",
+        "zero-shot"
+      ],
+      "entities": [
+        "MeanVoiceFlow",
+        "MeanVoiceFlow2",
+        "diffusion-GAN",
+        "zero-shot voice conversion"
+      ],
+      "diagram": {
+        "kind": "architecture",
+        "title": "MeanVoiceFlow2 结构与监督",
+        "caption": "轻量内容编码器与一步 mean-flow 转换模块联合优化，训练侧由蒸馏、真实重建、diffusion-GAN 三路监督。",
+        "svg": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 200'><defs><marker id='arw' markerWidth='8' markerHeight='8' refX='7' refY='4' orient='auto'><polygon points='0,0 8,4 0,8' fill='currentColor'/></marker></defs><text x='14' y='24' font-size='13' fill='var(--fg-1)'>推理</text><rect x='14' y='32' width='118' height='34' rx='6' fill='none' stroke='var(--line-1)'/><text x='73' y='54' font-size='13' text-anchor='middle' fill='var(--fg-1)'>轻量内容编码器</text><rect x='14' y='84' width='118' height='34' rx='6' fill='none' stroke='var(--line-1)'/><text x='73' y='106' font-size='13' text-anchor='middle' fill='var(--fg-1)'>说话人 / 条件</text><rect x='180' y='32' width='130' height='56' rx='6' fill='var(--accent)' fill-opacity='0.14' stroke='var(--accent)'/><text x='245' y='58' font-size='13' text-anchor='middle' fill='var(--fg-1)'>一步 mean-flow</text><text x='245' y='78' font-size='13' text-anchor='middle' fill='var(--fg-1)'>转换模块</text><rect x='370' y='32' width='94' height='36' rx='6' fill='none' stroke='var(--line-1)'/><text x='417' y='55' font-size='13' text-anchor='middle' fill='var(--fg-1)'>输出波形</text><line x1='132' y1='45' x2='174' y2='50' stroke='var(--accent)' marker-end='url(#arw)'/><text x='134' y='28' font-size='13' fill='var(--fg-1)'>内容特征</text><line x1='132' y1='98' x2='174' y2='84' stroke='var(--accent)' marker-end='url(#arw)'/><line x1='310' y1='54' x2='364' y2='54' stroke='var(--accent)' marker-end='url(#arw)'/><text x='314' y='44' font-size='13' fill='var(--fg-1)'>一步采样</text><text x='14' y='132' font-size='13' fill='var(--fg-1)'>训练监督</text><rect x='14' y='142' width='140' height='44' rx='6' fill='none' stroke='var(--line-1)'/><text x='84' y='162' font-size='13' text-anchor='middle' fill='var(--fg-1)'>转换蒸馏</text><text x='84' y='180' font-size='13' text-anchor='middle' fill='var(--fg-1)'>来自 MeanVoiceFlow</text><rect x='170' y='142' width='140' height='44' rx='6' fill='none' stroke='var(--line-1)'/><text x='240' y='171' font-size='13' text-anchor='middle' fill='var(--fg-1)'>真实数据重建</text><rect x='326' y='142' width='140' height='44' rx='6' fill='none' stroke='var(--line-1)'/><text x='396' y='162' font-size='13' text-anchor='middle' fill='var(--fg-1)'>diffusion-GAN</text><text x='396' y='180' font-size='13' text-anchor='middle' fill='var(--fg-1)'>样本混合+条件增强</text><line x1='84' y1='142' x2='196' y2='92' stroke='var(--line-1)' stroke-dasharray='4 4' marker-end='url(#arw)'/><line x1='240' y1='142' x2='240' y2='92' stroke='var(--line-1)' stroke-dasharray='4 4' marker-end='url(#arw)'/><line x1='396' y1='142' x2='304' y2='92' stroke='var(--line-1)' stroke-dasharray='4 4' marker-end='url(#arw)'/></svg>",
+        "spec": {
+          "type": "architecture",
+          "nodes": [
+            {
+              "label": "轻量内容编码器",
+              "detail": "计算高效、可与转换模块联合优化的内容编码器"
+            },
+            {
+              "label": "说话人 / 条件",
+              "detail": "零样本 VC 的目标说话人条件，进入转换模块"
+            },
+            {
+              "label": "一步 mean-flow 转换模块",
+              "detail": "flow-based 转换模块，一步生成，推理约快 9 倍"
+            },
+            {
+              "label": "输出波形",
+              "detail": "转换后的目标说话人语音"
+            },
+            {
+              "label": "转换蒸馏",
+              "detail": "以 MeanVoiceFlow 为教师提供转换监督"
+            },
+            {
+              "label": "真实数据重建",
+              "detail": "在真实数据上做重建监督"
+            },
+            {
+              "label": "diffusion-GAN",
+              "detail": "样本混合 + 教师引导条件增强，提升真实感与解耦"
+            }
+          ],
+          "edges": [
+            {
+              "from": 0,
+              "to": 2,
+              "label": "内容特征"
+            },
+            {
+              "from": 1,
+              "to": 2,
+              "label": "说话人条件"
+            },
+            {
+              "from": 2,
+              "to": 3,
+              "label": "一步生成"
+            },
+            {
+              "from": 4,
+              "to": 2,
+              "label": "蒸馏监督"
+            },
+            {
+              "from": 5,
+              "to": 2,
+              "label": "重建监督"
+            },
+            {
+              "from": 6,
+              "to": 2,
+              "label": "对抗与解耦监督"
+            }
+          ]
+        },
+        "alt": "架构图：轻量内容编码器与说话人条件输入一步 mean-flow 转换模块并输出波形；训练侧由转换蒸馏、真实数据重建、diffusion-GAN 三条虚线监督共同训练该模块。"
+      },
+      "concepts": [
+        {
+          "name": "平均速度场一步生成 Mean Flow One-Step Generation",
+          "readable": "mean flow 不学每一步的瞬时速度，而是直接学从时刻 t 到终点 1 的平均速度 u(x_t,t)；推理时用起点加一次平均速度就得到结果，所以只需一次前向。",
+          "analogy": "像打车：普通扩散每到一个路口都要重新问一次导航（下一步往哪开），mean flow 直接问「从这里到终点整段路平均往哪开」，一次踩到底就到。",
+          "analogyBreaksDown": "现实里路况固定，所以「平均方向」是个常数；生成任务里平均速度依赖当前所在位置 x_t 和时间区间，位置一变平均方向就变，所以仍要一个网络去预测它，一步近似在分布复杂时会变糙。",
+          "mechanism": "把瞬时速度场沿时间积分得到平均速度场，再用恒等式把它写成数据对差 x_1-x_0 在 x_t 下的条件期望，于是平均速度可以直接用回归目标训练，不需要逐步展开轨迹；代价是要额外估计与瞬时速度/时间导数相关的项，换来的是单次前向推理。",
+          "visual": "横轴为时间 t（0 → 1），纵轴为状态 x。若干灰色细曲线表示从同一 x_0 出发的不同采样轨迹，一条加粗彩色直线表示平均位移 x_1 - x_0，线端标注「一次前向」。",
+          "prerequisites": [
+            "flow matching / 连续归一化流（CNF）基础",
+            "扩散模型的速度场参数化与条件期望写法",
+            "回归损失与蒙特卡洛估计"
+          ],
+          "selfTest": [
+            "一步 mean flow 采样与 DDIM 少步采样在计算图和步数上的根本差别是什么？",
+            "写出平均速度场 u(x_t,t) 与瞬时速度 v 的积分关系，以及它与 E[x_1-x_0|x_t] 的恒等式。",
+            "为什么 t=0 处的一步近似在目标分布复杂时误差最大？"
+          ],
+          "formula": "u(x_t,t)=\\mathbb{E}[x_1-x_0\\mid x_t],\\quad x_1\\approx x_0+u(x_0,0)"
+        },
+        {
+          "name": "转换蒸馏加扩散GAN联合训练 Conversion Distillation with Diffusion-GAN",
+          "readable": "学生系统（新编码器 + 新转换模块）一边模仿教师 MeanVoiceFlow 的转换输出，一边重建真实语音，再用 diffusion-GAN 的判别器逼真，并用样本混合与教师引导条件增强稳住训练。",
+          "analogy": "像学徒同时跟两位老师加一位评委：一位老师（MeanVoiceFlow）演示成品动作，另一位（真实录音）纠正基本功，评委（GAN 判别器）只挑刺「像不像真人」。",
+          "analogyBreaksDown": "评委只给真伪分数，不指出错在哪，所以对抗训练容易不稳定；而且学生容量有限时会把教师的错误一起学过来，蒸馏误差会叠加，不能只靠模仿。",
+          "mechanism": "用转换蒸馏获得教师的一步转换能力，用真实数据重建把学生拉回真实数据分布，diffusion-GAN 在生成过程上加对抗损失提升真实感；样本混合扩大训练覆盖，教师引导的条件增强提供更干净的条件输入以改善内容-说话人解耦。",
+          "visual": "中心是学生模型方块，三条不同粗细/虚实的箭头指向它：一条来自 MeanVoiceFlow 方块（蒸馏），一条来自真实音频圆角框（重建），一条来自判别器方块（对抗）；判别器两侧用双向箭头标注真/假样本流。",
+          "prerequisites": [
+            "知识蒸馏（教师-学生、软目标）",
+            "GAN 对抗训练与判别器目标",
+            "条件增强 / 数据增强",
+            "语音转换中的内容与说话人解耦"
+          ],
+          "selfTest": [
+            "为什么在蒸馏之外还要保留真实数据重建这一路监督？",
+            "样本混合（sample mixing）与教师引导条件增强分别试图缓解什么问题？",
+            "只保留 GAN 对抗损失、去掉蒸馏会发生什么？"
+          ],
+          "formula": "\\mathcal{L}=\\mathcal{L}_{distill}+\\lambda_{rec}\\mathcal{L}_{rec}+\\lambda_{adv}\\mathcal{L}_{adv}"
+        }
+      ],
+      "formulas": [
+        {
+          "id": "f-meanflow-onestep",
+          "name": "平均速度场恒等式与一步采样（Mean Flow Identity and One-Step Sampling）",
+          "category": "posttraining",
+          "glyph": "𝔼",
+          "tags": [
+            "flow-matching",
+            "one-step",
+            "voice-conversion"
+          ],
+          "latex": "u(x_t, t) = \\mathbb{E}\\!\\left[\\, x_1 - x_0 \\mid x_t \\,\\right], \\qquad x_1 \\approx x_0 + u(x_0, 0)",
+          "html": "<code>u(x_t, t) = E[ x_1 - x_0 | x_t ],  x_1 ≈ x_0 + u(x_0, 0)</code>",
+          "symbols": [
+            [
+              "x_0",
+              "起点状态（可理解为源语音的内容/声学表示或噪声起点），形状 [B, D] 或 [B, T, D]"
+            ],
+            [
+              "x_1",
+              "终点状态（目标说话人语音表示），与 x_0 同形状"
+            ],
+            [
+              "x_t",
+              "t ∈ [0,1] 处的插值状态，常用线性路径 x_t = (1-t)x_0 + t x_1"
+            ],
+            [
+              "u(x_t, t)",
+              "从 t 到 1 的平均速度场，由网络预测，形状同 x"
+            ],
+            [
+              "𝔼[· | x_t]",
+              "在给定 x_t 的条件下对所有数据对 (x_0, x_1) 求期望"
+            ]
+          ],
+          "derivation": [
+            "flow matching 用连续归一化流把先验推向数据，轨迹由瞬时速度 v = dx/dt 决定，但采样需要多步数值积分。",
+            "为了少步生成，定义从 t 到终点 1 的平均速度 u(x_t,t)，它等于该区间上瞬时速度的平均（对时间做积分再除以 1-t）。",
+            "把 u 的定义代入轨迹表达式可得到恒等式 u(x_t,t) = E[x_1 - x_0 | x_t]，于是平均速度能直接用数据对回归训练，无需展开中间步。",
+            "推理时取 t = 0，用 x_1 ≈ x_0 + u(x_0, 0) 完成一步生成；训练中还需估计与瞬时速度/时间导数相关的项来正确约束 u（本文具体做法摘要未给出）。"
+          ],
+          "analogy": "问路而不是自己走：不问每个路口该怎么拐（瞬时速度），而是问「从这儿到终点整体朝哪走」（平均速度），一次就能抵达。",
+          "pitfalls": [
+            "把 u(x_t,t) 当成瞬时速度 v(x_t,t) 使用，导致采样步数与公式不匹配。",
+            "忘记 u 是 t→1 区间上的平均量，t=0 处的一步近似在目标分布复杂时误差最大。",
+            "误以为一步生成一定比多步质量差：本文报告感知质量反而更高，但评测设置需回原文确认。",
+            "混淆 x_0 与 x_1 的角色（源语音/噪声起点 vs 目标说话人语音），导致重建与蒸馏损失的方向写反。"
+          ],
+          "code": "import torch\nimport torch.nn as nn\n\nclass MeanFlowNet(nn.Module):\n    \"\"\"预测平均速度场 u(x_t, t)，输出与输入同形状。\"\"\"\n    def __init__(self, dim=64, hidden=128):\n        super().__init__()\n        self.net = nn.Sequential(\n            nn.Linear(dim + 1, hidden), nn.SiLU(),\n            nn.Linear(hidden, hidden), nn.SiLU(),\n            nn.Linear(hidden, dim),\n        )\n\n    def forward(self, x_t, t):                 # x_t: [B, D], t: [B] in [0, 1]\n        return self.net(torch.cat([x_t, t[:, None]], dim=-1))\n\ndef mean_flow_loss(model, x0, x1):\n    \"\"\"回归 u(x_t, t) -> x_1 - x_0 的蒙特卡洛估计。\"\"\"\n    t = torch.rand(x0.size(0), device=x0.device)\n    x_t = (1 - t)[:, None] * x0 + t[:, None] * x1\n    target = x1 - x0\n    return ((model(x_t, t) - target) ** 2).mean()\n\n@torch.no_grad()\ndef one_step_sample(model, x0):\n    \"\"\"一步采样：x_1 ~= x_0 + u(x_0, 0)。\"\"\"\n    t0 = torch.zeros(x0.size(0), device=x0.device)\n    return x0 + model(x0, t0)\n\nif __name__ == \"__main__\":\n    dim, B = 64, 8\n    model = MeanFlowNet(dim)\n    x0, x1 = torch.randn(B, dim), torch.randn(B, dim)\n    loss = mean_flow_loss(model, x0, x1)\n    out = one_step_sample(model, x0)\n    print(loss.item(), out.shape)",
+          "sources": [
+            {
+              "title": "MeanVoiceFlow2: Joint Optimization of Mean Flow and Content Encoder for Fast One-Step Zero-Shot Voice Conversion",
+              "url": "https://arxiv.org/abs/2609.40087v1"
+            },
+            {
+              "title": "MeanVoiceFlow2 audio samples",
+              "url": "https://www.kecl.ntt.co.jp/people/kaneko.takuhiro/projects/meanvoiceflow2/"
+            }
+          ]
+        }
+      ],
+      "selfCheck": {
+        "claims": [
+          "flow-matching 类语音转换方法因高音质与强说话人相似度而受到关注。",
+          "MeanVoiceFlow 属于一步模型，优势是推理高效。",
+          "MeanVoiceFlow 依赖计算量大的内容编码器，这是其瓶颈。",
+          "MeanVoiceFlow2 联合优化 flow-based 转换模块与计算高效的内容编码器。",
+          "训练包含两路：用 MeanVoiceFlow 做转换蒸馏、以及在真实数据上做重建。",
+          "进一步引入 diffusion-GAN 训练，含样本混合与教师引导的条件增强，用于提升真实感与解耦。",
+          "零样本 VC 实验中 MeanVoiceFlow2 感知质量更高、推理约快 9 倍，说话人相似度与 MeanVoiceFlow 相当。",
+          "摘要给出的音频样例页为 kecl.ntt.co.jp 下的项目页。"
+        ],
+        "uncertain": [
+          "本文转换蒸馏损失（conversion distillation）的确切形式需看原文；本条目只写了通用的「蒸馏 + 重建 + 对抗」加权形式。",
+          "平均速度场恒等式 u(x_t,t)=E[x_1-x_0|x_t] 与一步采样 x_1≈x_0+u(x_0,0) 取自 mean flow 领域的标准表述，本文是否原样采用、以及训练时如何估计额外项需看原文。",
+          "约 9 倍加速的测试硬件、批大小、是否计入内容编码器开销，摘要未说明。",
+          "sample mixing 与 teacher-guided conditioning augmentation 的具体实现细节摘要未给出。",
+          "「计算高效的内容编码器」的具体结构与参数量/计算量指标摘要未给出。",
+          "diffusion-GAN 是在哪一步（生成过程还是去噪过程）施加对抗损失、判别器结构如何，摘要未说明。"
+        ]
+      }
+    },
+    {
+      "id": "49cb899dc35e83a0",
+      "tldr": "用 MCP 把 PSSE 接成工具，以 skills 和 subagents 编排，两条路径均跑通电力仿真任务。",
+      "keyPoints": [
+        "自研 MCP server 暴露 PSSE 潮流/动态仿真/结果提取/模型校验",
+        "两条路径：OpenAI Agents SDK、Claude Code CLI",
+        "均复用 skills、subagents、MCP 工具与数据仓库/本地执行",
+        "按任务完成、输出准确、是否需要人工介入三项验收，代表性任务均成功",
+        "公开数据集结果显示可大幅加速输电规划的动态仿真流程"
+      ],
+      "why": "Agent 工程正从 prompt 走向「skill 库 + 子代理 + MCP 工具」编排；这套分层验收与工具接入思路可迁移到多模态/后训练实验流水线。",
+      "difficulty": "medium",
+      "tags": [
+        "mcp",
+        "agentic-workflow",
+        "skill-library",
+        "subagents",
+        "power-system-simulation",
+        "tool-use"
+      ],
+      "entities": [
+        "Model Context Protocol (MCP)",
+        "Siemens PTI PSSE",
+        "OpenAI Agents SDK",
+        "Claude Code CLI"
+      ],
+      "diagram": {
+        "kind": "flow",
+        "title": "技能化智能体电力仿真流程",
+        "caption": "记住分工：Agent 编排 skill 与 subagent，MCP 打通 PSSE，专家只在门控处介入并按三项标准验收。",
+        "svg": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 280'><g font-size='13' fill='var(--fg-1)'><rect x='14' y='30' width='110' height='50' rx='8' fill='none' stroke='var(--line-1)'/><text x='69' y='52' text-anchor='middle'>工程师需求</text><text x='69' y='70' text-anchor='middle' fill='var(--accent)'>输电规划研究</text><rect x='140' y='30' width='110' height='50' rx='8' fill='none' stroke='var(--accent)' stroke-width='2'/><text x='195' y='52' text-anchor='middle'>编排 Agent</text><text x='195' y='70' text-anchor='middle' fill='var(--accent)'>SDK / CLI</text><rect x='266' y='30' width='110' height='50' rx='8' fill='none' stroke='var(--line-1)'/><text x='321' y='47' text-anchor='middle'>skills 库</text><text x='321' y='61' text-anchor='middle'>subagents</text><text x='321' y='76' text-anchor='middle' fill='var(--accent)'>潮流·仿真·校验</text><rect x='392' y='30' width='110' height='50' rx='8' fill='none' stroke='var(--line-1)'/><text x='447' y='52' text-anchor='middle'>MCP server</text><text x='447' y='70' text-anchor='middle' fill='var(--accent)'>自研</text><rect x='518' y='30' width='110' height='50' rx='8' fill='none' stroke='var(--line-1)'/><text x='573' y='47' text-anchor='middle'>PSSE 平台</text><text x='573' y='61' text-anchor='middle'>数据仓库</text><text x='573' y='76' text-anchor='middle'>shell/Python</text><line x1='124' y1='55' x2='133' y2='55' stroke='var(--line-1)'/><polygon points='140,55 133,51 133,59' fill='currentColor'/><line x1='250' y1='55' x2='259' y2='55' stroke='var(--line-1)'/><polygon points='266,55 259,51 259,59' fill='currentColor'/><line x1='376' y1='55' x2='385' y2='55' stroke='var(--line-1)'/><polygon points='392,55 385,51 385,59' fill='currentColor'/><line x1='502' y1='55' x2='511' y2='55' stroke='var(--line-1)'/><polygon points='518,55 511,51 511,59' fill='currentColor'/><rect x='180' y='160' width='448' height='100' rx='10' fill='none' stroke='var(--line-1)'/><text x='204' y='183'>人工专家介入门控 · Human-in-the-loop</text><rect x='196' y='200' width='132' height='34' rx='6' fill='none' stroke='var(--accent)'/><text x='262' y='222' text-anchor='middle' fill='var(--accent)'>任务完成</text><rect x='340' y='200' width='132' height='34' rx='6' fill='none' stroke='var(--accent)'/><text x='406' y='222' text-anchor='middle' fill='var(--accent)'>输出准确</text><rect x='484' y='200' width='132' height='34' rx='6' fill='none' stroke='var(--accent)'/><text x='550' y='222' text-anchor='middle' fill='var(--accent)'>人工介入次数</text><line x1='573' y1='85' x2='573' y2='152' stroke='var(--line-1)'/><polygon points='573,158 568,151 578,151' fill='currentColor'/><text x='566' y='124' text-anchor='end'>输出送审</text><line x1='195' y1='158' x2='195' y2='92' stroke='var(--accent)' stroke-dasharray='4 3'/><polygon points='195,85 190,92 200,92' fill='var(--accent)'/><text x='188' y='124' text-anchor='end' fill='var(--accent)'>介入回灌</text></g></svg>",
+        "spec": {
+          "type": "flow",
+          "nodes": [
+            {
+              "label": "工程师需求",
+              "detail": "输电规划研究任务（场景设计由专家给出）"
+            },
+            {
+              "label": "编排 Agent",
+              "detail": "两条实现路径：OpenAI Agents SDK / Claude Code CLI，负责调度与决策"
+            },
+            {
+              "label": "skills 库 + subagents",
+              "detail": "可复用 skill：潮流分析、动态仿真、结果提取、模型校验；复杂子任务下沉给 subagents"
+            },
+            {
+              "label": "MCP server（自研）",
+              "detail": "把 PSSE 功能封装为 MCP 工具，供两条路径共用"
+            },
+            {
+              "label": "PSSE / 数据仓库 / 本地 shell+Python",
+              "detail": "Siemens PTI PSSE 行业级仿真平台、公开数据集与本地执行环境"
+            },
+            {
+              "label": "人工专家介入门控",
+              "detail": "门控点：何时需要人接手；介入可回灌给编排 Agent"
+            },
+            {
+              "label": "三项验收",
+              "detail": "任务完成、输出准确、人工介入次数"
+            }
+          ],
+          "edges": [
+            {
+              "from": 0,
+              "to": 1,
+              "label": "提出研究任务"
+            },
+            {
+              "from": 1,
+              "to": 2,
+              "label": "调用可复用 skill / 派发 subagent"
+            },
+            {
+              "from": 2,
+              "to": 3,
+              "label": "经 MCP 协议调用工具"
+            },
+            {
+              "from": 3,
+              "to": 4,
+              "label": "执行潮流/动态仿真与结果提取"
+            },
+            {
+              "from": 4,
+              "to": 5,
+              "label": "输出送审（检查输出准确）"
+            },
+            {
+              "from": 5,
+              "to": 1,
+              "label": "人工介入时回灌修正"
+            },
+            {
+              "from": 5,
+              "to": 6,
+              "label": "按三项标准判定验收"
+            }
+          ]
+        },
+        "alt": "流程图：工程师需求进入编排 Agent（OpenAI Agents SDK 或 Claude Code CLI 两条路径），Agent 调用可复用 skills 与 subagents，经自研 MCP server 调用 Siemens PTI PSSE、数据仓库与本地 shell/Python；下方是人工专家介入门控与三项验收（任务完成、输出准确、人工介入次数），人工介入会回灌给编排 Agent。"
+      },
+      "concepts": [
+        {
+          "name": "技能化智能体编排 Skill-Based Agent Orchestration",
+          "readable": "把研究流程拆成可复用的 skill（潮流分析、动态仿真、结果提取、模型校验），由编排 Agent 决定调用哪个 skill、派给哪个 subagent，而不是把所有步骤塞进一条提示。",
+          "analogy": "像医院分诊：主诊医生（编排 Agent）不亲自做每项检查，而是开单让放射科、检验科（skills/subagents）各干各的，最后汇总成一份报告。",
+          "analogyBreaksDown": "医院科室接口是行业标准、结果格式固定；这里的 skill 边界要靠人手工划分与维护，skill 之间还会争抢同一份模型状态，出错时很难定位是「分诊错」还是「科室做错」。",
+          "mechanism": "关键设计是把「会什么」与「怎么调度」解耦：能力以 skills 落成文档+脚本，调度交给 Agent，复杂子任务再下沉给 subagents；代价是需要额外维护 skill 库与接口约定。",
+          "visual": "画三层泳道图：顶层是编排 Agent 的决策节点，中层是四张并列 skill 卡片（潮流/动态/提取/校验），底层是 PSSE 工具调用；实线表示 Agent→skill 的派发，虚线表示 skill→工具的执行，用 accent 色高亮当前被选中的 skill。",
+          "prerequisites": [
+            "LLM 工具调用 / function calling 基础",
+            "多智能体编排范式（planner-executor、subagent）",
+            "电力系统潮流与动态仿真的基本概念"
+          ],
+          "selfTest": [
+            "skill 与 subagent 的分工边界应该怎么划？",
+            "把流程拆成 skill 为什么能降低上下文压力？",
+            "skill 库变大之后，编排失败的主要来源是什么？"
+          ],
+          "formula": "a^{*}=\\arg\\max_{a\\in\\mathcal{S}} f_\\theta(q, a)"
+        },
+        {
+          "name": "MCP 工具接入层 Model Context Protocol Tool Layer",
+          "readable": "MCP 是一套让模型用统一协议调用外部工具的接口规范；论文自研了一个 MCP server，把 PSSE 的潮流、动态仿真、结果提取、模型校验暴露成可被 Agent 调用的工具。",
+          "analogy": "像 USB-C 转接：不管后面接的是仿真软件、数据库还是本地脚本，Agent 这头永远只插同一个口。",
+          "analogyBreaksDown": "USB-C 只统一物理形状，不保证语义；MCP 统一的是调用格式，工具参数含义、单位、失败返回仍需工程师逐个约定，工具报错时模型也未必能自我纠正。",
+          "mechanism": "把工程软件封装成 server 端工具，模型侧只处理工具名、参数与返回值；好处是换模型或换客户端（SDK 或 CLI）不用重写仿真代码，代价是多一层进程与协议开销，且要自己维护 server。",
+          "visual": "画左右两栏：左栏两个客户端（OpenAI Agents SDK、Claude Code CLI），右栏是 PSSE 与数据仓库；中间竖一条 MCP 协议带，用双向箭头表示请求/返回，同一颜色表示「同一套工具被两条路径复用」。",
+          "prerequisites": [
+            "JSON-RPC / 工具 schema 基本概念",
+            "Python 进程与子进程调用",
+            "PSSE 或同类电力仿真软件的操作常识"
+          ],
+          "selfTest": [
+            "MCP server 解决的是接口统一还是能力增强？",
+            "为什么同一套 MCP 工具能同时服务 SDK 和 CLI 两条路径？",
+            "工具调用失败时，协议层能给 Agent 提供哪些信息？"
+          ],
+          "formula": ""
+        },
+        {
+          "name": "人在回路验收门控 Human-in-the-Loop Acceptance Gate",
+          "readable": "论文不只看智能体能否跑完，还统计它是否需要人类专家介入；也就是把「专家要不要接手」当成一等评测信号，而不是隐藏成本。",
+          "analogy": "像自动驾驶的接管率：跑完一段路不算本事，全程零接管才算；论文同时看「跑通率」和「接管率」。",
+          "analogyBreaksDown": "开车接管有明确安全阈值，科研任务「该不该介入」是主观判断，不同专家松紧不一；而且介入后任务做成了也会被算作完成，两个指标并不独立。",
+          "mechanism": "把人的介入从「后台补丁」变成显式门控：任务完成、输出准确、介入次数三项一起算，于是优化目标从「能不能做」变成「少让人插手还能做对」。",
+          "visual": "画一个十字象限：横轴是任务完成率、纵轴是人工介入率，右上角是「能跑但离不开人」，右下角才是目标区；用箭头标出希望移动的方向。",
+          "prerequisites": [
+            "评测指标设计基础（指示函数、均值统计）",
+            "理解 agent benchmark 的常见评测维度",
+            "知道「完成」与「准确」是两个独立条件"
+          ],
+          "selfTest": [
+            "为什么只报成功率会高估智能体的自主性？",
+            "人工介入率的分母应该怎么定？",
+            "三项验收里哪一项最难自动判定，为什么？"
+          ],
+          "formula": "HIR=\\frac{1}{N}\\sum_{i=1}^{N}\\mathbb{1}[H_i]"
+        }
+      ],
+      "formulas": [
+        {
+          "id": "f-agent-task-success",
+          "name": "任务成功率与人工介入率（Task Success Rate & Human Intervention Rate）",
+          "category": "agent",
+          "glyph": "Σ",
+          "tags": [
+            "agent",
+            "evaluation",
+            "success-rate",
+            "human-in-the-loop"
+          ],
+          "latex": "SR = \\frac{1}{N}\\sum_{i=1}^{N} \\mathbb{1}[\\,C_i \\land A_i\\,], \\qquad HIR = \\frac{1}{N}\\sum_{i=1}^{N} \\mathbb{1}[\\,H_i\\,]",
+          "html": "<code>SR = (1/N) * Σ 1[C_i ∧ A_i];  HIR = (1/N) * Σ 1[H_i]</code>",
+          "symbols": [
+            [
+              "SR",
+              "任务成功率，取值 [0,1]，无量纲"
+            ],
+            [
+              "HIR",
+              "人工介入率，取值 [0,1]，无量纲"
+            ],
+            [
+              "N",
+              "被评估的代表性研究任务总数（摘要未给出具体数值）"
+            ],
+            [
+              "C_i",
+              "第 i 条任务完成（task completion）的布尔指示"
+            ],
+            [
+              "A_i",
+              "第 i 条任务输出准确（output accuracy）的布尔指示"
+            ],
+            [
+              "H_i",
+              "第 i 条任务需要人类专家介入的布尔指示"
+            ],
+            [
+              "\\mathbb{1}[\\cdot]",
+              "指示函数：条件成立取 1，否则取 0"
+            ],
+            [
+              "\\land",
+              "逻辑与：完成且准确才计入成功率分子"
+            ]
+          ],
+          "derivation": [
+            "摘要明确验收只看三件事：任务完成、输出准确、是否需要人工介入，因此把每条任务压成可判定的布尔向量 (C_i, A_i, H_i)。",
+            "成功率只统计「既完成又准确」的任务，用逻辑与 C_i ∧ A_i 同时约束两个条件，避免「跑完但算错」被当成成功。",
+            "对 N 条任务取指示函数均值得到 SR；把指示函数换成 H_i 再取均值，就得到人工介入率 HIR。",
+            "两项一起看才有意义：SR 高而 HIR 也高，说明智能体能跑通却仍离不开专家兜底，离「自动执行常规仿真设置与结果提取」还有距离。"
+          ],
+          "analogy": "像驾考：SR 是「一次通过且没压线的比例」，HIR 是「需要教练踩副刹的比例」；通过率再高，教练仍频繁踩刹车，就说明还不能单独上路。",
+          "pitfalls": [
+            "把「完成」和「准确」拆成两个独立数字汇报，而不是取交集成 SR——口径不同结论可能反过来。",
+            "忽略 H_i 与 C_i 的相关性：人在介入后把任务做成了，C_i 仍可能为 1，会虚高 SR；摘要未说明是否剔除介入样本。",
+            "分母 N 的口径（是否包含超时/放弃任务）没有定义，跨系统比较前必须对齐。",
+            "误以为 HIR 越低越好：有场景下专家介入本身就是设计好的门控，而不是缺陷。"
+          ],
+          "code": "from typing import Any\n\n\ndef evaluate(results: list[dict[str, Any]]) -> dict[str, float]:\n    \"\"\"results: 每条任务的三项验收结果（摘要口径：完成/准确/是否需人工介入）。\"\"\"\n    n = len(results)\n    if n == 0:\n        return {\"SR\": float(\"nan\"), \"HIR\": float(\"nan\")}\n    sr = sum(1 for r in results if r[\"completed\"] and r[\"accurate\"]) / n\n    hir = sum(1 for r in results if r[\"human_intervention\"]) / n\n    return {\"SR\": sr, \"HIR\": hir}\n\n\ntasks = [\n    {\"completed\": True, \"accurate\": True, \"human_intervention\": False},\n    {\"completed\": True, \"accurate\": False, \"human_intervention\": True},\n    {\"completed\": True, \"accurate\": True, \"human_intervention\": True},\n]\nprint(evaluate(tasks))  # {'SR': 0.6666666666666666, 'HIR': 0.6666666666666666}\n",
+          "sources": [
+            {
+              "title": "Skill-Based AI Agents for Power-System Studies",
+              "url": "https://arxiv.org/abs/2609.40272v1"
+            }
+          ]
+        }
+      ],
+      "selfCheck": {
+        "claims": [
+          "论文提出一个面向电力系统研究的技能化（skill-based）智能体框架。",
+          "框架使用 Model Context Protocol (MCP) 连接工程工具。",
+          "作者自研了一个 MCP server，把 Siemens PTI PSSE 的功能暴露出来，覆盖潮流分析、动态仿真、结果提取与模型校验工作流。",
+          "评估了两条实现路径：基于 OpenAI Agents SDK 的可编程方式，与 Claude Code CLI。",
+          "两条路径都使用可复用 skills、subagents、MCP 工具、数据仓库连接以及本地 shell/Python 执行。",
+          "两个基于前沿模型的实现都成功执行了代表性研究任务。",
+          "验收依据是任务完成情况、输出准确性与是否需要人类专家介入。",
+          "基于公开数据集的结果显示，智能体系统可以大幅加速输电规划研究中的电力系统动态仿真流程。",
+          "论文认为这指向输电规划实践的转变：智能体承担常规仿真设置与结果提取，工程师把专家判断放在场景设计与结果解读上。"
+        ],
+        "uncertain": [
+          "摘要未给出 SR / HIR 的具体数值与任务数 N；formulas 中的公式按「任务完成 ∧ 输出准确」的领域标准写法给出，论文变体的精确形式（是否加权、是否有阈值或归一化）需看原文。",
+          "摘要未说明人工介入后仍未完成的任务如何计数，也未说明「介入」是按次数还是按是否发生过统计。",
+          "摘要未给出所用前沿模型的具体型号、PSSE 版本、MCP server 的实现细节与公开数据集名称。",
+          "「大幅加速」的具体加速比摘要未给出数字，任何量化倍数都需回原文核实。",
+          "arXiv 编号 2609.40272v1 为用户给定信息，本次未自行联网核实其存在。",
+          "concepts 中「技能化智能体编排」的 skill 选择 argmax 公式属于通用写法，论文未在摘要中给出对应形式化定义。"
+        ]
+      }
+    },
+    {
+      "id": "9f48a350d01de4cc",
+      "tldr": "用三种 uRNN 变体替换循环 PPO，以复数模长保持与相位自由度提升记忆任务回报，最高达基线 2-3 倍。",
+      "keyPoints": [
+        "复现 uRNN 并提出三种变体，作为循环 PPO 的即插即用替代",
+        "复数隐状态用酉矩阵递推，模长保持让信息在长序列中传播",
+        "复数相位提供实值 RNN 没有的额外自由度",
+        "在 rocksample、Craftax 等记忆任务上回报达基线 2-3 倍",
+        "提出相位感知策略，类比量子态测量读出复数相位"
+      ],
+      "why": "部分可观测是机器人/世界模型的常见设定，复数递归与相位读出提供了替代门控与注意力的记忆方案，面试可谈表征设计。",
+      "difficulty": "hard",
+      "tags": [
+        "reinforcement-learning",
+        "unitary-rnn",
+        "complex-valued-networks",
+        "recurrent-ppo",
+        "partial-observability",
+        "memory"
+      ],
+      "entities": [
+        "uRNN (Unitary RNN)",
+        "Recurrent PPO",
+        "Arjovsky et al. 2016",
+        "Jing et al. 2017",
+        "rocksample",
+        "Craftax"
+      ],
+      "diagram": {
+        "kind": "architecture",
+        "title": "uRNN 复数递归接入循环 PPO",
+        "caption": "记住三件事：复数隐状态的模长保信息、相位给自由度、隐状态再喂给 PPO 的 actor/critic。",
+        "svg": "<svg viewBox='0 0 480 200' xmlns='http://www.w3.org/2000/svg'><rect x='12' y='30' width='88' height='44' rx='6' fill='none' stroke='var(--line-1)'/><text x='56' y='48' font-size='13' text-anchor='middle' fill='var(--fg-1)'>观测 o_t</text><text x='56' y='65' font-size='13' text-anchor='middle' fill='var(--fg-1)'>部分可观测</text><line x1='100' y1='52' x2='121' y2='52' stroke='currentColor' stroke-width='1.5'/><polygon points='126,52 116,47 116,57' fill='currentColor'/><rect x='126' y='26' width='150' height='52' rx='6' fill='none' stroke='var(--accent)'/><text x='201' y='45' font-size='13' text-anchor='middle' fill='var(--fg-1)'>uRNN 复数递归</text><text x='201' y='63' font-size='13' text-anchor='middle' fill='var(--accent)'>|u|=1 模长保持</text><line x1='276' y1='52' x2='299' y2='52' stroke='currentColor' stroke-width='1.5'/><polygon points='304,52 294,47 294,57' fill='currentColor'/><rect x='304' y='26' width='164' height='52' rx='6' fill='none' stroke='var(--line-1)'/><text x='386' y='45' font-size='13' text-anchor='middle' fill='var(--fg-1)'>循环 PPO</text><text x='386' y='63' font-size='13' text-anchor='middle' fill='var(--fg-1)'>actor / critic</text><line x1='201' y1='78' x2='201' y2='113' stroke='currentColor' stroke-width='1.5'/><polygon points='201,118 196,108 206,108' fill='currentColor'/><text x='210' y='104' font-size='13' fill='var(--fg-1)'>相位=新自由度</text><rect x='126' y='118' width='150' height='52' rx='6' fill='none' stroke='var(--line-1)'/><text x='201' y='137' font-size='13' text-anchor='middle' fill='var(--fg-1)'>相位感知策略</text><text x='201' y='155' font-size='13' text-anchor='middle' fill='var(--fg-1)'>用相位做决策</text><line x1='276' y1='144' x2='299' y2='144' stroke='currentColor' stroke-width='1.5'/><polygon points='304,144 294,139 294,149' fill='currentColor'/><rect x='304' y='118' width='164' height='52' rx='6' fill='none' stroke='var(--line-1)'/><text x='386' y='137' font-size='13' text-anchor='middle' fill='var(--fg-1)'>量子测量类比</text><text x='386' y='155' font-size='13' text-anchor='middle' fill='var(--fg-1)'>读出并保留相位</text></svg>",
+        "spec": {
+          "type": "architecture",
+          "nodes": [
+            {
+              "label": "观测 o_t",
+              "detail": "部分可观测环境的一步观测"
+            },
+            {
+              "label": "uRNN 复数递归",
+              "detail": "复数隐状态按酉动力学递推，逐元素乘 |u|=1 保持模长"
+            },
+            {
+              "label": "循环 PPO",
+              "detail": "隐状态作为 actor/critic 输入，即插即用替代原递归结构"
+            },
+            {
+              "label": "相位感知策略",
+              "detail": "把复数隐状态的相位信息读出用于决策"
+            },
+            {
+              "label": "量子测量类比",
+              "detail": "借鉴量子态如何被测量，组织相位读出方式"
+            }
+          ],
+          "edges": [
+            {
+              "from": 0,
+              "to": 1,
+              "label": "压缩时序信息为复数隐状态"
+            },
+            {
+              "from": 1,
+              "to": 2,
+              "label": "隐状态送入 actor/critic"
+            },
+            {
+              "from": 1,
+              "to": 3,
+              "label": "保留相位而非只取实部"
+            },
+            {
+              "from": 3,
+              "to": 4,
+              "label": "按量子测量方式读出"
+            }
+          ]
+        },
+        "alt": "观测 o_t 进入 uRNN 复数递归（模长保持、相位为新自由度），隐状态送入循环 PPO 的 actor/critic；另一路做相位感知策略，按量子测量类比把复数隐状态的相位读出用于决策。"
+      },
+      "concepts": [
+        {
+          "name": "酉复数递归网络 Unitary Recurrent Network (uRNN)",
+          "readable": "把 RNN 的隐状态和递推都放到复数空间，用模长恒为 1 的酉变换更新，让信息在长序列里不被反复缩放而衰减或爆炸。",
+          "analogy": "像一条无摩擦的滑冰道：每步只改变前进方向（相位），速度（模长）一点不丢，所以能滑很远；普通 RNN 像有沙子的路面，走几步速度就磨没了。",
+          "analogyBreaksDown": "滑冰只说清「不衰减」，没说清容量：酉变换不衰减但也不放大，要写入新信息仍得靠额外的非线性项；而且复数相位是网络自己学出来的内部量，没有真实物理角度可读，别把类比当成机制。",
+          "mechanism": "递推写成 h_t = u ⊙ h_{t-1} + v ⊙ tanh(W x_t + b)，约束 |u|=1 保证梯度长程流动；复数给出模长与相位两条通道，相位是实值 RNN 没有的表征自由度，摘要称其带来更好的梯度流与关联回忆。",
+          "visual": "画一条时间轴：实线折线是普通 RNN 的隐状态模长，指数衰减到 0；水平虚线是 uRNN 恒为 1 的模长。旁边画复平面单位圆，箭头绕圆旋转表示相位逐时刻累积。",
+          "prerequisites": [
+            "RNN/LSTM 的隐状态更新与梯度沿时间连乘",
+            "复数乘法、共轭与极坐标表示",
+            "酉矩阵（正交矩阵的复数版本）",
+            "PPO 与 actor-critic 基础"
+          ],
+          "selfTest": [
+            "为什么约束 |u|=1 能缓解梯度消失？从梯度里连乘 ∏u 的模长角度解释。",
+            "同等参数规模下，复数隐状态比实值隐状态多出的自由度是什么？",
+            "如果把 u 换成实正交矩阵，会失去摘要强调的哪一项好处？"
+          ],
+          "formula": "h_t = u \\odot h_{t-1} + v \\odot \\tanh(W x_t + b), \\qquad |u_i| = 1"
+        },
+        {
+          "name": "相位感知策略 Phase-Aware Policy（量子测量类比）",
+          "readable": "复数隐状态同时带模长和相位；如果策略网络只取实部或模长，相位这条信息就白学了。该方法专门设计读出方式，让策略对相位敏感。",
+          "analogy": "像看旋转的风车：只量叶片长度没用，关键是叶片此刻转到哪个角度。相位感知策略就是给策略装一个「角度刻度盘」，而不是只拿一把尺子量长度。",
+          "analogyBreaksDown": "风车角度是可直接观测的物理量，而复数隐状态的相位是网络内部学出来的表示，没有物理量纲；摘要里的「量子测量」只是组织思路的类比，并未说引入了真正的量子力学形式，坍缩、不可克隆等性质都不适用。",
+          "mechanism": "常规做法把复数隐状态的实部（或模长）直接喂给策略，等于丢掉相位这一新增自由度；摘要提出为相位单独设计读出，使策略显式依赖相位，并用「量子态如何被测量」来类比这个过程。",
+          "visual": "画复平面单位圆：圆上一点表示隐状态，半径长度=模长、与实轴夹角=相位。左侧分支只画投影到实轴的线段（角度丢失），右侧分支沿角度画刻度盘并把角度值送进策略网络。",
+          "prerequisites": [
+            "复数表示与极坐标（模长、辐角）",
+            "策略网络的输入输出与 PPO 的更新目标",
+            "量子态测量中的基与概率幅（懂类比层面即可）"
+          ],
+          "selfTest": [
+            "为什么只取复数隐状态的实部会丢信息？丢的是哪一部分？",
+            "相位感知策略与「直接拿实部过 MLP」的读出头，在输入上差在哪？",
+            "摘要里的「量子测量」是理论工具还是类比？你的依据是什么？"
+          ],
+          "formula": "\\phi_t = \\arg(h_t), \\qquad \\pi_\\theta(a \\mid o_{\\le t}) = \\pi_\\theta\\big(a \\mid |h_t|, \\phi_t\\big)"
+        }
+      ],
+      "formulas": [
+        {
+          "id": "f-unitary-recurrence",
+          "name": "酉递归更新（Unitary Recurrence）",
+          "category": "rl",
+          "glyph": "⊙",
+          "tags": [
+            "unitary-rnn",
+            "complex-valued",
+            "recurrence",
+            "memory"
+          ],
+          "latex": "h_t = u \\odot h_{t-1} + v \\odot \\tanh(W x_t + b), \\qquad |u_i| = 1, \\quad h_t \\in \\mathbb{C}^{n}",
+          "html": "<code>h_t = u ⊙ h_{t-1} + v ⊙ tanh(W x_t + b),  |u_i| = 1</code>",
+          "symbols": [
+            [
+              "h_t",
+              "t 时刻的复数隐状态，形状 (n,)，取值于 ℂ^n"
+            ],
+            [
+              "x_t",
+              "t 时刻的观测/输入特征，形状 (d,)"
+            ],
+            [
+              "u",
+              "复数递推系数向量，形状 (n,)，约束逐元素 |u_i|=1（模长保持）"
+            ],
+            [
+              "v",
+              "复数输入增益向量，形状 (n,)，控制新信息写入强度"
+            ],
+            [
+              "W, b",
+              "输入到隐状态的复数仿射变换参数，W 形状 (n,d)"
+            ],
+            [
+              "⊙",
+              "逐元素复数乘法（Hadamard 积），不是矩阵乘"
+            ],
+            [
+              "tanh",
+              "逐元素非线性，产生要写入的新信息"
+            ]
+          ],
+          "derivation": [
+            "普通 RNN 做 h_t = W h_{t-1} + U x_t，梯度沿时间要连乘 W；谱半径偏离 1 就消失或爆炸。",
+            "把矩阵乘 W 换成逐元素乘 u（对角化），梯度连乘变成 ∏ u_i，每个通道的模长可独立控制。",
+            "再把 h 与 u 放到复数域并约束 |u_i|=1，于是 |∏ u_i|=1，模长沿时间完全保持，信息不随步数衰减。",
+            "模长保持项只负责搬运旧信息，新信息由 v ⊙ tanh(W x_t + b) 写入，两项相加得到酉递归更新。",
+            "更一般的形式是酉矩阵递推 h_t = U h_{t-1} + V·tanh(...)，U^H U = I；对角 u 是其中参数最省的特例。"
+          ],
+          "analogy": "像一条无损传送带：旧货（隐状态）原样送到下一站，新货由 tanh 那一项加上去；实值 RNN 的传送带每站都掉一部分货，走几十站就什么都不剩。",
+          "pitfalls": [
+            "|u|=1 只保证不衰减、不爆炸，不保证「记住了有用信息」；记忆内容还取决于相位如何旋转以及写入门控。",
+            "复数张量要么用 complex dtype、要么拆成实部虚部两组，参数量与显存约为实值同维度的两倍，收益不是免费的。",
+            "别直接对 u 做无约束梯度下降再期望 |u|=1；通常要参数化成 u = e^{iω} 或每步投影回单位圆。",
+            "⊙ 是逐元素乘而非矩阵乘：对角酉表达力有限，不能把它当成完整 uRNN 的通用形式。"
+          ],
+          "code": "import torch\n\n\ndef unitary_recurrence(x, h, omega, v, W, b):\n    \"\"\"x: (B, T, d) 实数观测; h: (B, n) 复数隐状态初值.\n    omega: (n,) 相位参数; u = exp(i*omega) 自动满足 |u| = 1.\n    v: (n,) complex 增益; W: (n, d) 实数; b: (n,) 实数.\n    返回 (B, T, n) 的复数隐状态序列.\"\"\"\n    u = torch.polar(torch.ones_like(omega), omega)          # (n,) complex, |u|=1\n    gate = torch.tanh(x @ W.t() + b)                        # (B, T, n) real\n    outs = []\n    for t in range(x.size(1)):\n        h = u * h + v * gate[:, t]                          # 逐元素复数乘 + 写入\n        outs.append(h)\n    return torch.stack(outs, dim=1)                         # (B, T, n) complex",
+          "sources": [
+            {
+              "title": "Reinforcement Learning with Complex (valued) Memories",
+              "url": "https://arxiv.org/abs/2609.38598v1"
+            },
+            {
+              "title": "qurl (官方代码仓库)",
+              "url": "https://github.com/Sathya98/qurl"
+            }
+          ]
+        }
+      ],
+      "selfCheck": {
+        "claims": [
+          "摘要指出部分可观测环境要求智能体压缩观测中的时序信息并维持记忆才能有效决策。",
+          "作者重访 uRNN（Arjovsky et al., 2016；Jing et al., 2017），并称其展现出更好的梯度流与关联回忆能力。",
+          "uRNN 把递推和隐状态表达在复数向量空间中，其模长保持的酉动力学使信息能沿长序列传播。",
+          "论文提出三种 uRNN 版本，作为循环 PPO 架构的即插即用替代（drop-in replacements）。",
+          "论文称简单递归加上复数相位的额外自由度，在多个「记忆可改进」任务（含连续控制）上显著优于基线。",
+          "论文进一步探索如何为相位感知策略保留复数隐状态的相位信息，并类比量子态的测量方式。",
+          "在 rocksample 与 Craftax 等环境中，方法回报最高达到基线的 2-3 倍。",
+          "摘要给出的代码地址是 https://github.com/Sathya98/qurl。"
+        ],
+        "uncertain": [
+          "本文三种 uRNN 变体的确切递推式需看原文核对；我给出的 h_t = u ⊙ h_{t-1} + v ⊙ tanh(W x_t + b)（|u|=1）是 Arjovsky et al. 2016 的标准形式，不是摘要原文。",
+          "摘要未给出「相位感知策略」的具体读出公式；concepts 里的 π_θ(a | o, |h_t|, φ_t) 只是示意写法，需看原文核对。",
+          "三种变体之间的差异（例如对角酉 u 还是完整酉矩阵 U、是否与门控/注意力混合）摘要完全未说明。",
+          "「2-3x reward」的评测设置（对比的是哪一版 recurrent PPO 基线、随机种子数与统计方式）摘要未说明。",
+          "摘要提到连续控制，但未列出对应的具体环境名，也未说明该结论来自哪种变体。",
+          "公式中 x_t 的具体形式（原始观测还是编码器输出）与复数值张量的实现细节摘要未说明。"
+        ]
+      }
+    }
+  ],
+  "jobs": [
+    {
+      "id": "pudu-robotics-2027-campus",
+      "company": "普渡机器人（Pudu Robotics）",
+      "shortName": "普渡",
+      "tier": "B",
+      "title": "27 届秋招（机器人 / 具身智能方向）",
+      "directions": [
+        "embodied"
+      ],
+      "cities": [],
+      "pay": null,
+      "duration": null,
+      "conversion": null,
+      "open": true,
+      "applyUrl": "https://nowcoder.com/discuss/934110167585636352",
+      "seasonality": "原帖（2026-10-01 抓到）称 27 届秋招正式启动；牛客帖为内推形式",
+      "highlights": [
+        "原帖标题：普渡机器人秋招正式启动啦",
+        "以「内推」形式发布"
+      ],
+      "process": [],
+      "notes": "仅标题可得：『普渡机器人秋招正式启动啦，普渡机器人内推』（牛客列表页摘要为通用文案，正文未采集）。公司为服务机器人厂商；岗位方向按『机器人』关键词推断（采集器据此把该帖归入 worldmodel），方向、城市、日薪、时长、转正均待核实，不做数字推测。applyUrl 指向原内推帖。",
+      "confidence": "low",
+      "sources": [
+        {
+          "title": "普渡机器人秋招正式启动啦，普渡机器人内推（牛客）",
+          "url": "https://nowcoder.com/discuss/934110167585636352"
+        }
+      ],
+      "relevance": 83,
+      "postedAt": "2026-10-01T18:50:15+08:00",
+      "deadline": null
+    },
+    {
+      "id": "trip-ai-app-intern",
+      "company": "携程集团（Trip.com Group）",
+      "shortName": "携程",
+      "tier": "B",
+      "title": "AI 应用开发实习生",
+      "directions": [
+        "agent"
+      ],
+      "cities": [],
+      "pay": null,
+      "duration": null,
+      "conversion": null,
+      "open": true,
+      "applyUrl": "https://nowcoder.com/discuss/933058120102739968",
+      "seasonality": "原帖为 2026-10-01 抓到的实习面经，面试已走到发 offer（OC），说明该岗在招",
+      "highlights": [
+        "原帖标题：携程 AI 应用开发实习一面（OC）",
+        "OC = 已收到录用意向"
+      ],
+      "process": [
+        "一面（原帖标题只标『一面（OC）』，轮次与题目未采集）"
+      ],
+      "notes": "仅标题可得：『携程AI应用开发实习一面（OC）』。可确认公司 + 岗位名 + 面试后已 OC；城市、日薪、时长、转正比例、具体轮次均待核实。方向按『AI 应用开发』暂归 agent（推断，待核实）。applyUrl 指向原面经帖。",
+      "confidence": "low",
+      "sources": [
+        {
+          "title": "携程AI应用开发实习一面（OC）（牛客）",
+          "url": "https://nowcoder.com/discuss/933058120102739968"
+        }
+      ],
+      "relevance": 83,
+      "postedAt": "2026-10-01T18:50:15+08:00",
+      "deadline": null
+    }
+  ],
+  "proposals": {
+    "taxonomyProposals": [
+      {
+        "action": "split",
+        "category": "coding",
+        "reason": "本轮 coding 新增 7 条全部是牛客面经标题帖（C++美团一面、影石移动端一面、字节后台开发秋招一二面、中行面经汇总、九方智投一面、22 届择业讨论、秋招转机帖），与「面试手撕题」的目标（可练习的手撕代码）严重错配：两类共用关键词『面经』。",
+        "proposedKeywords": [
+          "面经",
+          "复盘",
+          "面试流程"
+        ]
+      },
+      {
+        "action": "reweight",
+        "category": "trend",
+        "reason": "本轮 trend 新增 4 条中 3 条是知乎泛热点（土豆减肥、转专业、永动机），与 AI 技术演进无关；trend 由 zhihu 热榜驱动，缺少主题过滤，建议降低权重或给 zhihu 渠道加主题白名单。",
+        "proposedKeywords": []
+      },
+      {
+        "action": "reweight",
+        "category": "paper",
+        "reason": "音频-语言工作（UniAE-MoE：统一音频编码器 + MoE）落到了 paper 而非 multimodal，说明 multimodal 关键词表缺 LALM/音频编码器一族；建议补词而不是调 paper 权重。",
+        "proposedKeywords": [
+          "lalm",
+          "large audio language model",
+          "audio encoder"
+        ]
+      }
+    ],
+    "keywordProposals": [
+      {
+        "category": "multimodal",
+        "add": [
+          "lalm",
+          "large audio language model",
+          "audio encoder",
+          "speech understanding"
+        ],
+        "remove": [],
+        "reason": "本轮 UniAE-MoE（Qwen2-Audio / Audio-Flamingo 3 编码器 MoE 融合）被归入 paper：多模态关键词只有 audio-visual，未覆盖 LALM / 音频编码器 / 语音理解。"
+      },
+      {
+        "category": "coding",
+        "add": [
+          "手撕题",
+          "手写注意力"
+        ],
+        "remove": [
+          "面经"
+        ],
+        "reason": "『面经』一词让 coding 类被牛客面经帖占满（本轮新增 7/7 均为面经），手撕题反而被稀释；建议把面经移出该类的关键词。"
+      },
+      {
+        "category": "worldmodel",
+        "add": [
+          "robot learning",
+          "embodied policy"
+        ],
+        "remove": [],
+        "reason": "中文关键词『机器人』命中了招聘帖（普渡机器人秋招内推被归入 worldmodel）；补英文的 robot learning / embodied policy 可提高技术内容的命中精度。"
+      }
+    ],
+    "newChannelProposals": [],
+    "noiseReport": {
+      "overBroadKeywords": [
+        "机器人（把「普渡机器人秋招内推」拉进 worldmodel）",
+        "招聘 / 校招 / 内推（job 与内容类边界模糊，标题帖正文不可得）",
+        "面经（让 coding 被面经标题帖占满，本轮实测 7/7）"
+      ],
+      "underCoveredCategories": [
+        "音频-语言（LALM / 音频编码器）：本轮只能落到 paper，multimodal 词表未覆盖",
+        "面试手撕题：coding 类本轮新增全为面经，真正的手撕题覆盖不足"
+      ]
+    },
+    "humanReviewQueue": [
+      "jobs_alibaba 连续 blocked：淘天 27 届校招只能从牛客内推帖看到标题（nowcoder/discuss/934092678533304320）；是否需要人工导入 talent.alibaba.com 的校招岗列表？",
+      "人工导入（BOSS直聘）的「字节跳动 多模态算法实习生（Seed）」与 jobs.json 的 bytedance-seed 重复，且日薪 400-600 元/天 与库内「500 元/天起」口径不同：以哪个为准？",
+      "本轮新增岗位 pudu-robotics-2027-campus / trip-ai-app-intern 只有标题可判：方向、城市、日薪、时长、转正均写 null 并在 notes 标『待核实』，需要你确认后再补。",
+      "enrichment.json 中 2026-10-01 17:58 那批 12 条没有 diagram（不在本轮 deep-read-plan 的 queue 内，本轮未覆盖）：是否下一轮统一补图？",
+      "是否把 coding 拆成『面经』与『手撕题』两个分类？（改 taxonomy 需你确认，本轮只提案）",
+      "知乎热榜驱动的 trend 类是否加主题过滤/黑名单？（本轮 3/4 条与 AI 无关）"
+    ],
+    "channelHealth": [
+      {
+        "id": "jobs_alibaba",
+        "nameZh": "阿里招聘",
+        "status": "blocked",
+        "streak": 5,
+        "lastError": null,
+        "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+        "escalate": true,
+        "evidence": "Anti-bot gated: the real API is POST https://talent.alibaba.com/position/search (GET -> 405, POST without CSRF -> 403). With the page's own XSRF-TOKEN replayed as ?_csrf= it answers 200 but {\"success\":true,\"datas\":null,\"totalCount\":0} for every payload shape, and /searchCondition/list returns searchItems=null: the backend wants a token only the baxia browser script can mint. Needs a browser."
+      },
+      {
+        "id": "jobs_bytedance",
+        "nameZh": "字节招聘",
+        "status": "blocked",
+        "streak": 5,
+        "lastError": null,
+        "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+        "escalate": true,
+        "evidence": "Edge/WAF blocks scripted clients: GET /api/v1/search/job/posts answers 200 with the HTML page 字节跳动猎头平台, POST with the documented JSON body answers 405 (0 bytes), POST with a trailing slash answers 307, /referral/api/... is 404. The JS bundle confirms the path is right, so this is the edge, not our request. Needs a browser."
+      },
+      {
+        "id": "jobs_minimax",
+        "nameZh": "MiniMax",
+        "status": "blocked",
+        "streak": 5,
+        "lastError": null,
+        "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+        "escalate": true,
+        "evidence": "No machine-readable listing: minimaxi.com/careers embeds a Feishu ATSX portal (vrfi1sk8a0.jobs.feishu.cn). Its index page carries no job data, its API answers 405 like ByteDance's (same ATSX edge), and minimaxi.com/robots.txt disallows /api/. Needs a browser or a human import."
+      },
+      {
+        "id": "jobs_moonshot",
+        "nameZh": "月之暗面",
+        "status": "blocked",
+        "streak": 5,
+        "lastError": null,
+        "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+        "escalate": true,
+        "evidence": "No machine-readable listing: www.moonshot.cn/careers (200, 95KB) contains zero job keywords and now delegates to careers.kimi.com, which is an 11.6KB JS shell with no embedded data (/jobs and /positions are 404) and no job API in its chunks."
+      },
+      {
+        "id": "jobs_shailab",
+        "nameZh": "上海 AI Lab",
+        "status": "blocked",
+        "streak": 5,
+        "lastError": null,
+        "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+        "escalate": true,
+        "evidence": "No machine-readable listing: /joinus, /joinus/social and /joinus/campus return the same 70KB marketing page with no job rows; the openings are fetched by JS and no ATS/API endpoint is referenced. Needs a browser or a human import."
+      },
+      {
+        "id": "jobs_zhipu",
+        "nameZh": "智谱招聘",
+        "status": "blocked",
+        "streak": 5,
+        "lastError": null,
+        "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+        "escalate": true,
+        "evidence": "No machine-readable listing: zhipuai.cn/joinus (200, 783KB) server-renders job *categories* (算法/校招 labels) but no per-job data, exposes no ATS host, and none of its 15 Next.js chunks reference a job API. Needs a browser or a human import."
+      },
+      {
+        "id": "machineheart",
+        "nameZh": "机器之心",
+        "status": "blocked",
+        "streak": 5,
+        "lastError": null,
+        "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+        "escalate": true,
+        "evidence": "Feed retired: /rss and /feed both answer 200 text/html (机器之心·数据服务 landing page) instead of RSS, /rss/articles is 404, and the only reachable RSSHub mirror 404s on /jiqizhixin/daily. Replaced by the `leiphone` channel (雷锋网 AI feed)."
+      },
+      {
+        "id": "openreview",
+        "nameZh": "OpenReview",
+        "status": "blocked",
+        "streak": 5,
+        "lastError": null,
+        "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+        "escalate": true,
+        "evidence": "Bot challenge: api2 AND api1 /notes both answer 200 text/html 'Verifying your browser | OpenReview' (earlier runs saw 403 ChallengeRequiredError). Only a browser can pass it; arXiv + s2 cover papers."
+      },
+      {
+        "id": "reddit",
+        "nameZh": "Reddit",
+        "status": "blocked",
+        "streak": 5,
+        "lastError": null,
+        "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+        "escalate": true,
+        "evidence": "robots.txt: https://www.reddit.com/robots.txt is 'User-agent: * / Disallow: /', so we do not scrape it even though <sub>/top/.rss answers 200. No substitute either: lobste.rs has the same blanket Disallow. HN already covers the signal."
+      },
+      {
+        "id": "rsshub",
+        "nameZh": "RSSHub",
+        "status": "blocked",
+        "streak": 5,
+        "lastError": null,
+        "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+        "escalate": true,
+        "evidence": "Every public instance is down or blocking: rsshub.app 403 Cloudflare challenge, rsshub.rssforever.com 503, rsshub.ktachibana.party 404/503, rsshub.pseudoyu.com TLS error; the single reachable mirror (rss.injahow.cn) serves only /zhihu/hotlist and /solidot, and the zhihu route is already consumed by the fixed `zhihu` channel."
+      }
+    ]
+  },
+  "log": {
+    "status": "ok",
+    "notes": "按 web/data/deep-read-plan.json 的 queue 深读 6 条（paper/multimodal/worldmodel/posttraining/agent/rl 各 1 条，来自 arxiv），每条均含自包含内联 SVG 图解、八层概念与五层公式。本轮 digest 已恢复为 18:49 的完整采集（新增 23 条、16/26 渠道有产出、10 个渠道 blocked），不再是 17:48 那次 --only inbox 的 2 条窄跑。本文件是当日第二轮 payload：第一轮（17:58）的 12 条 enrichment、6 个公式、5 个腾讯岗位已在 enrichment.json / formulas.json / jobs.json 中，本轮按 id 合并、不做覆盖删除（其 payload 备份在 scripts/agent-input-2026-10-01.round1.json）。新增 2 个岗位（普渡机器人 27 届秋招、携程 AI 应用开发实习），均为只有标题可判的薄信息，数字字段一律 null 并标『待核实』。所有 tldr/keyPoints/why/concepts/formulas 的断言都能在本条目的 title/summary 中核对；摘要未给出的精确公式形式已逐条写入 selfCheck.uncertain。",
+    "errors": []
+  }
+}

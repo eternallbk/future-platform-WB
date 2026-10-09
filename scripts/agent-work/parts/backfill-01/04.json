@@ -1,0 +1,67 @@
+{
+  "id": "b7b17a114ffa47c7",
+  "formulas": [
+    {
+      "id": "f-asr-attack-success-rate",
+      "name": "攻击成功率（Attack Success Rate, ASR）",
+      "category": "multimodal",
+      "latex": "\\mathrm{ASR} = \\frac{1}{N} \\sum_{i=1}^{N} \\mathbf{1}\\left[ \\mathcal{J}(y_i) = 1 \\right]",
+      "symbols": [
+        ["N", "对抗或越狱测试样本总数"],
+        ["y_i", "模型对第 i 个含攻击输入的回复"],
+        ["\\mathcal{J}", "越狱判定函数，回复有害或违反策略时取 1"],
+        ["\\mathrm{ASR}", "攻击成功率，越高表示模型越容易被攻破"]
+      ],
+      "derivation": [
+        "第 1 步（动机）：多模态安全评测需要一个可跨攻击方法、跨模型比较的主体指标。",
+        "第 2 步（跑样本）：把每个对抗样本（如加了扰动的图像加诱导文本）喂给 LVLM，得到回复 y_i。",
+        "第 3 步（判定）：用人工规则、有害关键词或安全分类器判断是否越狱，记为 0 或 1。",
+        "第 4 步（统计）：对 N 条样本取平均即得 ASR；防御方法的目标就是把 ASR 压下去，评测基准则用 ASR 横向排名。"
+      ],
+      "analogy": "像给门锁做压力测试：找 N 个人各试一把钥匙（有的是万能钥匙），数几个人真能推开。ASR 就是被推开的比例，比例越低说明锁越牢。",
+      "pitfalls": [
+        "ASR 高度依赖判定器口径，换一个判定器数值就不可比，必须报告判定方式",
+        "只看 ASR 会忽略过度拒答：把所有请求都拒了 ASR=0，但模型已不可用",
+        "N 太小或正负样本不均衡时 ASR 方差大，不能据单次小样本结果下结论"
+      ],
+      "code": "import numpy as np\n\ndef attack_success_rate(judgments):\n    j = np.asarray(judgments, dtype=float)   # 每条回复的 0/1 越狱判定\n    return float(j.mean())                   # 即 ASR\n\nprint(attack_success_rate([1, 0, 1, 0, 1, 0, 0, 0]))   # 0.375\n",
+      "sources": [
+        {
+          "title": "XuankunRong/Awesome-LVLM-Safety",
+          "url": "https://github.com/XuankunRong/Awesome-LVLM-Safety"
+        }
+      ]
+    },
+    {
+      "id": "f-safety-utility-tradeoff",
+      "name": "安全—有用性权衡打分（Safety–Utility Trade-off Score）",
+      "category": "multimodal",
+      "latex": "S_{\\mathrm{safe}} = \\alpha\\,(1 - \\mathrm{ASR}) + (1-\\alpha)\\,(1 - \\mathrm{ORR})",
+      "symbols": [
+        ["\\mathrm{ASR}", "攻击成功率，越低越安全"],
+        ["\\mathrm{ORR}", "过度拒答率，对良性请求误拒的比例，越低越有用"],
+        ["\\alpha", "安全权重，属于 0 到 1，表示更看重安全还是有用性"],
+        ["S_{\\mathrm{safe}}", "综合安全—有用性得分，越高越好"]
+      ],
+      "derivation": [
+        "第 1 步（动机）：单看 ASR 会把「一律拒答」误判为最优，必须同时看有用性代价。",
+        "第 2 步（安全项）：定义 1 减 ASR 为安全得分，越安全越高。",
+        "第 3 步（有用项）：定义 1 减 ORR 为有用性得分，ORR 是在良性请求上的误拒率。",
+        "第 4 步（加权）：用权重 alpha 线性组合得 S_safe；防御方案在 (ASR, ORR) 平面上的位置越靠左上越优，该打分把二维权衡压成一维便于排序。"
+      ],
+      "analogy": "像招保安：既要拦住坏人（低 ASR），又不能把所有来客都拦下（低 ORR）。alpha 就是你更看重「别放过坏人」还是「别误拦好人」的偏好旋钮。",
+      "pitfalls": [
+        "alpha 是价值判断，换一个 alpha 排名可能翻转，报告时必须写明取值",
+        "1 减 ASR 与 1 减 ORR 量纲口径不同，直接线性相加前要确认已在同一评测集上归一",
+        "跨威胁模型或跨数据集比较无意义，只有同基准同判定器下的分数才可比"
+      ],
+      "code": "def safety_utility_score(asr, orr, alpha=0.5):\n    safety = 1.0 - asr        # 越安全越高\n    utility = 1.0 - orr       # 误拒越少越有用\n    return alpha * safety + (1 - alpha) * utility\n\nprint(safety_utility_score(asr=0.1, orr=0.05, alpha=0.5))   # 0.925\n",
+      "sources": [
+        {
+          "title": "XuankunRong/Awesome-LVLM-Safety",
+          "url": "https://github.com/XuankunRong/Awesome-LVLM-Safety"
+        }
+      ]
+    }
+  ]
+}

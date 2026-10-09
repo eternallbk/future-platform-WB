@@ -1,0 +1,85 @@
+{
+ "id": "5d166480d300892b",
+ "tldr": "磁盘调度按不同策略给磁道请求排序以减少磁头移动：FCFS、SSTF、SCAN、C-SCAN、LOOK 在寻道长度、公平与饥饿间各有取舍。",
+ "keyPoints": [
+  "七大算法含 FCFS、SSTF、SCAN、C-SCAN、LOOK 等",
+  "核心考点是寻道过程与平均寻道长度计算，并要会代码实现",
+  "SSTF 就近服务、平均寻道短，但远端请求会饥饿",
+  "SCAN/C-SCAN 电梯式扫掠，消除饥饿但边沿等待不均",
+  "需对比响应时间、公平性与饥饿三类指标"
+ ],
+ "why": "操作系统 I/O 八股高频；算法岗做数据加载与存储访存时也会遇到 I/O 调度，理解吞吐与公平的取舍有助于估时延。",
+ "difficulty": "medium",
+ "tags": ["os", "disk-scheduling", "io", "interview", "scheduling"],
+ "entities": ["FCFS", "SSTF", "SCAN", "C-SCAN", "LOOK"],
+ "diagram": {
+  "kind": "matrix",
+  "title": "五种磁盘调度算法对比",
+  "caption": "记住这张表：平均寻道越小的算法往往越容易饥饿，扫掠类用方向约束换公平。",
+  "svg": "<svg viewBox='0 0 480 236' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='五种磁盘调度算法在平均寻道、饥饿与特点上的对比表'><rect x='12' y='16' width='456' height='204' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><line x1='12' y1='40' x2='468' y2='40' stroke='var(--line-1)' stroke-width='1.2'/><line x1='12' y1='76' x2='468' y2='76' stroke='var(--line-1)' stroke-width='1.2'/><line x1='12' y1='112' x2='468' y2='112' stroke='var(--line-1)' stroke-width='1.2'/><line x1='12' y1='148' x2='468' y2='148' stroke='var(--line-1)' stroke-width='1.2'/><line x1='12' y1='184' x2='468' y2='184' stroke='var(--line-1)' stroke-width='1.2'/><line x1='110' y1='16' x2='110' y2='220' stroke='var(--line-1)' stroke-width='1.2'/><line x1='225' y1='16' x2='225' y2='220' stroke='var(--line-1)' stroke-width='1.2'/><line x1='300' y1='16' x2='300' y2='220' stroke='var(--line-1)' stroke-width='1.2'/><text x='20' y='32' font-size='13' fill='currentColor' font-weight='bold'>算法</text><text x='118' y='32' font-size='13' fill='currentColor' font-weight='bold'>平均寻道</text><text x='233' y='32' font-size='13' fill='currentColor' font-weight='bold'>饥饿</text><text x='308' y='32' font-size='13' fill='currentColor' font-weight='bold'>特点</text><text x='20' y='62' font-size='13' fill='currentColor'>FCFS</text><text x='118' y='62' font-size='13' fill='currentColor'>大</text><text x='233' y='62' font-size='13' fill='currentColor'>无</text><text x='308' y='62' font-size='13' fill='currentColor'>按到达顺序，最公平但慢</text><text x='20' y='98' font-size='13' fill='currentColor'>SSTF</text><text x='118' y='98' font-size='13' fill='currentColor'>小</text><text x='233' y='98' font-size='13' fill='currentColor'>有</text><text x='308' y='98' font-size='13' fill='currentColor'>就近服务，远道易饥饿</text><text x='20' y='134' font-size='13' fill='currentColor'>SCAN</text><text x='118' y='134' font-size='13' fill='currentColor'>较小</text><text x='233' y='134' font-size='13' fill='currentColor'>无</text><text x='308' y='134' font-size='13' fill='currentColor'>单向扫到端点再折返</text><text x='20' y='170' font-size='13' fill='currentColor'>C-SCAN</text><text x='118' y='170' font-size='13' fill='currentColor'>较小</text><text x='233' y='170' font-size='13' fill='currentColor'>无</text><text x='308' y='170' font-size='13' fill='currentColor'>只单向服务回程不服务</text><text x='20' y='206' font-size='13' fill='currentColor'>LOOK</text><text x='118' y='206' font-size='13' fill='currentColor'>小于SCAN</text><text x='233' y='206' font-size='13' fill='currentColor'>无</text><text x='308' y='206' font-size='13' fill='currentColor'>扫到最远请求即折返</text></svg>",
+  "alt": "对比表：FCFS 平均寻道大、无饥饿、按序服务；SSTF 最小但有饥饿；SCAN/C-SCAN/LOOK 较小且无饥饿，差异在扫掠方式。"
+ },
+ "concepts": [
+  {
+   "name": "Seek-Time Minimization（寻道时间最小化）",
+   "readable": "磁盘服务请求的耗时里，磁头移动到目标磁道（寻道）占大头，所以调度算法目标是让磁头移动的总距离尽量短。",
+   "analogy": "像在长书架前取书：真正费时间的是从这排走到那排，不是翻书本身；好的取书顺序能少走很多冤枉路。",
+   "analogyBreaksDown": "现实中你可以先看完所有书的位置再规划路线，而磁盘请求是动态到达的、调度器不知道未来；SSTF 只顾眼前最近，反而可能让最远的请求永远排不上。",
+   "mechanism": "以磁道距离为代价函数给待服务队列排序：FCFS 保序保公平、SSTF 贪心就近、SCAN/C-SCAN/LOOK 用单向或折返扫掠在吞吐与公平之间折中。",
+   "visual": "横轴时间、纵轴磁道号画磁头折线：SSTF 是小幅乱跳，SCAN 是规律的锯齿扫掠，肉眼就能看出总路程差异。",
+   "prerequisites": ["磁盘物理结构（盘面/磁道/扇区）", "寻道时间、旋转延迟与传输时间", "队列与贪心算法"],
+   "selfTest": ["为什么 SSTF 平均寻道最短却可能被淘汰？", "SCAN 与 C-SCAN 的差别在哪？", "LOOK 为什么比 SCAN 少走一段？"],
+   "formula": "L_{avg}=\\frac{1}{n}\\sum_{i=1}^{n}|T_{i}-T_{i-1}|"
+  },
+  {
+   "name": "Starvation vs Fairness（饥饿与公平性）",
+   "readable": "请求是动态到达的，若调度总优先服务最近的磁道，远端请求就会被源源不断的新请求插队，长时间得不到服务，这就是饥饿。",
+   "analogy": "食堂里总有人插到离窗口最近的位置，排在最后的人可能永远轮不到。",
+   "analogyBreaksDown": "食堂可以用强制排队保证秩序，而磁盘调度里公平与吞吐往往此消彼长——完全公平的 FCFS 会牺牲平均寻道长度，两者不能同时最优。",
+   "mechanism": "SSTF 用贪心换低寻道，代价是远端饥饿；SCAN 类强制磁头单向扫过全范围，保证任何请求在有限时间内被扫到，用略大的寻道换公平。",
+   "visual": "画一条磁道轴并标出请求点：SSTF 下最右端的点始终不被访问；SCAN 下磁头扫过时它终会被覆盖。",
+   "prerequisites": ["调度公平性的含义", "贪心算法的局限"],
+   "selfTest": ["哪种算法会产生饥饿？为什么？", "C-SCAN 如何让等待时间更均匀？", "为什么说公平与吞吐是一对矛盾？"],
+   "formula": ""
+  }
+ ],
+ "formulas": [
+  {
+   "id": "f-avg-seek-length",
+   "name": "平均寻道长度（Average Seek Length）",
+   "category": "engineering",
+   "latex": "L_{avg}=\\frac{1}{n}\\sum_{i=1}^{n}\\left|T_{i}-T_{i-1}\\right|",
+   "symbols": [["T_{i}", "第 i 个被服务的磁道号"], ["T_{0}", "初始磁头所在磁道"], ["n", "请求总数"], ["L_{avg}", "平均每次服务的寻道长度（磁道数）"]],
+   "derivation": ["第 1 步：动机——用磁头移动的磁道总距离衡量调度好坏。", "第 2 步：把被服务的磁道按顺序排成 T_0→T_1→…→T_n，逐段求移动距离绝对值。", "第 3 步：累加所有相邻距离得到总寻道长度。", "第 4 步：除以请求数 n 得平均寻道长度，越小越好。"],
+   "analogy": "快递员按不同顺序送同一批货：货物没变，但总路程会差很多，总路程除以订单数就是『平均每单跑多远』。",
+   "pitfalls": ["忘记算初始磁头位置 T_0 到第一个请求的距离", "把寻道长度当成总 I/O 时间，忽略旋转延迟与传输时间", "不同算法必须用同一请求序列与同一初始磁头才可比，不能背数字"],
+   "code": "def avg_seek(seq, head, order):\n    pos, total = head, 0\n    for i in order:\n        total += abs(seq[i] - pos); pos = seq[i]\n    return total / len(order)\nseq = [98, 183, 37, 122, 14, 124, 65, 67]\nprint(avg_seek(seq, 53, list(range(len(seq)))))  # FCFS 顺序",
+   "sources": [{"title": "磁盘调度算法有什么？", "url": "https://notes.kamacoder.com/base/disk-scheduling-algorithms.html"}]
+  }
+ ],
+ "selfCheck": {
+  "claims": ["磁盘调度是操作系统面试高频考点，主要考察 FCFS、SSTF、SCAN、C-SCAN、LOOK 等七大算法", "考察点是各算法寻道过程、优缺点、平均寻道长度计算与代码实现", "需要分析饥饿、公平性、响应时间等核心问题", "服务于大厂操作系统面试中关于 I/O 性能优化的提问"],
+  "uncertain": ["摘要说『七大算法』，但只点名了 FCFS/SSTF/SCAN/C-SCAN/LOOK 五种，其余（如 C-LOOK）具体清单待核实", "各算法的量化性能对比数字摘要未给出，本文的『较大/较小』为定性描述", "示例请求序列为自行构造，仅用于演示公式与代码，非原文数据"]
+ },
+ "teaching": {
+  "progressive": [
+   {"level": "一句话", "text": "磁盘调度就是决定先服务哪个磁道请求，好让磁头少跑路。"},
+   {"level": "入门", "text": "磁盘读写要先让磁头移到目标磁道，这段寻道最慢。调度算法把待服务请求排序：FCFS 按到达顺序，SSTF 先服务最近的，SCAN 像电梯一样来回扫。目标是平均寻道长度尽量小，同时不让某些请求饿死。"},
+   {"level": "进阶", "text": "FCFS 最公平但平均寻道大；SSTF 贪心就近、平均寻道小，但远端请求会饥饿；SCAN 让磁头单向扫到端点再折返，消除饥饿但边沿等待不均；C-SCAN 只在单程服务、回程快速返回，让等待更均匀；LOOK/C-LOOK 在最远请求处折返，不空扫到物理端点。"},
+   {"level": "专家", "text": "本质是排队论里『以寻道距离为代价的排序问题』：SSTF 是贪心近似，SCAN 类引入方向约束把最坏等待时间变成有界。真实磁盘还要叠旋转延迟与传输时间；SSD 无寻道、由固件与多队列调度，所以 SCAN 类更多是理解调度权衡的模型。面试给请求序列时，要正确标出磁头移动顺序并算总磁道数。"}
+  ],
+  "socratic": [
+   {"q": "如果不做任何重排（FCFS）会怎样？", "a": "公平且实现简单，但磁头来回横跳、平均寻道长度大，吞吐低。"},
+   {"q": "既然 SSTF 平均寻道最短，为什么还要 SCAN？", "a": "SSTF 只优化眼前，远端请求会被不断到达的近距离请求插队，造成饥饿；SCAN 保证有限等待。"},
+   {"q": "LOOK 凭什么比 SCAN 少走？", "a": "SCAN 要求扫到物理端点才折返，无请求也要空扫；LOOK 扫到最远请求即回头，省掉无效行程。"}
+  ],
+  "mechanism": "这类算法之所以必须存在，是因为『吞吐』与『公平』无法同时最优：只按到达顺序（FCFS）磁头大幅横跳、寻道时间高；只按最近优先（SSTF）吞吐上去了却让远端请求饥饿。SCAN 类用方向约束把无界等待变为有界——磁头单向扫过全范围，任何请求在有限时间内必被覆盖，代价是边沿与中间磁道等待不均；C-SCAN 只服务单程来再平衡等待。",
+  "boundary": "所有结论都基于『寻道时间主导』的机械磁盘模型；在 SSD/NVMe 上无寻道概念，调度由固件与多队列完成，这些算法不再直接适用。请求稀疏且集中时，SCAN 的空扫开销（LOOK 可避免）会显得浪费；不同算法的平均寻道数只在同一请求序列与同一初始磁头位置下才可比。",
+  "analogyBoundary": "电梯类比很贴切（SCAN 就是电梯算法），但电梯有明确楼层上下限、乘客按楼层排队，磁盘请求却是动态到达且磁头位置连续；电梯也不为公平牺牲行程，而磁盘调度里公平与吞吐是此消彼长的。",
+  "misconceptions": ["以为 SCAN 一定最优；它只是吞吐与公平的折中，并非普适最优。", "把 SSTF 平均寻道最短等同于最好；它会造成远端请求饥饿。", "把寻道长度当成总 I/O 时间，忽略旋转延迟与传输时间。"],
+  "ownAnalysis": "从调度模型看，SSTF 可视为 SCAN 家族的贪心下界，SCAN 用方向约束把无界等待变成有界（推断）。摘要标题说『七大算法』却只点名五种，是否含 C-LOOK 等待核实。结合摘要强调『平均寻道长度计算与代码实现』，建议把 FCFS/SSTF/SCAN/C-SCAN/LOOK 五种都练到手算无误（推断）。现代面试常给一串请求让你写移动序列，光背定义不够。",
+  "officialNotes": [{"position": "磁盘调度是操作系统面试高频考点，主要考察 FCFS、SSTF、SCAN、C-SCAN、LOOK 等七大算法的原理、优缺点与性能对比，以及平均寻道长度计算与饥饿、公平性、响应时间问题", "source": "https://notes.kamacoder.com/base/disk-scheduling-algorithms.html"}],
+  "interviewAnswer": "磁盘调度是给待服务的磁道请求排序，减少磁头寻道距离。四类经典做法：FCFS 按到达顺序，最公平但平均寻道大；SSTF 优先最近的磁道，平均寻道最短但会造成远端请求饥饿；SCAN 像电梯一样单向扫到端点再折返，消除饥饿但边沿等待不均；C-SCAN 只在单程服务、回程不服务，等待更均匀；LOOK 和 C-LOOK 扫到最远请求就折返，省掉空扫。衡量指标是平均寻道长度，面试常给请求序列让你算移动顺序。",
+  "studyPath": {"prerequisites": ["磁盘结构与寻道/旋转/传输时间", "排队与贪心算法", "操作系统 I/O 子系统"], "nextSteps": ["手算五种算法在同一请求序列下的磁头移动顺序", "写脚本模拟各算法并对比平均寻道长度", "对比 SSD 调度与机械盘的差异"]}
+ }
+}

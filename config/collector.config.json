@@ -1,0 +1,225 @@
+{
+  "collectorVersion": "1.0.0",
+  "targetDate": "2027-04-01",
+  "targetLabel": "目标投递窗口（2027 届春招）",
+  "interests": {
+    "coding": 1.35,
+    "job": 1.3,
+    "exam": 1.2,
+    "multimodal": 1.1,
+    "posttraining": 1.1,
+    "worldmodel": 1.05,
+    "rl": 1.0,
+    "generative": 0.85,
+    "agent": 0.8,
+    "engineering": 0.8,
+    "foundation": 0.75,
+    "paper": 0.55,
+    "course": 0.6,
+    "trend": 0.45,
+    "unclassified": 0.0
+  },
+  "http": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36 FutureWorkbench/1.0 (+personal academic research; contact: local)",
+    "defaultTimeout": 25,
+    "maxRetries": 2,
+    "backoffBase": 1.6,
+    "jitter": 0.35,
+    "delayBetween": 0.4
+  },
+  "limits": {
+    "perChannel": 12,
+    "maxNewPerRun": 96,
+    "perCategoryPerRun": 8,
+    "dropUnclassified": true
+  },
+  "scoring": {
+    "freshnessHalfLifeDays": 7.0,
+    "sourceTierWeight": {
+      "P0": 1.0,
+      "P1": 0.85,
+      "P2": 0.7
+    },
+    "qualityBoost": 8.0,
+    "minRelevance": 45.0,
+    "knowledgeBaseBoost": 22.0
+  },
+  "dedupe": {
+    "simhashBits": 64,
+    "hammingThreshold": 3
+  },
+  "arxiv": {
+    "queryTerms": [],
+    "maxPerQuery": 10,
+    "lookbackDays": 3
+  },
+  "github": {
+    "queries": [],
+    "minStars": 120,
+    "lookbackDays": 7
+  },
+  "categories": {
+    "job": {
+      "keywords": [
+        "内推",
+        "实习生"
+      ],
+      "keywordRemove": [
+        "intern"
+      ]
+    },
+    "trend": {
+      "keywords": [
+        "开源榜",
+        "模型发布"
+      ],
+      "keywordRemove": [
+        "state of",
+        "review"
+      ]
+    },
+    "foundation": {
+      "keywords": [
+        "kv-cache",
+        "归一化",
+        "long-context",
+        "positional encoding",
+        "linear attention",
+        "state space model",
+        "mixture-of-experts",
+        "flashattention",
+        "mhsa",
+        "multi-head attention",
+        "gqa",
+        "rmsnorm",
+        "swiglu",
+        "rotary embedding",
+        "旋转位置编码",
+        "logsumexp"
+      ],
+      "keywordRemove": [
+        "theory",
+        "architecture",
+        "基础"
+      ]
+    },
+    "generative": {
+      "keywords": [
+        "diffusion transformer"
+      ],
+      "keywordRemove": [
+        "dit"
+      ]
+    },
+    "rl": {
+      "keywords": [
+        "goal-conditioned",
+        "policy optimization",
+        "优势估计",
+        "ppo"
+      ]
+    },
+    "coding": {
+      "keywords": [
+        "题解",
+        "hot 100",
+        "手撕代码",
+        "算法题解",
+        "编程题",
+        "笔试真题",
+        "模型手撕",
+        "手写 attention",
+        "手写 transformer"
+      ],
+      "keywordRemove": [
+        "八股"
+      ]
+    },
+    "exam": {
+      "keywords": [
+        "八股",
+        "知识点",
+        "面试高频",
+        "常见问题",
+        "面试题",
+        "原理分析",
+        "知识梳理"
+      ]
+    },
+    "posttraining": {
+      "keywords": [
+        "dpo",
+        "grpo",
+        "rlhf",
+        "sft",
+        "lora",
+        "qlora",
+        "reward model",
+        "奖励模型",
+        "偏好对齐",
+        "策略优化"
+      ]
+    },
+    "multimodal": {
+      "keywords": [
+        "clip loss",
+        "infonce",
+        "contrastive",
+        "对比学习"
+      ]
+    }
+  },
+  "knowledge": {
+    "_comment": "知识质量判断的阈值（scripts/knowledge_quality.py 读取）。改这里就能调整判断口径，不需要改代码。",
+    "minMaterialityForNews": 0.34,
+    "minMaterialityForFlagged": 0.4,
+    "minMaterialityForDepth": 0.28,
+    "minKeepImportance": 25,
+    "minKeepMateriality": 0.22,
+    "scoreMaterialityWeight": 10.0,
+    "scoreEphemeralPenalty": 8.0,
+    "_comment_career": "求职可用性分量：采集打分与重要度里的加成上限。career_usability() 是 0–1，乘上这个权重后加到总分上 —— 目的是让「手撕题 / 面经 / 目标方向核心工作」排在「泛资讯 / 外围论文」前面。",
+    "scoreCareerWeight": 15.0,
+    "_comment_technical": "论文/仓库/课程的方向门槛：core_fit 只数具体技术词（不含 ai/cv/nlp 这类泛化词）。0.5 = 至少命中一个具体方向词。",
+    "minCoreFitForTechnical": 0.5,
+    "_comment_cap": "论文分类饱和上限：目标方向更宽（要深度），邻近方向更窄。只作用于 kind=paper，豁免白名单知识库；面经/手撕题/八股/岗位不受限。",
+    "maxPapersPerCategory": 26,
+    "maxPapersPerCategoryTarget": 34,
+    "_comment_problem": "题库深读配额：手撕题/笔试题不参与论文饱和上限，并且每天至少深读这么多条（来自 codetop / 代码随想录 / 卡码笔记）。",
+    "minProblemsPerRun": 6,
+    "maxProblemsPerRun": 14
+  },
+  "retention": {
+    "archiveAfterDays": 90,
+    "keepDayFiles": 400
+  },
+  "categoryIntakeWeight": {
+    "coding": 1.8,
+    "job": 1.5,
+    "exam": 1.3,
+    "multimodal": 1.0,
+    "posttraining": 1.0,
+    "worldmodel": 1.0,
+    "rl": 1.0,
+    "generative": 0.9,
+    "agent": 0.9,
+    "engineering": 0.9,
+    "foundation": 0.8,
+    "paper": 0.6,
+    "course": 0.6,
+    "trend": 0.4,
+    "unclassified": 0.0
+  },
+  "channelIntakeOverride": {
+    "programmercarl": 15,
+    "kamacoder_notes": 15,
+    "xiaolincoding": 12,
+    "codetop": 15,
+    "gh_algokb": 20,
+    "jobs_tencent": 20,
+    "jobs_deepseek": 12,
+    "arxiv": 12,
+    "hf_papers": 12,
+    "github": 12
+  }
+}

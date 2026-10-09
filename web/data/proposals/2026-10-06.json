@@ -1,0 +1,409 @@
+{
+ "date": "2026-10-06",
+ "generatedAt": "2026-10-06T21:13:48+08:00",
+ "generatedBy": "collect.py deterministic layer (no LLM required)",
+ "reviewPolicy": {
+  "autoApplicable": [
+   "单个关键词权重 ≤10% 的微调"
+  ],
+  "requiresHumanApproval": [
+   "分类增删改名",
+   "渠道增删与升降级",
+   "评分公式与权重",
+   "去重阈值",
+   "blocklist",
+   "robots.txt 状态变化"
+  ]
+ },
+ "channelHealth": [
+  {
+   "id": "jobs_alibaba",
+   "nameZh": "阿里招聘",
+   "status": "blocked",
+   "streak": 9,
+   "lastError": null,
+   "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+   "escalate": true
+  },
+  {
+   "id": "jobs_bytedance",
+   "nameZh": "字节招聘",
+   "status": "blocked",
+   "streak": 9,
+   "lastError": null,
+   "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+   "escalate": true
+  },
+  {
+   "id": "jobs_minimax",
+   "nameZh": "MiniMax",
+   "status": "blocked",
+   "streak": 9,
+   "lastError": null,
+   "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+   "escalate": true
+  },
+  {
+   "id": "jobs_moonshot",
+   "nameZh": "月之暗面",
+   "status": "blocked",
+   "streak": 9,
+   "lastError": null,
+   "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+   "escalate": true
+  },
+  {
+   "id": "jobs_shailab",
+   "nameZh": "上海 AI Lab",
+   "status": "blocked",
+   "streak": 9,
+   "lastError": null,
+   "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+   "escalate": true
+  },
+  {
+   "id": "jobs_zhipu",
+   "nameZh": "智谱招聘",
+   "status": "blocked",
+   "streak": 9,
+   "lastError": null,
+   "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+   "escalate": true
+  },
+  {
+   "id": "machineheart",
+   "nameZh": "机器之心",
+   "status": "blocked",
+   "streak": 9,
+   "lastError": null,
+   "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+   "escalate": true
+  },
+  {
+   "id": "openreview",
+   "nameZh": "OpenReview",
+   "status": "blocked",
+   "streak": 9,
+   "lastError": null,
+   "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+   "escalate": true
+  },
+  {
+   "id": "reddit",
+   "nameZh": "Reddit",
+   "status": "blocked",
+   "streak": 9,
+   "lastError": null,
+   "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+   "escalate": true
+  },
+  {
+   "id": "rsshub",
+   "nameZh": "RSSHub",
+   "status": "blocked",
+   "streak": 9,
+   "lastError": null,
+   "suggestedAction": "确认是否已被反爬或已下线；如需继续，改为人工导入或寻找替代源",
+   "escalate": true
+  },
+  {
+   "id": "hf_blog_rss",
+   "nameZh": "HF Blog",
+   "status": "error",
+   "streak": 4,
+   "lastError": "URLError: <urlopen error Tunnel connection failed: 502 Bad Gateway>",
+   "suggestedAction": "检查接口变更或凭据；连续 3 次失败应降级到备用源",
+   "escalate": true
+  },
+  {
+   "id": "hf_papers",
+   "nameZh": "HF 每日论文",
+   "status": "error",
+   "streak": 4,
+   "lastError": "URLError: <urlopen error Tunnel connection failed: 502 Bad Gateway>",
+   "suggestedAction": "检查接口变更或凭据；连续 3 次失败应降级到备用源",
+   "escalate": true
+  },
+  {
+   "id": "hf_models",
+   "nameZh": "HF 模型",
+   "status": "empty",
+   "streak": 0,
+   "lastError": null,
+   "suggestedAction": "查询式可能过窄，考虑放宽关键词或时间窗口",
+   "escalate": false
+  }
+ ],
+ "coverage": {
+  "categoriesWithItems": [
+   "agent",
+   "coding",
+   "course",
+   "engineering",
+   "exam",
+   "foundation",
+   "generative",
+   "job",
+   "multimodal",
+   "posttraining",
+   "rl",
+   "worldmodel"
+  ],
+  "categoriesEmpty": [],
+  "categoriesQuietThisRun": [
+   "multimodal",
+   "posttraining",
+   "worldmodel",
+   "generative",
+   "rl",
+   "agent",
+   "engineering",
+   "foundation",
+   "job",
+   "coding",
+   "exam",
+   "course"
+  ],
+  "byCategoryTotal": {
+   "coding": 236,
+   "engineering": 42,
+   "agent": 113,
+   "worldmodel": 59,
+   "posttraining": 86,
+   "rl": 39,
+   "generative": 57,
+   "exam": 118,
+   "foundation": 22,
+   "multimodal": 79,
+   "course": 6,
+   "job": 26
+  },
+  "byCategoryFresh": {}
+ },
+ "keywordProposals": [],
+ "newChannelProposals": [],
+ "knowledgeQuality": {
+  "byKind": {
+   "paper": 317,
+   "problem": 185,
+   "repo": 161,
+   "notes": 152,
+   "interview": 37,
+   "job": 30,
+   "news": 1
+  },
+  "kindShare": {
+   "paper": 35.9,
+   "problem": 21.0,
+   "repo": 18.2,
+   "notes": 17.2,
+   "interview": 4.2,
+   "job": 3.4,
+   "news": 0.1
+  },
+  "materiality": {
+   "mean": 0.446,
+   "p25": 0.305,
+   "p50": 0.453,
+   "p75": 0.618,
+   "shareBelow035": 37.5
+  },
+  "newsShare": 0.1,
+  "lowSignalShare": 37.5,
+  "offDirectionShare": 3.4,
+  "career": {
+   "interview": 37,
+   "problem": 185,
+   "notes": 152,
+   "job": 26,
+   "offDirection": 30
+  },
+  "directions": {
+   "engineering": {
+    "total": 42,
+    "knowledge": 42,
+    "news": 0,
+    "deepRead": 29
+   },
+   "agent": {
+    "total": 113,
+    "knowledge": 112,
+    "news": 1,
+    "deepRead": 28
+   },
+   "worldmodel": {
+    "total": 59,
+    "knowledge": 59,
+    "news": 0,
+    "deepRead": 46
+   },
+   "posttraining": {
+    "total": 86,
+    "knowledge": 86,
+    "news": 0,
+    "deepRead": 45
+   },
+   "rl": {
+    "total": 39,
+    "knowledge": 39,
+    "news": 0,
+    "deepRead": 33
+   },
+   "generative": {
+    "total": 57,
+    "knowledge": 57,
+    "news": 0,
+    "deepRead": 36
+   },
+   "foundation": {
+    "total": 22,
+    "knowledge": 22,
+    "news": 0,
+    "deepRead": 19
+   },
+   "multimodal": {
+    "total": 79,
+    "knowledge": 79,
+    "news": 0,
+    "deepRead": 40
+   },
+   "course": {
+    "total": 6,
+    "knowledge": 6,
+    "news": 0,
+    "deepRead": 1
+   }
+  }
+ },
+ "channelQualityProposals": [
+  {
+   "id": "jobs_tencent",
+   "totalItems": 29,
+   "newsShare": 0.0,
+   "lowSignalShare": 72.4,
+   "suggestedAction": "降级到 P2，或收窄该渠道的抓取范围（只取高材料性内容）",
+   "reason": "jobs_tencent 的产出里 0.0% 是资讯、72.4% 是低材料性内容，对本工作台的知识积累贡献很低",
+   "requiresHumanApproval": true
+  }
+ ],
+ "kindGapProposals": [],
+ "noiseReport": {
+  "unknownHosts": {
+   "ncompass.tech": 1,
+   "app.mokahr.com": 1,
+   "openpipe.ai": 1
+  },
+  "unknownHostItemShare": 0.003,
+  "newsShare": 0.1,
+  "lowSignalShare": 37.5,
+  "offDirectionShare": 3.4,
+  "career": {
+   "interview": 37,
+   "problem": 185,
+   "notes": 152,
+   "job": 26,
+   "offDirection": 30
+  }
+ },
+ "humanReviewQueue": [
+  "以下渠道已连续 3 轮以上失败，请确认是永久下线还是需要换源：jobs_alibaba(blocked×9)，jobs_bytedance(blocked×9)，jobs_minimax(blocked×9)，jobs_moonshot(blocked×9)，jobs_shailab(blocked×9)，jobs_zhipu(blocked×9)，machineheart(blocked×9)，openreview(blocked×9)，reddit(blocked×9)，rsshub(blocked×9)，hf_blog_rss(error×4)，hf_papers(error×4)",
+  "【深读层】【连续 2 轮·需人工决策·已升级】方向闸门偏松：CORE_DIRECTION_TERMS 单命中即得 core_fit=0.5，恰等于 minCoreFitForTechnical=0.5，于是「multimodal/多模态」出现一次就能过闸。本轮深读层判 off-direction 跳过 12 条，全部是**进了队列才被拦下**的非方向内容：queue-07/19f1e52144398b6d（Contactless radar sensing offers a promi…）；queue-09/2459123f398960a0（ambient WiFi Channel State Information (…）；queue-09/98a15602fb7fb35e（learning-based beam adaptation framework…）；queue-11/3573d5a391326adf（本文整理了阿里巴巴面试中关于慢SQL排查与优化、MySQL索引、Redis数据结…）；queue-11/b267ff96b62b124d（25 MB lightweight cross-platform databas…）；queue-12/b5d97e0997c4193a（本文整理了盒马面试中高频的 Java 与并发编程面试题……synchronize…）。修法只需人工拍板二选一：(a) minCoreFitForTechnical 0.5→0.75；或 (b) 把 multimodal/多模态 从 CORE_DIRECTION_TERMS 降级为宽口径词。",
+  "【深读层】【渠道·需人工决策，连续多轮】仍有 12 个渠道连续 3 轮以上失败：jobs_alibaba(blocked×9), jobs_bytedance(blocked×9), jobs_minimax(blocked×9), jobs_moonshot(blocked×9), jobs_shailab(blocked×9), jobs_zhipu(blocked×9), machineheart(blocked×9), openreview(blocked×9), reddit(blocked×9), rsshub(blocked×9), hf_blog_rss(error×4), hf_papers(error×4)。按契约**不自动禁用渠道**，请人工确认：永久下线、换源，还是改人工导入。",
+  "【深读层】【渠道·上一轮结论已作废】上一轮（2026-10-05）基于「本轮有产出」判定 hf_papers / hf_blog_rss 已自愈、并建议关闭该条。本轮两者**再次失败**（Tunnel 502）：hf_blog_rss error×4；hf_papers error×4。结论修正：这不是稳定自愈，而是**出口代理的间歇性故障**，该条不应关闭，需人工决定是否改用直连源或本地镜像。",
+  "【深读层】【需人工决策，连续多轮】论文数超分类上限：posttraining=54 / worldmodel=52 / generative=49 / agent=47 / multimodal=45 / rl=38（上限 maxPapersPerCategory=26，共 6 个分类越界）。需要人工决定是否执行 python scripts/prune_items.py --apply。注意该命令会把被删条目写进 blocklist（不会自动回来）。",
+  "【深读层】【需人工决策】公式库同义 id 碎片化：11 组公式名重复，「缩放点积注意力 (Scaled Dot-Product …」×3、「GRPO 组相对策略优化目标（Group Relativ…」×2、「LoRA 低秩更新（Low-Rank Adaptatio…」×2、「仿射量化与反量化（Affine Quantization…」×2、「余弦相似度检索打分（Cosine Similarity …」×2。建议人工合并/删除同义公式，否则「公式剖析」页会长期出现多条等价公式。（深读层的 id 去重只保证不新增重复，不会自动清理既有重名。）",
+  "【深读层】【数据质量·需人工确认】2 条无摘要条目（采集层拿不到摘要，需深读层抓原文）：483764c59e96fd52（Fixing GRPO's credit assignm…，hn，已深读）；d235d4d0dd5acd4b（The Agent Said It Was Done. …，hf_blog_rss，未深读）。若同一渠道的无摘要条数突然增多，说明该源返回格式变了，应加入人工复核清单。"
+ ],
+ "stats": {
+  "totalItems": 883,
+  "freshThisRun": 0,
+  "channelsRan": 28,
+  "channelsOk": 15
+ },
+ "agentReview": {
+  "generatedAt": "2026-10-06T21:47:56+08:00",
+  "note": "深读层补充（由本轮产物推导，不再使用硬编码文本）：方向闸门、渠道失败、论文饱和、公式 id 碎片化、needsFetch 状态。",
+  "deepRead": {
+   "queued": 80,
+   "problemBankQueued": 14,
+   "backfillQueued": 0,
+   "entriesFull": 82,
+   "entriesBackfill": 0,
+   "skipped": 12,
+   "skipDetail": [
+    {
+     "id": "19f1e52144398b6d",
+     "batch": "queue-07",
+     "reason": "off-direction",
+     "evidence": "Contactless radar sensing offers a promising approach to continuous vital-sign monitoring ... reconfigurable intelligent surface (RIS)-assisted monopulse radar "
+    },
+    {
+     "id": "2459123f398960a0",
+     "batch": "queue-09",
+     "reason": "off-direction",
+     "evidence": "ambient WiFi Channel State Information (CSI) can substitute for a body-worn inertial measurement unit (IMU) in human activity recognition (HAR)"
+    },
+    {
+     "id": "98a15602fb7fb35e",
+     "batch": "queue-09",
+     "reason": "off-direction",
+     "evidence": "learning-based beam adaptation framework for active/passive-aware monopulse integrated sensing and communication (ISAC) with spatial leakage suppression"
+    },
+    {
+     "id": "3573d5a391326adf",
+     "batch": "queue-11",
+     "reason": "off-direction",
+     "evidence": "本文整理了阿里巴巴面试中关于慢SQL排查与优化、MySQL索引、Redis数据结构、设计模式、进程线程及SpringBoot自动装配等高频考点。"
+    },
+    {
+     "id": "b267ff96b62b124d",
+     "batch": "queue-11",
+     "reason": "off-direction",
+     "evidence": "25 MB lightweight cross-platform database client for 100+ databases, including MySQL, PostgreSQL, SQLite, Redis, MongoDB, DuckDB, SQL Server, and Dameng."
+    },
+    {
+     "id": "b5d97e0997c4193a",
+     "batch": "queue-12",
+     "reason": "off-direction",
+     "evidence": "本文整理了盒马面试中高频的 Java 与并发编程面试题……synchronized 与 Lock 区别……以及 MySQL 索引分类等核心考点，帮助求职者系统准备大厂技术面试。"
+    },
+    {
+     "id": "209a6520800a5cf3",
+     "batch": "queue-15",
+     "reason": "off-direction",
+     "evidence": "TCP 拥塞控制是计算机网络面试中的高频考点……通过慢开始、拥塞避免、快重传、快恢复四种经典算法动态调整发送速率——属纯计算机网络/后端工程八股，与多模态/post-training/生成式/世界模型/大模型手撕均无技术关联"
+    },
+    {
+     "id": "45af88edc732a0d6",
+     "batch": "queue-15",
+     "reason": "off-direction",
+     "evidence": "事务的四大特性（ACID）是数据库面试的核心高频考点……通过Undo Log保证原子性、锁与MVCC实现隔离性、Redo Log确保持久性——属纯数据库工程八股，与多模态/post-training/生成式/世界模型/大模型手撕均无技术关联"
+    },
+    {
+     "id": "8d63fbcdd499a7d4",
+     "batch": "queue-16",
+     "reason": "off-direction",
+     "evidence": "软连接和硬链接的区别是操作系统与Linux文件系统的高频面试考点，核心在于inode引用……本文通过原理对比、代码示例详解了inode计数、文件系统限制、悬空链接等关键概念"
+    },
+    {
+     "id": "bfa2262c9d9e3dec",
+     "batch": "queue-16",
+     "reason": "off-direction",
+     "evidence": "索引失效是数据库面试高频考点，指查询优化器未使用本应生效的索引……在索引列上使用函数或计算、以通配符开头的模糊匹配……违反联合索引最左前缀原则"
+    },
+    {
+     "id": "b70eb1d32b1f347e",
+     "batch": "queue-16",
+     "reason": "off-direction",
+     "evidence": "Cookie和Session是面试中高频出现的HTTP状态管理考点……解析了Cookie通过Set-Cookie/请求头传递、Session依赖Session ID的工作机制，并拓展了分布式Session与JWT等现代架构方案"
+    },
+    {
+     "id": "91c887571279d21f",
+     "batch": "queue-16",
+     "reason": "off-direction",
+     "evidence": "本文详解数据库索引的种类，这是数据库面试中的高频考点。从数据结构（B+树、哈希、全文）、物理存储（聚簇、非聚簇）和逻辑特性（主键、普通、联合、唯一、空间）三大维度系统分类"
+    }
+   ]
+  }
+ }
+}

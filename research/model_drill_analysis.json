@@ -1,0 +1,3434 @@
+{
+ "generatedAt": "2026-10-04T01:41:00+08:00",
+ "source": "_gen_model_drills.py（作者工具；全部实现 exec+assert 验证后入库）",
+ "drills": {
+  "curated-mha-implementation": {
+   "tldr": "MHSA 的全部难点是「形状编排」：把 (B,S,d) 投影成 (B,h,S,dh)，Q·Kᵀ/√dh 后做因果掩码，softmax 得权重再加权 V，最后合并各头再投影。多头不是特征变多，而是让不同头在独立子空间里各自学一种关系。",
+   "why": "所有 LLM 面试的第一道手撕题：同时考察注意力公式、√dh 的来历、因果掩码写法和张量变形功底。这题答不清，KV-Cache/FlashAttention/GQA 的追问都无从展开。",
+   "teaching": {
+    "progressive": [
+     {
+      "level": 1,
+      "text": "先把单头写对：score = Q·Kᵀ/√dh，权重 = softmax(score)，输出 = 权重·V。三步矩阵乘。"
+     },
+     {
+      "level": 2,
+      "text": "加因果掩码：j>i 的 score 加 −1e9 再 softmax——不是删行，是让 exp 下溢为 0。"
+     },
+     {
+      "level": 3,
+      "text": "扩到多头：(B,S,d) → reshape (B,S,h,dh) → transpose (B,h,S,dh)，头成为独立 batch 维；算完逆操作合并，过 W_o。"
+     },
+     {
+      "level": 4,
+      "text": "生产视角：(B,h,S,S) 权重矩阵是显存大头（FlashAttention 的动机）；推理时 K/V 可缓存（KV-Cache 的入口）。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么除以 √dh？",
+      "a": "Q·K 每分量是 dh 个独立乘积求和，方差随 dh 线性增长；除 √dh 把方差拉回 ~1，防止 softmax 饱和梯度消失。"
+     },
+     {
+      "q": "掩码为什么加 −1e9 而不是置 0？",
+      "a": "置 0 后 softmax 仍给这些位置分配 e⁰>0 的权重——0 分不是负无穷分。加 −1e9 让 exp 下溢为 0，才是真「看不见」。"
+     },
+     {
+      "q": "多头合并后为什么还要 W_o？",
+      "a": "concat 只是摆放，W_o 让不同头的信息混合。没有它，多头退化成 h 个互不通信的单头。"
+     }
+    ],
+    "mechanism": "每头独立投影 Q/K/V，在低维子空间内做 scaled dot-product attention；输出 concat 后经 W_o 融合。多头的价值是关系多样性——语法、共指、位置局部性在不同头里各自形成。",
+    "boundary": "单头大 dh 与多头小 dh 参数量相同但表达不同：多头有 h 个 softmax 分布，关系容量更大；但 dh<32 时点积估计噪声大。dh=64 是关系容量与估计质量的折中。",
+    "analogyBoundary": "像多位评审独立打分再汇总：各有评分标准（投影），最后开会统一（W_o）。失效处：评审如何融合是训练学出的（W_o 可学习），不是固定平均。",
+    "misconceptions": [
+     "拆头直接 reshape(B,h,S,dh)——把序列切碎，必须先 (B,S,h,dh) 再 transpose。",
+     "掩码加在 softmax 之后——score 仍参与归一化分母，信息照样泄漏。",
+     "√dh 写成 √d 或 √S：缩放只跟点积求和长度 dh 有关。",
+     "忘 W_o：concat 不等于输出。",
+     "softmax 不减 max：S 大时 exp 上溢。"
+    ],
+    "ownAnalysis": "形状注释从头写到尾——面试官就在看 (B,h,S,dh) 是否条件反射。掩码先造 (1,1,S,S) 三角布尔阵再 where，不要循环。写完主动做因果性自测：改动未来 token，过去输出不变——最有说服力的验证，还能自然引到 KV-Cache。",
+    "officialNotes": "Attention Is All You Need (Vaswani 2017) §3.2.2；The Annotated Transformer 逐行实现；torch F.scaled_dot_product_attention 文档。",
+    "interviewAnswer": "先写公式，再按「投影→分头→点积→掩码→softmax→加权→合头→W_o」落码，主动讲 √dh 方差论证、−1e9 原理、(B,h,S,S) 显存问题，收尾引出 FlashAttention 与 KV-Cache。",
+    "studyPath": {
+     "prerequisites": [
+      "矩阵乘与 einsum",
+      "softmax 数值稳定",
+      "reshape/transpose 语义"
+     ],
+     "nextSteps": [
+      "KV-Cache 与 GQA",
+      "FlashAttention",
+      "RoPE"
+     ]
+    }
+   },
+   "diagram": {
+    "kind": "architecture",
+    "title": "一次前向里张量的形状流转（B=2, h=4, S=5, d=256, dh=64）",
+    "caption": "四个投影把 (B,S,d) 变成 (B,h,S,dh)；attention 在头维内独立完成；concat 回 (B,S,256) 经 W_o 输出。掩码作用在 softmax 之前。",
+    "alt": "MHSA 张量形状流转图",
+    "svg": "<svg viewBox='0 0 680 362' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='MHSA 前向张量形状流转'><rect x='150' y='14' width='250' height='30' rx='8' fill='none' stroke='var(--warn)' stroke-width='2.1'/><text x='275.0' y='34' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>W_q / W_k / W_v  线性投影</text><text x='140' y='34' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>(B,S,256)</text><text x='410' y='34' font-size='13' fill='currentColor' opacity='0.8'>各 (B,S,256)</text><text x='150' y='60' font-size='13' opacity='0.72' fill='currentColor'>常合并为 (d,3d) 大矩阵一次算完</text><line x1='275.0' y1='48' x2='275.0' y2='68' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,62 279.0,62 275.0,69' fill='var(--line-1)'/><rect x='150' y='72' width='250' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.3'/><text x='275.0' y='92' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>reshape + transpose 拆头</text><text x='140' y='92' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>(B,S,256)</text><text x='410' y='92' font-size='13' fill='currentColor' opacity='0.8'>Q,K,V: (B,4,5,64)</text><text x='150' y='118' font-size='13' opacity='0.72' fill='currentColor'>头维插在 batch 之后，成为独立子空间</text><line x1='275.0' y1='106' x2='275.0' y2='126' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,120 279.0,120 275.0,127' fill='var(--line-1)'/><rect x='150' y='130' width='250' height='30' rx='8' fill='none' stroke='var(--warn)' stroke-width='2.1'/><text x='275.0' y='150' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>Q·Kᵀ / √64</text><text x='140' y='150' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>(B,4,5,64)×(B,4,64,5)</text><text x='410' y='150' font-size='13' fill='currentColor' opacity='0.8'>score (B,4,5,5)</text><text x='150' y='176' font-size='13' opacity='0.72' fill='currentColor'>√dh 缩放让 logits 方差 ~1</text><line x1='275.0' y1='164' x2='275.0' y2='184' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,178 279.0,178 275.0,185' fill='var(--line-1)'/><rect x='150' y='188' width='250' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.3'/><text x='275.0' y='208' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>因果掩码 + softmax</text><text x='140' y='208' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>score (B,4,5,5)</text><text x='410' y='208' font-size='13' fill='currentColor' opacity='0.8'>权重 (B,4,5,5)</text><text x='150' y='234' font-size='13' opacity='0.72' fill='currentColor'>j&gt;i 的 score += −1e9；softmax 沿最后一维</text><line x1='275.0' y1='222' x2='275.0' y2='242' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,236 279.0,236 275.0,243' fill='var(--line-1)'/><rect x='150' y='246' width='250' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.3'/><text x='275.0' y='266' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>权重·V，合并各头</text><text x='140' y='266' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>(B,4,5,64)</text><text x='410' y='266' font-size='13' fill='currentColor' opacity='0.8'>(B,5,256)</text><text x='150' y='292' font-size='13' opacity='0.72' fill='currentColor'>transpose 回来再 reshape</text><line x1='275.0' y1='280' x2='275.0' y2='300' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,294 279.0,294 275.0,301' fill='var(--line-1)'/><rect x='150' y='304' width='250' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.3'/><text x='275.0' y='324' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>W_o 输出投影</text><text x='140' y='324' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>(B,5,256)</text><text x='410' y='324' font-size='13' fill='currentColor' opacity='0.8'>(B,5,256)</text><text x='150' y='350' font-size='13' opacity='0.72' fill='currentColor'>各头信息混合——多头真正「多」的一步</text></svg>"
+   },
+   "concepts": [
+    {
+     "name": "缩放点积",
+     "readable": "Q·K 点积衡量「我该关注你多少」，除 √dh 防止求和把方差撑大。",
+     "analogy": "考试给分：题目越多总分越大，要除 √题量才能跨卷比较。",
+     "analogyBreaksDown": "总分线性增长，方差按 √dh 增长——缩放保方差不保均值，所以除 √dh 不是 dh。",
+     "mechanism": "q,k 分量 iid 零均值方差 1 时，和的方差 = dh；除 √dh 回到 1，softmax 远离饱和区。",
+     "visual": "dh=64 → 缩放 1/8：score 整体缩小 8 倍。",
+     "prerequisites": [
+      "点积方差的维度依赖",
+      "softmax 饱和与梯度"
+     ],
+     "selfTest": "q,k 分量方差变 4，缩放因子改多少？（仍 √dh——只补维度不补分布）",
+     "formula": "softmax(QKᵀ/√dh)V"
+    },
+    {
+     "name": "因果掩码",
+     "readable": "位置 i 只许看 ≤ i：j>i 的 score 加 −1e9。",
+     "analogy": "考场只能看已发的试卷页。",
+     "analogyBreaksDown": "挡的是「信息获取」不是「数值大小」——被挡位置不进入归一化，不是低分。",
+     "mechanism": "exp(−1e9−max)≈0，权重为 0 且分母无贡献——等价于不存在。",
+     "visual": "5×5 上三角封死，对角线及以下可看。",
+     "prerequisites": [
+      "−1e9 与 0 的区别",
+      "padding 掩码叠加"
+     ],
+     "selfTest": "BERT 为什么不用？（编码器全句可见）",
+     "formula": "score.masked_fill(~mask, -1e9)"
+    },
+    {
+     "name": "多头子空间",
+     "readable": "h 个头在 d/h 维子空间独立 attention，最后拼接融合。",
+     "analogy": "委员会各自调研再开会决议。",
+     "analogyBreaksDown": "委员开会前不交流（头间无交互），交流只发生在 W_o 且规则是学的。",
+     "mechanism": "各头独立 W_qᵢ/W_kᵢ/W_vᵢ（实现合成大矩阵再 reshape）；输出 concat 经 W_o∈R^{d×d} 回模型空间。",
+     "visual": "4 头 × 64 维 concat = 256 维，再乘 256×256 W_o。",
+     "prerequisites": [
+      "参数量：4d² vs 单头 d²",
+      "为什么合并后必须再投影"
+     ],
+     "selfTest": "heads=8, d=512 时单头 dh？（64）",
+     "formula": "MultiHead = Concat(head₁..h)·W_o"
+    }
+   ],
+   "problem": {
+    "statement": "用 numpy 手写带因果掩码的多头自注意力：输入 X (B,S,d)，头数 h，输出 (B,S,d)。要求显式 √dh 缩放、−1e9 掩码、softmax 前减 max、形状注释完整。",
+    "examples": [],
+    "approach": {
+     "idea": "三步：① 一次矩阵乘完成 Q/K/V 投影再拆头；② 单头 scaled dot-product + 掩码 + 稳定 softmax；③ 合头 + W_o。",
+     "steps": [
+      "W_q/W_k/W_v/W_o 初始化（真实训练中可学习）",
+      "X@W → reshape (B,S,h,dh) → transpose (B,h,S,dh)",
+      "score = Q @ Kᵀ / sqrt(dh)",
+      "因果掩码：j>i 处 score += −1e9",
+      "softmax 前沿最后一维减 max",
+      "权重@V → transpose 回 → reshape (B,S,d) → @ W_o"
+     ],
+     "whyItWorks": "注意力是可微分的查表：Q·K 匹配度经 softmax 变软寻址权重，V 按权重混合。缩放保数值、掩码保因果、多头保多样性、W_o 保融合。",
+     "alternatives": []
+    },
+    "solution": {
+     "python": "import numpy as np\n\ndef softmax(x, axis=-1):\n    x = x - x.max(axis=axis, keepdims=True)\n    e = np.exp(x)\n    return e / e.sum(axis=axis, keepdims=True)\n\ndef mha(X, Wq, Wk, Wv, Wo, n_head, causal=True):\n    \"\"\"X:(B,S,d) -> (B,S,d)。所有 W 是 (d,d)。\"\"\"\n    B, S, d = X.shape\n    dh = d // n_head\n    assert dh * n_head == d\n    def split(T):   # (B,S,d) -> (B,h,S,dh)：先拆头再换轴\n        return T.reshape(B, S, n_head, dh).transpose(0, 2, 1, 3)\n    Q, K, V = split(X @ Wq), split(X @ Wk), split(X @ Wv)\n    score = Q @ K.transpose(0, 1, 3, 2) / np.sqrt(dh)  # (B,h,S,S)\n    if causal:\n        tri = np.triu(np.ones((S, S), bool), k=1)\n        score = np.where(tri, score - 1e9, score)\n    w = softmax(score)\n    out = w @ V                                        # (B,h,S,dh)\n    out = out.transpose(0, 2, 1, 3).reshape(B, S, d)\n    return out @ Wo\n\n# 自测：形状 + 因果性（改未来 token，过去输出不变）\nrng = np.random.default_rng(0)\nB, S, d, h = 2, 5, 256, 4\nX = rng.normal(size=(B, S, d))\nWq, Wk, Wv, Wo = (rng.normal(scale=0.02, size=(d, d)) for _ in range(4))\nY = mha(X, Wq, Wk, Wv, Wo, h)\nassert Y.shape == (B, S, d)\nX2 = X.copy(); X2[:, 3:, :] = rng.normal(size=(B, S - 3, d))\nY2 = mha(X2, Wq, Wk, Wv, Wo, h)\nassert np.allclose(Y[:, :3, :], Y2[:, :3, :], atol=1e-10)\nprint('mha OK', Y.shape)\n",
+     "python_alt": null,
+     "notes": "Wq/Wk/Wv 生产实现常合成 (d,3d) 大矩阵一次 GEMM；这里分开写为可读。因果性自测是最有说服力的验证：掩码真生效时，未来token 换内容不影响过去输出。"
+    },
+    "complexity": {
+     "time": "O(h·S²·dh) = O(S²·d)",
+     "space": "O(h·S²·dh)，权重矩阵是显存大头",
+     "why": "S×S 权重矩阵逐头独立存在，长序列平方增长——FlashAttention 把它压到 O(S·dh) 的动机。"
+    },
+    "keyPoints": [
+     "score = QKᵀ/√dh，除 √dh 是方差归一化不是可选项",
+     "掩码加在 softmax 之前的 score 上，用 −1e9 而非 0",
+     "拆头 (B,S,h,dh)→(B,h,S,dh)，合头逆操作",
+     "softmax 前沿最后一维减 max",
+     "W_o 是多头机制的一半：没有它头与头从未交互",
+     "训练并行+掩码 vs 推理逐 token+缓存，两套运行时行为"
+    ],
+    "pitfalls": [
+     "拆头直接 reshape(B,h,S,dh)——序列被切碎。",
+     "掩码用 0 而非 −1e9：softmax 仍分配正权重。",
+     "score 忘除 √dh：softmax 饱和训练不动。",
+     "softmax 沿错轴：必须沿最后一维（每个查询位置）。",
+     "合头忘先 transpose 再 reshape，维度对不上当场卡死。",
+     "不减 max 直接 exp：S 大必溢出。"
+    ],
+    "edgeCases": [
+     "S=1：输出 = 单 token 的 V 投影，无信息混合。",
+     "h=1：退化为单头 scaled dot-product。",
+     "dh=1：每头一个标量维度，方差论证失效。",
+     "含 padding：因果掩码上再叠 padding 掩码。",
+     "X 全零：softmax 均匀，输出 = W_o·mean(V)。"
+    ],
+    "interviewTips": "先把形状写在草稿上，每步标注。写完主动演示因果性验证，再带出「推理时 K/V 可缓存」——把话题引向 KV-Cache/FlashAttention 的主场。",
+    "variants": [
+     {
+      "name": "einsum 一体版",
+      "idea": "einsum 把「拆头-点积-加权」写成一行，头维自动对齐，展示形状功底的加分写法。",
+      "code": "import numpy as np\nrng = np.random.default_rng(1)\nB,S,d,h = 2,4,64,8; dh = d//h\nX = rng.normal(size=(B,S,d))\nWqkv = rng.normal(scale=0.02, size=(d, 3*d))\nqkv = X @ Wqkv\nq,k,v = np.split(qkv, 3, axis=-1)\nshp = (B,S,h,dh)\nq,k,v = (t.reshape(shp).transpose(0,2,1,3) for t in (q,k,v))\nscore = np.einsum('bhqd,bhkd->bhqk', q, k) / np.sqrt(dh)\nmask = np.triu(np.ones((S,S),bool),1)\nscore = np.where(mask, -1e9, score)\nw = np.exp(score - score.max(-1,keepdims=True))\nw = w / w.sum(-1,keepdims=True)\nout = np.einsum('bhqk,bhkd->bhqd', w, v)\nout = out.transpose(0,2,1,3).reshape(B,S,d)\nassert out.shape == (B,S,d)\nprint('einsum 版 OK')\n",
+      "when": "熟悉 einsum、追求代码密度；生产实现里 einsum/bmm 均常见。",
+      "cost": "少两次临时矩阵"
+     },
+     {
+      "name": "单头显式循环（教学版）",
+      "idea": "每个查询位置对每个键位置显式循环，看清「掩码挡谁」；O(S³) 只用于讲原理。",
+      "code": "import numpy as np\nrng = np.random.default_rng(2)\nS,d = 4,16\nX = rng.normal(size=(S,d))\nWq,Wk,Wv = (rng.normal(scale=.1,size=(d,d)) for _ in range(3))\nQ,K,V = X@Wq, X@Wk, X@Wv\nout = np.zeros_like(V)\nfor i in range(S):\n    scores = np.array([Q[i]@K[j]/np.sqrt(d) if j<=i else -1e9\n                       for j in range(S)])\n    w = np.exp(scores - scores.max())\n    w /= w.sum()\n    out[i] = w @ V\n    assert abs(w.sum()-1) < 1e-9\nprint('循环教学版 OK')\n",
+      "when": "白板推导、给面试官逐步讲掩码语义；生产不用。",
+      "cost": "O(S³)，纯教学"
+     }
+    ],
+    "comparison": [
+     {
+      "cells": [
+       "实现",
+       "显存",
+       "时间",
+       "适用"
+      ]
+     },
+     {
+      "cells": [
+       "朴素（本实现）",
+       "O(S²·d)",
+       "O(S²·d)",
+       "小模型训练/白板"
+      ]
+     },
+     {
+      "cells": [
+       "FlashAttention",
+       "O(S·dh)",
+       "O(S²·d)",
+       "长序列训练/推理"
+      ]
+     },
+     {
+      "cells": [
+       "KV-Cache 推理",
+       "O(S·d) 缓存",
+       "每 token O(S·d)",
+       "自回归解码"
+      ]
+     },
+     {
+      "cells": [
+       "线性注意力",
+       "O(S·d²/dh)",
+       "O(S·d)",
+       "超长序列近似"
+      ]
+     }
+    ],
+    "interviewScript": "「我按投影、分头、点积、掩码、加权、合头六步写。两个易错点先说明：拆头必须先 reshape 后 transpose；掩码加 −1e9 在 softmax 前。写完用因果性自测——改动未来 token 过去输出不变。这个实现的两个工程后裔是 FlashAttention（压 S² 显存）和 KV-Cache（省重复计算），需要可以继续展开。」"
+   }
+  },
+  "curated-kv-cache-memory": {
+   "tldr": "自回归解码不缓存 K/V 就是每步重算全部历史——O(S²)。KV-Cache 用 O(S·L·d) 显存换增量计算；GQA 再把 KV 头数除以分组数 g，显存直降 g 倍，Llama-2/3-70B 的标准配置。",
+   "why": "推理优化岗必考：先考「会不会算」（显存公式现场推），再考「怎么省」（GQA/MQA/量化/分页）。串起模型结构、显存、吞吐三个维度，区分度极高。",
+   "teaching": {
+    "progressive": [
+     {
+      "level": 1,
+      "text": "会算：每层缓存 K 和 V 各 (B,S,d)，fp16 每元素 2 字节。总显存 = 2·L·B·S·d·dtype。"
+     },
+     {
+      "level": 2,
+      "text": "看数量级：Llama-2-7B（L=32,d=4096）4K 上下文单序列 ≈ 2.1 GB——比权重本身更敏感。"
+     },
+     {
+      "level": 3,
+      "text": "GQA：Q 头不变，KV 头分组共享——g 个 Q 头共用 1 组 KV，KV 显存 ÷g，质量几乎无损。"
+     },
+     {
+      "level": 4,
+      "text": "对比 MQA（g=1，省到极致质量有损）与 PagedAttention（按页管理 KV 治碎片，vLLM 核心）。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么只缓存 K/V 不缓存 Q？",
+      "a": "当前步的 Q 只有 1 个 token 现算即可；注意力要对全部历史K/V 打分——历史部分每步相同，不缓存就重算。缓存的是「被查方」。"
+     },
+     {
+      "q": "GQA 为什么几乎不掉点？",
+      "a": "注意力质量主要取决于 Q 头多样性；KV 共享只是多个 Q 头读同一份「记忆」。图书馆少建分馆，读者还能提不同问题。"
+     },
+     {
+      "q": "MQA 更省为什么主流选 GQA？",
+      "a": "g=1 时所有 Q 头被迫问同一个问题，能力受损；GQA 保留分组独立性，是显存与质量的经验最优。"
+     }
+    ],
+    "mechanism": "解码第 t 步：新 token 的 Q 与「缓存 K/V[0..t-1] + 当前 K/V」做注意力。缓存形状 (B, n_kv_head, S, dh)；GQA 下 n_kv = n_head/g，Q 头按 i//g 映射到 KV 组。",
+    "boundary": "g=1（MQA）最省但查询同质化损质量；g=n_head（MHA）最贵质量最高。batch 大、序列长时 KV 显存主导，GQA 收益越大；短序列小 batch 收益有限。",
+    "analogyBoundary": "开会记录：MHA 每人一本笔记，GQA 每组共享一本，MQA 全场一本。失效处：共享笔记不「丢信息」，但 MQA 确实损质量——不同头查询分布不同，一组 KV 无法同时最优满足。",
+    "misconceptions": [
+     "公式漏掉 2（K/V 各一份）或层数 L——数量级错误。",
+     "以为缓存注意力权重——缓存 K/V 张量，权重每步重算。",
+     "GQA 是「减少 Q 头」——Q 头不变，减的是 KV 头。",
+     "混淆 KV-Cache（省计算）与 PagedAttention（省碎片）。",
+     "参数量 B（十亿）与字节 B 混写。"
+    ],
+    "ownAnalysis": "先白纸推公式 2·L·B·S·d·dtype，代入真实模型给数量级，再引 GQA 分组比。能当场算出「70B 模型 batch=8、4K 上下文KV 多少 GB」是强信号。收尾提 PagedAttention 和 KV 量化（int8/fp8），展示推理栈全貌。",
+    "officialNotes": "GQA 论文 (Ainslie 2023)；MQA (Shazeer 2019)；PagedAttention/vLLM (Kwon 2023)；Llama-2/3 技术报告给出各尺寸 GQA 配置。",
+    "interviewAnswer": "公式 2LKbd×dtype → 代入 7B/70B 算量级 → GQA 显存 ÷g → MQA 质量代价 → PagedAttention 管碎片 → KV 量化再压一半，完整推理显存优化链。",
+    "studyPath": {
+     "prerequisites": [
+      "MHA 结构",
+      "自回归解码流程",
+      "fp16/bf16 字节数"
+     ],
+     "nextSteps": [
+      "PagedAttention 与 vLLM",
+      "KV-Cache 量化",
+      "投机解码"
+     ]
+    }
+   },
+   "diagram": {
+    "kind": "architecture",
+    "title": "MHA / GQA / MQA 的 KV 头共享结构（Q 8 头为例）",
+    "caption": "GQA（g=2 组距）里每 2 个 Q 头共享 1 组 KV，KV 显存减半；MQA 全部 Q 共享 1 组，减为 1/8 但查询同质化。",
+    "alt": "MHA vs GQA vs MQA 的 KV 共享对比",
+    "svg": "<svg viewBox='0 0 680 238' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='三种注意力方案的 KV 头数与显存'><rect x='20' y='14' width='200' height='180' rx='10' fill='none' stroke='var(--line-1)' stroke-width='1.3'/><text x='120.0' y='38' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>MHA（8 组 KV）</text><text x='32' y='64' font-size='13' fill='currentColor' opacity='0.85'>KV 头数 = Q 头数 = 8</text><text x='32' y='88' font-size='13' fill='currentColor' opacity='0.85'>每头独立记忆</text><text x='32' y='112' font-size='13' fill='currentColor' opacity='0.85'>显存基准 1×</text><text x='32' y='136' font-size='13' fill='currentColor' opacity='0.85'>质量最优</text><text x='32' y='160' font-size='13' fill='currentColor' opacity='0.85'>成本最高</text><rect x='240' y='14' width='200' height='180' rx='10' fill='none' stroke='var(--warn)' stroke-width='2.1'/><text x='340.0' y='38' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>GQA（4 组 KV）</text><text x='252' y='64' font-size='13' fill='currentColor' opacity='0.85'>每 2 个 Q 头共享 1 组 KV</text><text x='252' y='88' font-size='13' fill='currentColor' opacity='0.85'>KV 头数 = 4</text><text x='252' y='112' font-size='13' fill='currentColor' opacity='0.85'>显存 1/2</text><text x='252' y='136' font-size='13' fill='currentColor' opacity='0.85'>质量 ≈ MHA</text><text x='252' y='160' font-size='13' fill='currentColor' opacity='0.85'>Llama-2/3 主流</text><rect x='460' y='14' width='200' height='180' rx='10' fill='none' stroke='var(--line-1)' stroke-width='1.3'/><text x='560.0' y='38' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>MQA（1 组 KV）</text><text x='472' y='64' font-size='13' fill='currentColor' opacity='0.85'>所有 Q 头共享 1 组 KV</text><text x='472' y='88' font-size='13' fill='currentColor' opacity='0.85'>KV 头数 = 1</text><text x='472' y='112' font-size='13' fill='currentColor' opacity='0.85'>显存 1/8</text><text x='472' y='136' font-size='13' fill='currentColor' opacity='0.85'>质量有损</text><text x='472' y='160' font-size='13' fill='currentColor' opacity='0.85'>极致吞吐</text><text x='340.0' y='228' font-size='13' text-anchor='middle' font-weight='bold' fill='currentColor'>KV 显存 ∝ KV 头数：分组数 g 是显存与质量的旋钮</text></svg>"
+   },
+   "concepts": [
+    {
+     "name": "自回归重复计算",
+     "readable": "无缓存时生成第 t 个 token 要对前 t 个 token 全部重算 K/V，累计 O(S²)。",
+     "analogy": "每次加一页都重抄全书——其实只需写新页。",
+     "analogyBreaksDown": "「重抄」浪费计算，但注意力权重每步确实变；不变的只有 K/V 本身。",
+     "mechanism": "K[i]=f(x_i) 只依赖 x_i，与后续无关——causal 结构保证历史不依赖未来，这就是可缓存的数学依据。",
+     "visual": "第 t 步：新 Q(1,dh) × 缓存 K(t,dh)ᵀ → (1,t) 权重 → 加权 V。",
+     "prerequisites": [
+      "为什么 causal 可增量解码",
+      "双向模型为什么不行"
+     ],
+     "selfTest": "prefill 与 decode 的计算特征差异？（并行算力密集 vs 逐 token 访存密集）",
+     "formula": "KV[t] = concat(KV[t-1], k_t)"
+    },
+    {
+     "name": "GQA 分组共享",
+     "readable": "Q 头分组，每组共用一组 K/V 头，KV 头数从 n_head 降到 n_head/g。",
+     "analogy": "8 个图书馆分馆合并成 4 个，读者人数不变。",
+     "analogyBreaksDown": "共享使不同 Q 头「看到同一份 K/V」——自由度下降是真实代价，只是经验上很小。",
+     "mechanism": "KV 投影输出 = n_kv·dh，再 repeat/gather 到 n_head 做 attention；映射 kv_idx = i//g（也有均间隔映射，训练时需一致）。",
+     "visual": "8 Q 头 + 4 KV 头：KV 投影参数与缓存均减半。",
+     "prerequisites": [
+      "g 常取 4~8",
+      "训练时用 GQA vs 后处理 uptraining"
+     ],
+     "selfTest": "Llama-2-70B 用 GQA 吗？（是，8 KV 头/64 Q 头）",
+     "formula": "n_kv_head = n_head // g"
+    },
+    {
+     "name": "PagedAttention",
+     "readable": "KV-Cache 切成固定大小页按需分配，逻辑连续物理离散。",
+     "analogy": "操作系统虚拟内存页表机制搬到 KV 显存管理。",
+     "analogyBreaksDown": "页表查询有开销，但相比消除的碎片（朴素分配实测 60%+ 浪费）完全值得。",
+     "mechanism": "vLLM 以 block（16 token）为粒度分配；相同前缀可共享物理页（prefix caching）；batch 内碎片接近零。",
+     "visual": "两条序列共享同一 system prompt 的物理页，只存一份。",
+     "prerequisites": [
+      "内部碎片 vs 外部碎片",
+      "prefix sharing 与 beam search 配合"
+     ],
+     "selfTest": "朴素 KV 分配 batch 大时浪费率为何高？（按 max_seq_len 预分配，实际长度参差）",
+     "formula": "logical block -> physical block 映射"
+    }
+   ],
+   "problem": {
+    "statement": "① 推导 KV-Cache 显存公式（含 GQA）；② numpy 实现 GQA 注意力的增量解码一步，并与全量计算对齐。",
+    "examples": [],
+    "approach": {
+     "idea": "显存：2·L·B·S·n_kv_head·dh·dtype。实现：维护 (B,n_kv,S,dh) 缓存，每步 append 新 k/v；Q 按 i//g 映射到 KV 组。",
+     "steps": [
+      "基础公式：bytes = 2(K,V) × L × B × S × d_kv × dtype",
+      "GQA：d_kv = n_kv_head·dh = (n_head/g)·dh",
+      "代入真实模型算数量级（7B, fp16, 4K）",
+      "缓存 (B,n_kv,S,dh)，每步 concat 新 k/v",
+      "Q (B,n_head,1,dh) 按组映射 → 单步注意力",
+      "验证逐步解码 == 全量前向对应行"
+     ],
+     "whyItWorks": "causal 注意力里 K/V 只依赖自身位置，一次计算终身使用；GQA 成立因为注意力质量主要由 Q 多样性决定，KV 适度共享几乎无损。",
+     "alternatives": []
+    },
+    "solution": {
+     "python": "import numpy as np\n\ndef kv_cache_bytes(L, B, S, n_kv_head, dh, dtype_bytes=2):\n    \"\"\"KV-Cache 显存（字节）：K 和 V 各一份。\"\"\"\n    return 2 * L * B * S * n_kv_head * dh * dtype_bytes\n\ngb = kv_cache_bytes(32, 1, 4096, 32, 128) / 1024**3\nprint(f'7B MHA fp16 4K ctx KV-Cache: {gb:.2f} GiB')\nassert 1.5 < gb < 2.5\ngb_gqa = kv_cache_bytes(32, 1, 4096, 4, 128) / 1024**3\nassert abs(gb_gqa - gb / 8) < 1e-9\nprint(f'7B GQA(g=8) fp16 4K ctx: {gb_gqa:.2f} GiB')\n\ndef softmax(x, axis=-1):\n    x = x - x.max(axis=axis, keepdims=True)\n    e = np.exp(x)\n    return e / e.sum(axis=axis, keepdims=True)\n\nrng = np.random.default_rng(3)\nn_head, g, dh = 8, 4, 16\nn_kv = n_head // g\nKc = rng.normal(size=(1, n_kv, 6, dh))\nVc = rng.normal(size=(1, n_kv, 6, dh))\nq = rng.normal(size=(1, n_head, 1, dh))\nkv_idx = np.arange(n_head) // g          # GQA 映射核心\nw = softmax((q @ Kc[:, kv_idx].transpose(0,1,3,2)) / np.sqrt(dh))\nout = w @ Vc[:, kv_idx]\nassert out.shape == (1, n_head, 1, dh)\nprint('GQA 增量步 OK; 4 KV 头 -> 8 Q 头映射正确')\n",
+     "python_alt": null,
+     "notes": "kv_idx = arange(n_head)//g 是 GQA 映射本质。显存公式的单位检查：全部用「元素个数」，最后乘 dtype 字节数。7B 模型 4K 上下文 MHA 约 2GB，GQA(g=8) 约 250MB——面试要报得出量级。"
+    },
+    "complexity": {
+     "time": "decode 单步 O(S·d)（有缓存）vs 无缓存累计 O(S²·d)",
+     "space": "O(2·L·B·S·n_kv_head·dh) 字节级缓存",
+     "why": "缓存把每步 K/V 计算从重算全部历史降到只算新 token；GQA 把缓存规模除以 g。"
+    },
+    "keyPoints": [
+     "显存公式 2·L·B·S·d_kv·dtype，四个乘数一个不能漏",
+     "缓存的是 K/V 张量，不是注意力权重",
+     "GQA：n_kv = n_head/g，映射 kv_idx = i//g",
+     "MQA 是 g=1 极限，省显存但查询同质化",
+     "prefill 算力密集、decode 访存密集——优化策略完全不同",
+     "PagedAttention 在管理层继续省：页化 + 前缀共享"
+    ],
+    "pitfalls": [
+     "公式漏乘 2 或漏乘 L——差数量级。",
+     "GQA 映射写反：是 Q 头 → 所属 KV 组。",
+     "以为缓存注意力权重——权重每步随新 Q 变化。",
+     "混淆 decode（访存密集）与 prefill（算力密集）。",
+     "用 fp32 字节数套 fp16 模型——推理栈全是 fp16/bf16/int8。"
+    ],
+    "edgeCases": [
+     "S=0（首 token）：缓存为空，注意力退化为对自身。",
+     "g=n_head / g=1：两端极限，公式自洽。",
+     "batch 内长度不齐：padding 或 PagedAttention 分页。",
+     "int8 KV：dtype_bytes=1，显存再 ÷2，需 scale 校准。",
+     "beam search：每 beam 独立缓存 ×beam 数（或共享前缀页）。"
+    ],
+    "interviewTips": "先写公式再报数字：面试官要听「4K 上下文 7B 模型 KV 约 2GB，GQA 省到 250MB」这种量级感。然后主动问「要不要看 GQA 增量解码实现」——把主动权抓在手里。",
+    "variants": [
+     {
+      "name": "MQA 极简版（g=1）",
+      "idea": "所有 Q 头共享唯一一组 KV，缓存最小、广播实现最简。",
+      "code": "import numpy as np\nrng = np.random.default_rng(4)\nn_head, dh, S = 8, 16, 6\nK1 = rng.normal(size=(1, 1, S, dh))\nV1 = rng.normal(size=(1, 1, S, dh))\nq = rng.normal(size=(1, n_head, 1, dh))\ndef softmax(x, axis=-1):\n    x = x - x.max(axis=axis, keepdims=True)\n    e = np.exp(x); return e / e.sum(axis=axis, keepdims=True)\nw = softmax((q @ K1.transpose(0,1,3,2)) / np.sqrt(dh))\nout = w @ V1\nassert out.shape == (1, n_head, 1, dh)\nprint('MQA OK: 1 组 KV 广播到 8 头')\n",
+      "when": "吞吐优先的推理服务；也作 GQA 的理解台阶。",
+      "cost": "KV 显存 1/n_head"
+     },
+     {
+      "name": "增量 KV 缓存维护（多步循环）",
+      "idea": "逐 token append 的缓存循环——decode 的真实骨架。",
+      "code": "import numpy as np\nrng = np.random.default_rng(5)\nn_kv, dh, T = 2, 8, 5\nKbuf, Vbuf = None, None\nfor t in range(T):\n    k = rng.normal(size=(1, n_kv, 1, dh))\n    v = rng.normal(size=(1, n_kv, 1, dh))\n    Kbuf = k if Kbuf is None else np.concatenate([Kbuf, k], axis=2)\n    Vbuf = v if Vbuf is None else np.concatenate([Vbuf, v], axis=2)\n    assert Kbuf.shape[2] == t + 1\nprint('缓存循环 OK, 最终长度', Kbuf.shape[2])\n",
+      "when": "任何自回归推理栈的骨架；口述比手写更重要。",
+      "cost": "每步 concat O(S)，生产用预分配环形缓冲"
+     }
+    ],
+    "comparison": [
+     {
+      "cells": [
+       "方案",
+       "KV 头数",
+       "KV 显存",
+       "质量",
+       "代表"
+      ]
+     },
+     {
+      "cells": [
+       "MHA",
+       "n_head",
+       "1×",
+       "最优",
+       "Llama-1, GPT-2"
+      ]
+     },
+     {
+      "cells": [
+       "GQA",
+       "n_head/g",
+       "1/g",
+       "≈MHA",
+       "Llama-2/3-70B, Mistral"
+      ]
+     },
+     {
+      "cells": [
+       "MQA",
+       "1",
+       "1/n_head",
+       "有损",
+       "PaLM, Falcon"
+      ]
+     },
+     {
+      "cells": [
+       "+PagedAttention",
+       "同上",
+       "同上(碎片≈0)",
+       "无损",
+       "vLLM"
+      ]
+     },
+     {
+      "cells": [
+       "+KV int8",
+       "同上",
+       "再÷2",
+       "近无损",
+       "FlexGen 类栈"
+      ]
+     }
+    ],
+    "interviewScript": "「分三层：算法层——causal 保证 K/V 可缓存，decode 从 O(S²) 降每步 O(S)；结构层——GQA 把 KV 头分组共享显存 ÷g，质量几乎无损；系统层——PagedAttention 治碎片、KV 量化压字节。公式 2LKbd×dtype，7B 模型 4K 上下文约 2GB fp16。」"
+   }
+  },
+  "curated-dpo-loss": {
+   "tldr": "DPO 把 RLHF 的「奖励模型 + PPO」压成一个监督损失：用「策略与参考策略的对数概率比」隐式定义奖励，对 chosen 比 rejected 做 logistic 回归。核心是 β 控制偏离参考模型的力度——一行损失，绕开整个 RL 循环。",
+   "why": "对齐方向第一道手撕题：考「从 RLHF 到 DPO 的等价变换」是否真懂，包括参考模型为什么冻结、β 的作用、completion-only masking。追问常到「DPO 何时不如 PPO」。",
+   "teaching": {
+    "progressive": [
+     {
+      "level": 1,
+      "text": "监督版直觉：让 policy 对 chosen 的对数概率变高、对 rejected 变低，差值过 sigmoid 做二分类。"
+     },
+     {
+      "level": 2,
+      "text": "加参考模型：不用绝对 logprob，用 log π_θ − log π_ref 衡量「相对参考偏了多少」，防止策略整体漂移。"
+     },
+     {
+      "level": 3,
+      "text": "理论身份：这个对数比在 RLHF 目标闭式解里就是隐式奖励 r = β·log(π/π_ref)——DPO 是推导出来的，不是启发式。"
+     },
+     {
+      "level": 4,
+      "text": "工程细节：mask 掉 prompt 只算 completion；β 是 KL 约束强度（β 小偏离大）；负样本难度影响梯度——IPO/SimPO 由此出发。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么必须冻结参考模型？",
+      "a": "π_ref 是 KL 约束的锚点：损失定义在相对 π_ref 的偏移上。锚点跟着更新，偏移失去意义。实现上 π_ref 只前向不反传。"
+     },
+     {
+      "q": "β 变小会怎样？",
+      "a": "β 是 KL 强度的倒数代理：β 小，隐式奖励 scale 大，允许更大偏离——对齐信号强但易 reward hacking（长度爆炸、风格坍缩）。经验 0.05~0.5。"
+     },
+     {
+      "q": "为什么只对 completion 算概率？",
+      "a": "prompt 在两个样本里相同，logprob 项相减完全抵消——数学上无影响，算进去只浪费算力、稀释梯度。"
+     }
+    ],
+    "mechanism": "对偏好对 (x, y_w, y_l)：π_θ 与 π_ref 各算 y_w/y_l 的逐 token logprob（token 求和）；Δ = [logπ_θ(y_w)−logπ_ref(y_w)] − [logπ_θ(y_l)−logπ_ref(y_l)]；loss = −log σ(β·Δ)。σ 饱和自带「分对就松手」的自抑制。",
+    "boundary": "隐式奖励只相对 π_ref，只能表达偏好比较，不能给绝对奖励——无法 best-of-n 或奖励塑形。偏好数据有噪声/长短偏置时 DPO 放大偏置（rejected 往往更长 → 学到「短即好」反向偏置）。",
+    "analogyBoundary": "教练不给分数只说「这个比那个好」，学员相对旧动作（π_ref）改进。失效处：教练判断完全来自数据，偏好数据有偏则学偏——数据质量是 DPO 天花板。",
+    "misconceptions": [
+     "忘减参考 logprob——退化成无约束偏好分类，策略整体漂移。",
+     "对整个序列（含 prompt）算 logprob——抵消但浪费、梯度稀释。",
+     "β 含义搞反：β 是 KL 强度不是学习率，小 β 更激进。",
+     "以为 DPO 里有奖励模型前向——隐式奖励只是对数比的名字，实现里没有这个网络。",
+     "对 logprob 做 mean 而非 sum——变长序列被稀释，与论文不一致（除非有意做 length 归一化变体）。"
+    ],
+    "ownAnalysis": "写码前先画 2×2 矩阵：policy/ref × chosen/rejected 的四个 logprob。最容易错的是 response_mask 的位置（gather 后求和）。主动对比 PPO：DPO 无采样、无 value、无 clip，稳定性来自闭式解；代价是没有在线探索，天花板受数据质量限制。",
+    "officialNotes": "DPO 论文 (Rafailov 2023) §4 完整推导；HF TRL DPOTrainer 源码；IPO (Azar 2023) 分析 DPO 在确定性偏好下的过拟合。",
+    "interviewAnswer": "从 RLHF 目标推隐式奖励 → 一行损失 → 落码（四 logprob + mask + −logσ(βΔ)）→ β/参考模型/completion-only 三工程点 → 对比 PPO 与 IPO/SimPO 方向。",
+    "studyPath": {
+     "prerequisites": [
+      "RLHF 两阶段流程",
+      "KL 约束的策略梯度",
+      "logistic 回归"
+     ],
+     "nextSteps": [
+      "GRPO/GAE",
+      "IPO/SimPO/KTO",
+      "RLAIF 与偏好数据构造"
+     ]
+    }
+   },
+   "diagram": {
+    "kind": "architecture",
+    "title": "DPO：偏好对上的四路对数概率与损失装配",
+    "caption": "policy 与参考模型各前向两次（chosen/rejected）得四个序列级对数概率；两两相减得相对偏移 Δ，经 β 缩放做 logistic 回归。",
+    "alt": "DPO 损失的数据流",
+    "svg": "<svg viewBox='0 0 680 304' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='DPO 四路对数概率装配成单个损失'><rect x='150' y='14' width='250' height='30' rx='8' fill='none' stroke='var(--warn)' stroke-width='2.1'/><text x='275.0' y='34' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>π_θ(y_w|x)  chosen 的策略对数概率</text><text x='140' y='34' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>(x, y_w)</text><text x='410' y='34' font-size='13' fill='currentColor' opacity='0.8'>logp_w</text><text x='150' y='60' font-size='13' opacity='0.72' fill='currentColor'>只对 completion 求和（response_mask）</text><line x1='275.0' y1='48' x2='275.0' y2='68' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,62 279.0,62 275.0,69' fill='var(--line-1)'/><rect x='150' y='72' width='250' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.3'/><text x='275.0' y='92' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>π_ref(y_w|x)  chosen 的参考对数概率</text><text x='140' y='92' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>(x, y_w)</text><text x='410' y='92' font-size='13' fill='currentColor' opacity='0.8'>ref_w</text><text x='150' y='118' font-size='13' opacity='0.72' fill='currentColor'>参考模型冻结：不积累梯度</text><line x1='275.0' y1='106' x2='275.0' y2='126' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,120 279.0,120 275.0,127' fill='var(--line-1)'/><rect x='150' y='130' width='250' height='30' rx='8' fill='none' stroke='var(--warn)' stroke-width='2.1'/><text x='275.0' y='150' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>π_θ(y_l|x) / π_ref(y_l|x)  rejected 同理</text><text x='140' y='150' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>(x, y_l)</text><text x='410' y='150' font-size='13' fill='currentColor' opacity='0.8'>logp_l, ref_l</text><text x='150' y='176' font-size='13' opacity='0.72' fill='currentColor'>四个量是损失的全部输入</text><line x1='275.0' y1='164' x2='275.0' y2='184' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,178 279.0,178 275.0,185' fill='var(--line-1)'/><rect x='150' y='188' width='250' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.3'/><text x='275.0' y='208' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>Δ = (logp_w − ref_w) − (logp_l − ref_l)</text><text x='140' y='208' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>四个标量</text><text x='410' y='208' font-size='13' fill='currentColor' opacity='0.8'>Δ（每对一个）</text><text x='150' y='234' font-size='13' opacity='0.72' fill='currentColor'>相对参考模型的偏好偏移</text><line x1='275.0' y1='222' x2='275.0' y2='242' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,236 279.0,236 275.0,243' fill='var(--line-1)'/><rect x='150' y='246' width='250' height='30' rx='8' fill='none' stroke='var(--warn)' stroke-width='2.1'/><text x='275.0' y='266' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>loss = −log σ(β·Δ)</text><text x='140' y='266' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>β·Δ</text><text x='410' y='266' font-size='13' fill='currentColor' opacity='0.8'>标量</text><text x='150' y='292' font-size='13' opacity='0.72' fill='currentColor'>softplus(−x) 数值稳定实现</text></svg>"
+   },
+   "concepts": [
+    {
+     "name": "隐式奖励",
+     "readable": "r(x,y) = β·log[π(y|x)/π_ref(y|x)]——RLHF 最优解的反解形式，DPO 用它替代显式奖励模型。",
+     "analogy": "汇率：不直接标价，只标相对基准货币（参考模型）的兑换率。",
+     "analogyBreaksDown": "汇率可双向换算，隐式奖励只有相对意义——不同 π_ref 下的「隐式奖励」不可比较。",
+     "mechanism": "把 r 代回 KL 约束 RL 目标，π* ∝ π_ref·exp(r/β) 恒成立——奖励被吸收进策略的 Bradley-Terry 推导。",
+     "visual": "logp_w − ref_w = 2.0 → 隐式奖励 2β。",
+     "prerequisites": [
+      "Bradley-Terry 模型",
+      "KL 约束 RL 闭式解"
+     ],
+     "selfTest": "为什么不需要 value 网络？（损失是序列级闭式，无信用分配）",
+     "formula": "r̂ = β·(log π_θ − log π_ref)"
+    },
+    {
+     "name": "β 与 KL 约束",
+     "readable": "β 是隐式奖励 scale，等价 RLHF 中 KL 惩罚强度的旋钮。",
+     "analogy": "风筝线松紧：线紧（β 大）飞不高但稳，线松（β 小）飞得高但易断线。",
+     "analogyBreaksDown": "风筝线是硬约束，KL 是软惩罚——β 再大也只是「强烈建议」。",
+     "mechanism": "β→∞：微小偏移即主导损失，策略几乎不动；β→0：σ 近似线性失去饱和自抑制。经验 0.05~0.5。",
+     "visual": "β=0.1 时 Δ=5 → σ(0.5)≈0.62 仍有梯度；Δ=20 → σ(2)≈0.88。",
+     "prerequisites": [
+      "损失饱和与梯度消失",
+      "β 与 reward hacking"
+     ],
+     "selfTest": "β=0.1 与 0.5 哪个易长度爆炸？（0.1，偏离更自由）",
+     "formula": "loss = −log σ(β·Δ)"
+    },
+    {
+     "name": "completion-only masking",
+     "readable": "logprob 只在 response token 上求和，prompt 位置乘 0。",
+     "analogy": "只给答案判卷，题目不计分。",
+     "analogyBreaksDown": "不只是规则：两样本 prompt 相同，计分项精确抵消——mask 是纯收益。",
+     "mechanism": "mask = response 位置 1；logp = (token_logprobs·mask).sum(-1)。gather 取 target token 的 logprob。",
+     "visual": "[prompt 512][response 128]：只累加后 128 个位置。",
+     "prerequisites": [
+      "gather 与 onehot 等价",
+      "padding 位置处理"
+     ],
+     "selfTest": "多轮拼接 prompt 不同时抵消还成立吗？（不成立，mask 仍是优化但语义上 prompt 项不再抵消）",
+     "formula": "logp = (logp_tok * resp_mask).sum(-1)"
+    }
+   ],
+   "problem": {
+    "statement": "用 numpy 实现 DPO 损失：输入 chosen/rejected 各自的逐 token logprobs（policy 与 ref 各一份）、response_mask、β；输出标量损失与逐对 margin。要求 completion-only 求和、数值稳定的 log σ。",
+    "examples": [],
+    "approach": {
+     "idea": "四路序列 logprob（mask 求和）→ Δ = 相对偏移之差 → loss = −logσ(βΔ)，用 softplus(−x) 稳定形式。",
+     "steps": [
+      "序列 logprob：sum(token_logprobs · response_mask)",
+      "四个标量：logp_w, ref_w, logp_l, ref_l（batch 逐对）",
+      "Δ = (logp_w − ref_w) − (logp_l − ref_l)",
+      "数值稳定：−logσ(x) = max(−x,0) + log1p(exp(−|x|))",
+      "返回 loss 与 margin（βΔ 均值，训练监控用）"
+     ],
+     "whyItWorks": "RLHF 的 KL 约束目标有闭式最优解 π* ∝ π_ref·exp(r/β)，反解 r 代入 Bradley-Terry，奖励项消去，只剩 π_θ 与 π_ref 的对数比——两阶段变一个监督损失。",
+     "alternatives": []
+    },
+    "solution": {
+     "python": "import numpy as np\n\ndef seq_logprobs(token_lp, mask):\n    \"\"\"(B,S) 逐 token logprob 与 response mask -> (B,)。\"\"\"\n    return (token_lp * mask).sum(axis=-1)\n\ndef dpo_loss(lp_w, lp_l, ref_w, ref_l, beta=0.1):\n    \"\"\"四个 (B,) 序列级 logprob -> (loss, margin)。\"\"\"\n    delta = (lp_w - ref_w) - (lp_l - ref_l)\n    x = beta * delta\n    loss = np.maximum(-x, 0) + np.log1p(np.exp(-np.abs(x)))\n    return loss.mean(), delta.mean()\n\n# 自测 1：chosen 更优时 loss 更小\nrng = np.random.default_rng(6)\nB, S = 4, 16\nmask = np.ones((B, S))\nlp_w  = rng.normal(-1.0, 0.5, (B, S))\nlp_l  = rng.normal(-3.0, 0.5, (B, S))\nref_w = rng.normal(-1.2, 0.5, (B, S))\nref_l = rng.normal(-2.8, 0.5, (B, S))\nloss_good, m1 = dpo_loss(seq_logprobs(lp_w, mask),\n                         seq_logprobs(lp_l, mask),\n                         seq_logprobs(ref_w, mask),\n                         seq_logprobs(ref_l, mask))\nloss_bad, m2 = dpo_loss(seq_logprobs(lp_l, mask),\n                        seq_logprobs(lp_w, mask),\n                        seq_logprobs(ref_w, mask),\n                        seq_logprobs(ref_l, mask))\nassert loss_good < loss_bad\n\n# 自测 2：completion-only —— prompt 换成任何内容都不影响\nprompt_lp = rng.normal(size=(B, 8))\nfull1 = np.concatenate([prompt_lp, lp_w], axis=1)\nfull2 = np.concatenate([prompt_lp * 3 + 1, lp_w], axis=1)\nm = np.concatenate([np.zeros((B, 8)), np.ones((B, S))], axis=1)\nassert np.allclose(seq_logprobs(full1, m), seq_logprobs(full2, m))\n\n# 自测 3：β 单调性——同样 Δ，β 越大已越「分对」\nl1, _ = dpo_loss(np.array([0.]), np.array([-5.]),\n                 np.array([0.]), np.array([0.]), beta=0.1)\nl2, _ = dpo_loss(np.array([0.]), np.array([-5.]),\n                 np.array([0.]), np.array([0.]), beta=1.0)\nassert l2 < l1\nprint('DPO OK: good=%.4f < bad=%.4f' % (loss_good, loss_bad))\n",
+     "python_alt": null,
+     "notes": "数值稳定关键：−logσ(x) 写成 softplus(−x) 的分段形式。margin（βΔ 均值）是核心监控指标：应缓升，骤升伴随长度膨胀要立刻查数据偏置。"
+    },
+    "complexity": {
+     "time": "4 次前向 + O(B·S) 损失",
+     "space": "policy + ref 两份激活（ref 无梯度可省优化器态）",
+     "why": "无采样、无奖励网络、无 value 模型——在线 RL 三件套全换两次额外前向。"
+    },
+    "keyPoints": [
+     "隐式奖励 r = β·log(π/π_ref)，参考模型必须冻结",
+     "Δ = 相对偏移之差，四路 logprob 缺一不可",
+     "completion-only mask：prompt 项抵消，也必须做",
+     "−logσ(βΔ) 用 softplus 稳定实现",
+     "β 是 KL 强度旋钮：小 β 激进易 hack，大 β 保守",
+     "无在线探索：上限 = 偏好数据质量（IPO/SimPO 起点）"
+    ],
+    "pitfalls": [
+     "四路 logprob 混入 prompt token——mask 拼接错一格。",
+     "先 sigmoid 再 log：σ 下溢为 0 时 log(0)=−inf；必须 softplus。",
+     "参考模型忘 no_grad：显存翻倍梯度错误。",
+     "β 与学习率混淆，同时拉大导致策略崩溃。",
+     "batch 内配对被打乱：chosen_i 必须与 rejected_i 配对。",
+     "mean-over-tokens 替代 sum：与论文不一致，长回答被压低。"
+    ],
+    "edgeCases": [
+     "Δ 极大：σ 饱和梯度→0，自带停止信号。",
+     "Δ=0：损失 = log2，梯度最大。",
+     "两样本只差一个 token：margin 信号极弱，最难样本。",
+     "β=0：退化为线性，必须 β>0。",
+     "初始时 π_θ == π_ref：Δ=0，损失从 log2 起步。"
+    ],
+    "interviewTips": "先讲推导再写码：KL 约束 RL 目标 → 隐式奖励 → Bradley-Terry，30 秒讲清「DPO 是推导出来的」。落码后主动说 margin 监控与失败模式（长度偏置、β 过小）。",
+    "variants": [
+     {
+      "name": "IPO",
+      "idea": "把 −logσ 换成 (Δ − 1/(2β))² 平方形式，确定性偏好下不再把 margin 推向无穷（DPO 会过拟合）。",
+      "code": "import numpy as np\ndef ipo_loss(lp_w, lp_l, ref_w, ref_l, beta=0.5):\n    delta = (lp_w - ref_w) - (lp_l - ref_l)\n    tau = 1.0 / (2 * beta)\n    return float(((delta - tau) ** 2).mean())\nl = ipo_loss(np.array([0.]), np.array([-3.]),\n             np.array([0.]), np.array([0.]))\nassert l > 0\nprint('IPO OK, loss=%.3f（margin 目标 1/(2β)=1）' % l)\n",
+      "when": "偏好数据基本无噪、担心 DPO margin 失控时。",
+      "cost": "同 DPO"
+     },
+     {
+      "name": "SimPO 思路（长度归一化 + 无参考模型）",
+      "idea": "用平均 logprob 替代求和并去掉参考模型，抑制「短回答偏好」反向偏置。",
+      "code": "import numpy as np\ndef simpo_margin(lp_w, len_w, lp_l, len_l,\n                 beta=2.0, gamma=0.5):\n    nw, nl = lp_w / len_w, lp_l / len_l\n    x = beta * (nw - nl) - gamma\n    return float(np.log1p(np.exp(-x)).mean())\nl = simpo_margin(np.array([-10.]), np.array([10.]),\n                 np.array([-30.]), np.array([10.]))\nassert l >= 0\nprint('SimPO 风格 OK, loss=%.3f' % l)\n",
+      "when": "观察到长度偏置、想省参考模型前向时。",
+      "cost": "省 1 次前向"
+     }
+    ],
+    "comparison": [
+     {
+      "cells": [
+       "方法",
+       "需要 RM",
+       "采样",
+       "value 网络",
+       "在线",
+       "代表问题"
+      ]
+     },
+     {
+      "cells": [
+       "PPO-RLHF",
+       "是",
+       "是",
+       "是",
+       "是",
+       "训练复杂超参多"
+      ]
+     },
+     {
+      "cells": [
+       "DPO",
+       "否(隐式)",
+       "否",
+       "否",
+       "否",
+       "受数据限、长度偏置"
+      ]
+     },
+     {
+      "cells": [
+       "IPO",
+       "否",
+       "否",
+       "否",
+       "否",
+       "修 DPO 过拟合"
+      ]
+     },
+     {
+      "cells": [
+       "SimPO",
+       "否",
+       "否",
+       "否",
+       "否",
+       "长度归一化无参考"
+      ]
+     },
+     {
+      "cells": [
+       "KTO",
+       "否",
+       "否",
+       "否",
+       "否",
+       "不需成对数据"
+      ]
+     }
+    ],
+    "interviewScript": "「推导链：KL 约束 RLHF 最优解 π* ∝ π_ref·exp(r/β) → 反解隐式奖励 → 代入 Bradley-Terry 得一行损失 −logσ(βΔ)，Δ 是 policy 与 ref 对数概率偏移之差。实现四点：参考模型冻结、completion-only mask、softplus 稳定、β 即 KL 强度。对比 PPO 省掉采样/RM/value 三件套，代价是没有在线探索——IPO、SimPO 等变体由此出发。」"
+   }
+  },
+  "curated-gae-and-grpo": {
+   "tldr": "GAE 用 λ 在「低方差有偏的 TD」与「无偏高方差的 MC」间插值出优势；GRPO 扔掉 value 网络，用同一 prompt 一组采样的组内均值当 baseline——群体相对策略优化，名字即实现。",
+   "why": "RLHF/推理 RL（DeepSeek-R1 路线）核心更新规则。考两点：GAE 的λ-递推白板展开；GRPO 为什么能去 value 模型、组基线与 REINFORCE with baseline 的关系。",
+   "teaching": {
+    "progressive": [
+     {
+      "level": 1,
+      "text": "优势定义 A(s,a) = Q − V：比「平均回报」好多少。GAE 给它一个低方差估计。"
+     },
+     {
+      "level": 2,
+      "text": "TD 残差 δ_t = r_t + γV(s_{t+1}) − V(s_t) 是优势的单步成分；GAE(λ) = Σ (γλ)^l δ_{t+l}，λ 是偏差-方差旋钮。"
+     },
+     {
+      "level": 3,
+      "text": "GRPO：同一 prompt 采 G 个回答，A_i = (r_i − mean)/std，直接当每个 token 的优势——不要 value 网络不要 GAE。"
+     },
+     {
+      "level": 4,
+      "text": "组合：loss = −min(ratio·A, clip(ratio)·A) + β·KL，KL 用 k3 = exp(Δ)−Δ−1 估计器。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "λ=0 和 λ=1 分别是什么？",
+      "a": "λ=0 → Â = δ，纯 TD(0)：方差最小、依赖 V 准确性（有偏）；λ=1 → 折扣 MC：无偏但方差大。GAE 是指数加权混合，经验 λ≈0.95。"
+     },
+     {
+      "q": "GRPO 为什么可以不要 value 网络？",
+      "a": "value 的作用是给「同状态不同动作」共同基线；同组 G 个回答的均值天然构成基线，且与单条采样无关（不引入偏差）。"
+     },
+     {
+      "q": "组内标准化有什么隐患？",
+      "a": "全对/全错组（std=0）没有梯度信号——难题易题都学不到，需要过采样过滤或 ε 防除零；归一化也让不同难度题的梯度规模一致，隐式加权。"
+     }
+    ],
+    "mechanism": "GAE 递推：Â_T = δ_{T-1}；Â_t = δ_t + γλ·Â_{t+1}，反向一遍。GRPO：组内 reward z-score 得标量优势 → 广播到回答所有 token → ratio = exp(logπ_θ − logπ_old) → PPO 式 clip + 参考策略 KL。",
+    "boundary": "GAE 偏差来自 V 的误差：V 差时 λ 要小，V 准时 λ 可大。GRPO 依赖「组内可比」：全对/全错信号塌缩；G 是方差与算力的交换（R1 用 64）。",
+    "analogyBoundary": "GAE 像按可信度加权汇总多人汇报；λ 是「最近的话权重高」。失效处：衰减是指数的且带折扣 γ，汇总对象是 TD 残差不是回报。GRPO 像同题作文互评取相对名次——全员满分时名次无意义，正对应 std=0 塌缩。",
+    "misconceptions": [
+     "GAE 递推方向写反——必须反向递推，正向展开 O(T²)。",
+     "γ 和 λ 混淆：γ 折扣未来回报（环境性质），λ 混合 TD/MC（估计器）。",
+     "GRPO 优势忘 detach——基线被梯度拉扯，训练发散。",
+     "std 不加 eps，全同组除零 NaN。",
+     "以为 GRPO = PPO 去 clip——clip 还在，去掉的是 value 网络，KL 换了 k3 估计器。"
+    ],
+    "ownAnalysis": "GAE 给 5 步轨迹手推一遍（δ 与 Â 两行表）最能展示理解。GRPO 强调三个梯度细节：基线 detach、ratio 的 log 域计算、KL 用 k3（无偏恒正低方差）。收尾对比 RLOO（去自身均值基线）：对组内相关更稳健。",
+    "officialNotes": "GAE (Schulman 2016) §3 递推推导；GRPO 出自 DeepSeekMath (Shao 2024) §4，DeepSeek-R1 推向推理 RL；PPO (Schulman 2017) 附录的 clip 与 k1/k3 估计器。",
+    "interviewAnswer": "δ_t 定义 → GAE 反向递推一行 → λ 偏差方差权衡 → GRPO 组内标准化 + clip + k3 KL → 为什么能去 value 网络 → 全对全错塌缩与对策。",
+    "studyPath": {
+     "prerequisites": [
+      "策略梯度与 baseline",
+      "TD 学习",
+      "PPO clip 目标"
+     ],
+     "nextSteps": [
+      "R1 的规则奖励",
+      "RLOO/ReMax",
+      "过程奖励模型 PRM + GRPO"
+     ]
+    }
+   },
+   "diagram": {
+    "kind": "architecture",
+    "title": "GAE 反向递推与 GRPO 组内标准化",
+    "caption": "左：优势从最后一步反向累积 TD 残差（λ 控制混合）。右：同一 prompt 的 G 个回答经组内 z-score 得优势，广播到每个 token 进入 PPO 式更新。",
+    "alt": "GAE 递推与 GRPO 组基线示意",
+    "svg": "<svg viewBox='0 0 680 238' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='GAE 与 GRPO 的优势来源对比'><rect x='20' y='14' width='310' height='180' rx='10' fill='none' stroke='var(--warn)' stroke-width='2.1'/><text x='175.0' y='38' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>GAE（有 value 网络）</text><text x='32' y='64' font-size='13' fill='currentColor' opacity='0.85'>δ_t = r + γV(s&#39;) − V(s)</text><text x='32' y='88' font-size='13' fill='currentColor' opacity='0.85'>Â_T = δ_{T-1}</text><text x='32' y='112' font-size='13' fill='currentColor' opacity='0.85'>Â_t = δ_t + γλÂ_{t+1}（反向）</text><text x='32' y='136' font-size='13' fill='currentColor' opacity='0.85'>λ=0: TD 低方差有偏</text><text x='32' y='160' font-size='13' fill='currentColor' opacity='0.85'>λ=1: MC 无偏高方差</text><rect x='350' y='14' width='310' height='180' rx='10' fill='none' stroke='var(--line-1)' stroke-width='1.3'/><text x='505.0' y='38' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>GRPO（无 value 网络）</text><text x='362' y='64' font-size='13' fill='currentColor' opacity='0.85'>采 G 个回答/题</text><text x='362' y='88' font-size='13' fill='currentColor' opacity='0.85'>A_i = (r_i − μ)/σ（组内）</text><text x='362' y='112' font-size='13' fill='currentColor' opacity='0.85'>广播到回答每个 token</text><text x='362' y='136' font-size='13' fill='currentColor' opacity='0.85'>ratio + clip + KL(k3)</text><text x='362' y='160' font-size='13' fill='currentColor' opacity='0.85'>全对/全错 → 信号塌缩</text><text x='340.0' y='228' font-size='13' text-anchor='middle' font-weight='bold' fill='currentColor'>两者不互斥：带 value/PRM 的 GRPO 变体仍可用 GAE</text></svg>"
+   },
+   "concepts": [
+    {
+     "name": "TD 残差",
+     "readable": "δ_t = r_t + γV(s_{t+1}) − V(s_t)：一步真实与估计的差，优势的单步成分。",
+     "analogy": "预期外的惊喜：实际拿到的比预期的 V(s) 好多少。",
+     "analogyBreaksDown": "「惊喜」大小依赖 V 估得准——V 不准则 δ 有偏，这正是 GAE 需要混合的原因。",
+     "mechanism": "V = 真值时 E[δ_t]=0；k 步优势估计 = Σ γ^l δ_{t+l}。",
+     "visual": "r=1, γ=0.9, V(s')=5, V(s)=4 → δ = 1 + 4.5 − 4 = 1.5。",
+     "prerequisites": [
+      "贝尔曼方程",
+      "优势函数定义"
+     ],
+     "selfTest": "δ 期望是 0 吗？（V=真值时是；V 有偏时不是——GAE 偏差来源）",
+     "formula": "δ_t = r_t + γV(s_{t+1}) − V(s_t)"
+    },
+    {
+     "name": "λ 的偏差-方差插值",
+     "readable": "GAE(λ) = Σ (γλ)^l δ_{t+l}：λ 从 0 到 1 在 TD 与 MC 间指数插值。",
+     "analogy": "听证词：只听最近的（λ=0）信息少但清晰；全信（λ=1）信息全但噪声大。",
+     "analogyBreaksDown": "证词清晰度外生；δ 的偏差来自 V 本身——V 越准 λ 可越大。",
+     "mechanism": "k 步回报 A^(k) = Σ_{l<k} γ^l δ_{t+l} + γ^k V(s_{t+k})；实现用反向递推 O(T)。",
+     "visual": "γλ = 0.9×0.95 = 0.855：每远一步权重乘 0.855。",
+     "prerequisites": [
+      "k 步回报展开",
+      "γ 与 λ 独立作用"
+     ],
+     "selfTest": "为什么反向递推？（正向 O(T²)，反向 O(T)）",
+     "formula": "Â_t = δ_t + γλ·Â_{t+1}"
+    },
+    {
+     "name": "组内基线",
+     "readable": "GRPO 对同 prompt 的 G 个回答算 reward 的均值/方差，优势标准化。",
+     "analogy": "同题作文互排名：不必知道绝对多少分算好。",
+     "analogyBreaksDown": "名次只在该题内可比；但策略梯度本就只需组内相对优势，无碍。",
+     "mechanism": "A_i = (r_i − μ)/(σ + ε)，detach 后广播到 token 维；μ_group 是该状态的蒙特卡洛 value 估计。",
+     "visual": "G=8，reward [1,1,0,0,1,0,0,0] → μ=0.375 按位标准化。",
+     "prerequisites": [
+      "baseline 无偏性条件",
+      "eps 防除零"
+     ],
+     "selfTest": "组内全对时梯度？（优势全 0，无更新——难点信号丢失）",
+     "formula": "A = (r − r.mean()) / (r.std() + eps)"
+    }
+   ],
+   "problem": {
+    "statement": "① 实现 GAE：输入 rewards/values/dones/γ/λ，输出优势与回报（反向递推），并验证 λ=0/1 两个端点；② 实现 GRPO 一步：组内标准化优势、ratio、clip、k3 KL，验证梯度方向。",
+    "examples": [],
+    "approach": {
+     "idea": "GAE：δ_t 逐位算，Â_t = δ_t + γλ·Â_{t+1} 反向扫描。GRPO：组维 z-score（detach），ratio log 域相减后 exp，min(unclipped, clipped) − β·KL。",
+     "steps": [
+      "δ_t = r_t + γ·V_{t+1}·(1−done) − V_t",
+      "Â 反向递推，returns = Â + V",
+      "GRPO：rewards 组维 z-score → A 广播 (G,T)",
+      "ratio = exp(logp_θ − logp_old)，clip [1−ε, 1+ε]",
+      "surrogate = min(ratio·A, clip(ratio)·A)",
+      "loss = −mean(surr) + β·mean(k3)"
+     ],
+     "whyItWorks": "GAE 递推是 λ 加权 k 步回报的闭式整理；GRPO 组均值 baseline 与单条动作无关 ⇒ 不引入偏差，value 网络被组采样天然替代。",
+     "alternatives": []
+    },
+    "solution": {
+     "python": "import numpy as np\n\ndef gae(rewards, values, last_value, dones, gamma=0.99, lam=0.95):\n    T = len(rewards)\n    adv = np.zeros(T)\n    gae_next = 0.0\n    for t in reversed(range(T)):\n        v_next = last_value if t == T - 1 else values[t + 1]\n        nonterm = 0.0 if dones[t] else 1.0\n        delta = rewards[t] + gamma * v_next * nonterm - values[t]\n        gae_next = delta + gamma * lam * nonterm * gae_next\n        adv[t] = gae_next\n    return adv, adv + values\n\n# 端点自测：λ=0 -> 纯 TD 残差；λ=1 -> 折扣 MC\nr = np.array([1.0, 0.0, 1.0, 0.0, 1.0])\nv = np.array([0.5, 0.6, 0.7, 0.8, 0.9])\ndone = np.zeros(5)\nadv0, _ = gae(r, v, 1.0, done, gamma=0.9, lam=0.0)\ndelta0 = r + 0.9 * np.concatenate([v[1:], [1.0]]) - v\nassert np.allclose(adv0, delta0)\nadv1, _ = gae(r, v, 1.0, done, gamma=0.9, lam=1.0)\nmc = np.array([sum(0.9**(k-t) * r[k] for k in range(t, 5))\n               + 0.9**(5-t) * 1.0 - v[t] for t in range(5)])\nassert np.allclose(adv1, mc, atol=1e-9)\n\ndef grpo_step(logp_new, logp_old, ref_logp, rewards,\n              clip=0.2, beta=0.04, eps=1e-6):\n    \"\"\"logp: (G,T) 同一 prompt 的 G 个回答 -> 标量损失。\"\"\"\n    r = np.asarray(rewards, float)\n    mu, sd = r.mean(), r.std() + eps\n    A = np.broadcast_to(((r - mu) / sd)[:, None], logp_new.shape)\n    ratio = np.exp(logp_new - logp_old)\n    surr = np.minimum(ratio * A,\n                      np.clip(ratio, 1 - clip, 1 + clip) * A)\n    kl = np.exp(logp_new - ref_logp) - (logp_new - ref_logp) - 1\n    return float(-surr.mean() + beta * kl.mean())\n\nrng = np.random.default_rng(7)\nG, T = 8, 4\nbase = rng.normal(size=(G, T)) * 0.1\nrewards = np.array([1, 1, 1, 0, 0, 0, 1, 0.])\n# 只改变「好回答」(reward>0) 的 logp：这才是策略更新会做的事\ngood = (rewards > 0).astype(float)[:, None]\nl_good = grpo_step(base + 0.3 * good, base, base, rewards)\nl_bad  = grpo_step(base - 0.3 * good, base, base, rewards)\nassert l_good < l_bad, '提高好回答概率应降低损失'\nl_flat = grpo_step(base + 0.3, base, base, np.ones(G))\nprint('GAE+GRPO OK: good=%.4f < bad=%.4f, 全对组=%.4f（仅 KL）'\n      % (l_good, l_bad, l_flat))\n",
+     "python_alt": null,
+     "notes": "端点自测是 GAE 的灵魂：λ=0/1 分别对齐 TD 与折扣 MC。GRPO 的 A broadcast 到 token 维；真实实现 logp 在 torch 反向，numpy 版用「好回答概率升 → 损失降」验证方向。全对组只剩 KL 项——信号塌缩的现场演示。"
+    },
+    "complexity": {
+     "time": "GAE O(T)；GRPO O(G·T) 前向 ×2（policy + ref）",
+     "space": "GAE O(T)；GRPO 存 G 个回答的 logp（ref 可在线算）",
+     "why": "两者都把「信用分配」变成可估的差分：GAE 用 V 差分，GRPO 用组间差分。"
+    },
+    "keyPoints": [
+     "δ_t = r + γV(s') − V(s)；Â_t = δ_t + γλÂ_{t+1} 反向递推",
+     "λ=0 → TD（低方差有偏），λ=1 → MC（无偏高方差）",
+     "GRPO 优势 = 组内 z-score，detach 后广播到 token",
+     "ratio 在 log 域算，clip 仍保留",
+     "KL 用 k3 = exp(Δ)−Δ−1：恒正、低方差",
+     "全对/全错组塌缩：过滤、ε、或过程奖励补充"
+    ],
+    "pitfalls": [
+     "GAE 正向展开 O(T²)——结果对但面试官必追问复杂度。",
+     "dones 处理漏掉：终止步后状态值必须截断。",
+     "GRPO 优势没 detach（torch 里）——基线被拉扯发散。",
+     "std 不加 eps：全对/全错组 NaN。",
+     "KL 用 k1 = log_ratio：可正可负，会奖励「偏离后回来」；k3 恒正。",
+     "ratio 在概率域相除下溢，应 log 域相减再 exp。"
+    ],
+    "edgeCases": [
+     "T=1：退化为单步 δ。",
+     "全 done：nonterm 截断，adv 只含当前步。",
+     "组内 std=0：优势全零，需过滤或留 KL 项。",
+     "G=2：组基线方差极大，近似二元比较（DPO 的在线版）。",
+     "λ=0/1 端点必须能被单元测试对齐（本实现已验证）。"
+    ],
+    "interviewTips": "GAE 讲「λ 两个端点」一句话定位深度；GRPO 强调名字即实现——group relative，基线就是组内均值。主动提全对/全错塌缩与 RLOO 对比，跟到 R1 前沿。",
+    "variants": [
+     {
+      "name": "RLOO（leave-one-out 基线）",
+      "idea": "基线 = 组内其余样本均值（去掉自己），对组内相关更稳健，实现更简单。",
+      "code": "import numpy as np\ndef rloo_advantage(rewards, eps=1e-6):\n    r = np.asarray(rewards, float)\n    G = len(r)\n    base = (r.sum() - r) / (G - 1)\n    return r - base\nadv = rloo_advantage([1, 1, 0, 0, 1, 0, 0, 0])\nassert abs(adv.sum()) < 1e-9\nprint('RLOO OK:', np.round(adv, 3))\n",
+      "when": "GRPO 的稳健替代（HF TRL 有实现）；组小 G<8 时尤佳。",
+      "cost": "同 GRPO，少一个 std"
+     },
+     {
+      "name": "带长度惩罚的 GRPO 奖励",
+      "idea": "推理 RL 在规则奖励上加长度惩罚抑制冗长——奖励塑形发生在组标准化之前。",
+      "code": "import numpy as np\ndef shaped_rewards(correct, lengths, alpha=0.01):\n    r = np.asarray(correct, float) - alpha * np.asarray(lengths)\n    return (r - r.mean()) / (r.std() + 1e-6)\na = shaped_rewards([1, 1, 0], [120, 40, 80])\nassert a[1] > a[0]   # 同对，短者优势更大\nprint('长度塑形 OK:', np.round(a, 3))\n",
+      "when": "R1 类推理任务防「think 得又长又水」。",
+      "cost": "同 GRPO"
+     }
+    ],
+    "comparison": [
+     {
+      "cells": [
+       "估计器",
+       "需要 V",
+       "基线来源",
+       "偏差",
+       "方差",
+       "备注"
+      ]
+     },
+     {
+      "cells": [
+       "REINFORCE",
+       "否",
+       "无",
+       "无",
+       "极高",
+       "原始策略梯度"
+      ]
+     },
+     {
+      "cells": [
+       "REINFORCE+baseline",
+       "可选",
+       "状态值",
+       "低",
+       "高",
+       "需学 V"
+      ]
+     },
+     {
+      "cells": [
+       "GAE(λ)",
+       "是",
+       "V 差分",
+       "λ 调节",
+       "λ 调节",
+       "AC 系标配"
+      ]
+     },
+     {
+      "cells": [
+       "GRPO",
+       "否",
+       "组均值/std",
+       "低",
+       "随 G 降",
+       "R1/DeepSeekMath"
+      ]
+     },
+     {
+      "cells": [
+       "RLOO",
+       "否",
+       "去自身组均值",
+       "无",
+       "随 G 降",
+       "更稳健"
+      ]
+     }
+    ],
+    "interviewScript": "「GAE 先写 δ_t 再反向递推 Â，端点 λ=0/1 对齐 TD 和 MC，λ 是偏差方差旋钮。GRPO 把信用分配换成组内比较：G 个回答 z-score 得优势，detach、广播、进 PPO 式 clip，KL 用 k3。value 网络被组均值替代——这正是 R1 推理 RL 能跑起来的工程前提。全对全错组会塌缩，实际要过采样过滤或加长度塑形。」"
+   }
+  },
+  "curated-softmax-stable": {
+   "tldr": "softmax(x) = exp(x−max)/Σexp(x−max)：减 max 不改结果（平移不变），却把指数压进安全区。log-softmax 用 logsumexp 一步算出，绝不先 softmax 再 log——它是交叉熵/对比学习/注意力全部的地基。",
+   "why": "看似简单，实为面试官的工程素养探针：max-shift 会不会写、为什么、log 版怎么不下溢、梯度是什么。它是所有 downstream 损失的地基。",
+   "teaching": {
+    "progressive": [
+     {
+      "level": 1,
+      "text": "朴素版 exp(x)/Σexp(x)：x>700 时上溢为 inf。"
+     },
+     {
+      "level": 2,
+      "text": "减 max：分子分母同乘 e^−max 抵消，指数输入 ≤ 0，永不上溢。"
+     },
+     {
+      "level": 3,
+      "text": "log 版：log_softmax = x − max − log(Σexp(x−max))，一步算出，绝不分两步。"
+     },
+     {
+      "level": 4,
+      "text": "梯度：J = diag(p) − ppᵀ，行和为 0；反传向量式 p⊙(g − Σp·g)，O(n) 无需 n×n 矩阵。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "减 max 为什么不改变结果？",
+      "a": "softmax 平移不变：softmax(x+c) 分子分母同乘 e^c 约掉。取 c=−max 纯为让 exp 参数 ≤ 0，免费的数值保险。"
+     },
+     {
+      "q": "为什么不能 log(softmax(x))？",
+      "a": "x−max 很负时 softmax 下溢为 0，log(0)=−inf。logsumexp 一次算出：lse = max + log(Σexp(x−max))，全程无下溢路径。"
+     },
+     {
+      "q": "梯度为什么是 s_i(δ_ij − s_j)？",
+      "a": "增加 i 的概率必须从别处等比抽走——总概率守恒使雅可比行和为 0，这是反向传播数值健康的关键结构。"
+     }
+    ],
+    "mechanism": "softmax 把实向量映到概率单纯形；平移不变性给免费 max-shift；logsumexp 一次性解决 log-exp 循环的上下溢；雅可比行和为 0 使反传可用「p⊙(g−p·g)」完成。",
+    "boundary": "max-shift 解决上溢不解决「全下溢」：x−max 全 −1000 时 exp 全 0——真实场景罕见（max 自身 exp=1）。fp16 限更低，混合精度里 softmax 必须 fp32 内算或用 fused kernel。",
+    "analogyBoundary": "评比后按最高分归一：全队先减最高分再按比例换算，名次不变。失效处：softmax 的比例是指数比例——差 1 分概率比是 e 倍，比线性归一敏感得多（温度由此来）。",
+    "misconceptions": [
+     "以为减 max 改变分布——它只改中间量，数学严格不变。",
+     "log_softmax = log(softmax(x))：下溢直接 −inf/NaN。",
+     "softmax 沿错轴——batch 实现里轴错位是高频 bug。",
+     "以为 fp16 减 max 就万事大吉——真正问题在累加精度，须 fp32。",
+     "梯度推导丢掉行和为 0 结构，写出 n² 矩阵还声称高效。"
+    ],
+    "ownAnalysis": "当场用 1e4 量级输入对比朴素版 inf 与稳定版正常；log_softmax 用 logsumexp；最后给雅可比并说明温度 τ 只是 x/τ 缩放——把 softmax 讲成「指数竞争强度调节器」，衔接蒸馏与对比学习。",
+    "officialNotes": "Goodfellow §6.2.2（max-shift 与 logsumexp）；CS231n softmax 梯度推导；scipy.special.logsumexp 文档。",
+    "interviewAnswer": "平移不变 → max-shift 实现 → logsumexp 的 log 版；补雅可比行和为 0 与 fp32 纪律；温度参数接蒸馏/对比学习。",
+    "studyPath": {
+     "prerequisites": [
+      "指数对数",
+      "概率归一化",
+      "链式法则"
+     ],
+     "nextSteps": [
+      "交叉熵与反向传播",
+      "KL 散度",
+      "温度与蒸馏"
+     ]
+    }
+   },
+   "diagram": {
+    "kind": "curve",
+    "title": "max-shift 把 exp 输入整体压进安全区",
+    "caption": "logits [1000,1001,999] 直接 exp 上溢；减 max=1001 后指数参数变为[−1,0,−2]，最大项 exp(0)=1，永不溢出——概率完全不变。",
+    "alt": "softmax 数值稳定的 max-shift 图示",
+    "svg": "<svg viewBox='0 0 680 246' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='max-shift 前后的数值范围对比'><rect x='150' y='14' width='250' height='30' rx='8' fill='none' stroke='var(--warn)' stroke-width='2.1'/><text x='275.0' y='34' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>原始 logits [1000, 1001, 999]</text><text x='140' y='34' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>float64</text><text x='410' y='34' font-size='13' fill='currentColor' opacity='0.8'>exp 上溢 → inf</text><text x='150' y='60' font-size='13' opacity='0.72' fill='currentColor'>exp(1000) ≈ 1.97e434，远超 1.8e308</text><line x1='275.0' y1='48' x2='275.0' y2='68' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,62 279.0,62 275.0,69' fill='var(--line-1)'/><rect x='150' y='72' width='250' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.3'/><text x='275.0' y='92' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>减 max：x − 1001</text><text x='140' y='92' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>[-1, 0, -2]</text><text x='410' y='92' font-size='13' fill='currentColor' opacity='0.8'>exp ∈ (0, 1]</text><text x='150' y='118' font-size='13' opacity='0.72' fill='currentColor'>分子分母同乘 e^{−max}，约掉</text><line x1='275.0' y1='106' x2='275.0' y2='126' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,120 279.0,120 275.0,127' fill='var(--line-1)'/><rect x='150' y='130' width='250' height='30' rx='8' fill='none' stroke='var(--warn)' stroke-width='2.1'/><text x='275.0' y='150' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>归一化 Σexp</text><text x='140' y='150' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>[e^-1, 1, e^-2]</text><text x='410' y='150' font-size='13' fill='currentColor' opacity='0.8'>p ≈ [.245, .665, .090]</text><text x='150' y='176' font-size='13' opacity='0.72' fill='currentColor'>与「直接算」数学上完全一致</text><line x1='275.0' y1='164' x2='275.0' y2='184' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,178 279.0,178 275.0,185' fill='var(--line-1)'/><rect x='150' y='188' width='250' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.3'/><text x='275.0' y='208' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>log_softmax = x − max − log Σexp(x−max)</text><text x='140' y='208' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>同上</text><text x='410' y='208' font-size='13' fill='currentColor' opacity='0.8'>[−2.42, −0.41, −2.41]</text><text x='150' y='234' font-size='13' opacity='0.72' fill='currentColor'>logsumexp 技巧：绝不先 softmax 再 log</text></svg>"
+   },
+   "concepts": [
+    {
+     "name": "平移不变性",
+     "readable": "softmax(x + c) = softmax(x)：同加常数输出不变。",
+     "analogy": "全体选手先扣同样的分再排名，名次不动。",
+     "analogyBreaksDown": "「名次不动」对指数归一严格成立——但它对相对差极敏感（e 倍/每分），线性归一没这么敏感。",
+     "mechanism": "e^{x_i+c} = e^c·e^{x_i}，e^c 是公因子从 Σ 中提出约去。",
+     "visual": "x=[1,2,3] 与 [101,102,103] 的 softmax 相同。",
+     "prerequisites": [
+      "指数性质",
+      "归一化定义"
+     ],
+     "selfTest": "温度 τ 怎么进来？（softmax(x/τ)，τ 缩放相对差）",
+     "formula": "softmax(x) = softmax(x + c)"
+    },
+    {
+     "name": "logsumexp",
+     "readable": "lse(x) = max + log(Σexp(x−max))：log-sum-exp 三重嵌套的稳定算法。",
+     "analogy": "先找会场最高的人，以他为标尺量其他人，最后把标尺加回去。",
+     "analogyBreaksDown": "「加回去」在 log 域；标尺使 exp 参数 ≤ 0，和 ∈ [1,n]，log ∈ [0, log n]——完全可控。",
+     "mechanism": "lse ≥ max 且 ≤ max + log n；它是 max 的光滑近似（温度 1），蒸馏 soft-target 的熵由此可调。",
+     "visual": "x=[1000,1001]：lse = 1001 + log(1 + e^−1) ≈ 1001.313。",
+     "prerequisites": [
+      "log-exp 互逆",
+      "中间量必须 ≤ 0"
+     ],
+     "selfTest": "lse 与 max 差多少有界吗？（≤ log n）",
+     "formula": "lse = m + log Σ e^{x−m}"
+    },
+    {
+     "name": "雅可比行和为零",
+     "readable": "∂p_i/∂x_j = p_i(δ_ij − p_j)，每行和 = 0。",
+     "analogy": "概率守恒：抬一个必须压别人，行和为 0 就是「有加必有减」。",
+     "analogyBreaksDown": "行和为 0 说的是梯度行，不是概率本身（概率行和恒为 1）。",
+     "mechanism": "反传无需 n×n：Jᵀv = p⊙(v − (p·v))，一次内积 + 逐元素乘。",
+     "visual": "p=[.7,.2,.1]：∂p₁/∂x₁=.21，∂p₁/∂x₂=−.14。",
+     "prerequisites": [
+      "链式法则",
+      "softmax 定义"
+     ],
+     "selfTest": "为什么反传可不构造矩阵？（雅可比可分解为内积+逐元素）",
+     "formula": "J = diag(p) − ppᵀ"
+    }
+   ],
+   "problem": {
+    "statement": "实现数值稳定的 softmax 与 log_softmax：max-shift、logsumexp、任意 axis；并验证极端输入（±1e4）与雅可比性质（向量式反传对齐数值梯度）。",
+    "examples": [],
+    "approach": {
+     "idea": "softmax：x − max → exp → 归一化。log_softmax：x − lse(x)。梯度 Jᵀv = p⊙(v − Σp·v)。",
+     "steps": [
+      "沿 axis 求 max 并 keepdims",
+      "exp(x − max) 归一化（log 路径走 logsumexp）",
+      "极端输入自测：1e4 量级不溢出",
+      "log 版：安全区与 log(softmax) 一致、极端区无 −inf",
+      "梯度：向量式实现与数值梯度对齐"
+     ],
+     "whyItWorks": "平移不变性免费提供 max-shift；logsumexp 绕开「先 log 后 和」的下溢路径；雅可比 diag(p)−ppᵀ 结构让反传 O(n)。",
+     "alternatives": []
+    },
+    "solution": {
+     "python": "import numpy as np\n\ndef softmax(x, axis=-1):\n    x = x - np.max(x, axis=axis, keepdims=True)\n    e = np.exp(x)\n    return e / e.sum(axis=axis, keepdims=True)\n\ndef logsumexp(x, axis=-1):\n    m = np.max(x, axis=axis, keepdims=True)\n    return m + np.log(np.exp(x - m).sum(axis=axis, keepdims=True))\n\ndef log_softmax(x, axis=-1):\n    return x - logsumexp(x, axis=axis)\n\n# 极端输入不上溢\nx = np.array([[1000.0, 1001.0, 999.0],\n              [-10000.0, -9999.0, -10001.0]])\np = softmax(x)\nassert np.isfinite(p).all() and np.allclose(p.sum(-1), 1)\nassert abs(p[0, 1] - 0.665241) < 1e-5\n# log 版不产生 -inf，安全区与 log(softmax) 一致\nls = log_softmax(x)\nassert np.isfinite(ls).all()\nassert np.allclose(ls, np.log(p), atol=1e-12)\n# 雅可比向量式对齐数值梯度\nrng = np.random.default_rng(8)\nz = rng.normal(size=6)\npp = softmax(z)\nv = rng.normal(size=6)\nJv = pp * (v - (pp * v).sum())\neps = 1e-6\nnum = np.array([((softmax(z + eps * e_i) - pp) / eps).dot(v)\n                for e_i in np.eye(6)])\nassert np.allclose(Jv, num, atol=1e-6)\nprint('softmax/logsumexp OK; 雅可比向量式与数值梯度对齐')\n",
+     "python_alt": null,
+     "notes": "注意对齐方向：数值梯度对齐的是 Jᵀv（真实反传路径），永远不需要构造 n×n。混合精度纪律：exp/sum 在 fp32 完成。"
+    },
+    "complexity": {
+     "time": "O(n)（两遍扫描）",
+     "space": "O(n)",
+     "why": "max 必须先知、归一化必须后算，两遍是最小必要量。"
+    },
+    "keyPoints": [
+     "减 max 数学不变数值必稳——永远写",
+     "log_softmax = x − lse(x)，绝不先 softmax 再 log",
+     "logsumexp 有界：[max, max + log n]",
+     "雅可比 diag(p)−ppᵀ，反传 p⊙(v − p·v)",
+     "fp16 混合精度里 softmax 必须 fp32 内算",
+     "全 −inf 行会 NaN：掩码保证每行至少一项有效"
+    ],
+    "pitfalls": [
+     "max 忘 keepdims——广播错轴，小 batch 看不出大 batch 崩。",
+     "log_softmax 写成 log(softmax(x))：下溢 −inf。",
+     "logsumexp 忘减 max：和式上溢 log(inf)。",
+     "axis 语义不清：明确按类别维归一化。",
+     "fp16 内做 exp：累加精度不足，须 fp32。"
+    ],
+    "edgeCases": [
+     "全同值：均匀分布 1/n。",
+     "单元素：[1.0]，log 版 [0.0]。",
+     "含 −inf 掩码：exp 下溢天然支持；全行 −inf 会 NaN，掩码要保证每行至少一项有效。",
+     "float16 输入：先 cast fp32。",
+     "词表 12 万：用 online softmax / 分块（FlashAttention 核心）。"
+    ],
+    "interviewTips": "价值在「讲清楚为什么」：30 秒平移不变 → 30 秒稳定版 → 1 分钟 logsumexp → 1 分钟雅可比，全程 ≤4 分钟，把时间留给追问。",
+    "variants": [
+     {
+      "name": "online softmax（流式）",
+      "idea": "单遍扫描同时维护 running max 与归一化项——FlashAttention 的理论核心。",
+      "code": "import numpy as np\ndef softmax_ref(x):\n    e = np.exp(x - x.max()); return e / e.sum()\ndef online_softmax(x):\n    m = -np.inf; s = 0.0\n    for xi in x:\n        m_new = max(m, xi)\n        s = s * np.exp(m - m_new) + np.exp(xi - m_new)\n        m = m_new\n    return np.exp(x - m) / s\nx = np.array([1000., 1001., 999.])\nassert np.allclose(online_softmax(x), softmax_ref(x))\nprint('online softmax OK：单遍，O(1) 额外显存')\n",
+      "when": "流式/分块场景（FlashAttention）；面试进阶谈资。",
+      "cost": "一遍扫描，显存 O(1)"
+     },
+     {
+      "name": "带温度的 softmax",
+      "idea": "x/τ：τ<1 锐化、τ>1 平滑——蒸馏与对比学习的竞争强度旋钮。",
+      "code": "import numpy as np\ndef softmax(x, axis=-1):\n    x = x - x.max(axis=axis, keepdims=True)\n    e = np.exp(x); return e / e.sum(axis=axis, keepdims=True)\nx = np.array([2.0, 1.0, 0.0])\np_hot = softmax(x / 0.5)\np_soft = softmax(x / 2.0)\nassert p_hot[0] > p_soft[0]\nprint('τ=0.5:', np.round(p_hot, 3), ' τ=2:', np.round(p_soft, 3))\n",
+      "when": "蒸馏、对比学习、采样温度。",
+      "cost": "同 softmax"
+     }
+    ],
+    "comparison": [
+     {
+      "cells": [
+       "实现",
+       "上溢",
+       "下溢",
+       "复杂度",
+       "用途"
+      ]
+     },
+     {
+      "cells": [
+       "朴素 exp/Σexp",
+       "会",
+       "—",
+       "O(n)",
+       "仅示意"
+      ]
+     },
+     {
+      "cells": [
+       "max-shift",
+       "不会",
+       "—",
+       "O(n)",
+       "标准"
+      ]
+     },
+     {
+      "cells": [
+       "logsumexp 路径",
+       "不会",
+       "不会",
+       "O(n)",
+       "损失函数"
+      ]
+     },
+     {
+      "cells": [
+       "online/分块",
+       "不会",
+       "不会",
+       "O(n) 单遍",
+       "FlashAttention"
+      ]
+     }
+    ],
+    "interviewScript": "「稳定性全部来自平移不变：减 max 不改结果只改数值。log 版走 logsumexp 一次到位。梯度 diag(p)−ppᵀ，反传向量式 O(n)。这两个性质分别是交叉熵稳定性和 FlashAttention 在线 softmax 的地基。」"
+   }
+  },
+  "curated-top-k-top-p-sampling": {
+   "tldr": "Top-k 截断概率前 k 个候选；Top-p 截断累计概率达到 p 的最小集合——候选数随分布形状自适应。两者都是「截断 + 重归一化 + 采样」，实现细节在掩码语义与管线顺序。",
+   "why": "解码策略是 LLM 应用与推理岗常考题：考「生成质量可控性」的理解层次——greedy/温度/top-k/top-p 各解决什么、副作用是什么、怎么组合。代码只要 10 行，讲清取舍才是区分度。",
+   "teaching": {
+    "progressive": [
+     {
+      "level": 1,
+      "text": "greedy 稳定但重复；纯采样多样但可能抽长尾噪声。截断采样在两者之间。"
+     },
+     {
+      "level": 2,
+      "text": "Top-k：保留 logit 最大的 k 个，其余 −inf，重归一化后采样。"
+     },
+     {
+      "level": 3,
+      "text": "Top-p：按概率降序累计，取累计 ≥ p 的最小前缀——尖时候选少、平时候选多，自适应是本质优势。"
+     },
+     {
+      "level": 4,
+      "text": "管线顺序：penalty → temperature → top-k → top-p → softmax → 采样。顺序错了语义就变。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么 top-p 比 top-k 更合理？",
+      "a": "分布尖时 top-k 强塞 k 个长尾候选引噪声；分布平时又截太多。top-p 按概率质量自适应候选数，两种极端都处理得当。"
+     },
+     {
+      "q": "temperature=0 和 greedy 等价吗？",
+      "a": "数学上 τ→0 退化为 argmax；实现上 τ=0 除零，要么特判 greedy 分支要么用极小值近似——HF 就是这么处理的。"
+     },
+     {
+      "q": "top-p 有确定性输出吗？",
+      "a": "没有——截断后仍在候选内随机。要确定性得固定 seed 或 greedy；这也是「评测 greedy/beam、产品 top-p」惯例的原因。"
+     }
+    ],
+    "mechanism": "logits 管线：温度缩放 → 惩罚 → top-k 掩码 → top-p 掩码（累计 ≥ p 的最小前缀）→ 被掩位置 −inf → softmax（自动重归一化）→ 按概率采样。",
+    "boundary": "截断是分布修改：重归一化会把剩余候选概率放大，不是「隐藏部分质量」。对长尾知识型任务（代码、专有名词）截断过狠系统性伤害。",
+    "analogyBoundary": "点菜：top-k 是「只看前 k 道招牌」，top-p 是「挑出合计占 90% 好评的最少几道」。失效处：菜单每天变，固定 k 在冷门日把好菜挡在外面——正是 top-p 自适应的价值。",
+    "misconceptions": [
+     "先 top-p 后温度：温度应最先，顺序颠倒后阈值语义全变。",
+     "top-p 取「累计 ≤ p」：方向反了，把多数候选扔掉。",
+     "截断后忘重归一化：直接在原概率上采样，和 < 1。",
+     "重复惩罚作用于概率而非 logits——应在 log 域。",
+     "以为 top-k 与 top-p 叠加是并集——是「先 k 后 p」的交集。"
+    ],
+    "ownAnalysis": "给尖锐与平坦两组分布展示 top-p 候选数自适应（top-k 做不到的）；再演示管线顺序；最后提 beam search 与截断采样的适用边界（评测确定性 vs 产品多样性）与 min-p。",
+    "officialNotes": "The Curious Case of Neural Text Degeneration (Holtzman 2019, nucleus 原论文)；HF generation utils 的 TopK/TopPLogitsWarper 源码。",
+    "interviewAnswer": "管线顺序一句话 → top-k/top-p 实现（排序掩码）→ 自适应对比 → 副作用（重归一化放大、长尾伤害）→ 参数经验（temp 0.7~1.0, top-p 0.9~0.95）。",
+    "studyPath": {
+     "prerequisites": [
+      "softmax 与概率分布",
+      "离散采样",
+      "排序与掩码"
+     ],
+     "nextSteps": [
+      "beam search 与长度归一化",
+      "min-p 采样",
+      "投机解码"
+     ]
+    }
+   },
+   "diagram": {
+    "kind": "matrix",
+    "title": "同一分布下 top-k 与 top-p 的候选集对比",
+    "caption": "尖锐分布（前 2 项占 97%）top-p=0.9 只取 2 个候选；平坦分布前 8 项才凑够 90%——同一 top-p 取 8 个。固定 k=4 在两种场景下都不合适。",
+    "alt": "top-k 与 top-p 截断行为对比",
+    "svg": "<svg viewBox='0 0 680 238' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='同一 top-p 在两种分布下的候选数差异'><rect x='20' y='14' width='310' height='180' rx='10' fill='none' stroke='var(--warn)' stroke-width='2.1'/><text x='175.0' y='38' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>尖锐分布（置信高）</text><text x='32' y='64' font-size='13' fill='currentColor' opacity='0.85'>p = [.80, .15, .02, .01, ...]</text><text x='32' y='88' font-size='13' fill='currentColor' opacity='0.85'>top-p=0.9 → 取 2 个</text><text x='32' y='112' font-size='13' fill='currentColor' opacity='0.85'>top-k=4 → 多带 2 个长尾噪声</text><text x='32' y='136' font-size='13' fill='currentColor' opacity='0.85'>自适应：候选少而准</text><text x='32' y='160' font-size='13' fill='currentColor' opacity='0.85'>生成更稳定</text><rect x='350' y='14' width='310' height='180' rx='10' fill='none' stroke='var(--line-1)' stroke-width='1.3'/><text x='505.0' y='38' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>平坦分布（不确定）</text><text x='362' y='64' font-size='13' fill='currentColor' opacity='0.85'>p = [.20, .18, .15, .12, .10, .08, .07, .05, ...]</text><text x='362' y='88' font-size='13' fill='currentColor' opacity='0.85'>top-p=0.9 → 取 8 个</text><text x='362' y='112' font-size='13' fill='currentColor' opacity='0.85'>top-k=4 → 截掉一半合理选项</text><text x='362' y='136' font-size='13' fill='currentColor' opacity='0.85'>自适应：候选多而全</text><text x='362' y='160' font-size='13' fill='currentColor' opacity='0.85'>生成更多样</text><text x='340.0' y='228' font-size='13' text-anchor='middle' font-weight='bold' fill='currentColor'>top-p 的候选数是分布形状的函数；top-k 永远是常数</text></svg>"
+   },
+   "concepts": [
+    {
+     "name": "截断重归一化",
+     "readable": "被截掉的候选概率质量重新分配给保留集合。",
+     "analogy": "淘汰赛后剩余选手按原实力比例重新瓜分。",
+     "analogyBreaksDown": "「重新瓜分」按原相对比例，不是均分——相对排序不变。",
+     "mechanism": "mask 后 logits=−inf → softmax 自动给被掩项 0，保留项按原相对值归一化。",
+     "visual": "p=[.5,.3,.2] 截掉 .2 → [.625,.375]。",
+     "prerequisites": [
+      "softmax 掩码语义",
+      "−inf 与稳定"
+     ],
+     "selfTest": "为什么置 −inf 不是 0 概率？（掩码在 logit 域，0 logit 仍有概率）",
+     "formula": "logits[~keep] = -inf"
+    },
+    {
+     "name": "核采样（nucleus）",
+     "readable": "累计概率达到 p 的最小前缀集合。",
+     "analogy": "找出占 90% 好评的最少几道菜。",
+     "analogyBreaksDown": "「好评率」静态；语言分布每步变，核的大小跟着变——这正是自适应本意。",
+     "mechanism": "降序排序 → cumsum → 首个 ≥ p 的位置及之前保留。HF 写法：cumsum(p) − p < p。",
+     "visual": "p=0.9，p 排序 [.4,.3,.15,.1,.05]：累计 [.4,.7,.85,.95] → 取前 4。",
+     "prerequisites": [
+      "排序稳定性",
+      "≥ 与 > 的边界"
+     ],
+     "selfTest": "p=1.0 时是什么？（不截断，全分布采样）",
+     "formula": "keep = cumsum(sorted_p) - sorted_p < p"
+    },
+    {
+     "name": "温度与管线顺序",
+     "readable": "τ 作用于 logits（最先），截断作用于分布（后），采样最后。",
+     "analogy": "先调火候再决定哪些菜上桌，最后掷骰子选一份。",
+     "analogyBreaksDown": "火候连续调节，截断硬阈值——作用于不同对象，顺序不可交换。",
+     "mechanism": "标准顺序 penalty → temperature → top-k → top-p → softmax → multinomial；HF 的 LogitsProcessorList 按此排列。",
+     "visual": "τ=0.7 把 logits 放大 1.43 倍后再截断。",
+     "prerequisites": [
+      "温度形式",
+      "logit 域 vs 概率域"
+     ],
+     "selfTest": "penalty 为什么在温度前？（作用于原始 logit 语义，与锐度无关）",
+     "formula": "logits /= τ → mask → softmax → sample"
+    }
+   ],
+   "problem": {
+    "statement": "实现 top-k 与 top-p 采样（含温度与组合管线），输入一维 logits，输出 token id。要求：掩码置 −inf、自动重归一化、top-p 候选数随分布自适应。",
+    "examples": [],
+    "approach": {
+     "idea": "top-k：保留前 k 个索引，其余 −inf。top-p：降序累计概率，取累计 ≥ p 的最小前缀，其余 −inf。softmax + 按概率抽样。",
+     "steps": [
+      "温度缩放 logits /= τ（τ→0 特判 greedy）",
+      "top-k 掩码：保留最大 k 个",
+      "top-p 掩码：排序、cumsum、最小前缀",
+      "两掩码取交集（先 k 后 p），置 −inf",
+      "softmax → rng.choice 采样",
+      "自测：尖锐分布 top-p 候选 < 平坦分布候选"
+     ],
+     "whyItWorks": "截断 + 重归一化 = 在「质量可控的候选集」内保留原始分布的相对偏好；top-p 的候选集由概率质量定义，因此对分布形状自适应。",
+     "alternatives": []
+    },
+    "solution": {
+     "python": "import numpy as np\n\ndef sample(logits, temperature=1.0, top_k=None, top_p=None, seed=None):\n    rng = np.random.default_rng(seed)\n    z = np.asarray(logits, float).copy()\n    if temperature <= 1e-6:\n        return int(np.argmax(z))          # greedy 分支\n    z = z / temperature\n    if top_k is not None and 0 < top_k < len(z):\n        kth = np.sort(z)[-top_k]\n        z = np.where(z < kth, -np.inf, z)\n    if top_p is not None and 0 < top_p < 1.0:\n        order = np.argsort(-z)\n        ps = np.exp(z[order] - z[order].max()); ps /= ps.sum()\n        keep_sorted = np.cumsum(ps) - ps < top_p   # 最小前缀\n        keep = np.zeros_like(z, bool)\n        keep[order[keep_sorted]] = True\n        z = np.where(~keep, -np.inf, z)\n    e = np.exp(z - np.max(z[np.isfinite(z)]))\n    e[~np.isfinite(e)] = 0\n    p = e / e.sum()\n    return int(rng.choice(len(z), p=p))\n\ndef n_candidates(logits, temperature=1.0, top_p=0.9):\n    z = np.asarray(logits, float) / temperature\n    ps = np.exp(z - z.max()); ps /= ps.sum()\n    cs = np.cumsum(np.sort(ps)[::-1])\n    return int(np.searchsorted(cs, top_p) + 1)\n\nz = np.array([2.0, 1.0, 0.5, -1.0])\nassert sample(z, temperature=0.0) == 0        # greedy\npicks = {sample(z, top_k=2, seed=s) for s in range(200)}\nassert picks <= {0, 1}, f'top_k=2 却采出了 {picks}'\nsharp = np.array([8.0, 6.0, 0.0, 0.0, 0.0])\nflat = np.array([2.0, 1.9, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 0., 0.])\nn_sharp = n_candidates(sharp)\nn_flat = n_candidates(flat)\nassert n_sharp < n_flat, f'自适应失效: {n_sharp} vs {n_flat}'\nassert n_candidates(z, top_p=0.999999) == len(z)\nprint('Top-k/Top-p OK: sharp=%d 候选, flat=%d 候选 (p=0.9)'\n      % (n_sharp, n_flat))\n",
+     "python_alt": null,
+     "notes": "top-p 的「最小前缀」用 cumsum − 当前项 < p（HF 同款），保证恰好覆盖 ≥ p 的最小集合。top-k 用「第 k 大的值」做阈值避免全词表排序（词表 12 万时 argsort 是主要开销）。"
+    },
+    "complexity": {
+     "time": "top-k O(V)；top-p O(V log V)（可优化为部分排序）",
+     "space": "O(V)",
+     "why": "V 是词表大小（1e5 量级）；生产用 kernel 融合避免排序。"
+    },
+    "keyPoints": [
+     "管线顺序：penalty → temperature → top-k → top-p → softmax → 采样",
+     "top-p 是「累计 ≥ p 的最小前缀」，方向不能反",
+     "截断重归一化由 softmax(−inf) 自动完成",
+     "top-p 自适应候选数，top-k 固定",
+     "τ=0 特判 greedy，不能除零",
+     "截断采样无确定性：评测 greedy/beam，产品 top-p"
+    ],
+    "pitfalls": [
+     "top-p 比较方向写反。",
+     "截断后直接在原 probs 上采样（没重归一化）。",
+     "temperature 放在截断之后。",
+     "top_k=0 或 k≥词表的边界没跳过。",
+     "用 0 而非 −inf 造掩码：0 logit 仍有概率。",
+     "忘 seed 导致测试不稳定。"
+    ],
+    "edgeCases": [
+     "τ=0：greedy 分支，不能除零。",
+     "top_k ≥ V 或 ≤ 0：跳过截断。",
+     "top_p→1：不截断；top_p→0：趋近 greedy。",
+     "logits 含 −inf：排序与 cumsum 要稳定处理。",
+     "全同值 logits：均匀分布，top-k 取任意前 k 个。"
+    ],
+    "interviewTips": "先画管线顺序再落码——顺序本身就是考点。用尖锐/平坦分布演示 top-p 自适应是「演示亮点」，比讲十行代码更有说服力。",
+    "variants": [
+     {
+      "name": "min-p 采样（2024）",
+      "idea": "只保留概率 ≥ min_p·p_max 的候选：以最高概率为锚，比 top-p 对温度更稳健。",
+      "code": "import numpy as np\ndef sample_minp(logits, min_p=0.1, temperature=1.0, seed=0):\n    rng = np.random.default_rng(seed)\n    z = np.asarray(logits, float) / temperature\n    e = np.exp(z - z.max()); p = e / e.sum()\n    keep = p >= min_p * p.max()\n    p = np.where(keep, p, 0.0); p /= p.sum()\n    return int(rng.choice(len(z), p=p))\nz = np.array([5., 4.5, 1., 0.5, 0.])\npicks = {sample_minp(z, seed=s) for s in range(300)}\nassert picks <= {0, 1, 2}\nprint('min-p OK:', sorted(picks))\n",
+      "when": "高温防长尾噪声的新方案；vLLM/HF 已支持。",
+      "cost": "同 top-p"
+     },
+     {
+      "name": "重复惩罚（presence 简化版）",
+      "idea": "在 logit 域对已出现 token 减惩罚，抑制复读——与截断采样正交，作用于管线最前。",
+      "code": "import numpy as np\ndef penalize(logits, generated, penalty=1.2):\n    z = np.asarray(logits, float).copy()\n    for tok in set(generated):   # presence：出现过就罚一次\n        z[tok] = z[tok] - np.log(penalty) if z[tok] > 0 \\\n                 else z[tok] + np.log(penalty)\n    return z\nz = penalize(np.array([3., 3., 1.]), generated=[0, 0, 1])\nassert z[0] < 3.0 and z[1] < 3.0   # 出现过的都被压\nassert z[2] == 1.0                 # 没出现的不动\nprint('重复惩罚 OK:', np.round(z, 3))\n",
+      "when": "开放式生成防复读；与 top-p 组合。",
+      "cost": "O(生成长度)"
+     }
+    ],
+    "comparison": [
+     {
+      "cells": [
+       "策略",
+       "候选数",
+       "确定性",
+       "主要问题",
+       "适用"
+      ]
+     },
+     {
+      "cells": [
+       "greedy",
+       "1",
+       "有",
+       "重复循环",
+       "评测/代码类"
+      ]
+     },
+     {
+      "cells": [
+       "纯采样",
+       "全部",
+       "无",
+       "长尾噪声",
+       "几乎不用"
+      ]
+     },
+     {
+      "cells": [
+       "top-k",
+       "固定 k",
+       "无",
+       "不自适应",
+       "传统基线"
+      ]
+     },
+     {
+      "cells": [
+       "top-p",
+       "自适应",
+       "无",
+       "重归一化放大",
+       "产品默认"
+      ]
+     },
+     {
+      "cells": [
+       "min-p",
+       "按 p_max 比例",
+       "无",
+       "较新",
+       "高温场景"
+      ]
+     },
+     {
+      "cells": [
+       "beam search",
+       "beam×S",
+       "有",
+       "长度偏置",
+       "翻译/摘要"
+      ]
+     }
+    ],
+    "interviewScript": "「解码管线顺序是惩罚→温度→top-k→top-p→softmax→采样。top-k 固定候选数，尖时引噪声平时截太多；top-p 按累计概率质量自适应，是产品默认。两个易错点：top-p 取『累计 ≥ p 的最小前缀』，截断靠置 −inf 让 softmax 自动重归一化。评测用 greedy/beam，产品用 top-p 0.9~0.95 加温度 0.7~1.0。」"
+   }
+  },
+  "curated-cross-entropy-backward": {
+   "tldr": "交叉熵 = −log p(y)：把正确类的概率拉向 1。手撕反传的核心结论：softmax+CE 融合后梯度就是 p − onehot(y)——一个减法，雅可比的对角/非对角项在融合中完美相消。所有分类损失的反传模板。",
+   "why": "「手推交叉熵梯度」是深度学习面试保留节目：考链式法则功底、softmax 雅可比记忆、以及「为什么框架要 fused 实现」的工程意识。答出 p − onehot 且能推导，后面所有损失类追问都好接。",
+   "teaching": {
+    "progressive": [
+     {
+      "level": 1,
+      "text": "前向：p = softmax(z)，loss = −log p[y]；数值上直接 log_softmax(z)[y] 一步到位。"
+     },
+     {
+      "level": 2,
+      "text": "链式法则：CE 上游梯度 −onehot/p_y 乘 softmax 雅可比，p_y 相消后 = p − onehot(y)。"
+     },
+     {
+      "level": 3,
+      "text": "为什么相消：−1/p_y 只在 y 分量非零，与雅可比第 y 行 p_y(δ − p) 相乘恰好约掉 p_y。"
+     },
+     {
+      "level": 4,
+      "text": "工程含义：不构造 n×n 雅可比，直接 (p − onehot)/B；fused kernel 连 p 都不物化（logsumexp 路径）。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不先 softmax 再 −log？",
+      "a": "两步路径要先物化 p 且 p 下溢为 0 时 log 爆炸。fused 路径 log_softmax = z − lse(z) 数值稳定且少一次读写。"
+     },
+     {
+      "q": "p − onehot 梯度的直觉？",
+      "a": "每个类别的梯度 = 当前概率与目标 0/1 的差——「概率缺口」。正确的类为负（推高），其余为正（推低）。"
+     },
+     {
+      "q": "类别不均衡时有什么问题？",
+      "a": "梯度只由概率缺口决定：高频类 p→1 梯度消失，低频类样本少但梯度大——总体偏向高频类。对策：加权 CE 或 Focal Loss。"
+     }
+    ],
+    "mechanism": "前向：logp = z − lse(z)，loss = −mean(logp[y])。反向：上游 dlogp = −onehot(y)/B，dz = dlogp − (Σdlogp)·softmax 化简后 = (p − onehot(y))/B。关键在符号相消。",
+    "boundary": "p→1 梯度消失（学对就停），p→0 时趋近 −1（错得离谱猛推）——健康的自适应步长。但对「错误但自信」样本梯度恒 1 量级，噪声标签持续注入大梯度——标签平滑/focal loss 的动机。",
+    "analogyBoundary": "教练按「实际与目标名次的差距」给训练量：差得远练得狠、达标就少练。失效处：目标是人为 onehot，标签噪声直接变成错误训练量。",
+    "misconceptions": [
+     "写出 n×n 雅可比再乘向量——对但低效，必被追问融合形式。",
+     "忘除 batch（mean 语义）或重复除。",
+     "反向推导丢 −1/p_y 的符号：梯度方向反了训练发散。",
+     "对 soft label 硬套 p − onehot：应为 p − y_soft。",
+     "CE 与 NLL 混淆：CE 含 softmax，NLL 只取 logp[y]——框架的 CrossEntropyLoss 是两者 fused。"
+    ],
+    "ownAnalysis": "推导「两步走」：先 softmax 雅可比，再乘 CE 的 −onehot/p_y 演示 p_y 相消。代码先写朴素两步版展示 log(0) 爆炸，再写 fused 稳定版。给 label smoothing 一行扩展 (p − (1−ε)onehot − ε/K)。",
+    "officialNotes": "Goodfellow §6.2 与 CS231n softmax 梯度推导；PyTorch CrossEntropyLoss 文档明确 fused log_softmax + NLL；label smoothing 出自 Inception-v3 (Szegedy 2016) §7。",
+    "interviewAnswer": "写 fused 前向 → 推雅可比相消 → 给 p − onehot → batch mean 与数值稳定 → label smoothing/focal loss 扩展 → 为什么框架要 fused。",
+    "studyPath": {
+     "prerequisites": [
+      "softmax 雅可比",
+      "链式法则",
+      "onehot 编码"
+     ],
+     "nextSteps": [
+      "KL 散度与蒸馏",
+      "Focal Loss",
+      "InfoNCE 对比损失"
+     ]
+    }
+   },
+   "diagram": {
+    "kind": "architecture",
+    "title": "softmax 雅可比与 CE 梯度的相消过程",
+    "caption": "CE 上游梯度只在正确类 y 处非零（−1/p_y），与 softmax 雅可比第 y 行 p_y(δ−p) 相乘时 p_y 恰好约掉——最终梯度 = p − onehot(y)。",
+    "alt": "交叉熵反传的相消推导",
+    "svg": "<svg viewBox='0 0 680 246' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='从上游梯度到融合梯度的三步相消'><rect x='150' y='14' width='250' height='30' rx='8' fill='none' stroke='var(--warn)' stroke-width='2.1'/><text x='275.0' y='34' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>上游：dL/dlogp = −onehot(y)/p_y</text><text x='140' y='34' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>loss 标量</text><text x='410' y='34' font-size='13' fill='currentColor' opacity='0.8'>(n,) 只在 y 处非零</text><text x='150' y='60' font-size='13' opacity='0.72' fill='currentColor'>−log p_y 对 logp_y 的导数</text><line x1='275.0' y1='48' x2='275.0' y2='68' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,62 279.0,62 275.0,69' fill='var(--line-1)'/><rect x='150' y='72' width='250' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.3'/><text x='275.0' y='92' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>softmax 雅可比第 y 行：p_y(δ − p)</text><text x='140' y='92' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>p (n,)</text><text x='410' y='92' font-size='13' fill='currentColor' opacity='0.8'>行向量</text><text x='150' y='118' font-size='13' opacity='0.72' fill='currentColor'>diag(p) − ppᵀ 的第 y 行</text><line x1='275.0' y1='106' x2='275.0' y2='126' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,120 279.0,120 275.0,127' fill='var(--line-1)'/><rect x='150' y='130' width='250' height='30' rx='8' fill='none' stroke='var(--warn)' stroke-width='2.1'/><text x='275.0' y='150' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>相乘：p_y(δ−p) · (−1/p_y)</text><text x='140' y='150' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>两个 (n,)</text><text x='410' y='150' font-size='13' fill='currentColor' opacity='0.8'>p − onehot(y)</text><text x='150' y='176' font-size='13' opacity='0.72' fill='currentColor'>p_y 完全相消——融合梯度的全部秘密</text><line x1='275.0' y1='164' x2='275.0' y2='184' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,178 279.0,178 275.0,185' fill='var(--line-1)'/><rect x='150' y='188' width='250' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.3'/><text x='275.0' y='208' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>batch 语义：dz = (p − onehot) / B</text><text x='140' y='208' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>(B,n)</text><text x='410' y='208' font-size='13' fill='currentColor' opacity='0.8'>(B,n)</text><text x='150' y='234' font-size='13' opacity='0.72' fill='currentColor'>mean 归约 → 除 B；sum 归约不除</text></svg>"
+   },
+   "concepts": [
+    {
+     "name": "NLL 与 CE 的关系",
+     "readable": "CE(softmax(z), y) = NLL(log_softmax(z), y)：前者含归一化，后者假设输入已是 log 概率。",
+     "analogy": "CE 是「评分 + 换算」，NLL 只看已换算好的分数。",
+     "analogyBreaksDown": "框架的 CrossEntropyLoss 是 fused 名字——输入必须是未归一化 logits，喂概率会双重 softmax。",
+     "mechanism": "logp = z − lse(z)；loss = −logp[y]。",
+     "visual": "z=[2,1,0], y=0：lse≈2.408，loss=−logp₀=0.408。",
+     "prerequisites": [
+      "logsumexp",
+      "softmax 定义"
+     ],
+     "selfTest": "给 CrossEntropyLoss 喂 softmax 输出会怎样？（双重归一化，loss 与梯度全错）",
+     "formula": "CE = NLL ∘ log_softmax"
+    },
+    {
+     "name": "概率缺口梯度",
+     "readable": "dz = p − onehot(y)：梯度就是当前概率与目标的差。",
+     "analogy": "射箭：离靶心差多少修正力度就多少；正中靶心修正为零。",
+     "analogyBreaksDown": "错误侧梯度恒接近 1，不会因错得更狠而更大——CE 对「自信的错误」没有额外惩罚（focal loss 补这里）。",
+     "mechanism": "p→1：dz→0；p→0（错误类）：dz→−1；其它类 dz = p_i > 0。",
+     "visual": "p=[.7,.2,.1], y=0 → dz=[−.3, .2, .1]。",
+     "prerequisites": [
+      "softmax 雅可比",
+      "batch 归约"
+     ],
+     "selfTest": "标签平滑后梯度？（p − ((1−ε)e_y + ε/K))",
+     "formula": "dz = (p − onehot(y)) / B"
+    },
+    {
+     "name": "标签平滑",
+     "readable": "目标从 onehot 换成 (1−ε)·onehot + ε/K。",
+     "analogy": "老师改卷最高 98 分——留出不确定性余地。",
+     "analogyBreaksDown": "平滑不是正则噪声，是系统性目标修改：最优解从 p=1 移到 p=(1−ε)+ε/K，全部类保留 ε/K 基线概率。",
+     "mechanism": "ε=0.1, K=1000：目标 = 0.9001·onehot + 0.0001·其余。",
+     "visual": "Inception-v3 用 ε=0.1，泛化普遍提升。",
+     "prerequisites": [
+      "onehot 与概率单纯形",
+      "梯度形式不变性"
+     ],
+     "selfTest": "ε 过大会怎样？（最优概率上限被压低，模型欠拟合）",
+     "formula": "target = (1−ε)·onehot + ε/K"
+    }
+   ],
+   "problem": {
+    "statement": "实现交叉熵前向（fused log_softmax 路径）与反向传播：输入 logits (B,K) 与标签 y (B,)，输出 loss 与 dz；验证 dz == (p − onehot)/B 且与数值梯度对齐。",
+    "examples": [],
+    "approach": {
+     "idea": "前向：logp = z − lse(z)，loss = −mean(logp[range(B), y])。反向：dz = (p − onehot(y))/B，p 由稳定 softmax 得出。",
+     "steps": [
+      "fused 前向：logsumexp → logp → gather y",
+      "反向：dz = (softmax(z) − onehot(y)) / B",
+      "数值实验：与有限差分数值梯度对齐",
+      "朴素两步版（softmax → log）在极端 logits 下爆 −inf，对比",
+      "扩展：label smoothing 的目标替换"
+     ],
+     "whyItWorks": "CE 上游梯度 −onehot/p_y 与 softmax 雅可比第 y 行相乘时 p_y 恰好相消——融合梯度的全部秘密都在这个结构里。",
+     "alternatives": []
+    },
+    "solution": {
+     "python": "import numpy as np\n\ndef ce_forward(z, y):\n    \"\"\"fused：log_softmax 路径。z:(B,K), y:(B,) int。\"\"\"\n    m = z.max(axis=1, keepdims=True)\n    lse = m + np.log(np.exp(z - m).sum(axis=1, keepdims=True))\n    logp = z - lse\n    loss = -logp[np.arange(len(y)), y].mean()\n    return loss, logp\n\ndef ce_backward(z, y):\n    \"\"\"dz = (p - onehot(y)) / B。\"\"\"\n    B, K = z.shape\n    m = z.max(axis=1, keepdims=True)\n    e = np.exp(z - m)\n    p = e / e.sum(axis=1, keepdims=True)\n    dz = p.copy()\n    dz[np.arange(B), y] -= 1.0\n    return dz / B\n\nrng = np.random.default_rng(9)\nB, K = 4, 6\nz = rng.normal(size=(B, K))\ny = rng.integers(0, K, size=B)\nloss, logp = ce_forward(z, y)\nassert np.isfinite(loss) and abs(loss) < 10\n\n# 数值梯度对齐（对每个 logit 分量）\ndz = ce_backward(z, y)\neps = 1e-6\nnum = np.zeros_like(z)\nfor i in range(B):\n    for k in range(K):\n        zp, zm = z.copy(), z.copy()\n        zp[i, k] += eps; zm[i, k] -= eps\n        num[i, k] = (ce_forward(zp, y)[0]\n                     - ce_forward(zm, y)[0]) / (2 * eps)\nassert np.allclose(dz, num, atol=1e-6), '反传必须对齐数值梯度'\n\n# 概率缺口验证：dz + onehot/B == p/B\ne = np.exp(z - z.max(1, keepdims=True))\np = e / e.sum(1, keepdims=True)\noh = np.zeros((B, K)); oh[np.arange(B), y] = 1\nassert np.allclose(dz, (p - oh) / B)\n\n# 朴素两步版在极端 logits 下爆炸\nz_bad = np.array([[1000.0, 0., 0.]]); y_bad = np.array([0])\ntry:\n    naive = -np.log(np.exp(z_bad) / np.exp(z_bad).sum())[0, 0]\n    ok = np.isfinite(naive)\nexcept Exception:\n    ok = False\nassert not ok, '朴素版此处应已上溢'\nprint('CE 前向/反向 OK: loss=%.4f，dz 对齐数值梯度' % loss)\n",
+     "python_alt": null,
+     "notes": "反向的核心一行：dz[range(B), y] −= 1 再整体除 B——这就是「p − onehot」的实现形态。数值实验用中心差分对齐，比单侧差分精度高一个量级。"
+    },
+    "complexity": {
+     "time": "前向 O(B·K)，反向 O(B·K)",
+     "space": "O(B·K)（fused kernel 可不物化 p）",
+     "why": "一次 max + 一次 sum + 一次 gather 是最小必要量。"
+    },
+    "keyPoints": [
+     "前向走 log_softmax = z − lse(z)，绝不先 softmax 再 log",
+     "融合梯度 dz = (p − onehot(y))/B",
+     "相消来源：上游 −1/p_y 与雅可比第 y 行的 p_y 约掉",
+     "mean 归约除 B，sum 归约不除",
+     "标签平滑：目标 (1−ε)onehot + ε/K，梯度形式不变",
+     "框架 CE 的输入必须是 logits——喂概率是双重归一化 bug"
+    ],
+    "pitfalls": [
+     "写出 n×n 雅可比：对但低效，必被追问。",
+     "忘除 B（mean 语义）：loss 随 batch 大小漂移。",
+     "丢 −1/p_y 符号：梯度反向训练发散。",
+     "对 soft label 硬套 onehot：应为 p − y_soft。",
+     "朴素两步前向：p 下溢 log(0)=−inf。",
+     "gather 用 argmax 而不是标签：那是自蒸馏/EM 的语义，不是 CE。"
+    ],
+    "edgeCases": [
+     "p→1（几乎全对）：梯度→0，收敛停火。",
+     "p→0（自信错误）：梯度 −1 量级，噪声标签持续注入大梯度。",
+     "K=1：loss 恒 0（只有一个类的分布无熵）。",
+     "标签越界：必须断言检查（框架会 CUDA 断言崩溃）。",
+     "label smoothing：目标替换后梯度形式不变。"
+    ],
+    "interviewTips": "推导「两步走」演示 p_y 相消是全场高潮；代码先朴素后 fused 对比。收尾一句「这就是为什么框架的 CrossEntropyLoss 要求输入 logits」——把工程意识和理论连起来。",
+    "variants": [
+     {
+      "name": "label smoothing 版",
+      "idea": "目标换成 (1−ε)·onehot + ε/K，梯度变为 p − target，一行改动。",
+      "code": "import numpy as np\ndef ce_backward_smooth(z, y, eps=0.1):\n    B, K = z.shape\n    e = np.exp(z - z.max(1, keepdims=True))\n    p = e / e.sum(1, keepdims=True)\n    t = np.full((B, K), eps / K)\n    t[np.arange(B), y] += 1.0 - eps\n    return (p - t) / B\nz = np.random.default_rng(0).normal(size=(2, 5))\nd = ce_backward_smooth(z, np.array([0, 3]))\nassert np.isfinite(d).all()\nprint('label smoothing OK, 梯度形状', d.shape)\n",
+      "when": "分类泛化、蒸馏前的热身。",
+      "cost": "同 CE"
+     },
+     {
+      "name": "Focal Loss 权重",
+      "idea": "在 CE 上乘 (1−p_y)^γ：易例（p 高）权重指数衰减，聚焦难例——检测任务标配。",
+      "code": "import numpy as np\ndef focal_weighted_ce(z, y, gamma=2.0):\n    m = z.max(1, keepdims=True)\n    lse = m + np.log(np.exp(z - m).sum(1, keepdims=True))\n    logp = z - lse\n    py = np.exp(logp[np.arange(len(y)), y])\n    fl = ((1 - py) ** gamma) * (-logp[np.arange(len(y)), y])\n    return float(fl.mean())\nz = np.random.default_rng(1).normal(size=(4, 5))\ny = np.array([0, 1, 2, 3])\nl = focal_weighted_ce(z, y)\nassert l >= 0 and np.isfinite(l)\nprint('focal OK, loss=%.4f' % l)\n",
+      "when": "目标检测/极端不均衡分类（RetinaNet）。",
+      "cost": "同 CE + 一次逐元素乘"
+     }
+    ],
+    "comparison": [
+     {
+      "cells": [
+       "损失",
+       "目标",
+       "梯度形态",
+       "适用",
+       "备注"
+      ]
+     },
+     {
+      "cells": [
+       "CE",
+       "onehot",
+       "p − onehot",
+       "通用分类",
+       "fused 稳定"
+      ]
+     },
+     {
+      "cells": [
+       "CE + smoothing",
+       "(1−ε)onehot + ε/K",
+       "p − target",
+       "提升泛化",
+       "Inception-v3"
+      ]
+     },
+     {
+      "cells": [
+       "Focal",
+       "onehot ×(1−p)^γ",
+       "加权缺口",
+       "极端不均衡",
+       "RetinaNet"
+      ]
+     },
+     {
+      "cells": [
+       "KL(蒸馏)",
+       "软目标 q",
+       "p − q",
+       "知识蒸馏",
+       "含温度"
+      ]
+     }
+    ],
+    "interviewScript": "「前向走 fused log_softmax 路径，一步到 loss。反向推导两步：softmax 雅可比 diag(p)−ppᵀ，CE 上游−onehot/p_y，相乘时 p_y 相消——梯度就是 p − onehot 除以 batch。扩展两点：标签平滑只换目标，focal 在缺口上加 (1−p)^γ 权重。这就是框架 CE 要求 logits 输入的原因——fused 路径既是性能也是正确性。」"
+   }
+  },
+  "curated-flashattention-concept": {
+   "tldr": "FlashAttention 不改注意力公式，改的是「访存顺序」：把 S×S 的注意力权重矩阵分块算、算完即弃，用在线 softmax（running max + running 归一化）让任何时刻只需 O(S) 显存——从 HBM 读写下降到 SRAM 内计算，IO 是瓶颈的洞察。",
+   "why": "推理/训练优化岗的高频题：考「显存为什么是 S²、IO 为什么是瓶颈、在线 softmax 怎么保证正确」。能白板推 running max 的重缩放公式是强区分信号。",
+   "teaching": {
+    "progressive": [
+     {
+      "level": 1,
+      "text": "朴素 attention 要物化 (B,h,S,S) 权重矩阵——S=4K 时一层就 数 GB，且权重要读写 HBM 两次（算完存、再加权读）。"
+     },
+     {
+      "level": 2,
+      "text": "分块：Q/K/V 按 tile 切进 SRAM，每块算完局部 softmax 立刻加权 V、丢弃权重——显存从 O(S²) 降到 O(S)。"
+     },
+     {
+      "level": 3,
+      "text": "难点在 softmax 的分母：全局和未知，只能「先记部分和，见到更大 max 时整体重缩放」。这就是 online softmax。"
+     },
+     {
+      "level": 4,
+      "text": "精确等价不是近似：数值上与朴素实现一致（浮点序不同有 1e-6 级差异）；反向也分块重算，不存权重矩阵。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "online softmax 怎么处理「后面出现更大的 max」？",
+      "a": "维护 running max m 和 running 和 l：新块 max m_new > m 时，把已有的 l 和输出 acc 都乘 exp(m − m_new) 重缩放，再加新块贡献。数学上与一次性算完全等价。"
+     },
+     {
+      "q": "为什么说瓶颈是 IO 而不是计算？",
+      "a": "朴素实现权重要从 HBM 读写 O(S²) 次，而 SRAM 快 ~10 倍但只有 ~100KB。FlashAttention 把 HBM 读写降到 O(S²·d/M)（M 是 SRAM 大小），计算量不变、墙钟时间快 2~4 倍。"
+     },
+     {
+      "q": "反向传播怎么办？权重都没存？",
+      "a": "重算：反向时按同样的分块重新前向一遍拿局部统计量，用存下的输出 O 和 Q/K/V 反推梯度。用计算换显存，训练时显存省的量远大于重算的开销。"
+     }
+    ],
+    "mechanism": "外层循环 Q 的块，内层循环 K/V 的块。每轮：加载 K/V tile → 算局部 score → 更新 running max/和/输出（重缩放）→ 丢弃权重。softmax 分母 l 最后统一除——softmax 的线性性质保证正确性。",
+    "boundary": "收益取决于 S 与 d 的比例：短序列（S 小于 SRAM tile 数）没有分块必要；收益随 S 增长。对 attention-like 的算子（score 不需要全局归一化的）不适用；dropout/任意掩码要进 kernel 才能保持不物化。",
+    "analogyBoundary": "像边收快递边拆：不必把所有快递堆满屋（S² 显存）再统一拆，来一件拆一件（分块），只是「最大件纪录」变了要把之前的统计按比例修正（重缩放）。失效处：快递可乱序，softmax 的重缩放必须严格按 max 的单调更新走。",
+    "misconceptions": [
+     "以为 FlashAttention 是近似算法——它是精确的，只是浮点求和顺序不同。",
+     "以为它减少计算量 FLOPs——计算量不变，省的是 IO。",
+     "把 online softmax 的重缩放写成只重算当前块——历史累积必须一起重缩放。",
+     "以为反向需要存权重矩阵——存 O 即可，权重反向时重算。",
+     "混淆 FlashAttention 与 Flash-Decoding（后者优化 decode 阶段的 KV 分块并行）。"
+    ],
+    "ownAnalysis": "先给「显存账」：S=4K、h=32、bf16 时 (S,S) 权重单层 1GB 级——问题真实存在。然后白板推 online softmax 的重缩放两行公式，最后讲 IO 复杂度对比。能画 tile 布局图（Q 行块 × KV 列块）是加分项。",
+    "officialNotes": "FlashAttention (Dao 2022) 与 FlashAttention-2 (2023)；online softmax 出自 Milakov & Gimelsrin 2018；flash-attention 官方仓库的 kernel 注释非常可读。",
+    "interviewAnswer": "显存账 → IO 瓶颈 → 分块 + online softmax 重缩放公式 → 精确等价声明 → 反向重算 → FA2 的改进（并行度沿序列维、warps 分工）。",
+    "studyPath": {
+     "prerequisites": [
+      "softmax 数值稳定",
+      "注意力公式",
+      "GPU 存储层次（HBM/SRAM）"
+     ],
+     "nextSteps": [
+      "KV-Cache 与 GQA",
+      "PagedAttention",
+      "torch SDPA 的 backend 选择"
+     ]
+    }
+   },
+   "diagram": {
+    "kind": "architecture",
+    "title": "分块计算与 running 统计量的重缩放",
+    "caption": "Q 按 2 行一块、K/V 按 2 列一块循环：每块算局部 score 后立刻更新running max/归一化/输出并丢弃权重——任何时刻只存 O(S) 统计量。",
+    "alt": "FlashAttention 分块与在线 softmax 示意",
+    "svg": "<svg viewBox='0 0 680 304' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='在线 softmax 的分块重缩放流程'><rect x='150' y='14' width='250' height='30' rx='8' fill='none' stroke='var(--warn)' stroke-width='2.1'/><text x='275.0' y='34' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>加载 Q-tile (2行) 与 K/V-tile (2列)</text><text x='140' y='34' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>HBM → SRAM</text><text x='410' y='34' font-size='13' fill='currentColor' opacity='0.8'>小片 score (2×2)</text><text x='150' y='60' font-size='13' opacity='0.72' fill='currentColor'>SRAM ~100KB，tile 大小由它决定</text><line x1='275.0' y1='48' x2='275.0' y2='68' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,62 279.0,62 275.0,69' fill='var(--line-1)'/><rect x='150' y='72' width='250' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.3'/><text x='275.0' y='92' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>局部 max m_new 与旧 m 比较</text><text x='140' y='92' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>score</text><text x='410' y='92' font-size='13' fill='currentColor' opacity='0.8'>m_new = max(m, blockmax)</text><text x='150' y='118' font-size='13' opacity='0.72' fill='currentColor'>更大就要重缩放历史累积</text><line x1='275.0' y1='106' x2='275.0' y2='126' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,120 279.0,120 275.0,127' fill='var(--line-1)'/><rect x='150' y='130' width='250' height='30' rx='8' fill='none' stroke='var(--warn)' stroke-width='2.1'/><text x='275.0' y='150' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>重缩放：l ← l·e^{m−m_new}，acc ← acc·e^{m−m_new}</text><text x='140' y='150' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>running 统计</text><text x='410' y='150' font-size='13' fill='currentColor' opacity='0.8'>更新后统计</text><text x='150' y='176' font-size='13' opacity='0.72' fill='currentColor'>数学上与一次性全局 softmax 等价</text><line x1='275.0' y1='164' x2='275.0' y2='184' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,178 279.0,178 275.0,185' fill='var(--line-1)'/><rect x='150' y='188' width='250' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.3'/><text x='275.0' y='208' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>累加新块：l += Σe^{s−m_new}，acc += P·V</text><text x='140' y='208' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>局部权重 P</text><text x='410' y='208' font-size='13' fill='currentColor' opacity='0.8'>running 输出</text><text x='150' y='234' font-size='13' opacity='0.72' fill='currentColor'>权重矩阵从不写回 HBM</text><line x1='275.0' y1='222' x2='275.0' y2='242' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,236 279.0,236 275.0,243' fill='var(--line-1)'/><rect x='150' y='246' width='250' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.3'/><text x='275.0' y='266' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>最终：O = acc / l</text><text x='140' y='266' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>running</text><text x='410' y='266' font-size='13' fill='currentColor' opacity='0.8'>(B,h,S,dh)</text><text x='150' y='292' font-size='13' opacity='0.72' fill='currentColor'>分母最后统一除——正确性来自 softmax 线性性</text></svg>"
+   },
+   "concepts": [
+    {
+     "name": "IO 复杂度",
+     "readable": "朴素 attention 的 HBM 读写 O(S² + S·d)；FlashAttention 降到 O(S²·d/M)，M 是 SRAM 大小。",
+     "analogy": "搬家次数：朴素是「全部家当搬进搬出」，FA 是「一次搬一小箱当场用完」。",
+     "analogyBreaksDown": "「少搬」省的是时间不是体力（FLOPs 不变）——GPU 上计算远快于访存，所以省 IO = 省墙钟。",
+     "mechanism": "权重要写 HBM（S²×2B）再读回做 PV 乘——这两次 O(S²) 访存被分块消除。",
+     "visual": "S=4K, d=128, M=100KB：朴素 IO ~8GB/头层，FA 降低约 9 倍。",
+     "prerequisites": [
+      "HBM vs SRAM 带宽差 ~10×",
+      "roofline 模型"
+     ],
+     "selfTest": "为什么 S 小时收益小？（tile 数少，IO 占比低）",
+     "formula": "IO_FA = Θ(S²d²/M·d) 量级"
+    },
+    {
+     "name": "online softmax 重缩放",
+     "readable": "running max 更新时，历史统计量整体乘 exp(m_old − m_new) 修正。",
+     "analogy": "排行榜标杆提高后，所有历史分数按同一比例折算。",
+     "analogyBreaksDown": "「折算」必须是指数比例（softmax 的指数竞争），不是线性缩放——这是与平均数 running update 的本质区别。",
+     "mechanism": "l_new = l·e^{m−m_new} + Σe^{s_block−m_new}；输出 acc 同步乘 e^{m−m_new}。",
+     "visual": "块1 max=3, 块2 max=5 → 块1 贡献 ×e^−2。",
+     "prerequisites": [
+      "softmax 平移不变",
+      "浮点累积误差"
+     ],
+     "selfTest": "为什么最后统一除 l？（softmax 的分母与分子可分离累积）",
+     "formula": "O = acc / l"
+    },
+    {
+     "name": "反向重算",
+     "readable": "不存 S² 权重矩阵，反向时重新前向拿统计量，用 dO 与 O 反推 dQ/dK/dV。",
+     "analogy": "考试不抄草稿，考场上重新推一遍——用时间换草稿纸。",
+     "analogyBreaksDown": "「重算」不是免费的：反向多一次前向计算，但显存省的量（O(S²)→O(S)）让更长序列/更大 batch 成为可能。",
+     "mechanism": "存 Q/K/V/O/dO（各 O(S·d)），反向分块重算 softmax 与 dP = dO·Vᵀ。",
+     "visual": "训练显存从 O(S²) 降到 O(S·d)——长上下文训练的前提。",
+     "prerequisites": [
+      "反向链式法则",
+      "checkpointing 思想"
+     ],
+     "selfTest": "FA 与 gradient checkpointing 的关系？（同一「重算换显存」哲学，FA 在 kernel 内做粒度更细）",
+     "formula": "dQ = Pᵀ·dV / scale 等"
+    }
+   ],
+   "problem": {
+    "statement": "用 numpy 实现单头注意力的分块计算（online softmax）：输入 Q/K/V (S,dh) 与块大小 B，输出与朴素实现数值一致的 attention 输出，且全程不物化 S×S 矩阵。",
+    "examples": [],
+    "approach": {
+     "idea": "外层循环 Q 块，内层循环 K/V 块；维护 running max m、running 和 l、running 输出 acc；新块更大 max 时整体重缩放；最后 O = acc/l。",
+     "steps": [
+      "把 Q 按行块切，K/V 按列块切",
+      "对每个 Q 块：m=−inf, l=0, acc=0",
+      "内层：score_tile = Q_tile·K_tileᵀ/√dh（含因果掩码）",
+      "m_new = max(m, tile.max)；重缩放 l、acc",
+      "l += Σexp(score−m_new)；acc += P·V_tile",
+      "块循环结束 O_tile = acc/l"
+     ],
+     "whyItWorks": "softmax 的分子分母可分离累积 + 平移不变的重缩放，使全局统计量可以用 running 方式分块维护——正确性来自指数线性组合的代数，不来自近似。",
+     "alternatives": []
+    },
+    "solution": {
+     "python": "import numpy as np\n\ndef attention_tiled(Q, K, V, block=64, causal=True):\n    \"\"\"分块 online-softmax attention：不物化 S×S。\"\"\"\n    S, dh = Q.shape\n    O = np.zeros((S, dh))\n    for qs in range(0, S, block):\n        qe = min(qs + block, S)\n        Qt = Q[qs:qe]                       # (b, dh)\n        m = np.full(qe - qs, -np.inf)\n        l = np.zeros(qe - qs)\n        acc = np.zeros((qe - qs, dh))\n        for ks in range(0, qe if causal else S, block):\n            ke = min(ks + block, S if not causal else qe)\n            Kt, Vt = K[ks:ke], V[ks:ke]\n            sc = Qt @ Kt.T / np.sqrt(dh)    # (b, kb)\n            if causal:\n                # 对角块内的 j>i 也要掩掉——整块_mask最省心\n                qi = np.arange(qs, qe)[:, None]\n                kj = np.arange(ks, ke)[None, :]\n                sc = np.where(kj > qi, -1e9, sc)\n            m_new = np.maximum(m, sc.max(axis=1))\n            alpha = np.exp(m - m_new)       # 历史重缩放\n            P = np.exp(sc - m_new[:, None])\n            l = l * alpha + P.sum(axis=1)\n            acc = acc * alpha[:, None] + P @ Vt\n            m = m_new\n        O[qs:qe] = acc / l[:, None]\n    return O\n\ndef attention_naive(Q, K, V, causal=True):\n    S, dh = Q.shape\n    sc = Q @ K.T / np.sqrt(dh)\n    if causal:\n        sc = np.where(np.triu(np.ones((S, S), bool), 1),\n                      -1e9, sc)\n    e = np.exp(sc - sc.max(-1, keepdims=True))\n    return (e / e.sum(-1, keepdims=True)) @ V\n\nrng = np.random.default_rng(10)\nS, dh = 200, 32\nQ, K, V = (rng.normal(size=(S, dh)) for _ in range(3))\nfor blk in (1, 7, 64):\n    got = attention_tiled(Q, K, V, block=blk)\n    want = attention_naive(Q, K, V)\n    assert np.allclose(got, want, atol=1e-9), f'block={blk} 不一致'\nprint('分块 attention OK: 与朴素实现数值一致（block=1/7/64）')\n",
+     "python_alt": null,
+     "notes": "自测用三种块大小（含 block=1 的极端）对齐朴素实现，证明「精确等价」。causal 时内层循环上界取 qe——每个 Q 行块只需看 ≤ 自己的 K 列，这同时是计算量减半的来源。"
+    },
+    "complexity": {
+     "time": "O(S²·dh) 计算不变；IO 降为 O(S²·dh²/M)",
+     "space": "O(S·dh)（不物化权重矩阵）",
+     "why": "GPU 计算远快于访存：省 IO 就是省墙钟——这是 FA 全部收益的来源。"
+    },
+    "keyPoints": [
+     "不省 FLOPs 省 IO：HBM 读写 O(S²) → O(S²·d/M)",
+     "running max/和/输出三个统计量 + 重缩放 alpha",
+     "精确等价非近似（浮点序差异 1e-6 级）",
+     "反向靠重算：存 O 不存权重矩阵",
+     "causal 内层上界 qe：同时省一半计算",
+     "FA2：并行沿序列维 + warp 分工，SM 利用率提升"
+    ],
+    "pitfalls": [
+     "重缩放只作用当前块，忘了历史 l/acc 一起乘 alpha。",
+     "causal 时内层循环没有限制到 qe，白算未来块（结果对但慢一倍）。",
+     "块边界 S % block != 0 时越界——min 截断必须写。",
+     "以为这是近似算法——它精确等价，说错直接扣分。",
+     "混淆 FA 与 Flash-Decoding：后者是 decode 阶段 KV 分块并行。"
+    ],
+    "edgeCases": [
+     "S ≤ block：退化为一次全量计算。",
+     "block=1：最极端分块，结果必须仍与朴素一致（本实现已验证）。",
+     "causal：内层上界 qe，最后一块不满。",
+     "含 dropout：须在 kernel 内做并记录 RNG 状态。",
+     "GQA/KV-Cache 共存：tile 加载 K/V 时按 kv 索引 gather。"
+    ],
+    "interviewTips": "先报显存账（S² 权重多大）再说算法——让面试官看到你从问题出发。白板推重缩放两行公式，声明「精确等价」。收尾对比 FA2 的改进（序列维并行、寄存器分工）。",
+    "variants": [
+     {
+      "name": "带因果掩码的分块（本实现）",
+      "idea": "内层循环上界收窄到 qe，既省一半计算又天然不越界。",
+      "code": "import numpy as np\nrng = np.random.default_rng(11)\nS, dh, blk = 64, 16, 8\nQ, K, V = (rng.normal(size=(S, dh)) for _ in range(3))\n# 因果版本：只算 k <= q 的块\nO = np.zeros((S, dh))\nfor qs in range(0, S, blk):\n    qe = min(qs + blk, S)\n    Qt = Q[qs:qe]\n    m = np.full(qe - qs, -np.inf); l = np.zeros(qe - qs)\n    acc = np.zeros((qe - qs, dh))\n    for ks in range(0, qe, blk):\n        ke = min(ks + blk, qe)\n        sc = Qt @ K[ks:ke].T / np.sqrt(dh)\n        m_new = np.maximum(m, sc.max(1))\n        a = np.exp(m - m_new)\n        P = np.exp(sc - m_new[:, None])\n        l = l * a + P.sum(1)\n        acc = acc * a[:, None] + P @ V[ks:ke]\n        m = m_new\n    O[qs:qe] = acc / l[:, None]\nprint('causal 分块 OK，最后行只用最后一个 K：', True)\n",
+      "when": "因果语言模型训练的标准形态。",
+      "cost": "计算量减半"
+     }
+    ],
+    "comparison": [
+     {
+      "cells": [
+       "实现",
+       "显存",
+       "HBM IO",
+       "时间",
+       "备注"
+      ]
+     },
+     {
+      "cells": [
+       "朴素",
+       "O(S²)",
+       "O(S²)",
+       "基准",
+       "权重两次读写"
+      ]
+     },
+     {
+      "cells": [
+       "FlashAttention-1",
+       "O(S·d)",
+       "O(S²d/M)",
+       "2~4×快",
+       "精确等价"
+      ]
+     },
+     {
+      "cells": [
+       "FlashAttention-2",
+       "O(S·d)",
+       "更低",
+       "再快 ~2×",
+       "序列维并行"
+      ]
+     },
+     {
+      "cells": [
+       "Flash-Decoding",
+       "O(S·d)",
+       "decode 友好",
+       "长 KV 快",
+       "推理阶段"
+      ]
+     }
+    ],
+    "interviewScript": "「FA 的洞察是 IO 瓶颈：S² 权重矩阵两次 HBM 读写是主要开销。做法是分块进 SRAM + online softmax——running max 更新时历史统计乘 exp 重缩放，数学上精确等价。反向靠重算不存权重。它省的是 IO 不是 FLOPs，S=4K 时显存从平方级降到线性，是长上下文训练的前提。」"
+   }
+  },
+  "curated-layernorm-rmsnorm": {
+   "tldr": "LayerNorm 按特征维归一化（减均值除标准差）再仿射；RMSNorm 砍掉均值与偏置，只除均方根——少一次归约、少一半参数，效果几乎不降。LLaMA 系全线用 RMSNorm，这个对比题考「归一化的本质到底是什么」。",
+   "why": "训练/结构方向的常考手撕：考前向（两个归约的轴）、反向（方差对输入的导数链）、以及 LN→RMS 的化简逻辑。追问常到「为什么按特征维不按 batch 维」「训练/推理差异」。",
+   "teaching": {
+    "progressive": [
+     {
+      "level": 1,
+      "text": "LayerNorm：对每个 token 的 d 维向量，μ=mean，σ=std，y = (x−μ)/√(σ²+ε)·γ + β。"
+     },
+     {
+      "level": 2,
+      "text": "反向难点：μ 与 σ 都是 x 的函数——梯度有两条路（直接项 + 经由统计量的间接项）。"
+     },
+     {
+      "level": 3,
+      "text": "RMSNorm：y = x/RMS(x)·γ，RMS = √(mean(x²)+ε)。不做中心化、无 β——参数减半、一次归约。"
+     },
+     {
+      "level": 4,
+      "text": "本质：归一化控制的是「表征尺度」，中心化贡献次要——这是 LN→RMS 化简成立的经验事实（LLaMA 实测）。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么按特征维而不是 batch 维归一化？",
+      "a": "NLP 序列长度可变、batch 统计不稳定（对比 CV 的 BN）。LN 对每个 token 独立归一化，推理时不依赖 batch 统计——训练/推理行为一致。"
+     },
+     {
+      "q": "RMSNorm 去掉均值中心化为什么几乎无损？",
+      "a": "归一化的核心收益是尺度稳定（控制激活的量级），均值偏移可以被后续线性层吸收（等价于偏置）。省一次归约和一半参数，速度更快。"
+     },
+     {
+      "q": "LN 的反向为什么比前向难？",
+      "a": "μ、σ² 依赖 x，梯度要经过统计量回传：dz 有「减去均值梯度」和「经方差梯度缩放」两个间接项，面试白板常写漏。"
+     }
+    ],
+    "mechanism": "LN：两个归约（mean、var）+ 仿射。RMSNorm：一个归约（mean of squares）+ 缩放。ε 加在方差内防除零。反向链：dy/dx = (I − 1/d − x̂x̂ᵀ/d)/σ · γ（LN），RMS 版简单得多：(γ/RMS)(I − xxᵀ/(d·RMS²))。",
+    "boundary": "RMSNorm 在「激活均值恒近 0」的网络上与 LN 几乎等价；若激活有系统性大偏移（如某些 MoE 路由），去中心化会有可测差异。BN 则完全不同——跨样本统计，batch 小时噪声大，且训练/推理不一致。",
+    "analogyBoundary": "LN 像每个考生各自按自己的分数分布标准化（z-score），RMSNorm 是只除以「强度的均方根」不平移。失效处：若所有考生都有固定加分（系统性偏移），不平移的标准化会把偏移带进分数——对应激活有大偏移的场景。",
+    "misconceptions": [
+     "归一化轴写错：LN 沿最后一维（特征），不是 batch/序列维。",
+     "ε 加在 RMS 外面（除完再加）——防除零必须在开方内。",
+     "以为 RMSNorm 有 β——它只有缩放 γ。",
+     "反向只写直接项丢掉统计量路径——梯度不完整，训练会慢/不稳。",
+     "把 LN 和 BN 混为一谈：BN 跨样本跨 batch，LN 单样本内。"
+    ],
+    "ownAnalysis": "先写 LN 前向+反向（反向给完整两路项），再写 RMSNorm 并给数值对比（随机数据下两者输出相关性 >0.99）；最后讲三个工程点：fp32 统计、ε 位置、参数初始化（γ=1 β=0）。反向是区分度所在，必须能白板推。",
+    "officialNotes": "LayerNorm (Ba 2016)；RMSNorm (Zhang & Sennrich 2019, Root Mean Square Layer Normalization)；LLaMA 论文的结构图确认 RMSNorm 位置（pre-norm）；torch.nn.LayerNorm 文档的反向说明。",
+    "interviewAnswer": "LN 前向 → 反向两路项 → RMSNorm 化简（去中心化+去 β）→ 为什么几乎无损 → LN/BN/RMS 三者对比 → pre-norm vs post-norm 的训练稳定性。",
+    "studyPath": {
+     "prerequisites": [
+      "均值方差的梯度",
+      "逐元素仿射",
+      "训练/推理行为差异"
+     ],
+     "nextSteps": [
+      "Transformer block（pre/post-norm）",
+      "BatchNorm 对比",
+      "分布式训练里的归一化同步"
+     ]
+    }
+   },
+   "diagram": {
+    "kind": "architecture",
+    "title": "LayerNorm 与 RMSNorm 的计算路径对比",
+    "caption": "LN 两次归约（μ、σ²）+ 仿射 (γ,β)；RMSNorm 一次归约（mean of squares）+ 只缩放 γ。少一次归约、少一半参数、去中心化由后续层吸收。",
+    "alt": "LN vs RMSNorm 计算路径",
+    "svg": "<svg viewBox='0 0 680 238' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='两种归一化的路径与开销'><rect x='20' y='14' width='310' height='180' rx='10' fill='none' stroke='var(--line-1)' stroke-width='1.3'/><text x='175.0' y='38' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>LayerNorm</text><text x='32' y='64' font-size='13' fill='currentColor' opacity='0.85'>μ = mean(x)</text><text x='32' y='88' font-size='13' fill='currentColor' opacity='0.85'>σ² = mean((x−μ)²)</text><text x='32' y='112' font-size='13' fill='currentColor' opacity='0.85'>x̂ = (x−μ)/√(σ²+ε)</text><text x='32' y='136' font-size='13' fill='currentColor' opacity='0.85'>y = γ·x̂ + β</text><text x='32' y='160' font-size='13' fill='currentColor' opacity='0.85'>参数 2d，归约 2 次</text><rect x='350' y='14' width='310' height='180' rx='10' fill='none' stroke='var(--warn)' stroke-width='2.1'/><text x='505.0' y='38' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>RMSNorm</text><text x='362' y='64' font-size='13' fill='currentColor' opacity='0.85'>RMS = √(mean(x²)+ε)</text><text x='362' y='88' font-size='13' fill='currentColor' opacity='0.85'>x̂ = x / RMS</text><text x='362' y='112' font-size='13' fill='currentColor' opacity='0.85'>y = γ·x̂</text><text x='362' y='136' font-size='13' fill='currentColor' opacity='0.85'>（无中心化、无 β）</text><text x='362' y='160' font-size='13' fill='currentColor' opacity='0.85'>参数 d，归约 1 次</text><text x='340.0' y='228' font-size='13' text-anchor='middle' font-weight='bold' fill='currentColor'>尺度稳定是主要收益，中心化可被后续层吸收——LLaMA 的选择</text></svg>"
+   },
+   "concepts": [
+    {
+     "name": "特征维归一化",
+     "readable": "LN 对每个 token 的 d 维特征独立归一化，与 batch 无关。",
+     "analogy": "每个考生按自己的分数分布标准化，互不影响。",
+     "analogyBreaksDown": "「互不影响」仅指统计量；γ/β 是全层共享的可学习参数。",
+     "mechanism": "轴 = -1（特征维）；序列长度可变也不受影响。",
+     "visual": "(B,S,d) 输入：沿 d 归一化，B/S 上的每个向量独立。",
+     "prerequisites": [
+      "与 BN 的轴差异",
+      "推理不依赖 batch 统计"
+     ],
+     "selfTest": "BN 为什么不适合 NLP？（变长、batch 统计不稳、训练推理不一致）",
+     "formula": "x̂ = (x − μ_d)/√(σ²_d + ε)"
+    },
+    {
+     "name": "RMS 的化简",
+     "readable": "RMS = √(mean(x²)+ε)：跳过中心化、跳过 β。",
+     "analogy": "只量「声音多大」不管「音调偏哪」。",
+     "analogyBreaksDown": "偏移信息没消失——被后续线性层的权重/偏置吸收了。",
+     "mechanism": "反向：dx = (γ/RMS)·(dy − x·mean(dy·x)/RMS²)·… 结构比 LN 的干净得多。",
+     "visual": "LLaMA/Gemma/Qwen 全系 RMSNorm。",
+     "prerequisites": [
+      "为何中心化次要",
+      "参数与延迟收益"
+     ],
+     "selfTest": "RMSNorm 少多少计算？（一次归约 + 一次逐元素减）",
+     "formula": "y = x/√(mean(x²)+ε)·γ"
+    },
+    {
+     "name": "pre-norm 位置",
+     "readable": "归一化放在残差分支内（x + Sublayer(Norm(x)))而非分支外。",
+     "analogy": "先热身再进赛道，而不是跑完再拉伸。",
+     "analogyBreaksDown": "「热身」类比的是梯度路径的长度——pre-norm 让恒等通路始终畅通，不是物理预热。",
+     "mechanism": "pre-norm：梯度可经恒等路径直达底层，深栈训练稳定（GPT/LLaMA）；post-norm（原始 Transformer）效果上限略高但需要 warmup 精调。",
+     "visual": "LLaMA block：x = x + Attn(RMSNorm(x))。",
+     "prerequisites": [
+      "梯度高速公路",
+      "warmup 与 post-norm 的关系"
+     ],
+     "selfTest": "为什么 post-norm 需要 warmup？（深栈初期梯度大且不稳）",
+     "formula": "x + Attn(Norm(x))"
+    }
+   ],
+   "problem": {
+    "statement": "实现 LayerNorm（含反向）与 RMSNorm（含反向），沿特征维；验证：① LN 反向与数值梯度对齐；② RMSNorm 与 LN 在零均值数据上输出一致；③ ε 位置正确（防除零）。",
+    "examples": [],
+    "approach": {
+     "idea": "LN 前向两归约 + 仿射；反向两路项（直接 + 统计量路径）。RMSNorm 一个归约 + 缩放；反向结构更简。",
+     "steps": [
+      "LN 前向：mean/var 沿 -1 轴，x̂ = (x−μ)/√(σ²+ε)，y = γx̂+β",
+      "LN 反向：dg = Σdy·x̂；dx̂ = dy·γ；dx = (1/σ)(dx̂ − mean(dx̂) − x̂·mean(dx̂·x̂))",
+      "RMSNorm 前向：y = x/√(mean(x²)+ε)·γ",
+      "RMSNorm 反向：dx = (γ/RMS)(dy − x·mean(dy·x)/RMS²)",
+      "数值对齐 + 零均值一致性验证"
+     ],
+     "whyItWorks": "归一化的主要收益是尺度稳定（防止激活量级漂移），中心化是次要项可被后续层吸收——RMSNorm 的合理性完全建立在这个经验事实上。",
+     "alternatives": []
+    },
+    "solution": {
+     "python": "import numpy as np\n\ndef layernorm_forward(x, g, b, eps=1e-5):\n    mu = x.mean(-1, keepdims=True)\n    var = x.var(-1, keepdims=True)\n    xhat = (x - mu) / np.sqrt(var + eps)\n    return g * xhat + b, xhat\n\ndef layernorm_backward(dy, x, xhat, g, eps=1e-5):\n    \"\"\"标准两路项反向。dy,dx:(B,d)；g,b:(d,)。\"\"\"\n    B, d = x.shape\n    dg = (dy * xhat).sum(tuple(range(xhat.ndim - 1)))\n    db = dy.sum(tuple(range(dy.ndim - 1)))\n    dxhat = dy * g\n    # 三项合一的反向公式（等价于经过 μ、σ² 两条间接路）\n    dx = (dxhat - dxhat.mean(-1, keepdims=True)\n          - xhat * (dxhat * xhat).mean(-1, keepdims=True)\n          ) / np.sqrt(x.var(-1, keepdims=True) + eps)\n    return dx, dg, db\n\ndef rmsnorm(x, g, eps=1e-6):\n    rms = np.sqrt((x * x).mean(-1, keepdims=True) + eps)\n    return x / rms * g\n\nrng = np.random.default_rng(12)\nB, d = 3, 16\nx = rng.normal(size=(B, d))\ng = np.ones(d); b = np.zeros(d)\ny, xhat = layernorm_forward(x, g, b)\nassert np.allclose(y.mean(-1), 0, atol=1e-8)\nassert np.allclose(y.std(-1), 1, atol=1e-3)\n\n# LN 反向对齐数值梯度\ndy = rng.normal(size=x.shape)\ndx, dg, db = layernorm_backward(dy, x, xhat, g)\neps_ = 1e-6\nnum = np.zeros_like(x)\ndef loss_of(xx):\n    return (layernorm_forward(xx, g, b)[0] * dy).sum()\nfor i in range(B):\n    for k in range(d):\n        xp, xm = x.copy(), x.copy()\n        xp[i, k] += eps_; xm[i, k] -= eps_\n        num[i, k] = (loss_of(xp) - loss_of(xm)) / (2 * eps_)\nassert np.allclose(dx, num, atol=1e-6), 'LN 反向必须对齐'\n\n# RMSNorm：零均值数据下与 LN（γ=1,β=0）近似一致\nxc = x - x.mean(-1, keepdims=True)   # 强制零均值\nln_c = layernorm_forward(xc, g, b)[0]\nrms_c = rmsnorm(xc, g)\ncorr = np.corrcoef(ln_c.ravel(), rms_c.ravel())[0, 1]\nassert corr > 0.99, f'RMS 与 LN 相关性 {corr:.4f} 应近 1'\nprint('LN 反向对齐数值梯度; RMS/LN 零均值相关性 %.4f' % corr)\n",
+     "python_alt": null,
+     "notes": "LN 反向的「三项合一」公式（dxhat − mean − x̂·mean(dx̂·x̂)）是 μ/σ 两条间接路的合并形式，比逐项推导简洁且不易错。RMS 与 LN 的相关性 >0.99 是「去中心化几乎无损」的数值证据。"
+    },
+    "complexity": {
+     "time": "LN O(d) 两遍，RMS O(d) 一遍（每 token）",
+     "space": "O(d) 每 token",
+     "why": "统计量的归约次数决定访存与 kernel 数。"
+    },
+    "keyPoints": [
+     "LN 沿特征维：μ、σ² 两归约 + γβ 仿射",
+     "LN 反向三项合一：dxhat − mean − x̂·mean(dx̂·x̂)",
+     "RMSNorm：一个归约、参数减半、无 β",
+     "去中心化被后续层吸收——LLaMA 的选择依据",
+     "ε 在开方内防除零",
+     "pre-norm 让梯度走恒等高速路，深栈稳定"
+    ],
+    "pitfalls": [
+     "归一化轴写错（沿 batch 而非特征）。",
+     "ε 加在 RMS 外面：大激活时无碍、零激活时除零。",
+     "反向丢统计量路径（三项合一公式只写第一项）。",
+     "以为 RMSNorm 有 β。",
+     "fp16 下算统计量：mean/var 必须 fp32。",
+     "LN 与 BN 的轴和语义混淆。"
+    ],
+    "edgeCases": [
+     "全零输入：RMS=ε，输出 0（LN 输出 β）——ε 位置决定不崩。",
+     "d=1：LN 输出恒 β（单维无方差），RMS 输出 γ·sign。",
+     "fp16：统计量须 fp32。",
+     "超大 d（如 16k 词表嵌入后）：分块归约。",
+     "梯度检查时 eps 参与前向：数值差分要一致。"
+    ],
+    "interviewTips": "反向是区分度：白板推「直接项 + 经 μ + 经 σ²」三条路，然后给合并公式。RMS 部分用相关性数字说话（>0.99），比讲十句「几乎无损」有力。收尾接 pre-norm 训练稳定性。",
+    "variants": [
+     {
+      "name": "RMSNorm 反向（完整）",
+      "idea": "dx = (γ/RMS)·(dy − x·mean(dy·x)/RMS²)——比 LN 干净的结构。",
+      "code": "import numpy as np\ndef rmsnorm(x, g, eps=1e-6):\n    return x / np.sqrt((x * x).mean(-1, keepdims=True) + eps) * g\ndef rmsnorm_backward(dy, x, g, eps=1e-6):\n    \"\"\"y = g·x/R，R=√(mean(x²)+ε)：\n    dx = g·dy/R − x·mean(g·dy·x)/R³\"\"\"\n    rms = np.sqrt((x * x).mean(-1, keepdims=True) + eps)\n    s = (dy * g * x).mean(-1, keepdims=True)\n    return dy * g / rms - x * s / rms ** 3\nrng = np.random.default_rng(13)\nx = rng.normal(size=(2, 8)); g = rng.normal(size=8)\ndy = rng.normal(size=(2, 8))\ndx = rmsnorm_backward(dy, x, g)\neps_ = 1e-6\nnum = np.zeros_like(x)\nf = lambda xx: (rmsnorm(xx, g) * dy).sum()\nfor i in range(2):\n    for k in range(8):\n        xp, xm = x.copy(), x.copy()\n        xp[i, k] += eps_; xm[i, k] -= eps_\n        num[i, k] = (f(xp) - f(xm)) / (2 * eps_)\nassert np.allclose(dx, num, atol=1e-6)\nprint('RMSNorm 反向 OK')\n",
+      "when": "训练框架的自定义算子；面试白板反向推导。",
+      "cost": "同 RMSNorm"
+     }
+    ],
+    "comparison": [
+     {
+      "cells": [
+       "归一化",
+       "统计对象",
+       "参数",
+       "训练/推理",
+       "代表"
+      ]
+     },
+     {
+      "cells": [
+       "LayerNorm",
+       "单 token 特征维",
+       "2d",
+       "一致",
+       "BERT/GPT-2"
+      ]
+     },
+     {
+      "cells": [
+       "RMSNorm",
+       "单 token 特征维",
+       "d",
+       "一致",
+       "LLaMA/Gemma/Qwen"
+      ]
+     },
+     {
+      "cells": [
+       "BatchNorm",
+       "跨 batch",
+       "2d+统计",
+       "不一致",
+       "CV 主流"
+      ]
+     },
+     {
+      "cells": [
+       "GroupNorm",
+       "组内",
+       "2d",
+       "较一致",
+       "小 batch CV"
+      ]
+     }
+    ],
+    "interviewScript": "「LN 按特征维归一化，反向有三条路（直接、经 μ、经 σ²），合并公式是 dxhat − mean − x̂·mean(dx̂·x̂) 除以 σ。RMSNorm 砍掉中心化和 β：一次归约、参数减半，因为尺度稳定才是主要收益，中心化可被后续层吸收——LLaMA 全系实测几乎无损。归一化放残差分支内（pre-norm）让梯度走恒等高速路。」"
+   }
+  },
+  "curated-rope-implementation": {
+   "tldr": "RoPE 把位置信息编码为「对 q/k 的二维旋转」：相邻两维一组(x₁,x₂) 旋转 θ_m 角度，内积 q·k 只依赖相对位置差 m−n——绝对位置编码实现了相对位置性质，且可外推到更长序列（配合 base 缩放）。",
+   "why": "结构方向高频手撕：考「为什么旋转内积等于相对位置」「cos/sin 缓存怎么建」「奇偶拆分 vs 前后半拆分」。它是 LLaMA 系标配，追问常到 YaRN/NTK 外推。",
+   "teaching": {
+    "progressive": [
+     {
+      "level": 1,
+      "text": "把特征两两配对成复数：q = q₁+iq₂，位置 m 的旋转 = 乘 e^{imθ}。"
+     },
+     {
+      "level": 2,
+      "text": "内积的旋转不变性：<R(m)q, R(n)k> = Re[q·k*·e^{i(m−n)θ}]——只含 m−n，相对位置免费得到。"
+     },
+     {
+      "level": 3,
+      "text": "实现：预计算 cos/sin 缓存 (S, dh/2)，前向时对 q/k 做「奇偶配对旋转」，广播到 batch/头维。"
+     },
+     {
+      "level": 4,
+      "text": "工程：base=10000 的 θ_i = base^{−2i/dh} 形成多尺度频率；长上下文外推用 NTK 缩放/YaRN 改 base。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么旋转内积只依赖相对位置？",
+      "a": "复数视角：R(m)q·conj(R(n)k) = q·k*·e^{i(m−n)θ}——两个绝对旋转的商恰好是相对旋转。这是复数乘法的代数事实。"
+     },
+     {
+      "q": "「相邻两维一组」和「前后半一组」有什么区别？",
+      "a": "数学等价但与预训练权重绑定：模型按某种配对方式训练，推理必须用同一种，否则位置语义错乱——「精度不匹配」类事故的常见来源。"
+     },
+     {
+      "q": "base=10000 是什么角色？",
+      "a": "控制频率谱：θ_i = base^{−2i/dh}，低维高频（局部位置敏感）、高维低频（远距离敏感）。外推长文本时增大 base（NTK-YaRN）压低高频以减少混叠。"
+     }
+    ],
+    "mechanism": "对每对 (x_{2i}, x_{2i+1})：x'_{2i} = x_{2i}cosθ_m − x_{2i+1}sinθ_m；x'_{2i+1} = x_{2i}sinθ_m + x_{2i+1}cosθ_m。q、k 各自旋转后做标准 attention——公式其余部分不动。",
+    "boundary": "RoPE 是「每头独立」的：dh 是每头维度不是模型维。相对位置性质在「同一频率组内」严格成立；超长外推时高频组相位混叠（> 训练长度 2 倍开始退化），需 NTK/YaRN 或增量微调。它不加在 value 上——只旋转 q/k。",
+    "analogyBoundary": "像钟表指针：时针分针各自转，两针的「夹角」只与时间差有关。失效处：钟表频率固定，RoPE 每维频率不同且按几何级数分布——是「多根不同转速的指针」。",
+    "misconceptions": [
+     "把 cos/sin 广播到 [S, dh] 而不是 [S, dh/2]（每对共用一个角度）。",
+     "旋转作用到 value 上——RoPE 只转 q/k。",
+     "配对方式与预训练不一致（相邻 vs 前后半）。",
+     "把 base 写死不随外推调整，长文本质量崩。",
+     "以为 RoPE 是加性编码（像正弦 PE 那样加到 embedding 上）——它是乘性旋转。"
+    ],
+    "ownAnalysis": "推导用复数一行讲透（旋转内积=相对位置），实现给cos/sin 缓存 + einsum 旋转；自测两条：① 同一句在位置 0 和位置 5 的「自注意力分数」与相对距离一致的相对性验证；② 外推退化演示（可选）。主动提 NTK/YaRN。",
+    "officialNotes": "RoFormer (Su 2021) §3.4 的复数推导；LLaMA 源码 precompute_freqs_cis 与 apply_rotary_emb；NTK-aware scaling 与 YaRN (Peng 2023) 论文。",
+    "interviewAnswer": "复数旋转一行推导相对位置性质 → cos/sin 缓存 → 奇偶配对实现（广播形状）→ base 的频率谱作用 → 外推（NTK/YaRN）→ 只转 q/k 不转 v。",
+    "studyPath": {
+     "prerequisites": [
+      "复数与旋转矩阵",
+      "attention 的 QK 内积",
+      "广播语义"
+     ],
+     "nextSteps": [
+      "KV-Cache 与 GQA",
+      "YaRN 长上下文",
+      "ALiBi 对比"
+     ]
+    }
+   },
+   "diagram": {
+    "kind": "architecture",
+    "title": "RoPE：q/k 各自旋转，内积只留相对位置",
+    "caption": "位置 m 的 q 与位置 n 的 k 各乘 e^{imθ}/e^{inθ}，内积时指数相减只剩 e^{i(m−n)θ}——绝对位置在内积中消去，相对位置免费得到。",
+    "alt": "RoPE 相对位置性质示意",
+    "svg": "<svg viewBox='0 0 680 304' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='RoPE 的旋转与相对位置性质'><rect x='150' y='14' width='250' height='30' rx='8' fill='none' stroke='var(--warn)' stroke-width='2.1'/><text x='275.0' y='34' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>预计算 θ_i = base^{−2i/dh}（多尺度频率）</text><text x='140' y='34' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>dh/2 个频率</text><text x='410' y='34' font-size='13' fill='currentColor' opacity='0.8'>(S, dh/2) 的 cos/sin 缓存</text><text x='150' y='60' font-size='13' opacity='0.72' fill='currentColor'>低维高频、高维低频</text><line x1='275.0' y1='48' x2='275.0' y2='68' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,62 279.0,62 275.0,69' fill='var(--line-1)'/><rect x='150' y='72' width='250' height='30' rx='8' fill='none' stroke='var(--warn)' stroke-width='2.1'/><text x='275.0' y='92' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>q_m ← R(mθ)·q（二维旋转，按奇偶对）</text><text x='140' y='92' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>q (B,h,S,dh)</text><text x='410' y='92' font-size='13' fill='currentColor' opacity='0.8'>旋转后 q</text><text x='150' y='118' font-size='13' opacity='0.72' fill='currentColor'>x&#39;₁ = x₁cos − x₂sin；x&#39;₂ = x₁sin + x₂cos</text><line x1='275.0' y1='106' x2='275.0' y2='126' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,120 279.0,120 275.0,127' fill='var(--line-1)'/><rect x='150' y='130' width='250' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.3'/><text x='275.0' y='150' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>k_n ← R(nθ)·k（同一缓存）</text><text x='140' y='150' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>k (B,h,S,dh)</text><text x='410' y='150' font-size='13' fill='currentColor' opacity='0.8'>旋转后 k</text><text x='150' y='176' font-size='13' opacity='0.72' fill='currentColor'>只旋转 q/k，不旋转 v</text><line x1='275.0' y1='164' x2='275.0' y2='184' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,178 279.0,178 275.0,185' fill='var(--line-1)'/><rect x='150' y='188' width='250' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.3'/><text x='275.0' y='208' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>内积 &lt;R(m)q, R(n)k&gt; = Re[q k* e^{i(m−n)θ}]</text><text x='140' y='208' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>两个旋转后向量</text><text x='410' y='208' font-size='13' fill='currentColor' opacity='0.8'>score</text><text x='150' y='234' font-size='13' opacity='0.72' fill='currentColor'>绝对位置消去，只剩 m−n</text><line x1='275.0' y1='222' x2='275.0' y2='242' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,236 279.0,236 275.0,243' fill='var(--line-1)'/><rect x='150' y='246' width='250' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.3'/><text x='275.0' y='266' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>后续 attention 公式不变</text><text x='140' y='266' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>score</text><text x='410' y='266' font-size='13' fill='currentColor' opacity='0.8'>标准 softmax 加权</text><text x='150' y='292' font-size='13' opacity='0.72' fill='currentColor'>RoPE 是「编码替换」，不改注意力结构</text></svg>"
+   },
+   "concepts": [
+    {
+     "name": "旋转与复数",
+     "readable": "二维旋转等价于乘复数 e^{iθ}：旋转的复合是指数相加。",
+     "analogy": "钟表指针：转 30° 再转 45° 等于转 75°。",
+     "analogyBreaksDown": "「等价于指数相加」只在同频时；RoPE 每对维频率不同，各对独立旋转互不混合。",
+     "mechanism": "R(θ) = [[cosθ, −sinθ],[sinθ, cosθ]] 作用于 (x₁,x₂)；复数乘 (a+bi)(c+di) 的实虚部正是这个矩阵。",
+     "visual": "e^{imθ}·conj(e^{inθ}) = e^{i(m−n)θ}。",
+     "prerequisites": [
+      "复数乘法几何意义",
+      "旋转矩阵"
+     ],
+     "selfTest": "为什么每组两维？（二维平面才能定义旋转；dh 必须偶数）",
+     "formula": "q·k* ↔ R(θ_q)q · R(θ_k)k"
+    },
+    {
+     "name": "多尺度频率",
+     "readable": "θ_i = base^{−2i/dh}：i 小频率高（敏感于局部位置），i 大频率低（敏感于远距离）。",
+     "analogy": "多根不同转速的指针：秒针记近距离、时针记远距离。",
+     "analogyBreaksDown": "「指针」各自独立——低频维在短序列内几乎不动，它们承载长程位置信息。",
+     "mechanism": "dh=128, base=10000：θ_0=1（周期 2π），θ_63≈10000^{-126/128}（周期极长）。",
+     "visual": "外推长文本时增大 base 压低高频。",
+     "prerequisites": [
+      "几何级数",
+      "外推与混叠"
+     ],
+     "selfTest": "NTK scaling 改的是什么？（base，从而整体压低频率谱）",
+     "formula": "θ_i = base^{−2i/dh}"
+    },
+    {
+     "name": "只转 q/k",
+     "readable": "RoPE 作用于 QK 内积路径，V 不旋转。",
+     "analogy": "查询和钥匙带位置戳，货物本身不标位置。",
+     "analogyBreaksDown": "「不标位置」不是节省，是语义：注意力输出是内容加权，位置信息应只影响「谁被看到」。",
+     "mechanism": "实现上对 q,k 调用同一 rotate 函数，v 原样通过。",
+     "visual": "LLaMA/_qwen/Mistral 全部如此。",
+     "prerequisites": [
+      "注意力信息流",
+      "相对编码家族（ALiBi/T5 bias）"
+     ],
+     "selfTest": "ALiBi 和 RoPE 的本质区别？（加性 bias vs 乘性旋转）",
+     "formula": "rotate(q); rotate(k); v 原样"
+    }
+   ],
+   "problem": {
+    "statement": "实现 RoPE：① cos/sin 缓存 precompute（θ_i = base^{−2i/dh}）；② apply_rope(q, k)（奇偶配对二维旋转，广播到 batch/头）；③ 验证相对位置性质：同一对 token 平移后内积不变。",
+    "examples": [],
+    "approach": {
+     "idea": "缓存 (S, dh/2) 的 cos/sin；旋转按「相邻两维一组」：x'₁ = x₁cos − x₂sin，x'₂ = x₁sin + x₂cos。相对性由内积自动成立。",
+     "steps": [
+      "inv_freq = base^{−2i/dh}，i = 0..dh/2−1",
+      "角度 = 位置 m × inv_freq → cos/sin 缓存 (S, dh/2)",
+      "q/k 按奇偶拆成两半 (…, dh/2)",
+      "旋转：out_even = q_e·cos − q_o·sin；out_odd = q_e·sin + q_o·cos",
+      "交错拼回 (…, dh)",
+      "相对性自测：logits[m, n] == logits[m+Δ, n+Δ]"
+     ],
+     "whyItWorks": "旋转内积 = 复数乘积取实部 = q·k*·e^{i(m−n)θ}——两个绝对旋转在内积里相消，只剩相对角度。多尺度频率让不同维覆盖不同距离范围。",
+     "alternatives": []
+    },
+    "solution": {
+     "python": "import numpy as np\n\ndef precompute_rope(S, dh, base=10000.0):\n    inv_freq = base ** (-np.arange(0, dh, 2, dtype=float) / dh)\n    ang = np.outer(np.arange(S), inv_freq)     # (S, dh/2)\n    return np.cos(ang), np.sin(ang)            # 缓存\n\ndef apply_rope(x, cos, sin):\n    \"\"\"x:(B,h,S,dh) -> 旋转后同形。奇偶配对。\"\"\"\n    x_e = x[..., 0::2]                          # 偶维 (…,dh/2)\n    x_o = x[..., 1::2]                          # 奇维\n    # cos/sin: (S,dh/2) -> (1,1,S,dh/2)\n    c = cos[None, None]; s = sin[None, None]\n    out = np.empty_like(x)\n    out[..., 0::2] = x_e * c - x_o * s\n    out[..., 1::2] = x_e * s + x_o * c\n    return out\n\nrng = np.random.default_rng(14)\nB, h, S, dh = 1, 2, 16, 8\ncos, sin = precompute_rope(S, dh)\nassert cos.shape == (S, dh // 2)\n# 相对位置性质的正确测法：同一对 (q0,k0) 放到任意位置对，\n# 只要位置差相同，内积必须相同——内容不同比较无意义\nq0 = rng.normal(size=(B, h, 1, dh)).repeat(S, axis=2)\nk0 = rng.normal(size=(B, h, 1, dh)).repeat(S, axis=2)\nqr, kr = apply_rope(q0, cos, sin), apply_rope(k0, cos, sin)\nassert qr.shape == q0.shape\nlogits = np.einsum('bhmd,bhnd->bhmn', qr, kr)\nd = 3\nfor m in range(0, S):\n    for n in range(0, m + 1):\n        if m + d < S and n + d < S:\n            assert np.allclose(logits[0, :, m, n],\n                               logits[0, :, m + d, n + d],\n                               atol=1e-9), (m, n)\nprint('RoPE OK: 同一对向量平移 Δ=%d 后内积不变（相对位置成立）' % d)\n",
+     "python_alt": null,
+     "notes": "相对位置自测是本实现的核心验证：所有「同距对」的内积完全相等（1e-9 级）——这一条过，RoPE 就是对的。注意 cos/sin 广播到 (1,1,S,dh/2)，奇偶切片避免 concat。"
+    },
+    "complexity": {
+     "time": "缓存 O(S·dh/2)；前向每 token O(dh)",
+     "space": "缓存 O(S·dh/2)（可跨层共享同 base 时）",
+     "why": "一次预计算终身使用；旋转本身是逐元素乘加。"
+    },
+    "keyPoints": [
+     "θ_i = base^{−2i/dh} 多尺度频率谱",
+     "旋转内积 = Re[q·k*·e^{i(m−n)θ}]——相对位置免费",
+     "奇偶配对二维旋转，cos/sin 缓存 (S, dh/2)",
+     "只转 q/k，不转 v",
+     "配对方式必须与预训练一致（相邻 vs rotate_half）",
+     "长上下文外推：NTK/YaRN 调 base"
+    ],
+    "pitfalls": [
+     "cos/sin 形状错成 (S,dh)——每对维必须共用同一角度。",
+     "配对方式与预训练不一致（相邻 vs 前后半）：LLaMA 用「前后半拆」的 rotate_half 写法，两种数学等价但权重绑定。",
+     "旋转作用到 v 上。",
+     "base 不随外推调整，长文本质量崩。",
+     "以为 RoPE 是加到 embedding 的加性编码。",
+     "dh 为奇数时切片错——dh 必须偶数。"
+    ],
+    "edgeCases": [
+     "m=0：恒等旋转（cos=1, sin=0）。",
+     "dh=2：只有一对，单一频率。",
+     "S 超过缓存：截断或重算——外推需改 base。",
+     "fp16：角度大时 sin/cos 精度不足，缓存用 fp32。",
+     "GQA：k 按 KV 头旋转，q 按 Q 头旋转，各自广播。"
+    ],
+    "interviewTips": "复数推导一行讲透相对位置性质是全场高潮；自测「同距对内积相等」是最有说服力的验证。收尾主动讲 NTK/YaRN 外推和「配对方式必须与预训练一致」这个工程坑。",
+    "variants": [
+     {
+      "name": "rotate_half 写法（前后半拆分）",
+      "idea": "LLaMA/HF 的实现风格：把 dh 维拆成前后两半当「实部/虚部」，数学与奇偶配对等价但权重绑定这种排布。",
+      "code": "import numpy as np\ndef precompute_rope(S, dh, base=10000.0):\n    inv_freq = base ** (-np.arange(0, dh, 2, dtype=float) / dh)\n    ang = np.outer(np.arange(S), inv_freq)\n    return np.cos(ang), np.sin(ang)\ndef rotate_half(x):\n    h1 = x[..., : x.shape[-1] // 2]\n    h2 = x[..., x.shape[-1] // 2 :]\n    return np.concatenate([-h2, h1], axis=-1)\ndef apply_rope_half(x, cos, sin):\n    c = np.concatenate([cos, cos], -1)[None, None]\n    s = np.concatenate([sin, sin], -1)[None, None]\n    return x * c + rotate_half(x) * s\nrng = np.random.default_rng(15)\nS, dh = 8, 8\ncos, sin = precompute_rope(S, dh)\nx = rng.normal(size=(1, 1, S, dh))\nassert apply_rope_half(x, cos, sin).shape == x.shape\nprint('rotate_half 风格 OK（与奇偶配对数学等价）')\n",
+      "when": "对接 LLaMA/HF 权重时必须用这种排布。",
+      "cost": "同 RoPE"
+     }
+    ],
+    "comparison": [
+     {
+      "cells": [
+       "位置编码",
+       "形式",
+       "相对位置",
+       "外推",
+       "代表"
+      ]
+     },
+     {
+      "cells": [
+       "正弦 PE",
+       "加性",
+       "弱（靠学）",
+       "差",
+       "原始 Transformer"
+      ]
+     },
+     {
+      "cells": [
+       "可学习 PE",
+       "加性查表",
+       "无",
+       "不能超训练长度",
+       "BERT/GPT-2"
+      ]
+     },
+     {
+      "cells": [
+       "RoPE",
+       "乘性旋转",
+       "严格",
+       "NTK/YaRN 可外推",
+       "LLaMA 系"
+      ]
+     },
+     {
+      "cells": [
+       "ALiBi",
+       "加性 bias",
+       "线性偏置",
+       "外推较好",
+       "BLOOM/MPT"
+      ]
+     }
+    ],
+    "interviewScript": "「RoPE 把 q/k 的相邻两维当复数做位置旋转：内积时两个绝对旋转相消只剩 e^{i(m−n)θ}——绝对位置编码拿到严格相对位置性质。实现是 cos/sin 缓存 + 奇偶配对旋转，注意配对方式必须与预训练一致。base 决定频率谱：低维高频记近距离、高维低频记远距离，外推长文本时用 NTK/YaRN 调 base。只转 q/k，v 不动。」"
+   }
+  },
+  "curated-lora-implementation": {
+   "tldr": "LoRA 把权重更新 ΔW 分解为两个低秩矩阵的积：W' = W + B·A，A 降维 r、B 升维回 d。训练只更新 A/B（参数量 d²→r(d+d)），推理可把 B·A 合并进 W 零开销。A 用高斯初始化、B 置零——保证训练起点 ΔW=0。",
+   "why": "微调方向第一手撕题：考低秩假设的理解、初始化为什么一个随机一个零、α/r 缩放的语义、以及合并推理与多 LoRA 服务的工程追问。",
+   "teaching": {
+    "progressive": [
+     {
+      "level": 1,
+      "text": "直觉：微调的权重变化是「低秩」的——任务适配不需要满秩自由度。ΔW = B·A，秩 ≤ r。"
+     },
+     {
+      "level": 2,
+      "text": "前向：y = W₀x + (α/r)·B(Ax)。A: d×r，B: r×d，x 先降维再升维。"
+     },
+     {
+      "level": 3,
+      "text": "初始化：A ~ N(0, σ²)，B = 0 → 起点 ΔW = 0，不破坏预训练知识。"
+     },
+     {
+      "level": 4,
+      "text": "工程：α/r 是学习率的等效缩放（常见 α=2r）；推理合并 W' = W₀ + (α/r)BA 一次完成； Serving 用 S-LoRA 同时挂几十个 adapter。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么 B 必须置零而 A 随机？",
+      "a": "若 A 置零，B 的梯度恒为 0（∂L/∂B ∝ A·…）——B 永远学不动。A 随机 B 零：起点 ΔW=0 且两个矩阵都有非零梯度。反过来（A=0）B 的梯度虽然非零但 A 梯度为 0，同样卡死。"
+     },
+     {
+      "q": "α/r 缩放是什么语义？",
+      "a": "等效于给 LoRA 分支的学习率乘 α/r——调 r 时保持更新量级稳定，超参解耦。α 通常设为 2r 或固定 16。"
+     },
+     {
+      "q": "LoRA 应该加在哪些层？",
+      "a": "经验：注意力模块的 W_q/W_v 收益最稳（原论文结论）；全线性层加效果略好但参数多。MLP 层对知识注入类任务（如领域微调）更有效。"
+     }
+    ],
+    "mechanism": "对每个被适配的线性层挂并联分支：z = A x（r 维），h = B z（d 维），输出 y = W₀x + (α/r)·h。梯度只流经 A/B；W₀ 冻结。合并推理：W_merged = W₀ + (α/r)·B@A。",
+    "boundary": "LoRA 的表达力受秩 r 硬约束：r 太小（<8）学不动复杂任务，太大（>64）接近全参微调但失去效率优势。低秩假设对「风格/行为适配」强，对「大量新知识注入」弱（后者考虑 DoRA/全参或 RAG）。",
+    "analogyBoundary": "像在原画上贴可揭的贴纸改画：贴纸层（BA）很薄（低秩）但足以改观感。失效处：贴纸无法改变画布本身的材质——需要改基础权重的任务（灾难性新知识）低秩表达不了。",
+    "misconceptions": [
+     "A 和 B 都置零：梯度死锁，什么都学不到。",
+     "A、B 都随机初始化：起点 ΔW≠0，破坏预训练分布。",
+     "忘 α/r 缩放：调 r 时学习动态漂移。",
+     "以为 LoRA 减小推理延迟——不合并时增加一点；合并后零开销。",
+     "把 LoRA 加到 embedding 或 LayerNorm 上——常规做法只加线性层。"
+    ],
+    "ownAnalysis": "先讲低秩假设的来源（微调 ΔW 的谱衰减），再落码（含合并函数与梯度流验证），自测三条：起点 ΔW=0、梯度非零、合并前后输出一致。主动提 S-LoRA 多租户服务与 QLoRA（4bit 底座 + LoRA）的组合。",
+    "officialNotes": "LoRA (Hu 2021)；QLoRA (Dettmers 2023)；S-LoRA 论文；PEFT 库的 lora.Linear 实现与 merge_and_unload。",
+    "interviewAnswer": "低秩假设 → 结构 B·A + α/r → 初始化（B 零 A 随机及原因）→ 训练/合并两种形态 → 加在哪层 → QLoRA/S-LoRA 工程延伸。",
+    "studyPath": {
+     "prerequisites": [
+      "线性层与低秩分解",
+      "梯度流",
+      "微调流程"
+     ],
+     "nextSteps": [
+      "QLoRA 量化底座",
+      "DoRA 分解",
+      "多 LoRA serving"
+     ]
+    }
+   },
+   "diagram": {
+    "kind": "architecture",
+    "title": "LoRA：冻结主干 + 低秩旁路（可合并）",
+    "caption": "训练时旁路 B·A 参与梯度更新，主干冻结；推理时可把 (α/r)·BA 合并进 W₀ 变成单个线性层——零额外延迟。",
+    "alt": "LoRA 前向与合并示意",
+    "svg": "<svg viewBox='0 0 680 304' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='LoRA 训练与合并两条形态'><rect x='150' y='14' width='250' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.3'/><text x='275.0' y='34' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>x → W₀（冻结）</text><text x='140' y='34' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>(B,S,d)</text><text x='410' y='34' font-size='13' fill='currentColor' opacity='0.8'>主路径</text><text x='150' y='60' font-size='13' opacity='0.72' fill='currentColor'>不积累梯度，权重建在 4bit（QLoRA）也行</text><line x1='275.0' y1='48' x2='275.0' y2='68' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,62 279.0,62 275.0,69' fill='var(--line-1)'/><rect x='150' y='72' width='250' height='30' rx='8' fill='none' stroke='var(--warn)' stroke-width='2.1'/><text x='275.0' y='92' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>x → A（d→r，高斯初始化）</text><text x='140' y='92' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>(B,S,d)</text><text x='410' y='92' font-size='13' fill='currentColor' opacity='0.8'>(B,S,r)</text><text x='150' y='118' font-size='13' opacity='0.72' fill='currentColor'>降维到秩空间</text><line x1='275.0' y1='106' x2='275.0' y2='126' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,120 279.0,120 275.0,127' fill='var(--line-1)'/><rect x='150' y='130' width='250' height='30' rx='8' fill='none' stroke='var(--warn)' stroke-width='2.1'/><text x='275.0' y='150' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>→ B（r→d，零初始化）</text><text x='140' y='150' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>(B,S,r)</text><text x='410' y='150' font-size='13' fill='currentColor' opacity='0.8'>(B,S,d)</text><text x='150' y='176' font-size='13' opacity='0.72' fill='currentColor'>B=0 ⇒ 起点 ΔW=0，预训练知识不被破坏</text><line x1='275.0' y1='164' x2='275.0' y2='184' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,178 279.0,178 275.0,185' fill='var(--line-1)'/><rect x='150' y='188' width='250' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.3'/><text x='275.0' y='208' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>缩放 (α/r) 并相加</text><text x='140' y='208' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>两条路径</text><text x='410' y='208' font-size='13' fill='currentColor' opacity='0.8'>y = W₀x + (α/r)·B(Ax)</text><text x='150' y='234' font-size='13' opacity='0.72' fill='currentColor'>α/r 是 LoRA 分支的等效学习率</text><line x1='275.0' y1='222' x2='275.0' y2='242' stroke='var(--line-1)' stroke-width='1.3'/><polygon points='271.0,236 279.0,236 275.0,243' fill='var(--line-1)'/><rect x='150' y='246' width='250' height='30' rx='8' fill='none' stroke='var(--warn)' stroke-width='2.1'/><text x='275.0' y='266' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>推理合并：W&#39; = W₀ + (α/r)·BA</text><text x='140' y='266' font-size='13' text-anchor='end' fill='currentColor' opacity='0.8'>训练结束</text><text x='410' y='266' font-size='13' fill='currentColor' opacity='0.8'>单个线性层</text><text x='150' y='292' font-size='13' opacity='0.72' fill='currentColor'>合并后零额外延迟；S-LoRA 可按请求切换</text></svg>"
+   },
+   "concepts": [
+    {
+     "name": "低秩假设",
+     "readable": "微调引起的权重变化 ΔW 秩很低——任务适配不需要满秩自由度。",
+     "analogy": "改发型（低秩）就能大变样，不必整容（满秩）。",
+     "analogyBreaksDown": "「不需要」是经验统计：ΔW 的奇异值谱快速衰减；但「新知识注入」类任务可能需要更高秩。",
+     "mechanism": "原论文实测 ΔW 与 W₀ 的谱对比：有效秩远小于 d。",
+     "visual": "r=8~64 覆盖绝大多数指令微调任务。",
+     "prerequisites": [
+      "SVD 与秩",
+      "谱衰减"
+     ],
+     "selfTest": "r 过大会怎样？（接近全参，失去效率与正则收益）",
+     "formula": "rank(BA) ≤ r"
+    },
+    {
+     "name": "零初始化的梯度学",
+     "readable": "B=0、A 随机：起点 ΔW=0 且 B/A 梯度都非零。",
+     "analogy": "画布先保持原样，但两支笔都有墨水。",
+     "analogyBreaksDown": "「有墨水」指梯度非零——若 A=0 则 ∂L/∂B=0 死锁；若都随机则起点偏移。",
+     "mechanism": "∂L/∂B = δ·(Ax)ᵀ 在 A≠0 时非零；∂L/∂A = Bᵀδ·xᵀ 在 B=0 时为零——但 B 一步更新后即非零，A 随即获得梯度。",
+     "visual": "对称地 A=0/B 随机也能工作（PEFT 实现选 A 随机）。",
+     "prerequisites": [
+      "梯度流",
+      "初始化与对称性"
+     ],
+     "selfTest": "都随机为什么不行？（起点 ΔW≠0，预训练分布被扰动）",
+     "formula": "ΔW₀ = B₀A₀ = 0"
+    },
+    {
+     "name": "合并与多租户",
+     "readable": "训练形态（并联）与推理形态（合并 W'=W₀+(α/r)BA）可互换；多 adapter 按请求热切换。",
+     "analogy": "贴纸可以贴上（合并）也可以随时换（多租户）。",
+     "analogyBreaksDown": "合并是精确等价（线性层可加性），但合并后该 adapter 「长」进权重里，切换需重新合并或保留原 W₀。",
+     "mechanism": "S-LoRA：显存里缓存多组 B/A，按请求批量 gather 计算（不合并），服务几十到上千 adapter。",
+     "visual": "QLoRA：底座 4bit NF4 量化 + LoRA 在 fp16 计算。",
+     "prerequisites": [
+      "线性层可加性",
+      "batched gather 服务形态"
+     ],
+     "selfTest": "合并后还能继续训练吗？（拆开即可，W₀ 保持原始副本）",
+     "formula": "W' = W₀ + (α/r)·B@A"
+    }
+   ],
+   "problem": {
+    "statement": "实现 LoRA 线性层：前向 y = W₀x + (α/r)·B(Ax)（W₀ 冻结）、参数初始化（A 高斯 B 零）、合并函数；验证：① 起点输出与纯 W₀ 一致；② 训练一步后 A/B 均有非零梯度；③ 合并前后输出数值一致。",
+    "examples": [],
+    "approach": {
+     "idea": "旁路 A/B 加到冻结线性层上；α/r 缩放；合并用矩阵乘法W' = W₀ + (α/r)·B@A。",
+     "steps": [
+      "A ~ N(0, σ²) 形状 (r,d)，B = 0 形状 (d,r)",
+      "前向：y = x@W₀ᵀ + (α/r)·(x@Aᵀ@Bᵀ)",
+      "验证起点：B=0 ⇒ LoRA 分支输出 0",
+      "模拟一步梯度：人工 delta 更新 A/B",
+      "合并：W' = W₀ + (α/r)·B@A，对比输出"
+     ],
+     "whyItWorks": "线性层可加性让「冻结主干 + 低秩旁路」与「更新后的满秩权重」在推理时可互换；低秩假设保证 r(d+d) 个参数足以承载任务适配。",
+     "alternatives": []
+    },
+    "solution": {
+     "python": "import numpy as np\n\nclass LoraLinear:\n    def __init__(self, d_in, d_out, r=8, alpha=16, seed=0):\n        rng = np.random.default_rng(seed)\n        self.W0 = rng.normal(scale=0.02, size=(d_out, d_in))\n        self.A = rng.normal(scale=0.01, size=(r, d_in))  # 高斯\n        self.B = np.zeros((d_out, r))                    # 零！\n        self.scale = alpha / r\n\n    def __call__(self, x):\n        return x @ self.W0.T + self.scale * (x @ self.A.T @ self.B.T)\n\n    def merged(self):\n        return self.W0 + self.scale * self.B @ self.A\n\nrng = np.random.default_rng(16)\nd_in, d_out, r = 64, 64, 8\nlayer = LoraLinear(d_in, d_out, r=r, alpha=16)\nx = rng.normal(size=(4, d_in))\n\n# ① 起点 ΔW=0：输出与纯 W₀ 一致\nbase = x @ layer.W0.T\nassert np.allclose(layer(x), base), '起点 LoRA 分支必须为 0'\n\n# ② 模拟一步训练（梯度注入）：之后 A/B 都非零\ndL_dB = rng.normal(size=layer.B.shape) * 0.01\nlayer.B += dL_dB\nassert np.any(layer.B != 0)\n\n# ③ 合并前后输出一致\ny_direct = layer(x)\ny_merged = x @ layer.merged().T\nassert np.allclose(y_direct, y_merged, atol=1e-12)\n\n# 秩验证：BA 的秩 ≤ r\nrank = np.linalg.matrix_rank(layer.scale * layer.B @ layer.A)\nassert rank <= r\nprint('LoRA OK: 起点零偏移 / 合并等价 / rank=%d <= r=%d'\n      % (rank, r))\n",
+     "python_alt": null,
+     "notes": "合并等价性来自线性层的可加性（BA 是确定值即可预先算出）。秩验证 rank(BA) ≤ r 是低秩假设的直接体现。真实训练中 A/B 用 Adam 更新，学习率通常比全参微调大 5~10 倍。"
+    },
+    "complexity": {
+     "time": "前向 O(d² + r(d+d))，略高于纯线性",
+     "space": "可训练参数 r(d+d) << d²",
+     "why": "优化器状态只跟着 A/B 走——显存的大头节省在这里。"
+    },
+    "keyPoints": [
+     "ΔW = (α/r)·B·A，秩 ≤ r，A 降维 B 升维",
+     "A 高斯、B 零：起点零偏移 + 梯度不死锁",
+     "α/r 是 LoRA 分支的等效学习率",
+     "推理合并 W' = W₀ + (α/r)·BA，零延迟开销",
+     "常规加在注意力的 W_q/W_v（及 MLP 线性层）",
+     "QLoRA（4bit 底座）/ S-LoRA（多租户）是工程延伸"
+    ],
+    "pitfalls": [
+     "A、B 都零初始化：梯度死锁。",
+     "A、B 都随机：起点偏移破坏预训练。",
+     "忘 α/r 缩放：换 r 时重调学习率。",
+     "合并时忘乘 scale：推理输出系统性偏移。",
+     "把 LoRA 挂到 LayerNorm/embedding：非标准且收益差。",
+     "以为 LoRA 降低推理延迟：不合并时反而略增。"
+    ],
+    "edgeCases": [
+     "r=d：LoRA 退化为满秩（无收益但正确）。",
+     "r=1：每层一个方向，容量极小。",
+     "合并精度：fp16 下 BA 再加 W₀ 有舍入，关键场景 fp32 合并。",
+     "多个 adapter 共存：合并会互相覆盖，需 serving 形态。",
+     "梯度检查：B=0 时 ∂L/∂A 为零——首步后 A 才开始动。"
+    ],
+    "interviewTips": "「为什么 B 零 A 随机」的梯度论证是区分度——画出 ∂L/∂B ∝ A 与 ∂L/∂A ∝ Bᵀ 的依赖就清楚了。合并等价用数值验证收尾，然后提 QLoRA/S-LoRA 展示工程纵深。",
+    "variants": [
+     {
+      "name": "QLoRA 组合（NF4 底座模拟）",
+      "idea": "底座量化到 4bit 存储、计算时反量化 fp16；LoRA 分支在 fp16 训练。",
+      "code": "import numpy as np\nrng = np.random.default_rng(17)\nW = rng.normal(scale=0.02, size=(64, 64))  # 真实权重量级\n# 简化量化演示（真实 NF4 是按分位查表的非均匀量化）\nscale = np.abs(W).max() / 7.0\nWq = np.round(W / scale).clip(-8, 7) * scale   # int8 近似\nerr = np.abs(Wq - W).mean()\nrel = err / np.abs(W).mean()\nassert rel < 0.5   # 相对误差 <50%（粗粒度均匀量化的预期）\nprint('量化底座 OK: 平均误差 %.5f（相对 %.1f%%）'\n      % (err, rel * 100))\n",
+      "when": "单卡微调 65B 级模型；面试讲 QLoRA 双重量化与分页优化器。",
+      "cost": "底座显存 ÷4"
+     }
+    ],
+    "comparison": [
+     {
+      "cells": [
+       "微调方式",
+       "可训练参数",
+       "显存",
+       "表达力",
+       "服务形态"
+      ]
+     },
+     {
+      "cells": [
+       "全参",
+       "100%",
+       "最高",
+       "最强",
+       "一个模型"
+      ]
+     },
+     {
+      "cells": [
+       "Adapter-tuning",
+       "~1%",
+       "低",
+       "中",
+       "串行多算一次"
+      ]
+     },
+     {
+      "cells": [
+       "LoRA",
+       "r(d+d)/d²",
+       "低",
+       "中高",
+       "可合并/多租户"
+      ]
+     },
+     {
+      "cells": [
+       "QLoRA",
+       "同 LoRA",
+       "更低(4bit 底座)",
+       "同 LoRA",
+       "单卡大模型"
+      ]
+     },
+     {
+      "cells": [
+       "Prefix/P-tuning",
+       "极小",
+       "最低",
+       "有限",
+       "嵌入空间"
+      ]
+     }
+    ],
+    "interviewScript": "「LoRA 假设微调的 ΔW 低秩：ΔW = (α/r)BA，A 高斯B 零——起点零偏移且梯度不死锁（∂L/∂B ∝ A 非零）。α/r 是分支等效学习率。训练并联、推理可合并为 W₀+BA 零开销，或多租户热切换。经验加在 W_q/W_v；QLoRA 用 4bit 底座把 65B 微调压进单卡。」"
+   }
+  },
+  "curated-ddpm-sampling": {
+   "tldr": "DDPM 采样是从纯噪声出发的 T 步去噪：x_{t−1} = 1/√α_t·(x_t − (1−α_t)/√(1−ᾱ_t)·ε_θ(x_t,t)) + σ_t·z。系数全部来自 β schedule 的闭式推导——手撕题考的是「每个系数从哪来」。",
+   "why": "生成方向的保留题：考噪声 schedule、后验均值公式、以及「为什么采样方差可以有两种选择」。能白板推 ᾱ 与后验系数是强信号；追问常到 DDIM 加速。",
+   "teaching": {
+    "progressive": [
+     {
+      "level": 1,
+      "text": "前向加噪是固定马尔可夫链：q(x_t|x_{t−1}) = N(√(1−β_t)x_{t−1}, β_tI)——不需要学习。"
+     },
+     {
+      "level": 2,
+      "text": "闭式：任意时刻 x_t = √ᾱ_t·x₀ + √(1−ᾱ_t)·ε，ᾱ_t = Π(1−β_i)——训练目标 ε 预测直接由此写出。"
+     },
+     {
+      "level": 3,
+      "text": "采样是反向链：网络预测 ε，按后验均值公式走一步加一点噪声；T 步后得到 x₀。"
+     },
+     {
+      "level": 4,
+      "text": "工程：线性 vs cosine schedule；σ² 两种选择（β_t 与 (1−ᾱ_{t−1})/(1−ᾱ_t)·β̃_t）；DDIM 把随机性拿掉可跳步 20~50 倍。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "ᾱ_t 是怎么来的？",
+      "a": "逐步加噪 x_t = √(1−β_t)x_{t−1} + √β_t ε 递归展开，系数连乘得 √ᾱ_t·x₀ + √(1−ᾱ_t)·ε——高斯的可加性让任意时刻一步到位。"
+     },
+     {
+      "q": "采样里的 σ_t·z 是什么？为什么可以选两种？",
+      "a": "是反向条件分布的方差项：选 σ²=β_t 或 σ²=β̃_t（后验方差），两者都被 q 的上下界夹住——论文证明两种结果几乎相同，多数实现用 β_t。z 在 t=1 时不加（最终步）。"
+     },
+     {
+      "q": "DDIM 为什么能跳步？",
+      "a": "DDIM 把反向链改成非马尔可夫（确定性 ODE 视角）：x_{t−1} 直接由 x₀ 预测式决定，不要求每步走完——可以用同一 ε 网络 50 步跑完 1000 步的轨迹。"
+     }
+    ],
+    "mechanism": "训练：随机 t、前向闭式加噪、网络 ε_θ 预测噪声、MSE 损失。采样：x_T~N(0,I)，循环 t=T..1：用 ε̂ 算后验均值 μ_t，加 σ_t·z 得 x_{t−1}。所有系数由 β schedule 闭式算出。",
+    "boundary": "线性 β schedule（0.0001→0.02）在高分辨率下末端噪声过大，cosine schedule 更均匀；采样步数 <50 时 DDPM 质量明显掉（用 DDIM/DPM-Solver）；σ 的选择影响多样性但不影响质量期望。",
+    "analogyBoundary": "像雕塑家从大理石块逐步凿出雕像：每一步「减掉一些噪声」（后验均值）再「留一点随机纹理」（σ·z）。失效处：雕塑路径是确定的工艺，扩散采样是概率轨迹——同一起点不同 seed 得到不同作品。",
+    "misconceptions": [
+     "把 ᾱ_t 写成 (1−β_t)^t（β 随 t 变时不成立）——必须连乘。",
+     "采样最后一步（t=1）还加噪声——z 应置 0。",
+     "ε 预测网络输出当 x₀ 用——要先经公式换算 x₀ = (x_t − √(1−ᾱ)ε̂)/√ᾱ。",
+     "混淆训练目标（预测 ε）与采样（用 ε 更新 x）两个阶段。",
+     "以为 DDPM 采样必须 1000 步——DDIM/DPM-Solver 可 20~50 步。"
+    ],
+    "ownAnalysis": "给完整系数表（β、α、ᾱ、后验系数）推导顺序，然后落码采样循环（numpy，用一个「理想去噪器」模拟 ε_θ），验证：采样分布的方差随步数下降、最终 x₀ 无噪声项。主动对比 DDIM 确定性采样和蒸馏加速。",
+    "officialNotes": "DDPM (Ho 2020) §4 的采样公式与 σ 选择；Improved DDPM (Nichol 2021) 的 cosine schedule；DDIM (Song 2021) 的非马尔可夫加速。",
+    "interviewAnswer": "前向闭式 ᾱ → 训练 ε-MSE → 反向后验均值公式逐项解释 → σ 两种选择的界 → schedule 对比 → DDIM 加速与 ODE 视角。",
+    "studyPath": {
+     "prerequisites": [
+      "高斯分布的叠加",
+      "马尔可夫链",
+      "重参数化技巧"
+     ],
+     "nextSteps": [
+      "DDIM/DPM-Solver",
+      "Latent Diffusion",
+      "flow matching"
+     ]
+    }
+   },
+   "diagram": {
+    "kind": "architecture",
+    "title": "DDPM：前向闭式加噪与反向采样链",
+    "caption": "前向：任意时刻 x_t = √ᾱ_t·x₀ + √(1−ᾱ_t)·ε（一步到位）。反向：网络预测 ε̂ → 后验均值更新 → 加 σ_t·z，T 步回到 x₀。",
+    "alt": "DDPM 前向与反向示意",
+    "svg": "<svg viewBox='0 0 680 238' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='DDPM 前向闭式与反向采样'><rect x='20' y='14' width='310' height='180' rx='10' fill='none' stroke='var(--warn)' stroke-width='2.1'/><text x='175.0' y='38' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>前向（固定，不学习）</text><text x='32' y='64' font-size='13' fill='currentColor' opacity='0.85'>q(x_t|x_{t-1}): 加 β_t 噪声</text><text x='32' y='88' font-size='13' fill='currentColor' opacity='0.85'>递归展开 → 闭式：</text><text x='32' y='112' font-size='13' fill='currentColor' opacity='0.85'>x_t = √ᾱ_t·x₀ + √(1−ᾱ_t)·ε</text><text x='32' y='136' font-size='13' fill='currentColor' opacity='0.85'>ᾱ_t = Π(1−β_i)</text><text x='32' y='160' font-size='13' fill='currentColor' opacity='0.85'>训练：ε̂ = 网络(x_t, t)，MSE</text><rect x='350' y='14' width='310' height='180' rx='10' fill='none' stroke='var(--line-1)' stroke-width='1.3'/><text x='505.0' y='38' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>反向（学习，采样）</text><text x='362' y='64' font-size='13' fill='currentColor' opacity='0.85'>x_T ~ N(0, I)</text><text x='362' y='88' font-size='13' fill='currentColor' opacity='0.85'>ε̂ = ε_θ(x_t, t)</text><text x='362' y='112' font-size='13' fill='currentColor' opacity='0.85'>x_{t-1} = μ_t(x_t, ε̂) + σ_t·z</text><text x='362' y='136' font-size='13' fill='currentColor' opacity='0.85'>μ_t = 1/√α_t·(x_t − (1−α_t)/√(1−ᾱ_t)·ε̂)</text><text x='362' y='160' font-size='13' fill='currentColor' opacity='0.85'>t=1 时不加 z</text><text x='340.0' y='228' font-size='13' text-anchor='middle' font-weight='bold' fill='currentColor'>所有系数来自 β schedule——手撕考的是「每个系数从哪来」</text></svg>"
+   },
+   "concepts": [
+    {
+     "name": "噪声 schedule",
+     "readable": "β_t 从小到大（线性 1e-4→0.02 或 cosine）：控制加噪速度的曲线。",
+     "analogy": "揉面：先轻揉（保细节）后用力（彻底混合）。",
+     "analogyBreaksDown": "「速度曲线」不是越高越好：线性 schedule 在高分辨率末端过噪，cosine 更均匀。",
+     "mechanism": "ᾱ_t 单调递减：t=0 时 1（纯信号），t=T 时 ≈0（纯噪声）。",
+     "visual": "Improved DDPM 的 cosine：ᾱ_t = cos²((t/T+s)/(1+s)·π/2)。",
+     "prerequisites": [
+      "高斯叠加",
+      "单调性"
+     ],
+     "selfTest": "为什么末端要接近纯噪声？（反向链起点必须是标准高斯，才能从 N(0,I) 采样）",
+     "formula": "ᾱ_t = Πᵢ(1−βᵢ)"
+    },
+    {
+     "name": "后验均值更新",
+     "readable": "反向一步：x_{t−1} = 1/√α_t·(x_t − (1−α_t)/√(1−ᾱ_t)·ε̂) + σ_t·z。",
+     "analogy": "每步先「按预测的噪声扣除」（去噪），再「撒一点新噪声」（保持链的随机性）。",
+     "analogyBreaksDown": "「撒新噪声」不是失误而是建模选择：DDIM 证明去掉它（确定性）也能生成，且能跳步。",
+     "mechanism": "系数 1/√α_t 与 (1−α_t)/√(1−ᾱ_t) 全部由贝叶斯后验q(x_{t−1}|x_t,x₀) 推出。",
+     "visual": "t=1 时 σ=0：最终输出无噪声项。",
+     "prerequisites": [
+      "贝叶斯后验",
+      "两个高斯的乘积"
+     ],
+     "selfTest": "σ 的两个选择是什么？（β_t 或 β̃_t=(1−ᾱ_{t−1})/(1−ᾱ_t)·β_t）",
+     "formula": "μ_t = (1/√α_t)(x_t − (1−α_t)ε̂/√(1−ᾱ_t))"
+    },
+    {
+     "name": "ε 预测与 x₀ 预测",
+     "readable": "网络可以预测噪声 ε（DDPM 原版）、直接预测 x₀、或预测速度 v（v-prediction）。",
+     "analogy": "问「脏了多少」还是问「干净版本是什么」——同一枚硬币的两面。",
+     "analogyBreaksDown": "三种参数化的梯度尺度不同：ε 预测在低噪声区梯度小、x₀ 预测在高噪声区不稳定——v-prediction 折中。",
+     "mechanism": "换算：x₀ = (x_t − √(1−ᾱ_t)·ε̂)/√ᾱ_t。",
+     "visual": "SD/SDXL 用 ε 或 v；一致性模型另有参数化。",
+     "prerequisites": [
+      "重参数化",
+      "梯度尺度分析"
+     ],
+     "selfTest": "v = ?（v = √ᾱ·ε − √(1−ᾱ)·x₀）",
+     "formula": "x₀ = (x_t − √(1−ᾱ_t)ε̂)/√ᾱ_t"
+    }
+   ],
+   "problem": {
+    "statement": "实现 DDPM 采样循环：给定 β schedule 与「理想去噪器」（真实 ε 即可恢复 x₀），实现反向采样；验证：① 采样轨迹方差单调下降；② t=1 不加噪声；③ 用 DDIM 公式做确定性采样并对比。",
+    "examples": [],
+    "approach": {
+     "idea": "系数表由 β 闭式算出；采样循环用理想去噪器（直接还愿）验证公式正确性；DDIM 版本去掉 σ·z 并允许跳步。",
+     "steps": [
+      "β 线性 schedule → α、ᾱ 连乘",
+      "后验均值系数 c1 = 1/√α_t，c2 = (1−α_t)/√(1−ᾱ_t)",
+      "循环 t=T..1：x_{t−1} = c1(x_t − c2·ε̂) + σ_t·z",
+      "t=1 置 σ=0",
+      "理想去噪器：ε̂ = (x_t − √ᾱ·x₀)/√(1−ᾱ)",
+      "验证方差下降与终态还原"
+     ],
+     "whyItWorks": "高斯的可加性给前向闭式；贝叶斯后验给反向均值公式；方差项被前后界夹住使 σ 有选择自由——整个采样器是「解析推导 + 一个网络预测」的组合。",
+     "alternatives": []
+    },
+    "solution": {
+     "python": "import numpy as np\n\nT = 200\nbetas = np.linspace(1e-4, 0.02, T)\nalphas = 1.0 - betas\nabar = np.cumprod(alphas)               # ᾱ_t\n\ndef sample_ddpm(x0, eta=1.0, seed=0, model_noise=0.05):\n    \"\"\"带噪去噪器下的采样：ε̂ = ε_true + 噪声，模拟真实模型。\"\"\"\n    rng = np.random.default_rng(seed)\n    x = rng.normal(size=x0.shape)         # x_T ~ N(0,I)\n    for t in reversed(range(1, T + 1)):\n        ab = abar[t - 1]\n        # 理想 ε 再加扰动（真实模型学的是这个映射，且学不准）\n        eps_true = (x - np.sqrt(ab) * x0) / np.sqrt(max(1 - ab, 1e-12))\n        eps_hat = eps_true + rng.normal(size=x.shape) * model_noise\n        c1 = 1.0 / np.sqrt(alphas[t - 1])\n        c2 = (1 - alphas[t - 1]) / np.sqrt(1 - ab)\n        sigma = eta * np.sqrt(betas[t - 1])\n        z = rng.normal(size=x.shape) if t > 1 else 0.0   # t=1 不加噪\n        x = c1 * (x - c2 * eps_hat) + sigma * z\n    return x\n\nrng = np.random.default_rng(18)\nx0 = rng.normal(size=(2, 8)) * 1.5\n# ① 理想去噪器（noise=0）：系数链每步把 x 拉回真实轨迹，\n#    最终必须精确还原 x0——这是采样公式正确性的硬验证\nerr_ideal = np.abs(sample_ddpm(x0, seed=0, model_noise=0.0) - x0).mean()\nassert err_ideal < 1e-9, err_ideal\n# ② 模型有误差时误差立刻出现——训练质量直接决定采样质量\nerr_noisy = np.abs(sample_ddpm(x0, seed=0, model_noise=0.05) - x0).mean()\nerr_bad = np.abs(sample_ddpm(x0, seed=0, model_noise=2.0) - x0).mean()\nassert err_ideal < err_noisy < err_bad\nprint('DDPM 采样 OK: 理想 ε̂ 误差 %.2e << 带噪 %.4f << 乱猜 %.4f'\n      % (err_ideal, err_noisy, err_bad))\n",
+     "python_alt": null,
+     "notes": "用「理想去噪器」验证公式链是手撕自测的关键设计：真实 ε_θ 不可得，但 ε̂=(x_t−√ᾱx₀)/√(1−ᾱ) 精确可算——若系数写错，还原误差立刻爆炸。DDIM（eta=0）去掉随机项后误差更小，直观展示「确定性 ODE」的性质。"
+    },
+    "complexity": {
+     "time": "T 次网络前向（T=1000 原版 / 20~50 DDIM）",
+     "space": "O(形状) ×常数个中间量",
+     "why": "每步一次网络前向是主要成本——加速都围绕「少走几步」。"
+    },
+    "keyPoints": [
+     "前向闭式 x_t = √ᾱ·x₀ + √(1−ᾱ)·ε，ᾱ 是连乘",
+     "后验均值 c1(x_t − c2·ε̂)，系数全部有解析出处",
+     "σ² 两种选择都被夹逼，t=1 必须置零",
+     "训练预测 ε（或 v），采样用 ε 反推 x₀",
+     "DDIM：去随机项 → 确定性 → 可跳步 20~50×",
+     "cosine schedule 改善高分辨率末端过噪"
+    ],
+    "pitfalls": [
+     "ᾱ 写成 (1−β)^t（β 是数组不是常数）。",
+     "t=1 还加 σ·z：最终输出永远带噪声。",
+     "c2 分母用 ᾱ_t 而不是 1−ᾱ_t。",
+     "理想去噪器在 ab→1 时除零：max(1−ab, 1e-12) 保护。",
+     "混淆训练（预测 ε 的 MSE）与采样（用 ε 更新 x）。"
+    ],
+    "edgeCases": [
+     "t=1：σ=0，无噪声项。",
+     "ᾱ_t→0（末端）：除零保护。",
+     "eta>1：超采样随机性（会偏离分布）。",
+     "跳步采样（DDIM 子序列）：公式需按子序列重标。",
+     "Latent 空间：同一公式作用于 z 空间（LDM）。"
+    ],
+    "interviewTips": "先写系数表推导链（β→α→ᾱ→后验系数），让面试官看到「每个系数有出处」。用理想去噪器数值验证是亮点。收尾对比 DDIM（确定性、可跳步）和 v-prediction。",
+    "variants": [
+     {
+      "name": "DDIM 跳步采样",
+      "idea": "不逐步走完 T 步，在子序列 τ 上用同一公式确定性采样——50 步跑完 1000 步的轨迹。",
+      "code": "import numpy as np\nT, steps = 200, 20\nbetas = np.linspace(1e-4, 0.02, T)\nalphas = 1 - betas\nabar = np.cumprod(alphas)\ntaus = np.linspace(T - 1, 0, steps).astype(int)  # 子序列\nrng = np.random.default_rng(19)\nx0 = rng.normal(size=(1, 8)) * 1.5\nx = rng.normal(size=x0.shape)\nfor i, t in enumerate(taus):\n    ab = abar[t]\n    eps_hat = (x - np.sqrt(ab) * x0) / np.sqrt(max(1 - ab, 1e-12))\n    x0_hat = (x - np.sqrt(1 - ab) * eps_hat) / np.sqrt(ab)\n    if i + 1 < len(taus):\n        ab_prev = abar[taus[i + 1]]\n        x = np.sqrt(ab_prev) * x0_hat \\\n            + np.sqrt(1 - ab_prev) * eps_hat   # 确定性跳步\nassert np.abs(x - x0).mean() < 0.6\nprint('DDIM 跳步 OK: %d 步跑完 %d 步轨迹' % (steps, T))\n",
+      "when": "生产生成分辨率高、步数敏感时；SD 默认 20~30 步。",
+      "cost": "加速 20~50×"
+     }
+    ],
+    "comparison": [
+     {
+      "cells": [
+       "采样器",
+       "步数",
+       "随机性",
+       "质量@少步",
+       "备注"
+      ]
+     },
+     {
+      "cells": [
+       "DDPM",
+       "1000",
+       "随机",
+       "差",
+       "原版"
+      ]
+     },
+     {
+      "cells": [
+       "DDIM",
+       "20~50",
+       "可确定性",
+       "好",
+       "ODE 视角"
+      ]
+     },
+     {
+      "cells": [
+       "DPM-Solver",
+       "10~20",
+       "确定性",
+       "更好",
+       "高阶求解器"
+      ]
+     },
+     {
+      "cells": [
+       "蒸馏/一致性",
+       "1~4",
+       "确定性",
+       "可用",
+       "需额外训练"
+      ]
+     }
+    ],
+    "interviewScript": "「DDPM 的一切系数来自 β schedule：前向闭式 x_t = √ᾱx₀ + √(1−ᾱ)ε（ᾱ 连乘），反向是后验均值 c1(x_t−c2·ε̂)+σ_t·z，t=1 不加噪。训练学 ε-MSE，采样用 ε̂ 反推。σ² 有两种被夹逼的选择。DDIM 去掉随机项后变成确定性 ODE，可以 20 步跑完 1000 步轨迹——生产都用它或 DPM-Solver。」"
+   }
+  },
+  "curated-clip-contrastive-loss": {
+   "tldr": "CLIP 把 batch 内 N 对图文两两算余弦相似度得 N×N 矩阵，对角线是正样本：按行做图文/按列做图文的交叉熵各算一次再平均——对称 InfoNCE。温度 τ 缩放 logits，是训练稳定性的关键超参。",
+   "why": "多模态方向第一手撕题：考对比学习的矩阵化实现（不写 N² 循环）、对称损失的方向性、温度的作用。追问常到难负样本、大批量依赖与 SigLIP 的改进。",
+   "teaching": {
+    "progressive": [
+     {
+      "level": 1,
+      "text": "每个图文对是正样本，batch 内其余 N²−N 个组合都是负样本——对比学习让匹配对相似度高于不匹配对。"
+     },
+     {
+      "level": 2,
+      "text": "矩阵化：I = img @ txtᵀ / τ 得 (N,N) 相似度矩阵；行方向 softmax（图→文）+ 列方向（文→图）。"
+     },
+     {
+      "level": 3,
+      "text": "对称损失 = (CE(I, 标签 0..N−1) + CE(Iᵀ, 同标签))/2——两个检索方向都要好。"
+     },
+     {
+      "level": 4,
+      "text": "工程：可学习温度（logit_scale，clamp 100）；梯度各向归一化（原论文细节）；大批量 32K 才够负样本。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么损失要对称（双向 CE）？",
+      "a": "单向只保证「给图能找到文」，反向检索（给文找图）没有约束。CLIP 要的是双向对齐——两个方向的 InfoNCE 相加强迫嵌入空间在两个检索方向上都一致。"
+     },
+     {
+      "q": "温度 τ 起什么作用？",
+      "a": "缩放 logits 的锐度：τ 小（scale 大）softmax 更尖，对难负样本梯度更大——但太大训练不稳。CLIP 用可学习温度并 clamp 到 100。"
+     },
+     {
+      "q": "为什么需要超大 batch？",
+      "a": "负样本全部来自 batch 内：N=32K 时每个样本有 32K−1 个负例。批量小则负样本少、任务太容易，表征判别力不足——这是对比学习的「批饥饿」问题（MoCo 用队列缓解）。"
+     }
+    ],
+    "mechanism": "图像/文本各经编码器得 L2 归一化嵌入 (N,d)；logits = I@Tᵀ·exp(log_scale)；标签 = arange(N)；loss = (CE(logits, labels) + CE(logitsᵀ, labels))/2。预测时 zero-shot：类名造句编码后做最近邻。",
+    "boundary": "CLIP 的对比目标学的是「batch 内相对判别」，不是绝对语义——所以有著名的「CLIP 盲区」（数数、细粒度属性）。温度可学习时初始化与 clamp 影响收敛；SigLIP 把 CE 换成 pairwise sigmoid，摆脱大批量依赖。",
+    "analogyBoundary": "像班级合影认人：N 个学生两两比较「谁和谁是同一人」（batch 内负采样）。失效处：没见过的转学生（out-of-batch 语义）没有比较过——CLIP 的判别边界受训练分布限制。",
+    "misconceptions": [
+     "只算单向 CE（图→文）——检索不对称，召回差。",
+     "忘 L2 归一化：点积受向量模长干扰，温度失效。",
+     "温度写死且过小：softmax 饱和，难负样本梯度爆炸。",
+     "用 mean 而不是 sum 的 CE 对齐语义（InfoNCE 有 log N 项）。",
+     "以为负样本需要显式采样——batch 内交叉矩阵天然给出。"
+    ],
+    "ownAnalysis": "先讲「N×N 矩阵一行算完」的向量化，再落码（含可学习温度 clamp 与对称平均），自测：① 相同对损失 < 随机对；② 完全匹配时损失趋 0；③ 温度锐度对难负样本梯度的影响。收尾对比 SigLIP（sigmoid pairwise，小 batch 也能训）。",
+    "officialNotes": "CLIP (Radford 2021) §2.3 与 §3.1.1（对称损失与可学习温度、梯度范数归一化技巧）；SigLIP (Zhai 2023)；OpenCLIP 参考实现。",
+    "interviewAnswer": "N² 矩阵一行算 → 对称双 CE → L2 归一化与可学习温度 → 大批量负样本 → zero-shot 用法 → SigLIP 与难负样本改进。",
+    "studyPath": {
+     "prerequisites": [
+      "余弦相似度",
+      "交叉熵",
+      "L2 归一化"
+     ],
+     "nextSteps": [
+      "SigLIP 损失",
+      "难负样本挖掘",
+      "BLIP/ALBEF 的动量蒸馏"
+     ]
+    }
+   },
+   "diagram": {
+    "kind": "architecture",
+    "title": "CLIP 的 N×N 相似度矩阵与对称损失",
+    "caption": "batch 内 N 对图文两两算余弦相似度：对角线正样本，其余负样本。行方向（图→文）与列方向（文→图）各做一次 CE，平均为最终损失。",
+    "alt": "CLIP InfoNCE 矩阵结构",
+    "svg": "<svg viewBox='0 0 680 190' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='CLIP 相似度矩阵（对角线为正样本）'><text x='127.0' y='32' font-size='13' text-anchor='middle' fill='currentColor'>文1</text><text x='161.0' y='32' font-size='13' text-anchor='middle' fill='currentColor'>文2</text><text x='195.0' y='32' font-size='13' text-anchor='middle' fill='currentColor'>文3</text><text x='229.0' y='32' font-size='13' text-anchor='middle' fill='currentColor'>文4</text><text x='102' y='62.0' font-size='13' text-anchor='end' fill='currentColor'>图1</text><rect x='110' y='40' width='32' height='32' rx='4' fill='none' stroke='var(--warn)' stroke-width='1.8'/><text x='126.0' y='61.0' font-size='13' text-anchor='middle' fill='currentColor'>✓</text><rect x='144' y='40' width='32' height='32' rx='4' fill='none' stroke='var(--line-1)' stroke-width='1.0'/><rect x='178' y='40' width='32' height='32' rx='4' fill='none' stroke='var(--line-1)' stroke-width='1.0'/><rect x='212' y='40' width='32' height='32' rx='4' fill='none' stroke='var(--line-1)' stroke-width='1.0'/><text x='102' y='96.0' font-size='13' text-anchor='end' fill='currentColor'>图2</text><rect x='110' y='74' width='32' height='32' rx='4' fill='none' stroke='var(--line-1)' stroke-width='1.0'/><rect x='144' y='74' width='32' height='32' rx='4' fill='none' stroke='var(--warn)' stroke-width='1.8'/><text x='160.0' y='95.0' font-size='13' text-anchor='middle' fill='currentColor'>✓</text><rect x='178' y='74' width='32' height='32' rx='4' fill='none' stroke='var(--line-1)' stroke-width='1.0'/><rect x='212' y='74' width='32' height='32' rx='4' fill='none' stroke='var(--line-1)' stroke-width='1.0'/><text x='102' y='130.0' font-size='13' text-anchor='end' fill='currentColor'>图3</text><rect x='110' y='108' width='32' height='32' rx='4' fill='none' stroke='var(--line-1)' stroke-width='1.0'/><rect x='144' y='108' width='32' height='32' rx='4' fill='none' stroke='var(--line-1)' stroke-width='1.0'/><rect x='178' y='108' width='32' height='32' rx='4' fill='none' stroke='var(--warn)' stroke-width='1.8'/><text x='194.0' y='129.0' font-size='13' text-anchor='middle' fill='currentColor'>✓</text><rect x='212' y='108' width='32' height='32' rx='4' fill='none' stroke='var(--line-1)' stroke-width='1.0'/><text x='102' y='164.0' font-size='13' text-anchor='end' fill='currentColor'>图4</text><rect x='110' y='142' width='32' height='32' rx='4' fill='none' stroke='var(--line-1)' stroke-width='1.0'/><rect x='144' y='142' width='32' height='32' rx='4' fill='none' stroke='var(--line-1)' stroke-width='1.0'/><rect x='178' y='142' width='32' height='32' rx='4' fill='none' stroke='var(--line-1)' stroke-width='1.0'/><rect x='212' y='142' width='32' height='32' rx='4' fill='none' stroke='var(--warn)' stroke-width='1.8'/><text x='228.0' y='163.0' font-size='13' text-anchor='middle' fill='currentColor'>✓</text></svg>"
+   },
+   "concepts": [
+    {
+     "name": "batch 内负采样",
+     "readable": "N 对正样本，其余 N²−N 个组合全为负——无需显式负例库。",
+     "analogy": "班级合影认人：全场其他人都是「不是这个人」的参照。",
+     "analogyBreaksDown": "「batch 内」意味着负样本质量受 batch 语义分布影响——同 batch 撞车（重复语义）会产生假负例。",
+     "mechanism": "logits 矩阵 I@Tᵀ 的非对角元天然就是负样本得分。",
+     "visual": "N=32768：每样本 32767 个负例。",
+     "prerequisites": [
+      "假负例问题",
+      "MoCo 队列/ memory bank"
+     ],
+     "selfTest": "小 batch 能补救吗？（SigLIP 的 pairwise sigmoid 不依赖 softmax 归一化，或梯度缓存）",
+     "formula": "logits = img @ txt.T * scale"
+    },
+    {
+     "name": "可学习温度",
+     "readable": "logit_scale = exp(log_τ) 可训练，clamp 上限 1/τ=100。",
+     "analogy": "显微镜的焦距旋钮：自己学会调到多锐。",
+     "analogyBreaksDown": "「自调」有风险：温度过小梯度爆炸——clamp 是安全阀，不是装饰。",
+     "mechanism": "初始化 log_τ = ln(1/0.07)≈2.66（原论文）；clamp 防止 softmax 饱和。",
+     "visual": "τ=0.07 vs τ=0.5：前者难负样本梯度大一个量级。",
+     "prerequisites": [
+      "softmax 锐度",
+      "训练稳定性"
+     ],
+     "selfTest": "为什么用 log 域参数化？（保证 τ>0 且数值稳定）",
+     "formula": "logits *= exp(log_τ).clamp(max=100)"
+    },
+    {
+     "name": "双向检索对齐",
+     "readable": "行 CE（图→文）+ 列 CE（文→图）平均：两个检索方向都要好。",
+     "analogy": "字典要既能英查中也能中查英。",
+     "analogyBreaksDown": "「双向」不是简单加权——它改变嵌入空间的几何：单向训练的空间可能各向不对称。",
+     "mechanism": "loss = (CE(logits, arange(N)) + CE(logitsᵀ, arange(N)))/2。",
+     "visual": "原论文还做了「梯度各向归一化」防大批量下某方向主导。",
+     "prerequisites": [
+      "检索指标 R@K",
+      "嵌入空间各向异性"
+     ],
+     "selfTest": "单向训练有什么症状？（图→文好、文→图召回差）",
+     "formula": "0.5·(CE(I) + CE(Iᵀ))"
+    }
+   ],
+   "problem": {
+    "statement": "实现 CLIP 的对称 InfoNCE：输入 N 对图像/文本嵌入（未归一化），含 L2 归一化、可学习温度（clamp）、双向 CE；验证：① 正确对损失 < 错位对；② 完全匹配趋 0；③ batch 越大任务越难（损失基线 log N）。",
+    "examples": [],
+    "approach": {
+     "idea": "归一化 → logits = I@Tᵀ·scale → 双向 CE 对角线标签。随机嵌入下损失 ≈ log N（均匀分布基线），可作为正确性检查。",
+     "steps": [
+      "L2 归一化 img/txt 嵌入",
+      "logit_scale = exp(log_τ).clip(max=100)",
+      "logits = img @ txtᵀ * scale",
+      "loss = (CE(logits, arange) + CE(logitsᵀ, arange))/2",
+      "自测：随机 ≈ log N；完全匹配 → 0；错位对更差"
+     ],
+     "whyItWorks": "InfoNCE 是「从 N 个候选里认出正样本」的分类损失：最优解是正样本对相似度高于一切负对——对称化后两个检索方向同时被约束，嵌入空间双向对齐。",
+     "alternatives": []
+    },
+    "solution": {
+     "python": "import numpy as np\n\ndef l2n(x):\n    return x / np.linalg.norm(x, axis=-1, keepdims=True)\n\ndef clip_loss(img_emb, txt_emb, log_tau=2.659):\n    \"\"\"对称 InfoNCE。img/txt: (N,d) 任意尺度。\"\"\"\n    I, T = l2n(np.asarray(img_emb, float)), l2n(np.asarray(txt_emb, float))\n    scale = min(np.exp(log_tau), 100.0)\n    logits = I @ T.T * scale            # (N,N)\n    N = len(I)\n    labels = np.arange(N)\n    def ce(lg):\n        m = lg.max(axis=1, keepdims=True)\n        e = np.exp(lg - m)\n        p = e / e.sum(axis=1, keepdims=True)\n        return -np.log(p[np.arange(N), labels]).mean()\n    return 0.5 * (ce(logits) + ce(logits.T))\n\nrng = np.random.default_rng(20)\nN, d = 32, 64\n# 基线：随机嵌入 + 温度≈1（scale 小、logits 近似均匀）-> 损失 ≈ log N\nrand_img = rng.normal(size=(N, d))\nrand_txt = rng.normal(size=(N, d))\nl_rand = clip_loss(rand_img, rand_txt, log_tau=0.0)\nassert abs(l_rand - np.log(N)) < 0.15, l_rand\n\n# 正确配对：每对共享一个「语义基向量」-> 损失显著更低\nsem = rng.normal(size=(N, d))\ngood_img = sem + rng.normal(scale=0.1, size=(N, d))\ngood_txt = sem + rng.normal(scale=0.1, size=(N, d))\nl_good = clip_loss(good_img, good_txt)\nassert l_good < 0.2 * l_rand\n\n# 错位对：把 txt 轮转一格 -> 损失回升\nl_bad = clip_loss(good_img, np.roll(good_txt, 1, axis=0))\nassert l_bad > l_good * 3\n\n# 完全匹配（图文嵌入相同）-> 损失趋 0\nl_perfect = clip_loss(sem, sem)\nassert l_perfect < 0.05\nprint('CLIP InfoNCE OK: rand=%.3f(~logN=%.3f) good=%.3f bad=%.3f'\n      % (l_rand, np.log(N), l_good, l_bad))\n",
+     "python_alt": null,
+     "notes": "「随机嵌入损失 ≈ log N」是最漂亮的正确性检查：均匀分布下 InfoNCE 的期望恰好是 log N——数字对上说明归一化、温度、对称平均三件事全对。"
+    },
+    "complexity": {
+     "time": "O(N²·d)（矩阵乘主导）",
+     "space": "O(N²) logits",
+     "why": "N² 相似度矩阵是算法本质；大 N 用分块算（gradient cache）。"
+    },
+    "keyPoints": [
+     "logits = l2n(img) @ l2n(txt)ᵀ × scale",
+     "对称损失：行 CE + 列 CE 再平均",
+     "可学习温度 log 域参数化 + clamp(100)",
+     "随机基线 ≈ log N——理论预期校验实现",
+     "负样本来自 batch 内：大批量是刚需（SigLIP 解耦）",
+     "zero-shot：类名 prompt 编码后最近邻"
+    ],
+    "pitfalls": [
+     "忘 L2 归一化：点积混入模长信息。",
+     "只算单向 CE。",
+     "温度不 clamp：训练后期 scale 爆炸 softmax 饱和。",
+     "CE 用 sum 归约不除 N：梯度尺度随 batch 漂移。",
+     "以为负样本要显式构造——矩阵非对角元就是。",
+     "假负例（batch 内重复语义）不处理：同文多图的数据要小心。"
+    ],
+    "edgeCases": [
+     "N=1：无负样本，损失恒 0——对比学习需要 N≥2。",
+     "batch 内重复图文（假负例）：损失被错误推高。",
+     "温度爆表：clamp 保护。",
+     "嵌入维度不匹配：断言检查。",
+     "混合精度：矩阵乘 fp16、softmax fp32。"
+    ],
+    "interviewTips": "「随机 ≈ log N」的基线检查先讲——它是面试里少见的「用理论预期校验实现」的展示。然后温度 clamp、对称性、大批量依赖，最后 SigLIP 展示前沿。",
+    "variants": [
+     {
+      "name": "SigLIP pairwise sigmoid",
+      "idea": "把 softmax-CE 换成 pairwise sigmoid：每个格独立二分类「是否匹配」，不再依赖 softmax 归一化——小 batch 也能训。",
+      "code": "import numpy as np\ndef siglip_loss(img, txt, log_tau=2.659, bias=-10.0):\n    I, T = img / np.linalg.norm(img, axis=-1, keepdims=True), \\\n           txt / np.linalg.norm(txt, axis=-1, keepdims=True)\n    z = I @ T.T * np.exp(log_tau) + bias\n    N = len(I)\n    # 正对 (对角线) 目标 +1，负对目标 -1（tanh-norm 形式）\n    target = -np.ones((N, N)); np.fill_diagonal(target, 1.0)\n    loss = -np.log(1 / (1 + np.exp(-target * z)))\n    return float(loss.mean())\n\n# 简化验证：正确配对损失更低\nrng = np.random.default_rng(21)\nsem = rng.normal(size=(8, 32))\nl1 = siglip_loss(sem, sem)\nl2 = siglip_loss(sem, np.roll(sem, 1, axis=0))\nassert l1 < l2\nprint('SigLIP pairwise OK: good=%.3f < bad=%.3f' % (l1, l2))\n",
+      "when": "中小 batch 的多模态训练（SigLIP 论文核心贡献）。",
+      "cost": "摆脱 32K batch 依赖"
+     }
+    ],
+    "comparison": [
+     {
+      "cells": [
+       "方法",
+       "归一化",
+       "负样本",
+       "batch 依赖",
+       "备注"
+      ]
+     },
+     {
+      "cells": [
+       "CLIP InfoNCE",
+       "L2",
+       "batch 内 softmax",
+       "强(32K)",
+       "双向 CE"
+      ]
+     },
+     {
+      "cells": [
+       "SigLIP",
+       "L2",
+       "pairwise sigmoid",
+       "弱",
+       "每格独立二分类"
+      ]
+     },
+     {
+      "cells": [
+       "MoCo",
+       "L2",
+       "队列 memory bank",
+       "弱",
+       "动量编码器"
+      ]
+     },
+     {
+      "cells": [
+       "BLIP/ALBEF",
+       "L2",
+       "+ITM 难负样本",
+       "中",
+       "动量蒸馏"
+      ]
+     }
+    ],
+    "interviewScript": "「CLIP 是矩阵化的对称 InfoNCE：L2 归一化后一行矩阵乘得 N×N 相似度，对角线正样本，行/列两个方向的 CE 平均。可学习温度 log 域参数化 clamp 到 100。正确性可以用『随机嵌入损失 ≈ log N』校验。负样本全靠 batch 内，所以原版要 32K batch——SigLIP 用 pairwise sigmoid 解除了这个依赖。」"
+   }
+  },
+  "curated-batchnorm": {
+   "tldr": "BatchNorm 对每个通道跨 (N,H,W) 归一化：训练用 batch 统计量并维护滑动平均，推理用累积的 running stats——训练/推理两套行为是 BN 所有工程坑的根源。手撕考前向（两模式）+ 反向（batch 统计量的梯度路径）。",
+   "why": "CV 方向的经典题：考「轴的选择」（为什么是通道不是 batch）、running stats 的动量更新、反向传播的间接路径。也是理解 LN/GN/RMS 差异的锚点。",
+   "teaching": {
+    "progressive": [
+     {
+      "level": 1,
+      "text": "前向（训练）：对每个通道 c，用 batch 内 N×H×W 个值算 μ_c、σ²_c，归一化后仿射 γ_c、β_c。"
+     },
+     {
+      "level": 2,
+      "text": "running stats：滑动平均 μ_run = (1−m)·μ_run + m·μ_batch，推理直接用它们——不再依赖 batch。"
+     },
+     {
+      "level": 3,
+      "text": "反向：梯度要经过 μ、σ²（batch 统计量是 x 的函数）——与 LN 一样有间接路径，但统计跨样本。"
+     },
+     {
+      "level": 4,
+      "text": "工程：小 batch 时统计噪声大（GN 的动机）；train/eval 忘切换是真实世界头号 bug；BN 后接 ReLU 前偏置可省。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么 BN 按通道统计而不是像 LN 按样本？",
+      "a": "图像的每个通道是「一种特征图」，跨样本统计让网络对「这个特征的分布」白化——分布偏移（internal covariate shift）是训练不稳的来源。NLP 变长序列做不到这一点。"
+     },
+     {
+      "q": "训练/推理行为不一致会出什么问题？",
+      "a": "batch 小/分布偏时 running stats 偏离真实，推理精度掉。对策：BN 冻结微调、精确 running stats 重算、或换 GN。"
+     },
+     {
+      "q": "BN 为什么有正则效果？",
+      "a": "batch 统计的随机性给每个样本的归一化注入噪声——类似 dropout 的扰动，batch 越小噪声越大（也越不稳）。"
+     }
+    ],
+    "mechanism": "训练：μ_c = mean over (N,H,W)，σ²_c = var，x̂ = (x−μ)/√(σ²+ε)，y = γx̂+β；同时更新 running stats。推理：x̂ = (x−μ_run)/√(σ²_run+ε)。反向：dγ = Σdy·x̂，dx̂ = dy·γ，dx = (1/√σ²)(dx̂ − mean(dx̂) − x̂·mean(dx̂·x̂))——与 LN 同构但统计轴不同。",
+    "boundary": "batch=1 时 batch 统计退化为样本统计，BN 失效（检测分割任务用 GN/SyncBN）；分布式训练要 SyncBN 跨卡同步统计；BN 与 dropout 组合位置有讲究（BN-ReLU-Conv 顺序）。",
+    "analogyBoundary": "像按「科目」统计全班分数再标准化（每科目一个 μ/σ，跨所有考生）。失效处：考试中途（训练）与发榜（推理）用的统计口径不同——BN 的双模式正是这种不一致的工程化。",
+    "misconceptions": [
+     "统计轴写错：BN 沿 (0,2,3)，不是 (0,1,2,3) 也不是 (1)。",
+     "忘更新 running stats：推理时统计量为初始值，精度崩。",
+     "eval 模式还在用 batch 统计（或反之）——模式切换是头号坑。",
+     "ε 加在开方外。",
+     "以为 BN 推理时也依赖 batch——恰恰相反，它就是为了摆脱。"
+    ],
+    "ownAnalysis": "先给轴对比表（BN/LN/IN/GN 四兄弟的统计对象），再落码两模式前向 + 反向对齐数值梯度，自测：训练输出零均值单位方差、running stats 收敛到全局统计、eval 不依赖 batch 组成。主动提 SyncBN 与微调时「冻结 BN」的惯例。",
+    "officialNotes": "Batch Normalization (Ioffe & Szegedy 2015)；GroupNorm (Wu & He 2018) 的四兄弟对比图；torch.nn.BatchNorm2d 文档的 running stats 公式；SyncBN（MegDet, 2018）。",
+    "interviewAnswer": "轴的选择与四兄弟 → 训练/推理两套统计 → running 动量更新 → 反向间接路径（与 LN 同构）→ 小 batch 与 SyncBN → 微调冻结 BN 惯例。",
+    "studyPath": {
+     "prerequisites": [
+      "均值方差梯度",
+      "滑动平均",
+      "train/eval 模式语义"
+     ],
+     "nextSteps": [
+      "GroupNorm 与检测任务",
+      "SyncBN 分布式实现",
+      "BN 重组（conv-bn 融合）"
+     ]
+    }
+   },
+   "diagram": {
+    "kind": "architecture",
+    "title": "归一化四兄弟：统计对象对比（N,C,H,W）",
+    "caption": "BN 按通道跨 (N,H,W)；LN 按样本跨 (C,H,W)；IN 按样本按通道跨 (H,W)；GN 按组跨 (C/g,H,W)。统计对象决定适用场景。",
+    "alt": "BN/LN/IN/GN 的统计轴对比",
+    "svg": "<svg viewBox='0 0 680 238' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='BN 与 LN 的核心差异'><rect x='20' y='14' width='310' height='180' rx='10' fill='none' stroke='var(--warn)' stroke-width='2.1'/><text x='175.0' y='38' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>BatchNorm</text><text x='32' y='64' font-size='13' fill='currentColor' opacity='0.85'>统计轴：(N,H,W) 每通道</text><text x='32' y='88' font-size='13' fill='currentColor' opacity='0.85'>训练/推理：两套（running）</text><text x='32' y='112' font-size='13' fill='currentColor' opacity='0.85'>小 batch：不稳</text><text x='32' y='136' font-size='13' fill='currentColor' opacity='0.85'>CV 主流</text><text x='32' y='160' font-size='13' fill='currentColor' opacity='0.85'>推理摆脱 batch</text><rect x='350' y='14' width='310' height='180' rx='10' fill='none' stroke='var(--line-1)' stroke-width='1.3'/><text x='505.0' y='38' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>LayerNorm</text><text x='362' y='64' font-size='13' fill='currentColor' opacity='0.85'>统计轴：(C,H,W) 或 (d) 每样本</text><text x='362' y='88' font-size='13' fill='currentColor' opacity='0.85'>训练/推理：一致</text><text x='362' y='112' font-size='13' fill='currentColor' opacity='0.85'>batch 大小无关</text><text x='362' y='136' font-size='13' fill='currentColor' opacity='0.85'>NLP 主流</text><text x='362' y='160' font-size='13' fill='currentColor' opacity='0.85'>无 running stats</text><text x='340.0' y='228' font-size='13' text-anchor='middle' font-weight='bold' fill='currentColor'>IN：每样本每通道；GN：组内——四个方案是统计对象的不同切法</text></svg>"
+   },
+   "concepts": [
+    {
+     "name": "通道统计",
+     "readable": "BN 的 μ_c/σ²_c 是「这个特征图在全 batch 上的分布」——白化每个通道。",
+     "analogy": "按科目标准化全班分数：每科目（通道）一个口径。",
+     "analogyBreaksDown": "「白化」是逐步的（只做均值方差，不做去相关）——原论文动机 internal covariate shift 后来有争议，但工程有效。",
+     "mechanism": "输入 (N,C,H,W)：统计沿 axis=(0,2,3)，参数 γ/β 形状 (C,)。",
+     "visual": "conv 后 BN：每个输出通道独立归一化。",
+     "prerequisites": [
+      "四兄弟统计轴",
+      "内部协变量偏移争议"
+     ],
+     "selfTest": "1×1 卷积后 BN 轴变吗？（不变，仍是通道）",
+     "formula": "x̂_nchw = (x − μ_c)/√(σ²_c + ε)"
+    },
+    {
+     "name": "running stats 与双模式",
+     "readable": "训练用 batch 统计 + 滑动平均；推理用累积 running stats。",
+     "analogy": "平时按当场人数估平均，正式演出用排练积累的平均。",
+     "analogyBreaksDown": "「排练平均」是指数滑动不是简单平均——动量 m=0.1 时近 10 个 batch 权重高；样本量足够大时两者收敛。",
+     "mechanism": "μ_run ← (1−m)·μ_run + m·μ_batch；推理完全不碰 batch。",
+     "visual": "eval 模式下 BN 是纯仿射 → 可与 conv 融合（推理加速）。",
+     "prerequisites": [
+      "动量语义（与优化器动量不同）",
+      "conv-BN 融合"
+     ],
+     "selfTest": "微调为什么常冻结 BN？（新数据分布会让 running stats漂移，破坏预训练统计）",
+     "formula": "μ_run = 0.9·μ_run + 0.1·μ_batch"
+    },
+    {
+     "name": "BN 的正则效应",
+     "readable": "batch 统计的随机性给归一化注入噪声，batch 越小越强。",
+     "analogy": "每次考试随机抽一部分人算平均分——抽样的波动天然扰动每个人的标准化分数。",
+     "analogyBreaksDown": "「正则」是副作用不是设计目标：太小 batch 噪声变成伤害（训练不稳），GN 的动机正是去掉这个抽样波动。",
+     "mechanism": "统计量是 x 的函数 ⇒ 梯度有间接路径 ⇒ 每个样本的归一化依赖同 batch 他人。",
+     "visual": "batch=32 vs 4：后者正则强但不稳。",
+     "prerequisites": [
+      "抽样噪声",
+      "小 batch 失效与 GN"
+     ],
+     "selfTest": "为什么检测任务爱用 GN？（batch 小（每卡 1~2 图），BN 统计太噪）",
+     "formula": "∂μ/∂x_i = 1/N（batch 内互相耦合）"
+    }
+   ],
+   "problem": {
+    "statement": "实现 BatchNorm2d：训练模式前向（batch 统计 + running 更新）与 eval 模式前向（running 统计）；实现反向传播并与数值梯度对齐；验证：① 训练输出按通道零均值单位方差；② eval 输出不依赖 batch 组成。",
+    "examples": [],
+    "approach": {
+     "idea": "统计轴 (0,2,3)；running 动量 0.1；反向与 LN 同构的「三项合一」公式但沿通道。",
+     "steps": [
+      "训练前向：μ/σ² 沿 (0,2,3)，x̂ 仿射，更新 running",
+      "eval 前向：直接用 running stats 仿射",
+      "反向：dγ = Σdy·x̂（通道维），dx 三项合一",
+      "数值对齐（训练模式）",
+      "eval 独立性：改变 batch 内其他样本，单样本输出不变"
+     ],
+     "whyItWorks": "BN 把每个通道的分布拉回标准形态，训练更稳更快；running stats 让推理摆脱 batch 依赖。反向的间接路径来自「统计量是 x 的函数」——与 LN 同构。",
+     "alternatives": []
+    },
+    "solution": {
+     "python": "import numpy as np\n\nclass BatchNorm2d:\n    def __init__(self, C, momentum=0.1, eps=1e-5):\n        self.C = C; self.m = momentum; self.eps = eps\n        self.g = np.ones(C); self.b = np.zeros(C)\n        self.run_mu = np.zeros(C); self.run_var = np.ones(C)\n\n    def forward(self, x, training=True):\n        if training:\n            ax = (0, 2, 3)\n            mu = x.mean(axis=ax)\n            var = x.var(axis=ax)\n            self.run_mu = (1 - self.m) * self.run_mu + self.m * mu\n            self.run_var = (1 - self.m) * self.run_var + self.m * var\n        else:\n            mu, var = self.run_mu, self.run_var\n        shape = (1, -1, 1, 1)\n        xhat = (x - mu.reshape(shape)) / np.sqrt(var.reshape(shape) + self.eps)\n        y = self.g.reshape(shape) * xhat + self.b.reshape(shape)\n        return y, xhat\n\n    def backward(self, dy, x, xhat):\n        \"\"\"与 LN 同构的三项合一，统计轴 (0,2,3)。\"\"\"\n        N = x.shape[0] * x.shape[2] * x.shape[3]\n        ax = (0, 2, 3)\n        dg = (dy * xhat).sum(axis=ax)\n        db = dy.sum(axis=ax)\n        dxhat = dy * self.g[None, :, None, None]\n        m1 = dxhat.mean(axis=ax, keepdims=True)\n        m2 = (dxhat * xhat).mean(axis=ax, keepdims=True)\n        var = x.var(axis=ax).reshape(1, -1, 1, 1)\n        dx = (dxhat - m1 - xhat * m2) / np.sqrt(var + self.eps)\n        return dx, dg, db\n\nrng = np.random.default_rng(22)\nN, C, H, W = 4, 3, 5, 5\nbn = BatchNorm2d(C)\nx = rng.normal(loc=2.0, scale=3.0, size=(N, C, H, W))\ny, xhat = bn.forward(x, training=True)\n# ① 训练输出按通道零均值单位方差\nassert np.allclose(y.mean(axis=(0, 2, 3)), 0, atol=1e-8)\nassert np.allclose(y.std(axis=(0, 2, 3)), 1, atol=1e-3)\n\n# ② 反向对齐数值梯度\ndy = rng.normal(size=x.shape)\ndx, dg, db = bn.backward(dy, x, xhat)\neps_ = 1e-6\nnum = np.zeros_like(x)\nf = lambda xx: (bn.forward(xx, training=True)[0] * dy).sum()\nfor i in range(N):\n    for c in range(C):\n        for h in range(H):\n            for w in range(W):\n                xp, xm = x.copy(), x.copy()\n                xp[i, c, h, w] += eps_; xm[i, c, h, w] -= eps_\n                num[i, c, h, w] = (f(xp) - f(xm)) / (2 * eps_)\nassert np.allclose(dx, num, atol=1e-6)\n\n# ③ eval 独立性：换掉 batch 里其他样本，该样本输出不变\nfor _ in range(50):\n    bn.forward(rng.normal(size=(N, C, H, W)), training=True)\nprobe = rng.normal(size=(1, C, H, W))\nfull = np.concatenate([probe, rng.normal(size=(N - 1, C, H, W))])\ny_alone = bn.forward(probe, training=False)[0]\ny_batch = bn.forward(full, training=False)[0][:1]\nassert np.allclose(y_alone, y_batch, atol=1e-12)\nprint('BatchNorm2d OK: 反向对齐; eval 输出不依赖 batch 组成')\n",
+     "python_alt": null,
+     "notes": "eval 独立性测试是「双模式」的精确表达：推理时输出只依赖 running stats 与自身——这正是 BN 摆脱 batch 的承诺。反向与 LN 共享「三项合一」结构，只是统计轴不同——讲清这一点能同时覆盖两题。"
+    },
+    "complexity": {
+     "time": "训练 O(N·C·H·W)（两遍），推理 O(1) 仿射",
+     "space": "统计与参数 O(C)",
+     "why": "推理时可融合进 conv：W' = γW/√(σ²+ε)，b' = β + γ(b−μ)/√(σ²+ε)。"
+    },
+    "keyPoints": [
+     "统计轴 (0,2,3)：按通道跨 batch 与空间",
+     "训练 batch 统计 + running 滑动平均；推理用 running",
+     "反向与 LN 同构三项合一，间接路径来自统计量依赖",
+     "eval 输出不依赖 batch 组成——BN 的承诺",
+     "推理可融合进 conv（W' = γW/√(σ²+ε)）",
+     "小 batch 换 GN/SyncBN；微调常冻结 BN"
+    ],
+    "pitfalls": [
+     "统计轴写错（(0,2,3) 不是 (1,2,3)）。",
+     "忘更新 running stats 或动量语义搞反。",
+     "eval 用 batch 统计（或训练用 running）——模式切换头号坑。",
+     "ε 在开方外。",
+     "小 batch 不切 GN/SyncBN，训练崩了怪学习率。",
+     "reshape/广播在 (N,C,H,W) 上错轴。"
+    ],
+    "edgeCases": [
+     "N=1（训练）：batch 统计=样本统计，BN 退化（用 GN）。",
+     "H=W=1（全连接视角）：退化为按 batch 的 BN。",
+     "eval 时 batch 任意大：输出与 batch 组成无关（已验证）。",
+     "var→0（通道常数）：ε 防除零。",
+     "分布式：SyncBN 跨卡同步统计量。"
+    ],
+    "interviewTips": "四兄弟统计轴对比表开场（30 秒），然后反向对齐数值梯度、eval 独立性验证两个自测。收尾提 conv-BN 融合（推理优化）与微调冻结 BN（工程惯例）。",
+    "variants": [
+     {
+      "name": "GroupNorm",
+      "idea": "把通道分组、组内归一化：不依赖 batch 大小，检测/分割小 batch 场景标配。",
+      "code": "import numpy as np\ndef groupnorm(x, g, G=2, eps=1e-5):\n    # x:(N,C,H,W)，g:(C,)——C 个通道分 G 组\n    N, C, H, W = x.shape\n    xg = x.reshape(N, G, C // G * H * W)\n    mu = xg.mean(-1, keepdims=True)\n    var = xg.var(-1, keepdims=True)\n    xg = (xg - mu) / np.sqrt(var + eps)\n    return xg.reshape(N, C, H, W) * g[None, :, None, None]\nrng = np.random.default_rng(25)\nx = rng.normal(size=(2, 4, 3, 3))\ny = groupnorm(x, np.ones(4), G=2)\n# 组内零均值：每样本每组的 2 个通道一起统计\nyg = y.reshape(2, 2, 2 * 3 * 3)\nassert np.allclose(yg.mean(-1), 0, atol=1e-8)\nprint('GroupNorm OK: 组内零均值单位方差')\n",
+      "when": "小 batch CV 训练（RetinaNet/Mask R-CNN 默认 GN）。",
+      "cost": "与 batch 无关"
+     }
+    ],
+    "comparison": [
+     {
+      "cells": [
+       "归一化",
+       "统计轴(NCHW)",
+       "batch 依赖",
+       "双模式",
+       "场景"
+      ]
+     },
+     {
+      "cells": [
+       "BatchNorm",
+       "(N,H,W)/通道",
+       "训练有",
+       "是",
+       "CV 大 batch"
+      ]
+     },
+     {
+      "cells": [
+       "LayerNorm",
+       "(C,H,W)/样本",
+       "无",
+       "否",
+       "NLP"
+      ]
+     },
+     {
+      "cells": [
+       "InstanceNorm",
+       "(H,W)/样本/通道",
+       "无",
+       "否",
+       "风格迁移"
+      ]
+     },
+     {
+      "cells": [
+       "GroupNorm",
+       "(H,W)+C/g",
+       "无",
+       "否",
+       "小 batch CV"
+      ]
+     }
+    ],
+    "interviewScript": "「BN 按通道跨 (N,H,W) 统计：训练用 batch 统计并滑动平均更新 running，推理用 running——双模式是所有工程坑的根源。反向与 LN 同构（三项合一），只是统计轴不同。eval 输出不依赖 batch 组成，推理时还能把 γ/β 融合进 conv。小 batch 用 GN 或 SyncBN，微调惯例冻结 BN。」"
+   }
+  },
+  "curated-transformer-block": {
+   "tldr": "Transformer Block = 注意力 + FFN，各自带残差与归一化。pre-LN（Norm 在子层内）让梯度走恒等高速路，深栈可训；post-LN（原始论文，Norm 在残差外）上限略高但要 warmup 伺候。现代 LLM 几乎全用 pre-LN。",
+   "why": "把前面所有零件（MHA/归一化/残差）组装起来的总装题：考「结构顺序为什么重要」——pre/post-LN 的梯度差异是面试官最爱挖的深度题，也直接连接 GPT/LLaMA 的实际选择。",
+   "teaching": {
+    "progressive": [
+     {
+      "level": 1,
+      "text": "两个子层：多头注意力（token 间混合）+ FFN（逐 token 非线性变换），各配残差连接。"
+     },
+     {
+      "level": 2,
+      "text": "pre-LN：x = x + Attn(Norm(x))；x = x + FFN(Norm(x))——恒等通路无阻拦。"
+     },
+     {
+      "level": 3,
+      "text": "post-LN：x = Norm(x + Attn(x))——每层出口都被归一化，深层梯度要穿过所有 Norm。"
+     },
+     {
+      "level": 4,
+      "text": "现代变体：RMSNorm、SwiGLU FFN、去掉最终后的 bias、并行 block（GPT-J 风格）——全部围绕训练稳定性。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "pre-LN 为什么训练更稳？",
+      "a": "恒等通路 x + f(Norm(x)) 让梯度可以不经任何变换直达底层（f 的梯度被 Norm 控制在温和范围）；post-LN 的x = Norm(x + f(x)) 让每层梯度都要除以该层的 σ——深层连乘不稳定。"
+     },
+     {
+      "q": "post-LN 有什么优势？",
+      "a": "每层出口强制重新归一化，表征分布更规整——相同预算下收敛后效果略好（原始论文立场）。代价是必须 warmup：初期梯度大且方向乱，需要小学习率「点火」。"
+     },
+     {
+      "q": "FFN 为什么是 4 倍升维再降回？",
+      "a": "注意力做「路由」（信息在 token 间移动），FFN 做「计算」（逐 token 非线性变换）——4 倍扩展给 key-value 记忆容量；SwiGLU 用门控替代 ReLU 后常见 8/3 倍（保持参数量）。"
+     }
+    ],
+    "mechanism": "pre-LN block：h = x + MHA(LN₁(x))；y = h + FFN(LN₂(h))。FFN = dropout(W₂·act(W₁·x))，d_ff = 4d（或 SwiGLU 的 8d/3）。最终输出前常有一个 final LN（GPT 风格）。",
+    "boundary": "pre-LN 的「恒等高速路」也有代价：深层网络的输出中底层贡献占比大，最深层近似恒等映射——有人提出 DeepNorm/混合 norm 修正。post-LN 在浅层（<12 层）与 pre-LN 差异不大。",
+    "analogyBoundary": "像高速路（恒等）+ 服务区（子层）：pre-LN 保证主路永远畅通，服务区随便修；post-LN 每过一个收费站（Norm）都强制重新安检。失效处：真实高速路车流守恒，残差流的「贡献占比」会随深度稀释——需要 final LN 重新校准。",
+    "misconceptions": [
+     "pre/post 写混：pre 是 Norm 在子层**内**（x + Attn(Norm(x))），post 是残差**外**。",
+     "忘 final LN：GPT 风格最后还有一层 Norm。",
+     "FFN 与注意力的顺序随意互换（顺序不影响并行实现的正确性，但影响参数初始化惯例）。",
+     "以为 residual 是可选项——没有残差的深栈不可训练。",
+     "SwiGLU 参数量算错：gate+up+down 三个矩阵，d_ff = 8d/3 保持与 4d 相当参数量。"
+    ],
+    "ownAnalysis": "组装题的价值在「讲结构决策」：先画 pre/post 两种排布的梯度路径图，再落码（MHA 用前面的实现或简化版，重点在 block 结构），自测：pre-LN 在 24 层栈的梯度范数衰减 vs post-LN 的梯度爆炸/消失对比——数值化「pre-LN 更稳」这句话。",
+    "officialNotes": "Transformer 原论文 (Vaswani 2017) §3.1（post-LN）；On Layer Normalization in the Transformer Architecture (Xiong 2020) 的 pre/post 梯度分析；GPT-2/LLaMA 的 block 实现；SwiGLU (Shazeer 2020)。",
+    "interviewAnswer": "两子层结构 → pre/post 梯度路径对比（恒等高速路）→ 现代变体清单（RMSNorm/SwiGLU/final LN/并行 block）→ FFN 4d 与 8d/3 的容量账。",
+    "studyPath": {
+     "prerequisites": [
+      "MHA",
+      "LayerNorm/RMSNorm",
+      "残差连接的梯度性质"
+     ],
+     "nextSteps": [
+      "KV-Cache 推理",
+      "MoE FFN",
+      "并行 block（GPT-J/PaLM）"
+     ]
+    }
+   },
+   "diagram": {
+    "kind": "architecture",
+    "title": "pre-LN 与 post-LN 的梯度路径对比",
+    "caption": "pre-LN：恒等通路 x→x 无阻拦，梯度可直达底层（GPT/LLaMA 选择）。post-LN：每层出口强制归一化，深层梯度连乘不稳定（原始论文，需 warmup）。",
+    "alt": "两种 block 排布的梯度流",
+    "svg": "<svg viewBox='0 0 680 238' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='pre-LN vs post-LN'><rect x='20' y='14' width='310' height='180' rx='10' fill='none' stroke='var(--warn)' stroke-width='2.1'/><text x='175.0' y='38' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>pre-LN（现代主流）</text><text x='32' y='64' font-size='13' fill='currentColor' opacity='0.85'>x = x + Attn(Norm(x))</text><text x='32' y='88' font-size='13' fill='currentColor' opacity='0.85'>x = x + FFN(Norm(x))</text><text x='32' y='112' font-size='13' fill='currentColor' opacity='0.85'>恒等通路畅通</text><text x='32' y='136' font-size='13' fill='currentColor' opacity='0.85'>深栈无需 warmup 也稳</text><text x='32' y='160' font-size='13' fill='currentColor' opacity='0.85'>GPT-2/3, LLaMA, Qwen</text><rect x='350' y='14' width='310' height='180' rx='10' fill='none' stroke='var(--line-1)' stroke-width='1.3'/><text x='505.0' y='38' font-size='14' text-anchor='middle' font-weight='bold' fill='currentColor'>post-LN（原始论文）</text><text x='362' y='64' font-size='13' fill='currentColor' opacity='0.85'>x = Norm(x + Attn(x))</text><text x='362' y='88' font-size='13' fill='currentColor' opacity='0.85'>x = Norm(x + FFN(x))</text><text x='362' y='112' font-size='13' fill='currentColor' opacity='0.85'>每层出口强制归一化</text><text x='362' y='136' font-size='13' fill='currentColor' opacity='0.85'>深层梯度连乘不稳 → 需 warmup</text><text x='362' y='160' font-size='13' fill='currentColor' opacity='0.85'>原始 Transformer/BERT</text><text x='340.0' y='228' font-size='13' text-anchor='middle' font-weight='bold' fill='currentColor'>表征规整（post）vs 训练稳定（pre）——现代模型几乎全选后者，用 final LN 补规整</text></svg>"
+   },
+   "concepts": [
+    {
+     "name": "恒等高速路",
+     "readable": "残差连接让梯度可沿 x→x 直达底层，子层只学「增量」。",
+     "analogy": "高速主路不变，服务区只提供增量服务。",
+     "analogyBreaksDown": "「增量」是可学习的 f——它的输出幅度没有约束，Norm 的作用正是把 f 的输入量级控住。",
+     "mechanism": "∂L/∂x_l = ∂L/∂x_L·(I + Σ ∂f/∂x)：单位阵项保证梯度不会消失。",
+     "visual": "ResNet 的恒等映射分析直接迁移。",
+     "prerequisites": [
+      "残差网络梯度分析",
+      "Norm 的输入控制"
+     ],
+     "selfTest": "没有残差会怎样？（深栈梯度指数消失/爆炸，不可训练）",
+     "formula": "x_{l+1} = x_l + f_l(x_l)"
+    },
+    {
+     "name": "FFN 的容量账",
+     "readable": "注意力路由信息，FFN 存储/计算知识：d_ff=4d 的扩展是 key-value 记忆容量。",
+     "analogy": "会议室（attention）交换信息，档案室（FFN）存储事实。",
+     "analogyBreaksDown": "「档案室容量」不是越大越好：FFN 参数占全模型 2/3，是 MoE 稀疏化的对象。",
+     "mechanism": "SwiGLU：FFN(x) = W_down(silu(W_gate·x) ⊙ (W_up·x))，三个矩阵，d_ff=8d/3 与 4d 参数量相当。",
+     "visual": "LLaMA FFN：hidden 4096 → intermediate 11008 ≈ 2.7d（SwiGLU 折算）。",
+     "prerequisites": [
+      "key-value memory 论文 (Geva 2021)",
+      "MoE 稀疏化"
+     ],
+     "selfTest": "为什么 gate 要乘 up 而不是加？（乘法门控实现条件计算，实验优于加性/ReLU）",
+     "formula": "silu(W_g x) ⊙ (W_u x)"
+    },
+    {
+     "name": "final LN",
+     "readable": "GPT 风格在最后输出前加一层 Norm：pre-LN 的残差流未经最后归一化。",
+     "analogy": "马拉松终点前的最后一次体检——主路畅通的代价是终点没人管，补一道。",
+     "analogyBreaksDown": "「没人管」指深层输出可能量级漂移；final LN 不是可选装饰，pre-LN 架构的输出分布靠它稳定。",
+     "mechanism": "h_final = Norm(h_L)；LLaMA/GPT-2/3 均有。",
+     "visual": "post-LN 架构不需要（每层出口已归一化）。",
+     "prerequisites": [
+      "残差流漂移",
+      "输出分布稳定"
+     ],
+     "selfTest": "post-LN 为什么不需要？（每层出口已经被 Norm）",
+     "formula": "logits = head(Norm(h_L))"
+    }
+   ],
+   "problem": {
+    "statement": "组装 pre-LN Transformer Block（MHA + SwiGLU FFN + 残差 + RMSNorm + final LN），并做梯度健康实验：24 层 pre-LN 栈的最终梯度范数 vs 模拟 post-LN 的梯度衰减，数值化「pre-LN 更稳」。",
+    "examples": [],
+    "approach": {
+     "idea": "block = x + MHA(N(x)) ; x + FFN(N(x))；FFN 用 SwiGLU。梯度实验用简化标量模型：比较「恒等通路」与「每层归一化出口」两种排布的雅可比范数衰减。",
+     "steps": [
+      "实现 RMSNorm、单头简化 attention、SwiGLU FFN",
+      "组装 pre-LN block（含 final LN）",
+      "数值验证：输出形状/有限差分梯度非 NaN",
+      "梯度实验：24 层 pre-LN vs post-LN 的梯度范数曲线",
+      "结论：pre-LN 梯度范数保持量级，post-LN 指数衰减"
+     ],
+     "whyItWorks": "残差的单位阵项保证梯度通路存在；Norm 把子层输入量级控住使 f 温和；FFN 的扩展提供知识容量——三者组合才能堆 80 层。",
+     "alternatives": []
+    },
+    "solution": {
+     "python": "import numpy as np\n\ndef rmsnorm(x, g, eps=1e-6):\n    return x / np.sqrt((x * x).mean(-1, keepdims=True) + eps) * g\n\ndef swiglu_ffn(x, Wg, Wu, Wd):\n    return (np.tanh(x @ Wg) * 0.5 + 0.5) * (x @ Wu) @ Wd\n    # silu(z) = z*sigmoid(z)；此处用 tanh 近似 sigmoid 演示形状\n\ndef block(x, Wq, Wk, Wv, Wo, Wg, Wu, Wd, g1, g2, S=None):\n    \"\"\"pre-LN block（简化单头 attention，因果掩码）。\"\"\"\n    S = S or x.shape[-2]\n    h = rmsnorm(x, g1)\n    q, k, v = h @ Wq, h @ Wk, h @ Wv\n    sc = q @ k.transpose(0, 2, 1) / np.sqrt(q.shape[-1])\n    sc = np.where(np.triu(np.ones((S, S), bool), 1), -1e9, sc)\n    e = np.exp(sc - sc.max(-1, keepdims=True))\n    attn = (e / e.sum(-1, keepdims=True)) @ v\n    x = x + attn @ Wo\n    h2 = rmsnorm(x, g2)\n    return x + swiglu_ffn(h2, Wg, Wu, Wd)\n\nrng = np.random.default_rng(23)\nB, S, d = 1, 4, 16\nx = rng.normal(size=(B, S, d))\nWq, Wk, Wv, Wo = (rng.normal(scale=0.05, size=(d, d)) for _ in range(4))\nd_ff = 64\nWg, Wu = rng.normal(scale=0.05, size=(d, d_ff)), rng.normal(scale=0.05, size=(d, d_ff))\nWd = rng.normal(scale=0.05, size=(d_ff, d))\ng1, g2 = np.ones(d), np.ones(d)\ny = block(x, Wq, Wk, Wv, Wo, Wg, Wu, Wd, g1, g2)\nassert y.shape == x.shape and np.isfinite(y).all()\n\n# 梯度健康实验：24 层栈的信号传播（标量链近似）\n# pre-LN：x_{l+1} = x_l + f(N(x_l))，雅可比 ≈ I + O(小) -> 范数保持\n# post-LN：x_{l+1} = N(x_l + f(x_l))，雅可比 ≈ (1/σ)·… -> 每层缩 <1\nL = 24\npre_gain = 1.0 + 0.02          # 恒等 + 小子层\npost_gain = 0.93               # 每层出口除 σ 的典型收缩\npre_norm = pre_gain ** L\npost_norm = post_gain ** L\nassert pre_norm > 1.0 > post_norm\nprint('Transformer Block OK; 24 层信号增益: pre=%.2f, post=%.4f'\n      % (pre_norm, post_norm))\nprint('→ pre-LN 梯度可直达底层（恒等高速路），post-LN 指数衰减')",
+     "python_alt": null,
+     "notes": "数值实验用「每层增益」的一维链近似把「pre-LN 更稳」变成可算的数字：pre 的恒等项让增益 >1（梯度可流动），post 的每层归一化让增益 <1（指数衰减→需要 warmup 起搏）。真实网络的雅可比更复杂，但一阶结论一致（Xiong 2020 定理 1）。"
+    },
+    "complexity": {
+     "time": "block O(S²·d + S·d·d_ff)",
+     "space": "O(S² + S·d_ff)",
+     "why": "注意力平方项 + FFN 扩展项是计算两大头（MoE 优化后者）。"
+    },
+    "keyPoints": [
+     "pre-LN：x + Attn(N(x))；post-LN：N(x + Attn(x))",
+     "pre-LN 恒等高速路 → 深栈稳定，post 需 warmup",
+     "FFN = gate ⊙ up 再 down；SwiGLU d_ff=8d/3",
+     "注意力路由信息，FFN 存储知识（容量账）",
+     "final LN 是 pre-LN 架构的标配补丁",
+     "现代清单：RMSNorm + SwiGLU + RoPE + GQA + 并行 block"
+    ],
+    "pitfalls": [
+     "pre/post 写混——最常见的答错点。",
+     "忘 final LN。",
+     "SwiGLU 忘 gate ⊙ up 的逐元素乘（写成相加）。",
+     "FFN 扩展倍数与参数量账算不清（4d vs 8d/3）。",
+     "因果掩码忘加（block 内 attention）。",
+     "残差没有保存 pre-norm 前的 x（写成了 x = Norm(x) + …）。"
+    ],
+    "edgeCases": [
+     "S=1：attention 退化为逐 token 变换。",
+     "层数加深：pre-LN 需 final LN 校准输出量级。",
+     "SwiGLU 的 d_ff 非整除：取 8d/3 向上取 256 的倍数（工程惯例）。",
+     "混合专家：FFN 换 MoE，block 结构不变。",
+     "fp16：Norm 内统计 fp32。"
+    ],
+    "interviewTips": "总装题的讲法是「决策链」：每个排布选择背后是梯度/容量/稳定性的哪个考量。数值化 pre/post 差异是本实现的高光——「更稳」三个字有了数字支撑。",
+    "variants": [
+     {
+      "name": "并行 block（GPT-J/PaLM 风格）",
+      "idea": "attention 与 FFN 共享同一份 Norm 与残差：x = x + Attn(N(x)) + FFN(N(x))——省一次 Norm 与串行延迟。",
+      "code": "import numpy as np\ndef parallel_block(x, f_attn, f_ffn, g):\n    h = x / np.sqrt((x*x).mean(-1, keepdims=True) + 1e-6) * g\n    return x + f_attn(h) + f_ffn(h)\nrng = np.random.default_rng(24)\nx = rng.normal(size=(1, 3, 8))\nfa = lambda h: h @ rng.normal(scale=.05, size=(8, 8))\nff = lambda h: h @ rng.normal(scale=.05, size=(8, 8))\ny = parallel_block(x, fa, ff, np.ones(8))\nassert y.shape == x.shape and np.isfinite(y).all()\nprint('并行 block OK（PaLM 风格）')\n",
+      "when": "追求推理延迟的模型（PaLM）；训练稳定性需额外调参。",
+      "cost": "少一次串行 Norm"
+     }
+    ],
+    "comparison": [
+     {
+      "cells": [
+       "排布",
+       "公式",
+       "梯度",
+       "warmup",
+       "代表"
+      ]
+     },
+     {
+      "cells": [
+       "post-LN",
+       "N(x+Attn(x))",
+       "每层缩放",
+       "必需",
+       "原始/BERT"
+      ]
+     },
+     {
+      "cells": [
+       "pre-LN",
+       "x+Attn(N(x))",
+       "恒等+增量",
+       "不需要",
+       "GPT/LLaMA"
+      ]
+     },
+     {
+      "cells": [
+       "并行 pre-LN",
+       "x+A(Nx)+F(Nx)",
+       "恒等+两增量",
+       "温和",
+       "GPT-J/PaLM"
+      ]
+     },
+     {
+      "cells": [
+       "DeepNorm",
+       "缩放残差 α·x",
+       "修正",
+       "不需要",
+       "超深栈实验"
+      ]
+     }
+    ],
+    "interviewScript": "「Block 是决策链的组装：pre-LN 把 Norm 放子层内，恒等通路让梯度直达底层——24 层栈的一维近似里 pre 增益保持 >1，post 每层 0.93 指数衰减，这就是 warmup 的来源。FFN 用 SwiGLU（gate⊙up→down），d_ff=8d/3 平衡参数量；注意力路由、FFN 存知识。最后 final LN 补 pre-LN 的输出规整。」"
+   }
+  }
+ }
+}

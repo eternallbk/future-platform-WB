@@ -1,0 +1,97 @@
+{
+ "id": "b06d216e7d58a20f",
+ "tldr": "上下文窗口由输入与输出 token 共同占用；Context Engineering 用检索、重排、压缩、滑动窗口与记忆来对抗信息稀释、Lost in the Middle 与上下文污染。",
+ "keyPoints": [
+  "输入与输出 token 共享同一个窗口预算",
+  "Context Engineering 管的是整个上下文，不等于 Prompt Engineering",
+  "长上下文三大问题：信息稀释、Lost in the Middle、上下文污染",
+  "工程手法：检索、筛选、排序、摘要压缩、滑动窗口",
+  "还包括外部记忆与工具结果清理"
+ ],
+ "why": "上下文管理是 LLM 应用与后训练共用的核心工程能力，长上下文与记忆机制是生成式、Agent 方向的面试高频考点。",
+ "difficulty": "medium",
+ "tags": ["llm", "context-engineering", "long-context", "prompt", "kv-cache", "retrieval"],
+ "entities": ["Context Engineering", "Prompt Engineering", "Lost in the Middle", "滑动窗口", "外部记忆", "KV Cache"],
+ "diagram": {
+  "kind": "architecture",
+  "title": "上下文组装流水线",
+  "caption": "记住这条流水线：先把资料取进来，再重排压缩，最后才组装进共享的窗口预算。",
+  "svg": "<svg viewBox='0 0 480 254' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='上下文组装流水线：任务与历史到检索筛选到排序压缩到组装上下文到生成与记忆回写'><rect x='56' y='16' width='368' height='34' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='38' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>任务与对话历史</text><text x='408' y='38' font-size='13' text-anchor='end' fill='currentColor'>用户输入 + 多轮消息</text><line x1='240' y1='50' x2='240' y2='58' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,64 236,56 244,56' fill='var(--line-1)'/><rect x='56' y='64' width='368' height='34' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='86' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>检索与筛选</text><text x='408' y='86' font-size='13' text-anchor='end' fill='currentColor'>从外部库取相关片段</text><line x1='240' y1='98' x2='240' y2='106' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,112 236,104 244,104' fill='var(--line-1)'/><rect x='56' y='112' width='368' height='34' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='134' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>排序与压缩</text><text x='408' y='134' font-size='13' text-anchor='end' fill='currentColor'>重排 / 摘要 / 去冗余</text><line x1='240' y1='146' x2='240' y2='154' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,160 236,152 244,152' fill='var(--line-1)'/><rect x='56' y='160' width='368' height='34' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='182' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>组装上下文</text><text x='408' y='182' font-size='13' text-anchor='end' fill='currentColor'>输入 + 输出共享窗口预算</text><line x1='240' y1='194' x2='240' y2='202' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,208 236,200 244,200' fill='var(--line-1)'/><rect x='56' y='208' width='368' height='34' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='230' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>生成与记忆回写</text><text x='408' y='230' font-size='13' text-anchor='end' fill='currentColor'>工具结果清理、写回记忆</text></svg>",
+  "alt": "五步流水线：任务与对话历史→检索与筛选→排序与压缩→组装上下文（输入输出共享窗口）→生成与记忆回写。"
+ },
+ "concepts": [
+  {
+   "name": "Context Engineering（上下文工程）",
+   "readable": "把『给模型的全部输入』当成需要精心设计的工程对象：检索什么、怎么排序、超长怎么压、跨轮怎么记、工具结果怎么清理。",
+   "analogy": "像给专家准备一份开庭简报：不是把全部卷宗搬过去，而是挑出关键证据、按重要性排序、把冗长材料做成摘要、把无关的废纸扔掉。",
+   "analogyBreaksDown": "简报对象是有限耐心的人，能翻页也能追问；而模型对序列中部信息利用最差，位置本身就是变量，同一份内容换顺序效果就变，这在简报类比里体现不出来。",
+   "mechanism": "对抗注意力的不均匀与稀释：检索管『读什么』、排序管『读的顺序』、压缩与滑动窗口管『留多少』、记忆管『跨轮留什么』，把有限窗口预算投向高价值信息，同时压低 KV 显存与延迟。",
+   "visual": "画一条横向窗口预算条：左侧是输入（系统提示、检索片段、工具结果），右侧预留输出；前面用检索-重排-压缩三个漏斗逐步缩小输入占比。",
+   "prerequisites": ["注意力机制", "KV Cache", "RAG 检索流程"],
+   "selfTest": ["输入和输出如何共享窗口？", "为什么排序会影响最终结果？", "检索与压缩分别解决什么问题？"],
+   "formula": "n_{in}+n_{out}\\le L"
+  },
+  {
+   "name": "Lost in the Middle（中间遗忘）",
+   "readable": "模型对长上下文里开头和结尾的信息利用较好，位于中间的信息容易被忽略，即使它同样重要。",
+   "analogy": "听一场很长的讲座：开头和结尾记得清楚，中间大段内容记不住，哪怕中间才是重点。",
+   "analogyBreaksDown": "人忘掉中间常因分心或疲劳，而模型的这种现象源于注意力分布与训练位置分布的固有偏差，靠『认真听』无法改善，只能靠重排把关键信息移到首尾。",
+   "mechanism": "与位置编码及训练时的位置分布有关；工程对策是把最关键的证据放在上下文开头或结尾，或用重排把高相关片段提前，减少对中部长文的依赖。",
+   "visual": "横轴为信息所在位置（开头→中间→结尾），纵轴为利用该信息的准确率，画一条 U 形曲线：两端高、中间凹。",
+   "prerequisites": ["注意力机制", "位置编码"],
+   "selfTest": ["为什么把关键信息放中间会掉分？", "有哪些缓解手段？", "它和上下文污染的区别是什么？"],
+   "formula": ""
+  }
+ ],
+ "formulas": [
+  {
+   "id": "f-context-window-budget",
+   "name": "上下文窗口预算（Context Window Budget）",
+   "category": "foundation",
+   "latex": "n_{in}+n_{out}\\le L",
+   "symbols": [["n_{in}", "输入 token 数（系统提示、历史、检索片段、工具结果之和）"], ["n_{out}", "本次生成占用的 token 数"], ["L", "模型的上下文窗口上限"]],
+   "derivation": ["第 1 步：模型一次前向能处理的 token 上限是 L。", "第 2 步：组装好的 prompt 占用 n_in 个 token。", "第 3 步：解码时每个新 token 追加到序列，占用 n_out 个 token。", "第 4 步：两者之和不能超过 L，否则必须截断、压缩或给输出预留预算。"],
+   "analogy": "一个固定大小的行李箱：说明书（输入）塞得越多，留给带回来的纪念品（输出）的空间就越少。",
+   "pitfalls": ["以为窗口只限制输入；输出与输入共用同一预算", "漏算系统提示与工具返回结果，它们都计入 n_in", "以为窗口越大就能等量利用；长窗口存在信息稀释与中部遗忘"],
+   "code": "def fits(n_in, n_out, L=128000):\n    return n_in + n_out <= L\nprint(fits(120000, 8000))   # True\nprint(fits(125000, 8000))   # False，需压缩或截断输入",
+   "sources": [{"title": "上下文窗口有多大？Context Engineering入门", "url": "https://notes.kamacoder.com/llm/app/context_engineering.html"}]
+  },
+  {
+   "id": "f-context-rope-interpolation",
+   "name": "位置插值的外推（Position Interpolation for RoPE）",
+   "category": "foundation",
+   "latex": "\\phi_{m,i}=\\frac{m}{s}\\,\\theta_{i},\\qquad \\theta_{i}=10000^{-2i/d}",
+   "symbols": [["m", "token 的位置索引"], ["i", "维度对索引"], ["d", "注意力头维度"], ["\\theta_{i}", "旋转位置编码的基频"], ["s", "外推缩放因子（新长度 / 训练长度）"]],
+   "derivation": ["第 1 步：RoPE 用位置 m 与基频 θ_i 的乘积作为旋转角度，位置越远角度越大。", "第 2 步：训练时见过的最大位置有限，直接外推到更长位置会超出训练分布，效果骤降。", "第 3 步：位置插值把位置除以缩放因子 s，把新长度整体『压』回训练区间。", "第 4 步：压缩后角度变小、分辨率变粗，通常需要少量继续训练来恢复短上下文能力。"],
+   "analogy": "把只在 3 米内校准过刻度的皮尺等比例拉伸到 6 米用：刻度对得上，但每格精度变粗了。",
+   "pitfalls": ["以为位置插值是零成本；通常需要继续微调才能恢复性能", "把位置插值与 NTK / YaRN 等其它外推方案混为一谈", "把『窗口 128K』当成所有位置都能同等有效利用"],
+   "code": "import torch\ndef scale_positions(pos, s):\n    # 位置插值：把位置除以缩放因子，压回训练区间\n    return pos / s\npos = torch.arange(0, 32768)\nprint(scale_positions(pos, s=4.0)[-1].item())  # 8191.0",
+   "sources": [{"title": "上下文窗口有多大？Context Engineering入门", "url": "https://notes.kamacoder.com/llm/app/context_engineering.html"}]
+  }
+ ],
+ "selfCheck": {
+  "claims": ["上下文窗口由输入与输出 token 共同占用", "Context Engineering 与 Prompt Engineering 是不同概念", "长上下文的典型问题包括信息稀释、Lost in the Middle、上下文污染", "工程方案包括检索、筛选、排序、摘要压缩、滑动窗口", "还包括外部记忆与工具结果清理"],
+  "uncertain": ["位置插值公式与 KV Cache 显存公式属通用背景知识，本知识页摘要未给出具体公式，需与原文核对", "摘要未给各手法的量化效果对比与推荐选型，实际取舍需实测", "『输入输出共同占用窗口』的具体分配建议（预留多少给输出）摘要未给"]
+ },
+ "teaching": {
+  "progressive": [
+   {"level": "一句话", "text": "把要给大模型看的内容挑好、排好、压好，这就是上下文工程。"},
+   {"level": "入门", "text": "上下文窗口是模型一次能看的 token 上限，输入和输出共用这个预算。窗口大不等于用得都好：关键信息放中间容易被忽略，无关内容会稀释注意力。Context Engineering 就是靠检索、筛选、排序、压缩与清理，把有限窗口花在最有用的信息上。"},
+   {"level": "进阶", "text": "它与 Prompt Engineering 的差别在于管的是『整个上下文』而非一句提示词：从外部检索候选片段、按相关性重排、超长时摘要压缩、多轮对话用滑动窗口或外部记忆、工具返回结果要清理后再放回。要解决的三类问题是信息稀释、Lost in the Middle 和上下文污染。"},
+   {"level": "专家", "text": "工程上要同时权衡有效长度、KV Cache 显存与成本：KV 缓存随序列长度线性增长（2·b·s·n_layer·n_head·d_head·bytes），塞满窗口很贵。更长的可用长度还要靠位置编码外推——如位置插值把位置除以缩放因子 s 压回训练区间，通常需少量微调。所以它是检索、记忆、压缩与显存预算的联合优化，不是单纯堆长度。"}
+  ],
+  "socratic": [
+   {"q": "如果直接把所有相关资料都塞进窗口会怎样？", "a": "信息稀释：无关内容摊薄注意力、淹没关键证据，还推高 KV 显存与延迟。"},
+   {"q": "既然窗口有 128K，为什么还要做检索？", "a": "能放下不等于能用好：Lost in the Middle 让中部信息易被忽略，且长上下文显存与成本线性上涨。"},
+   {"q": "上下文污染是怎么来的？", "a": "历史里保留的错误结论、失败的工具输出、过期的检索片段会一路带偏后续推理。"}
+  ],
+  "mechanism": "之所以需要它，是因为注意力既不免费也不均匀：窗口越大，单条信息分到的注意力越少（稀释），模型对序列中部信息的利用又最差（Lost in the Middle）。所以必须主动裁剪——检索决定『读什么』、排序决定『先读什么』、压缩与滑动窗口决定『留多少』、记忆决定『跨轮记住什么』，把预算投向高价值信息，同时压低 KV 显存与推理成本。",
+  "boundary": "任务只需短上下文、信息高度自洽时，过度工程反而增加延迟与出错面；检索质量差时，噪声会直接污染上下文，比不检索更糟。摘要压缩会丢细节，对需要精确数值或代码的任务要谨慎。位置外推能延长可用长度，但超出训练分布后精度仍会下降，不能无脑加长。",
+  "analogyBoundary": "『行李箱』类比在容量固定这点上成立，但行李箱装再多东西也不会互相干扰，而上下文里的条目会彼此竞争注意力、还会互相污染；超长上下文下模型对中部内容的利用明显变差，这在行李箱类比里完全体现不出来。",
+  "misconceptions": ["以为窗口越大越好；能放下不等于能用好，中部信息易被忽略。", "把 Context Engineering 等同于 Prompt Engineering；前者管整个上下文与记忆。", "以为塞满窗口零成本；KV 显存与延迟随长度线性增长。"],
+  "ownAnalysis": "把 Context Engineering 与 RAG、长上下文外推放在一起看，本质是同一约束下的三种解法：外扩窗口（位置外推）、精准取用（检索加重排）、主动遗忘（压缩、滑动窗口、记忆）（推断）。摘要特别强调『输入和输出共同占用窗口』，做 Agent 时要给输出留预算，否则容易被截断（推断）。可疑处：摘要未给各手法的效果对比，实际选型仍需实测；KV 显存与位置外推为通用背景，公式为教科书形式，需与原文核对。",
+  "officialNotes": [{"position": "上下文窗口由输入与输出 token 共同占用；Context Engineering 与 Prompt Engineering 不同，需应对信息稀释、Lost in the Middle、上下文污染，并给出检索、筛选、排序、摘要压缩、滑动窗口、外部记忆与工具结果清理等工程方案", "source": "https://notes.kamacoder.com/llm/app/context_engineering.html"}],
+  "interviewAnswer": "上下文窗口是模型一次能处理的 token 上限，输入和输出共用这个预算。窗口大不等于用得好：信息会稀释，模型对序列中部利用最差，也就是 Lost in the Middle，历史里的错误还会造成上下文污染。Context Engineering 是围绕整个上下文做工程：检索相关片段、按相关性重排、超长时摘要压缩、多轮用滑动窗口或外部记忆、工具结果清理后再放回。工程上还要权衡 KV Cache 显存和成本，必要时用位置编码外推延长可用长度。",
+  "studyPath": {"prerequisites": ["Transformer 注意力与位置编码", "KV Cache", "RAG 基本流程"], "nextSteps": ["实现一个带重排与压缩的上下文组装器", "对比不同截断与摘要策略的效果", "了解 RoPE 外推（位置插值、YaRN）"]}
+ }
+}

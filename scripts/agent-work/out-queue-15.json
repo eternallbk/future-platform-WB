@@ -1,0 +1,1154 @@
+{
+ "batchId": "queue-15",
+ "entries": [
+  {
+   "id": "89824e07d162c472",
+   "tldr": "回溯去重两种写法对照：每层用 set 跳过同层重复值，或用 used 数组区分树层与树枝，避免重复子集。",
+   "keyPoints": [
+    "同一节点下本层去重：每层新建 set 记录已用的分支值",
+    "used 数组版用 树枝 标记判断元素是否已在当前路径上",
+    "子集、组合、排列都套同一套去重模板",
+    "去重前必须先排序，让相同值相邻才能判重",
+    "set 写法更直观，used 写法更省内存但条件更绕"
+   ],
+   "why": "回溯去重是手撕题高频陷阱，面试常追问「树层与树枝的区别」；讲清 set 与 used 的取舍能直接加分。",
+   "difficulty": "medium",
+   "tags": [
+    "leetcode",
+    "backtracking",
+    "deduplication",
+    "algorithm",
+    "interview"
+   ],
+   "entities": [
+    "set",
+    "used 数组",
+    "回溯",
+    "子集",
+    "组合",
+    "排列"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "回溯去重四步",
+    "caption": "去重只发生在「同一层的兄弟分支」之间，一条路径向下的元素本来就不复用。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='回溯去重四步：排序、每层建 set、跳过同层重复值、沿路径递归收集'>\n<rect x='24' y='16' width='432' height='42' rx='8' fill='none' stroke='var(--accent)' stroke-width='1.4'/>\n<text x='40' y='42' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>① 先排序 nums.sort()</text>\n<text x='440' y='42' font-size='13' text-anchor='end' fill='currentColor'>相同值相邻，重复才可判</text>\n<line x1='240' y1='58' x2='240' y2='66' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,74 236,66 244,66' fill='var(--line-1)'/>\n<rect x='24' y='74' width='432' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='40' y='100' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>② 每层新建 used = set()</text>\n<text x='440' y='100' font-size='13' text-anchor='end' fill='currentColor'>只记录本层用作起点的值</text>\n<line x1='240' y1='116' x2='240' y2='124' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,132 236,124 244,124' fill='var(--line-1)'/>\n<rect x='24' y='132' width='432' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='40' y='158' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>③ 值已在 set 中 → continue</text>\n<text x='440' y='158' font-size='13' text-anchor='end' fill='currentColor'>树层去重：同层不重复取</text>\n<line x1='240' y1='174' x2='240' y2='182' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,190 236,182 244,182' fill='var(--line-1)'/>\n<rect x='24' y='190' width='432' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='40' y='216' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>④ 下探并收集 path</text>\n<text x='440' y='216' font-size='13' text-anchor='end' fill='currentColor'>树枝语义：元素不复用</text>\n</svg>",
+    "alt": "竖排四步：排序、每层新建 set、同层重复值跳过、沿路径递归收集，说明去重发生在同一层的兄弟分支之间。"
+   },
+   "concepts": [
+    {
+     "name": "树层去重 vs 树枝去重（Level vs Branch Deduplication）",
+     "readable": "把回溯的递归树分成横向和纵向：横向同一层的兄弟节点若值相同，会产生重复结果，要剪掉（树层去重）；纵向一条路径上元素本就不该复用，用标记控制（树枝去重）。",
+     "analogy": "点菜时一张桌子上「清蒸鱼」只点一次，这是同桌（同层）去重；而同一个人不能把同一道菜吃两遍，这是一条路径（树枝）去重。",
+     "analogyBreaksDown": "点菜类比里「菜」是固定的，回溯里是否剪枝取决于数组已排序且相同值相邻；没排序时同层重复值不相邻，类比就失效了。",
+     "mechanism": "排序把相同值聚在一起，使「本层已取过该值」可判定；每层用一个全新 set 记录本层已作为起点的值，命中即 continue，从而删掉值相同的兄弟分支，而 path 与递归顺序不受影响。",
+     "visual": "画一棵递归树：同一深度的节点用同一行横向排列并框住（标 树层），从根到叶的一条竖线加粗（标 树枝），重复值的兄弟节点打叉。",
+     "prerequisites": [
+      "递归与回溯模板",
+      "数组排序",
+      "集合（set）用法"
+     ],
+     "selfTest": [
+      "为什么去重前一定要先排序？",
+      "每层新建 set 和全局共用一个 set 有什么区别？",
+      "used 数组版里 used[i-1] 为 false 代表什么？"
+     ],
+     "formula": "\\mathrm{skip}(i) = \\left[\\, \\mathrm{nums}[i] = \\mathrm{nums}[i-1] \\,\\right]"
+    },
+    {
+     "name": "排序加本层集合去重（Sort + Level Set）",
+     "readable": "先把数组排序让相同的数挨在一起，再在每一层循环里开一个新 set，记录这一层已经用来作为分支起点的值，重复出现就直接跳过。",
+     "analogy": "把一摞扑克按点数排好，发牌时每种点数只发给第一个人一张；后面再摸到同点数的牌就跳过去，牌型组合就不会重样。",
+     "analogyBreaksDown": "发牌是一次性的，回溯会沿着每条分支反复进入新的一层，每层都要重新判重；类比没体现「每层一个新 set」这种随递归深度重建的结构。",
+     "mechanism": "把「本层是否已用过该值」这个状态局限在单层的作用域里，天然对应该层新增一个 set；这样既避免跨层误剪，又不需要像 used 数组那样维护下标与路径的对应关系。",
+     "visual": "画一行候选数组，同层循环的每个下标上方标一个小格子记录 set；某下标的值已在格子里时，用一个叉标出它被跳过。",
+     "prerequisites": [
+      "循环与递归",
+      "哈希集合",
+      "子集问题模板"
+     ],
+     "selfTest": [
+      "set 版和 used 数组版的结果为什么完全一致？",
+      "为什么 set 要写在递归函数内部而不是外部？",
+      "排列问题里 set 去重与组合问题里有什么不同？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-backtrack-level-dedup",
+     "name": "回溯树层去重条件（Level Deduplication）",
+     "category": "engineering",
+     "latex": "\\mathrm{skip}(i) = \\left[\\, i > \\mathrm{start} \\;\\wedge\\; \\mathrm{nums}[i] = \\mathrm{nums}[i-1] \\,\\right]",
+     "symbols": [
+      [
+       "i",
+       "当前层循环下标"
+      ],
+      [
+       "\\mathrm{start}",
+       "本层循环的起始下标（去重下界）"
+      ],
+      [
+       "\\mathrm{nums}",
+       "已升序排序的候选数组"
+      ],
+      [
+       "\\mathrm{skip}(i)",
+       "取 1 表示剪掉该分支，取 0 表示保留"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：为了产生所有不重复的子集/组合，先对 nums 升序排序，使相同值相邻",
+      "第 2 步：在同一层里，下标不同的两个相同值会产生一模一样的兄弟分支，必须去掉其中一个",
+      "第 3 步：因此当 i 大于本层起点 start 且 nums[i] 与前一个相等时，说明是重复值，剪掉",
+      "第 4 步：限定 i>start（而不是 i>0）是为了只在同一层剪枝，不误伤不同层的合法取值"
+     ],
+     "analogy": "同一桌点菜，同一种菜只点一次；判断依据是「它已经在前面被点过了」，而不是「这道菜今天出现两次」。",
+     "pitfalls": [
+      "把 i>start 写成 i>0，会连不同层的合法取值一起剪掉",
+      "忘记先排序，相同值不相邻，nums[i]=nums[i-1] 判断失效",
+      "把去重放在树枝上，导致本该允许的重复元素组合被全部删除"
+     ],
+     "code": "def backtrack(nums, start, path, res):\n    res.append(path[:])\n    for i in range(start, len(nums)):\n        if i > start and nums[i] == nums[i-1]:\n            continue  # 树层去重：同层跳过重复值\n        path.append(nums[i])\n        backtrack(nums, i + 1, path, res)\n        path.pop()",
+     "sources": [
+      {
+       "title": "回溯算法去重问题的另一种写法 · 题解",
+       "url": "https://programmercarl.com/algo/backtracking/alternative-backtracking-deduplication.html"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "摘要说明本条讲的是：回溯在子集、组合、排列问题中用 set 做同一节点下本层去重的实现",
+     "摘要说明本条会与 used 数组去重版本作对比",
+     "条目类型为题解，channel 为 programmercarl（代码随想录）"
+    ],
+    "uncertain": [
+     "本条为写法讲解（非单一 LeetCode 题），代表题由本层选定为「子集 II」；problem.number 因此留 null，未填 LeetCode 题号",
+     "摘要未给出 set 与 used 两版的具体代码细节，approach 与 complexities 依回溯去重通用写法重建（待核实原文措辞）",
+     "示例 nums=[1,2,2] 及其 6 个子集为自行构造，已用两版参考代码逐步验证"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "数组里有重复数时，回溯要主动跳过同层的重复选择，结果才不会重复。"
+     },
+     {
+      "level": "入门",
+      "text": "求子集、组合、排列时，如果原数组有重复元素，同一层里选了两个值相同的分支，会得到一模一样的答案。做法是先把数组排序，让相同值挨在一起，然后在每一层用一个 set 记住本层已经选过的值，再遇到相同值就跳过。"
+     },
+     {
+      "level": "进阶",
+      "text": "去重分两个方向：横向的「树层去重」处理同一层里的兄弟重复，纵向的「树枝去重」保证一条递归路径上不重复使用同一个元素。set 写法的思路是每层新建一个集合，只记录本层作为分支起点出现过的值；used 数组写法则用下标标记元素是否已在当前路径上，靠 nums[i]==nums[i-1] 且前一个未被使用来判断「这是本层的重复」。"
+     },
+     {
+      "level": "专家",
+      "text": "两种写法本质等价：set 把「本层已用的值」直接存下来，语义最直白但每层要额外 O(n) 空间；used 数组用布尔标记同时承担树枝判重，省内存但条件更难推——它依赖「若 nums[i-1] 与 nums[i] 相等且 nums[i-1] 未在路径上，则二者必是同层兄弟」这一性质，因此必须先排序。选择上：面试里先讲 set 版讲清语义，被追问空间再切 used 版；排列问题还要叠加上「同一位置不重复用」的 used 语义，比组合问题多一层约束。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "如果不排序直接去重会怎样？",
+      "a": "相同的值可能不相邻，nums[i]==nums[i-1] 判不出重复，同层重复分支去不掉，结果里就会出现重复子集。"
+     },
+     {
+      "q": "为什么 set 必须写在递归函数里面？",
+      "a": "set 表达的是「本层已用过的值」，作用域必须限定在单层；写在外面会跨层累积，把不同层的合法取值也误当成重复剪掉。"
+     }
+    ],
+    "mechanism": "关键设计是先把「重复」定义清楚：重复只来自同一层的兄弟分支产生相同结果，而不是路径上复用了元素。排序让相同值相邻，使这个判断可以在 O(1) 内完成；每层新建一个 set 则是把判重状态的作用域精确限制在单层，从而既不误剪跨层取值，也不需要维护下标与路径的复杂对应。",
+    "boundary": "这套去重依赖「先排序」。若题目要求保持原顺序、或候选集合不是数组而是图/字符串的字符集，直接照搬会出错。另外它只解决「结果重复」，不解决「同元素只能用一次」这类树枝约束，两者要分别处理。",
+    "analogyBoundary": "点菜类比没有体现排序这一步不可省：现实里「同一种菜」天然可识别，而数组里相同值若不相邻，程序无法判断它们是否同类；把类比当成「天生就能去重」会在没排序时踩坑。",
+    "misconceptions": [
+     "把去重判断写成 i>0，把不同层的合法取值也一起剪掉，结果变少",
+     "以为 set 写在递归外更省事，实际造成跨层误剪",
+     "把「树层去重」和「同元素不复用」混为一谈，只做了一半。"
+    ],
+    "ownAnalysis": "（推断）这条题解的价值不在某道题，而在把「去重」拆成横向与纵向两个正交问题，这与后面课程表（207）里「图论约束」是一个思路：先精确定义要排除的重复来源，再选最省的判重结构。set 与 used 之争其实是「可读性 vs 空间」的老取舍，面试里先答 set 讲语义、再答 used 讲优化，是更稳的表述顺序。",
+    "officialNotes": [
+     {
+      "position": "原文标题为「回溯算法去重问题的另一种写法」，主题是按同一节点下本层去重的 set 写法，并与 used 数组版对比",
+      "source": "https://programmercarl.com/algo/backtracking/alternative-backtracking-deduplication.html"
+     }
+    ],
+    "interviewAnswer": "我会先区分两个方向：横向同一层里值相同的兄弟分支要剪掉，这是树层去重；纵向一条路径上不重复使用同一元素，这是树枝去重。实现上，先排序让相同值相邻，然后在递归函数内部、每一层新建一个 set，记录本层已作为起点用过的值，命中就直接 continue。如果面试官追问空间，我会换成 used 数组，用 nums[i]==nums[i-1] 且前一个未被使用来判断这是同层重复。",
+    "studyPath": {
+     "prerequisites": [
+      "递归与回溯模板",
+      "排序",
+      "集合与数组标记"
+     ],
+     "nextSteps": [
+      "子集 II（LeetCode 90）",
+      "组合总和 II（LeetCode 40）",
+      "全排列 II（LeetCode 47）的树层去重"
+     ]
+    }
+   },
+   "problem": {
+    "title": "子集 II（树层去重 vs 树枝去重）",
+    "number": null,
+    "difficulty": "medium",
+    "statement": "给定一个可能包含重复元素的整数数组 nums，返回它的所有不重复子集（幂集）。解集不能包含重复的子集，子集之间的顺序与每个子集内部的顺序都不限。请用回溯实现，并说明其中哪些环节属于树层去重、哪些属于树枝去重。",
+    "examples": [
+     {
+      "input": "nums = [1,2,2]",
+      "output": "[[],[1],[1,2],[1,2,2],[2],[2,2]]",
+      "why": "含重复 2，去重后共 6 个子集而非 8 个"
+     },
+     {
+      "input": "nums = [0]",
+      "output": "[[],[0]]",
+      "why": "单元素只有空集与自身两种子集"
+     }
+    ],
+    "approach": {
+     "idea": "先把数组升序排序，让相同值相邻；递归每一层时新建一个 set 记录本层已作为分支起点用过的值，命中就跳过（树层去重）。递归下探时下标从 i+1 开始，保证一条路径上不复用同一元素（树枝语义）。",
+     "steps": [
+      "1. 对 nums 升序排序，使相同元素相邻",
+      "2. 定义回溯函数 backtrack(start)，进入时先把当前 path 的副本收进结果",
+      "3. 在每层循环前新建一个 used = set()",
+      "4. 循环 i 从 start 到末尾：若 nums[i] 已在 used 中则 continue，否则把 nums[i] 加入 used",
+      "5. 把 nums[i] 压入 path，递归 backtrack(i+1)，返回后弹出 path",
+      "6. 循环结束后返回结果集"
+     ],
+     "whyItWorks": "排序保证同层重复值相邻，set 精确记录「本层已用过的值」，因此值相同的兄弟分支只会保留一个，删掉的正是产生重复子集的那些分支；而递归下标取 i+1 保证路径上不复用元素，二者结合后每个不同子集恰好被收集一次。",
+     "alternatives": [
+      {
+       "name": "used 布尔数组版",
+       "complexity": "O(n·2^n) / O(n)",
+       "when": "想要省掉每层 set 的空间、或练习「树层 vs 树枝」条件推导时"
+      },
+      {
+       "name": "暴力枚举全部子集再用 set 对结果去重",
+       "complexity": "O(2^n·n) / O(2^n)",
+       "when": "只想快速写出可跑版本、数据规模很小时"
+      }
+     ]
+    },
+    "solution": {
+     "python": "def subsetsWithDup(nums):\n    nums.sort()\n    res, path = [], []\n\n    def backtrack(start):\n        res.append(path[:])          # 树上的每个节点都是一种子集\n        used = set()                 # 本层专属：记录本层已用作起点的值\n        for i in range(start, len(nums)):\n            if nums[i] in used:      # 树层去重：同层重复值跳过\n                continue\n            used.add(nums[i])\n            path.append(nums[i])\n            backtrack(i + 1)         # 树枝语义：下标往后推进，不复用元素\n            path.pop()\n\n    backtrack(0)\n    return res",
+     "python_alt": "def subsetsWithDup(nums):\n    nums.sort()\n    res, path = [], []\n    used = [False] * len(nums)       # 标记元素是否在当前路径（树枝）上\n\n    def backtrack(start):\n        res.append(path[:])\n        for i in range(start, len(nums)):\n            if i > 0 and nums[i] == nums[i - 1] and not used[i - 1]:\n                continue              # 树层去重：前一个相同值不在路径上\n            used[i] = True\n            path.append(nums[i])\n            backtrack(i + 1)\n            path.pop()\n            used[i] = False\n\n    backtrack(0)\n    return res",
+     "notes": "两版结果完全一致。set 版把「本层已用过的值」显式存下来，最直观；used 版用下标布尔标记同时承担树枝判重，省掉每层的 set 空间，但条件依赖数组已排序，写成 i>0 会误剪。切记 set 必须建在递归函数内部。"
+    },
+    "complexity": {
+     "time": "O(n * 2^n)",
+     "space": "O(n)",
+     "why": "去重后子集数上界为 2^n，每个子集复制 path 花 O(n)；递归栈与 path 深度为 O(n)（不计结果集本身）。"
+    },
+    "pitfalls": [
+     "忘记先排序，nums[i]==nums[i-1] 判不出重复，结果出现重复子集",
+     "把 set 建在递归函数外，造成跨层误剪，结果变少",
+     "used 数组版把条件写成 i>0，把不同层的合法取值也剪掉",
+     "收集结果时写成 res.append(path) 而非 path[:]，所有子集指向同一个列表"
+    ],
+    "edgeCases": [
+     "nums 为单个元素：结果只有空集与自身",
+     "nums 全部相同：去重后只有 n+1 个子集（长度 0 到 n 各一个）",
+     "nums 无重复：退化为普通求子集，共 2^n 个"
+    ],
+    "interviewTips": "先口头把「树层 vs 树枝」两点说清楚，再写 set 版，因为它的语义直接对应语言描述。写完主动提一句「这里必须排序」，并说明「set 要建在递归函数里面」。被追问空间就切到 used 数组版，边写边解释 nums[i]==nums[i-1] 且前一个未被使用这个条件为什么等价于同层重复。"
+   }
+  },
+  {
+   "id": "d5d810d0e17db7b0",
+   "tldr": "前缀和 + 哈希表一次遍历统计和为 k 的连续子数组个数，时间 O(n)；滑动窗口只在数组全非负时成立。",
+   "keyPoints": [
+    "统计连续非空子数组中和恰为 k 的个数",
+    "子数组和等于两个前缀和之差：pre[i] - pre[j] = k",
+    "哈希表记录每个前缀和出现次数，查 pre - k 即得个数",
+    "seen[0] = 1 覆盖从下标 0 开始的子数组",
+    "数组含负数时窗口和不单调，滑动窗口失效"
+   ],
+   "why": "「子数组和」类题的通用模板，大厂高频；前缀和 + 差值查表的思路可迁移到区间和、前缀计数等一大类题。",
+   "difficulty": "medium",
+   "tags": [
+    "leetcode",
+    "prefix-sum",
+    "hash-map",
+    "array",
+    "interview"
+   ],
+   "entities": [
+    "前缀和",
+    "哈希表",
+    "滑动窗口",
+    "子数组",
+    "pre",
+    "seen"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "前缀和 + 哈希计数四步",
+    "caption": "核心是 seen[0]=1：它代表空前缀，让「从头到 i」的子数组也能被数到。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='前缀和加哈希表统计和为 k 的子数组四步：初始化 seen 0 为 1、累加前缀和、查 pre 减 k、登记前缀和'>\n<rect x='24' y='16' width='432' height='42' rx='8' fill='none' stroke='var(--accent)' stroke-width='1.4'/>\n<text x='40' y='42' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>① 初始化 seen = {0: 1}</text>\n<text x='440' y='42' font-size='13' text-anchor='end' fill='currentColor'>空前缀，覆盖从头开始的子数组</text>\n<line x1='240' y1='58' x2='240' y2='66' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,74 236,66 244,66' fill='var(--line-1)'/>\n<rect x='24' y='74' width='432' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='40' y='100' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>② pre += nums[i]</text>\n<text x='440' y='100' font-size='13' text-anchor='end' fill='currentColor'>得到当前位置的前缀和</text>\n<line x1='240' y1='116' x2='240' y2='124' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,132 236,124 244,124' fill='var(--line-1)'/>\n<rect x='24' y='132' width='432' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='40' y='158' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>③ count += seen[pre - k]</text>\n<text x='440' y='158' font-size='13' text-anchor='end' fill='currentColor'>差值命中几个就加几个</text>\n<line x1='240' y1='174' x2='240' y2='182' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,190 236,182 244,182' fill='var(--line-1)'/>\n<rect x='24' y='190' width='432' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='40' y='216' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>④ seen[pre] += 1</text>\n<text x='440' y='216' font-size='13' text-anchor='end' fill='currentColor'>登记本次前缀和的次数</text>\n</svg>",
+    "alt": "竖排四步：初始化哈希表 seen 为 0 记 1、累加当前前缀和、累加 seen[pre-k]、把当前前缀和计数加一。"
+   },
+   "concepts": [
+    {
+     "name": "前缀和（Prefix Sum）",
+     "readable": "预先（或边遍历边）算出「从第一个元素到当前位置的累加和」，任一段连续子数组的和都能由两个前缀和相减得到，避免每次重新求和。",
+     "analogy": "跑步机上显示累计公里数：想知道第 3 公里到第 7 公里跑了多少，不必重跑，用第 7 公里读数减去第 3 公里读数即可。",
+     "analogyBreaksDown": "里程只能单调增加，而这里 nums 可以为负，前缀和会上下起伏。所以「总里程差」的直觉不能推出窗内和随右端点单调递增，滑动窗口那套就靠不住。",
+     "mechanism": "定义 pre[i] 为前 i 个元素之和，则子数组 nums[j..i-1] 的和恰为 pre[i]-pre[j]。把「求区间和」这一步压成一次减法，使得后续可以用哈希表查历史前缀和，把 O(n²) 枚举降到 O(n)。",
+     "visual": "画一条从 0 到 n 的前缀和折线，横轴是下标、纵轴是累加值；任意两点之间的纵向落差就是这两点之间子数组的和。",
+     "prerequisites": [
+      "数组遍历",
+      "哈希表基本操作"
+     ],
+     "selfTest": [
+      "pre[i] 与 pre[i-1] 的关系是什么？",
+      "为什么要在 seen 里预先放入 0 对应的计数 1？",
+      "子数组和为 k 等价于哪两个前缀和的关系？"
+     ],
+     "formula": "\\mathrm{pre}[i] = \\sum_{j=0}^{i-1} \\mathrm{nums}[j], \\quad \\mathrm{pre}[0] = 0"
+    },
+    {
+     "name": "差值查表（Difference Lookup）",
+     "readable": "把「找有多少个子数组和为 k」换成「对每个位置，历史上出现过多少次前缀和恰好等于当前前缀和减 k」，用哈希表 O(1) 回答。",
+     "analogy": "记账时想统计「最近收入多少」的次数，不去翻每一段，而是把每种累计余额出现过几次记在本子上；来一笔新账，只查「当前余额减目标」出现过几回。",
+     "analogyBreaksDown": "账本类比默认余额查询不重复计数；而这里必须严格控制「先查后登记」的顺序，否则 k=0 时会把当前这一笔也当成历史记录，凭空多算一个。",
+     "mechanism": "以右端点 i 为锚，所有以 i-1 结尾、和为 k 的子数组，其左端 j 必满足 pre[j]=pre[i]-k。遍历时此前所有 pre[j] 的计数已存入哈希表，查表即得个数；再登记当前 pre[i]，供后续位置使用。",
+     "visual": "画前缀和数组与一张哈希表并列：每次把当前 pre[i]-k 与表内键对齐，命中项的计数值累加进 count，然后把 pre[i] 写进表。",
+     "prerequisites": [
+      "前缀和",
+      "哈希表计数",
+      "遍历顺序"
+     ],
+     "selfTest": [
+      "为什么必须先 count += seen[pre-k]，再把 seen[pre] 加一？",
+      "k=0 时这个顺序写反会多算什么？",
+      "滑动窗口在含负数时为什么会漏解？"
+     ],
+     "formula": "\\mathrm{count} = \\sum_{i=1}^{n} \\mathrm{seen}[\\, \\mathrm{pre}[i] - k \\,]"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-prefix-sum-def",
+     "name": "前缀和定义（Prefix Sum）",
+     "category": "engineering",
+     "latex": "\\mathrm{pre}[i] = \\sum_{j=0}^{i-1} \\mathrm{nums}[j], \\quad \\mathrm{pre}[0] = 0",
+     "symbols": [
+      [
+       "\\mathrm{pre}[i]",
+       "前 i 个元素之和（第 i 个前缀和）"
+      ],
+      [
+       "\\mathrm{nums}[j]",
+       "下标 j 处的数组元素"
+      ],
+      [
+       "n",
+       "数组长度"
+      ],
+      [
+       "i",
+       "前缀和下标，取值 0 到 n"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：想快速求任意连续子数组的和，先定义「从头累加到某个位置」的辅助值",
+      "第 2 步：令 pre[0]=0 表示空区间，pre[i] 表示前 i 项之和",
+      "第 3 步：于是 pre[i] = pre[i-1] + nums[i-1]，可在线性遍历中递推得到",
+      "第 4 步：任意子数组 nums[j..i-1] 的和 = pre[i] - pre[j]，一次减法即得"
+     ],
+     "analogy": "跑步机累计里程：想知道第 3 到第 7 公里跑了多远，用终点读数减起点读数就行，不必重跑一遍。",
+     "pitfalls": [
+      "下标口径混乱（pre[i] 是前 i 项还是前 i+1 项），导致差一",
+      "忘记 pre[0]=0，无法表达从下标 0 开始的子数组",
+      "以为前缀和只适用于非负数组——它对任意整数都成立"
+     ],
+     "code": "def build_prefix(nums):\n    pre = [0] * (len(nums) + 1)\n    for i, x in enumerate(nums):\n        pre[i + 1] = pre[i] + x\n    return pre\n\n# 子数组 nums[j:i] 的和\n# pre[i] - pre[j]",
+     "sources": [
+      {
+       "title": "和为K的子数组（LeetCode 560）· 大厂高频手撕题",
+       "url": "https://leetcode.cn/problems/subarray-sum-equals-k"
+      }
+     ]
+    },
+    {
+     "id": "f-subarray-sum-count",
+     "name": "和为 k 的子数组计数（Count of Subarrays Summing to k）",
+     "category": "engineering",
+     "latex": "\\mathrm{count} = \\sum_{i=1}^{n} \\mathrm{seen}[\\, \\mathrm{pre}[i] - k \\,]",
+     "symbols": [
+      [
+       "\\mathrm{count}",
+       "和为 k 的子数组总数"
+      ],
+      [
+       "\\mathrm{pre}[i]",
+       "第 i 个前缀和"
+      ],
+      [
+       "k",
+       "目标和"
+      ],
+      [
+       "\\mathrm{seen}[v]",
+       "前缀和等于 v 的历史出现次数（哈希表）"
+      ],
+      [
+       "n",
+       "数组长度"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：子数组 nums[j..i-1] 的和为 k，即 pre[i] - pre[j] = k",
+      "第 2 步：整理得 pre[j] = pre[i] - k，即左端点的前缀和必须等于 pre[i]-k",
+      "第 3 步：固定右端点 i，这样的子数组个数就等于历史前缀和中等于 pre[i]-k 的出现次数",
+      "第 4 步：对所有右端点求和，即得 count；seen 初始置 {0:1} 以覆盖 j=0 的情形"
+     ],
+     "analogy": "账本记下每种累计余额出现过几回，来一笔新账时只查「当前余额减目标」出现过几次，就数清了多少段账目恰好达到目标。",
+     "pitfalls": [
+      "先 seen[pre] 加一再去查 pre-k，k=0 时会把当前项算进历史，多算一个",
+      "漏掉 seen[0]=1，导致所有从下标 0 开始的合法子数组全部丢失",
+      "把「子数组」当「子序列」，忽略连续性要求"
+     ],
+     "code": "from collections import defaultdict\n\ndef subarraySum(nums, k):\n    count = 0\n    pre = 0\n    seen = defaultdict(int)\n    seen[0] = 1\n    for x in nums:\n        pre += x\n        count += seen[pre - k]  # 先查历史\n        seen[pre] += 1          # 再登记当前\n    return count",
+     "sources": [
+      {
+       "title": "和为K的子数组（LeetCode 560）· 大厂高频手撕题",
+       "url": "https://leetcode.cn/problems/subarray-sum-equals-k"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "题面要求统计并返回数组中和为 k 的子数组的个数，子数组是连续非空序列",
+     "示例 1：nums=[1,1,1], k=2 输出 2；示例 2：nums=[1,2,3], k=3 输出 2",
+     "约束：1 <= nums.length <= 2*10^4，-1000 <= nums[i] <= 1000，-10^7 <= k <= 10^7"
+    ],
+    "uncertain": [
+     "推荐解法（前缀和 + 哈希表）与滑动窗口的对比为通用算法常识补充，源摘要未涉及（待核实非题目原文结论）",
+     "示例均为题目自带示例，已用参考代码逐一验证通过"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "数一数数组里有多少段连续的和正好等于 k，用前缀和加哈希表一遍扫完。"
+     },
+     {
+      "level": "入门",
+      "text": "连续子数组的和等于「右端前缀和减左端前缀和」。于是对每个位置，只要知道历史上出现过多少个前缀和等于「当前前缀和减 k」，就有多少段以它结尾、和为 k 的子数组。把这些历史前缀和的次数放进哈希表，就能 O(1) 查询，一遍遍历出答案。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键有两处：一是把「区间和」转成「前缀和之差」，把二重枚举降成一重；二是用哈希表存「每种前缀和出现过几次」，查询目标变成 pre-k 而不是 pre。还要记得初始化 seen={0:1}，否则从下标 0 开始的子数组全都数不到。整个解法时间 O(n)。"
+     },
+     {
+      "level": "专家",
+      "text": "同样能 O(n) 的滑动窗口在这里不成立，因为 nums 含负数：右端点右移时窗口和不再单调，收缩左端点的判断失去依据，会漏解或错解。这正是「子数组和 + 允许负数」必须用前缀和 + 哈希的分水岭。面试里还应指出遍历顺序：必须先用 pre-k 查表再登记 pre，否则 k=0 时会把当前项误当历史，多算。空间上用一个哈希表记前缀和频次，最坏 O(n)。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不能直接用滑动窗口？",
+      "a": "滑动窗口依赖「右移右端点，窗口和单调不减」这一性质来收缩左端点；数组含负数时窗口和上下波动，收缩条件失效，会漏掉合法子数组。"
+     },
+     {
+      "q": "seen[0]=1 到底代表什么？",
+      "a": "它代表「空前缀」的计数。当 pre[i] 本身等于 k 时，pre[i]-k=0，查到的这个 1 正好对应从下标 0 开始的子数组。"
+     }
+    ],
+    "mechanism": "必须这样设计，是因为「连续区间和」有两面：直接枚举是 O(n²)，而前缀和把它变成两个前缀值的差。只看差值就需要历史信息——不是「前缀和是多少」而是「某种前缀和出现过几次」。哈希表正好提供按值 O(1) 取计数，于是每步只做查表与登记，整体降到 O(n)。初始化 0 的计数是为了让「左端点在下标 0」也有对应的历史记录。",
+    "boundary": "前缀和 + 哈希对任意整数数组成立；滑动窗口版本只在 nums 全为非负时正确，遇到负数或题目要求长度/最值性质时会失效。若题目问的是「最长子数组」等带优化目标的问题，即使前缀和也对，往往还要额外维护首次出现位置，不能用计数直接解决。",
+    "analogyBoundary": "跑步机里程类比假定计数天然不重复，而本题必须严格「先查历史、再登记当前」；类比也没有体现前缀和会因负数而上下波动，正是这一点决定了滑动窗口不能用。",
+    "misconceptions": [
+     "用滑动窗口硬解含负数的用例，结果与答案不符",
+     "漏掉 seen[0]=1，把从下标 0 开始的所有子数组都数漏",
+     "先 seen[pre] 加一再去查 pre-k，k=0 时多算一个",
+     "把子数组理解成子序列，忽略连续性约束。"
+    ],
+    "ownAnalysis": "（推断）560 与前缀和模板题（如 LeetCode 303 前缀和查询、930 和相同的二元子数组）共用同一套「区间和转前缀差」的思维。它也是「一维前缀和 → 二维前缀和」的入口：二维版本里 pre[i][j] 换成矩形面积，差值查表换成四角容斥。把 560 吃透，二维矩阵的「和为某值」类题就有直接迁移路径。",
+    "officialNotes": [
+     {
+      "position": "题面要求统计并返回数组中和为 k 的连续非空子数组个数，并给出示例 nums=[1,1,1],k=2 输出 2 与 nums=[1,2,3],k=3 输出 2",
+      "source": "https://leetcode.cn/problems/subarray-sum-equals-k"
+     }
+    ],
+    "interviewAnswer": "我用前缀和加哈希表。子数组 nums[j..i-1] 的和等于 pre[i]-pre[j]，要求和为 k 就是 pre[j]=pre[i]-k。所以遍历时维护当前前缀和 pre 和一张哈希表 seen，seen[0] 先置 1；每到一个元素，pre 加上它，答案累加 seen[pre-k]，再把 seen[pre] 加一。时间 O(n)，空间 O(n)。如果面试官问能不能用滑动窗口，我会说只有在数组全非负时才成立，含负数时窗口和不单调，会漏解。",
+    "studyPath": {
+     "prerequisites": [
+      "数组与循环",
+      "哈希表",
+      "前缀和基本概念"
+     ],
+     "nextSteps": [
+      "前缀和查询（LeetCode 303）",
+      "和相同的二元子数组（LeetCode 930）",
+      "二维前缀和与矩阵区域和"
+     ]
+    }
+   },
+   "problem": {
+    "title": "和为 K 的子数组",
+    "number": 560,
+    "difficulty": "medium",
+    "statement": "给定一个整数数组 nums 和一个整数 k，统计并返回该数组中和为 k 的连续子数组的个数。子数组是数组中元素的连续非空序列。约束：1 <= nums.length <= 2*10^4，-1000 <= nums[i] <= 1000，-10^7 <= k <= 10^7。",
+    "examples": [
+     {
+      "input": "nums = [1,1,1], k = 2",
+      "output": "2",
+      "why": "两段长度为 2 的连续子数组和都是 2"
+     },
+     {
+      "input": "nums = [1,2,3], k = 3",
+      "output": "2",
+      "why": "[1,2] 与 [3] 两段和都为 3"
+     }
+    ],
+    "approach": {
+     "idea": "用前缀和把「子数组和」变成「两个前缀和之差」。固定右端点 i 时，左端点前缀和必须等于 pre[i]-k。遍历时用哈希表记录每种前缀和已出现的次数，查 pre-k 的次数即得以当前位置结尾的合法子数组数，累加即可。",
+     "steps": [
+      "1. 初始化 count=0、pre=0，哈希表 seen = {0: 1}",
+      "2. 遍历 nums 的每个元素 x：pre += x",
+      "3. count += seen.get(pre - k, 0)，先把当前前缀和「减 k」当作目标去查历史",
+      "4. seen[pre] += 1，把当前前缀和登记进哈希表，供后面的位置使用",
+      "5. 遍历结束返回 count"
+     ],
+     "whyItWorks": "设 pre[i] 为前 i 个元素之和，则子数组 nums[j..i-1] 的和为 pre[i]-pre[j]。它等于 k 当且仅当 pre[j]=pre[i]-k。遍历到 i 时，所有 j<i 的 pre[j] 都已登记在 seen 中，因此 seen[pre[i]-k] 正是以 i-1 结尾、和为 k 的子数组个数；对所有 i 求和即覆盖全部子数组且每个只数一次。",
+     "alternatives": [
+      {
+       "name": "滑动窗口（双指针）",
+       "complexity": "O(n) / O(1)",
+       "when": "仅当 nums 全为非负、窗口和单调时成立；含负数会漏解"
+      },
+      {
+       "name": "两重循环暴力枚举",
+       "complexity": "O(n^2) / O(1)",
+       "when": "n 很小或面试先要一个能跑的 baseline 时"
+      }
+     ]
+    },
+    "solution": {
+     "python": "from collections import defaultdict\n\ndef subarraySum(nums, k):\n    count = 0\n    pre = 0\n    seen = defaultdict(int)   # 前缀和 -> 出现次数\n    seen[0] = 1               # 空前缀，覆盖从下标 0 开始的子数组\n    for x in nums:\n        pre += x\n        count += seen[pre - k]   # 先查历史\n        seen[pre] += 1           # 再登记当前\n    return count",
+     "python_alt": "# 滑动窗口版：仅当 nums 全为非负数时正确（含负数会漏解）\ndef subarraySum_nonneg(nums, k):\n    count = 0\n    left = 0\n    window = 0\n    for right, x in enumerate(nums):\n        window += x\n        while window > k and left <= right:\n            window -= nums[left]\n            left += 1\n        if window == k:\n            count += 1\n    return count",
+     "notes": "主实现必须严守住「先查 pre-k、再登记 pre」的顺序：若先登记再查，k=0 时会把当前前缀和自己算进历史，多算一个。seen 初始置 {0:1} 不可省略，否则所有从下标 0 开始的合法子数组都会丢失。python_alt 展示滑动窗口写法，并注明仅适用于非负数组。"
+    },
+    "complexity": {
+     "time": "O(n)",
+     "space": "O(n)",
+     "why": "一次遍历，每步只做哈希表查询与写入（均摊 O(1)）；哈希表最坏存放 n+1 种不同前缀和。"
+    },
+    "pitfalls": [
+     "漏写 seen[0]=1，导致从下标 0 开始的子数组全部数不到",
+     "先 seen[pre] 加一再去查 pre-k，k=0 时多算一个",
+     "对含负数的用例改用滑动窗口，窗口收缩逻辑失效",
+     "把子数组误当子序列，忽略连续性要求"
+    ],
+    "edgeCases": [
+     "nums 只有一个元素：k 等于该元素时为 1，否则为 0",
+     "k = 0：需要 pre[i] = pre[j]，常见于前后缀和相等的场景",
+     "数组中含负数：前缀和非单调，必须用哈希方案而非滑动窗口"
+    ],
+    "interviewTips": "先给一句话思路「区间和转前缀差，差值查表」，再写代码。写完主动强调 seen[0]=1 与「先查后登记」这两个细节，这是最容易被追问的点。如果面试官提议用滑动窗口，先肯定它在非负数组下 O(1) 空间的优势，再指出本题允许负数、窗口和不单调，因此不能直接用。"
+   }
+  },
+  {
+   "id": "b6599b92013b6f4a",
+   "tldr": "用 Kahn 拓扑排序（BFS）判断课程依赖能否全部修完：入度为 0 入队、逐个出队并削减邻居入度，出队数等于课程数即无环。",
+   "keyPoints": [
+    "把先修关系建成有向图，边由先修课指向后继课",
+    "统计每门课的入度（还有多少门先修课没修）",
+    "入度为 0 的课入队，逐个出队",
+    "出队时把后继入度减 1，减到 0 就入队",
+    "最终出队数等于课程数则无环、能修完；否则存在环"
+   ],
+   "why": "拓扑排序是图论高频题，也是任务调度、构建依赖、编译顺序的通用模型；BFS 与 DFS 三色两条路线都值得掌握。",
+   "difficulty": "medium",
+   "tags": [
+    "leetcode",
+    "graph",
+    "topological-sort",
+    "bfs",
+    "interview"
+   ],
+   "entities": [
+    "拓扑排序",
+    "Kahn 算法",
+    "入度",
+    "BFS",
+    "DFS 三色",
+    "有向无环图"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "Kahn 算法四步",
+    "caption": "能否修完，等价于有向图是否存在拓扑序，也就是是否有环。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Kahn 拓扑排序四步：建图统计入度、入度为零入队、出队并削减邻居入度、比较出队数与课程数'>\n<rect x='24' y='16' width='432' height='42' rx='8' fill='none' stroke='var(--accent)' stroke-width='1.4'/>\n<text x='40' y='42' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>① 建图 + 统计入度</text>\n<text x='440' y='42' font-size='13' text-anchor='end' fill='currentColor'>先修课 b → 后继课 a</text>\n<line x1='240' y1='58' x2='240' y2='66' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,74 236,66 244,66' fill='var(--line-1)'/>\n<rect x='24' y='74' width='432' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='40' y='100' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>② 入度为 0 的课入队</text>\n<text x='440' y='100' font-size='13' text-anchor='end' fill='currentColor'>没有未满足的先修要求</text>\n<line x1='240' y1='116' x2='240' y2='124' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,132 236,124 244,124' fill='var(--line-1)'/>\n<rect x='24' y='132' width='432' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='40' y='158' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>③ 出队 done++，邻居入度 -1</text>\n<text x='440' y='158' font-size='13' text-anchor='end' fill='currentColor'>减到 0 就入队</text>\n<line x1='240' y1='174' x2='240' y2='182' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,190 236,182 244,182' fill='var(--line-1)'/>\n<rect x='24' y='190' width='432' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='40' y='216' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>④ done == numCourses ?</text>\n<text x='440' y='216' font-size='13' text-anchor='end' fill='currentColor'>相等可修完，否则有环</text>\n</svg>",
+    "alt": "竖排四步：建图并统计入度、入度为零入队、出队并削减邻居入度、比较出队数与课程总数得出是否能修完。"
+   },
+   "concepts": [
+    {
+     "name": "拓扑排序与入度（Topological Sort & Indegree）",
+     "readable": "把有依赖关系的有向图排成一个线性顺序，使每条边的方向都朝后；节点的入度就是有多少条边指向它，即还有多少个前置依赖没被处理。",
+     "analogy": "做菜流程：洗菜、切菜、下锅、装盘，每道工序只能等它前面的工序做完；入度为 0 的工序就是那些前置都已完成、可以马上开工的。",
+     "analogyBreaksDown": "做菜流程通常只有一条线（本身就是一个线性序），而图可以分叉、可以有多个入度为 0 的起点；更关键的是现实里很难出现「互相等待」的死循环工序，而图里一个环就足以让拓扑序不存在。",
+     "mechanism": "Kahn 算法每步只挑选入度为 0 的节点，等价于「当前所有前置依赖都已满足」；处理它时删掉它的出边，再看有没有新节点入度归零。如果存在环，环上节点入度永远不小于 1，永远不会被选到，于是出队节点数少于总数。",
+     "visual": "画一个有向图，节点旁标出入度数字，把入度为 0 的节点涂成强调色放进队列；每处理一个就擦掉它的出边，并刷新邻居的入度数字。",
+     "prerequisites": [
+      "图的邻接表表示",
+      "队列（BFS 模板）",
+      "入度概念"
+     ],
+     "selfTest": [
+      "为什么入度为 0 的节点一定可以立刻处理？",
+      "有环时 Kahn 算法会在哪里停下来？",
+      "如果图不连通，怎么保证所有节点都被访问到？"
+     ],
+     "formula": "\\mathrm{indeg}(v) = \\left|\\{\\, u : (u, v) \\in E \\,\\}\\right|"
+    },
+    {
+     "name": "DFS 三色标记（Three-Color DFS）",
+     "readable": "用三种颜色记录节点状态：白色表示还没访问，灰色表示正在当前递归路径上，黑色表示已经安全访问完。遍历时若又碰到灰色节点，就说明找到了一个环。",
+     "analogy": "走迷宫时用三种标记：没走的、正在走的这条路上的、以及确认走不通的死胡同；如果走着走着踩回「正在走」的脚印，就说明绕成了一个圈。",
+     "analogyBreaksDown": "迷宫类比里「死胡同」是空间概念，而这里黑色节点不一定走不通，它只是被证明不在任何环上；同一节点从不同起点再访问时要靠颜色直接返回，类比体现不出这种记忆化。",
+     "mechanism": "递归进入节点时把白色染成灰色，递归返回时染成黑色。若在递归中途遇到一个灰色节点，说明当前正在走的路径回到了自己，构成环；遇到黑色节点说明该子树已确认无环，直接返回 true，避免重复计算。",
+     "visual": "在同一张有向图上，用三种颜色标注节点：白色为未访问、灰色为递归栈中、黑色为已完成；用一条加粗箭头标出指向灰色节点的那条「回边」。",
+     "prerequisites": [
+      "递归",
+      "图的邻接表表示",
+      "有向图的环"
+     ],
+     "selfTest": [
+      "灰色节点代表什么？",
+      "遇到黑色节点为什么可以直接返回？",
+      "为什么无向图判环只需记录父节点，而这里需要三色？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-topological-indegree",
+     "name": "入度定义（Indegree）",
+     "category": "engineering",
+     "latex": "\\mathrm{indeg}(v) = \\left|\\{\\, u : (u, v) \\in E \\,\\}\\right|",
+     "symbols": [
+      [
+       "\\mathrm{indeg}(v)",
+       "节点 v 的入度"
+      ],
+      [
+       "E",
+       "有向图的边集"
+      ],
+      [
+       "(u, v)",
+       "从 u 指向 v 的一条有向边"
+      ],
+      [
+       "|\\cdot|",
+       "集合的元素个数"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：把课程依赖建成有向图，先修课 b 到后继课 a 连一条边 b 指向 a",
+      "第 2 步：节点 v 的入度定义为指向它的边数，也就是「还差几门先修课没修」",
+      "第 3 步：因此入度为 0 的节点没有任何未满足的依赖，可以立刻处理",
+      "第 4 步：处理 v 时删除它出发的所有边，等价于把每个后继的入度减 1"
+     ],
+     "analogy": "工序前置清单：某道工序的入度就是还剩几件前置材料没到；归零了就说明材料齐了，可以开工。",
+     "pitfalls": [
+      "边的方向建反（把 a→b 写成 b→a），入度统计与出队顺序全错",
+      "统计入度时只覆盖出现过的节点，漏掉没有依赖的孤立课程",
+      "对有重复边的输入不去重，入度偏大（本题保证边互异，但工程实现要留意）"
+     ],
+     "code": "from collections import defaultdict\n\ndef build_graph(numCourses, prerequisites):\n    graph = defaultdict(list)\n    indeg = [0] * numCourses\n    for a, b in prerequisites:   # 先修 b -> 后继 a\n        graph[b].append(a)\n        indeg[a] += 1\n    return graph, indeg",
+     "sources": [
+      {
+       "title": "207. 课程表：拓扑排序（BFS） · 题解",
+       "url": "https://programmercarl.com/algo/other/0207-course-schedule.html"
+      }
+     ]
+    },
+    {
+     "id": "f-topological-done-count",
+     "name": "拓扑序存在判据（Acyclic iff Done Equals V）",
+     "category": "engineering",
+     "latex": "\\mathrm{done} = |V| \\;\\Longrightarrow\\; \\mathrm{canFinish} = \\mathrm{true}",
+     "symbols": [
+      [
+       "\\mathrm{done}",
+       "Kahn 算法中成功出队的节点数"
+      ],
+      [
+       "|V|",
+       "图的节点总数（课程总数）"
+      ],
+      [
+       "\\mathrm{canFinish}",
+       "最终返回结果"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：每次取出一个入度为 0 的节点，说明它的全部前置依赖都已满足",
+      "第 2 步：若图中无环，反复取入度 0 节点必然能覆盖全部 |V| 个节点",
+      "第 3 步：若图中有环，环上每个节点的入度始终不小于 1，永远不会入队",
+      "第 4 步：因此出队数 done 严格小于 |V|；反之 done=|V| 即代表无环、可以完成"
+     ],
+     "analogy": "点名：如果所有人都能按顺序点到，说明排队规则没有死锁；只要有一小圈人互相等着谁也不肯先动，点名册上就会永远缺他们几个。",
+     "pitfalls": [
+      "只看队列是否为空，不比较 done 与 |V|，在图不连通时误判为无环",
+      "把 done 与入度为 0 的初始个数混为一谈",
+      "提前返回 true 而没跑完整个 BFS"
+     ],
+     "code": "from collections import deque\n\ndef canFinish(numCourses, prerequisites):\n    graph, indeg = build_graph(numCourses, prerequisites)\n    q = deque(i for i in range(numCourses) if indeg[i] == 0)\n    done = 0\n    while q:\n        u = q.popleft()\n        done += 1\n        for v in graph[u]:\n            indeg[v] -= 1\n            if indeg[v] == 0:\n                q.append(v)\n    return done == numCourses",
+     "sources": [
+      {
+       "title": "207. 课程表：拓扑排序（BFS） · 题解",
+       "url": "https://programmercarl.com/algo/other/0207-course-schedule.html"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "摘要说明本条用拓扑排序的广度优先搜索（BFS）方法解决力扣 207 题课程表",
+     "摘要说明目标是实现有向无环图的线性排序",
+     "题干为课程先修关系，判断能否完成所有课程"
+    ],
+    "uncertain": [
+     "DFS 三色方案与 BFS 的对比为通用算法常识补充，源摘要只提到 BFS 一种方法（待核实原文是否给出 DFS 版）",
+     "示例为 LeetCode 207 的经典示例，已用参考代码逐一验证通过"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "判断这些课程能不能按先修顺序全部修完，等价的问法是依赖图里有没有环。"
+     },
+     {
+      "level": "入门",
+      "text": "把每门先修关系当成一条箭头：先修课指向后继课。每门课记一个入度，表示还差几门先修课。入度为 0 的课可以马上修，修完就把它指向的课入度各减 1，减到 0 的又变成可修。这样一路修下去，如果所有课都修完就返回 true，否则说明剩下的课互相锁死成一个环。"
+     },
+     {
+      "level": "进阶",
+      "text": "这就是 Kahn 算法：用队列装所有入度为 0 的节点，逐个出队并递减后继入度。判断的核心不是「队列空没空」，而是「出队的课程数是否等于课程总数」——因为图可能不连通，有些课本来就没有依赖，必须保证它们也被处理到。复杂度是 O(V+E)，每条边恰好被看一次。"
+     },
+     {
+      "level": "专家",
+      "text": "同一题有两条路：BFS 版用一个队列加出队计数，额外需要存整张图的入度数组；DFS 三色版用白色/灰色/黑色标记递归状态，遇到灰色即发现后向边、说明有环。BFS 更直观、天然给出一个拓扑序，DFS 更省内存、适合要顺带做其它后序操作的场景。两者都是 O(V+E)。面试里建议先讲清「拓扑序存在等价于无环」，再按面试官偏好选一条实现。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么入度为 0 的课一定能立刻修？",
+      "a": "入度是「还有几门先修课没修」，为 0 表示所有前置依赖都已满足，没有任何阻碍，所以在任何合法顺序里它都可以排在最前面。"
+     },
+     {
+      "q": "有环时算法会卡在哪里？",
+      "a": "环上的课互相是对方的先修，任何一门的入度都永远不小于 1，永远进不了队列；BFS 把无环部分处理完就停了，出队数小于课程总数。"
+     }
+    ],
+    "mechanism": "必须用「入度」而不是别的指标，是因为它恰好刻画了「当前是否可执行」：入度为 0 就是无未满足依赖。每处理一个节点就删掉它的出边，这是唯一会改变其它节点入度的操作，于是整个算法就是把「可执行集合」的更新用队列维护起来，每条边只参与一次推导，天然 O(V+E)。",
+    "boundary": "拓扑排序只对有向图有意义，且只有当图无环（DAG）时拓扑序才存在；无向图或含环的有向图都不能直接用。若题目只要判断是否存在而不是真的排出顺序，仍可用同一套计数；但若要字典序最小的拓扑序，就得把队列换成优先队列。",
+    "analogyBoundary": "做菜流程类比是一条链，天然只有一个下一步；真实依赖图可以分叉、有多个入度为 0 的起点。更重要的是现实里几乎不会出现「互相等待」的环形工序，而本题的关键恰恰在于识别这种环，类比不足以传达「环导致永不入队」这一机制。",
+    "misconceptions": [
+     "边方向建反，把「先修→后继」建成了「后继→先修」",
+     "只看队列是否为空就返回，忽略图不连通导致漏判",
+     "只统计出现在 prerequisites 里的课程，漏掉无依赖的孤立课程",
+     "把拓扑排序当成「排序算法」，误以为时间复杂度与其元素比较有关。"
+    ],
+    "ownAnalysis": "（推断）207 是「依赖图可执行性」的最小模型，构建系统（如 make、Bazel）判断编译顺序、任务调度器判断能否排期，都是同一个 Kahn 算法。它也和本批次 01 的回溯去重重构出同一类思维：先精确定义「要排除的结构」（重复分支 / 环），再选最省的判定方式（set / 入度计数）。把 207 吃透，210 课程表 II（要求返回顺序）与 269 火星词典（拓扑排序 + 建图）可直接迁移。",
+    "officialNotes": [
+     {
+      "position": "原文介绍使用拓扑排序的广度优先搜索（BFS）方法解决力扣 207 课程表，实现有向无环图的线性排序",
+      "source": "https://programmercarl.com/algo/other/0207-course-schedule.html"
+     }
+    ],
+    "interviewAnswer": "我把先修关系建成有向图，边由先修课指向后继课，并统计每门课的入度。先把所有入度为 0 的课入队，然后逐个出队，出队一次就把它的后继课入度减 1，减到 0 就继续入队，同时统计出队的课程数。最后看出队数是否等于课程总数：相等说明无环、可以修完，否则说明存在互相依赖的环。时间 O(V+E)，空间 O(V+E)。如果面试官想看另一条路线，我会补上 DFS 三色版，遇到灰色节点即判环。",
+    "studyPath": {
+     "prerequisites": [
+      "图的邻接表",
+      "BFS 与队列",
+      "入度概念"
+     ],
+     "nextSteps": [
+      "课程表 II（LeetCode 210）返回拓扑序",
+      "DFS 三色判环",
+      "字典序最小拓扑序（优先队列版）"
+     ]
+    }
+   },
+   "problem": {
+    "title": "课程表",
+    "number": 207,
+    "difficulty": "medium",
+    "statement": "你这个学期必须选修 numCourses 门课程，记为 0 到 numCourses-1。在选修某些课程之前需要先修课程：先修关系由数组 prerequisites 给出，其中 prerequisites[i]=[a, b] 表示若要选修课程 a，则必须先选修课程 b。请判断是否可能完成所有课程的学习，可以则返回 true，否则返回 false。",
+    "examples": [
+     {
+      "input": "numCourses = 2, prerequisites = [[1,0]]",
+      "output": "true",
+      "why": "先修 0 再修 1，顺序存在"
+     },
+     {
+      "input": "numCourses = 2, prerequisites = [[1,0],[0,1]]",
+      "output": "false",
+      "why": "两门课互为先修，形成环"
+     }
+    ],
+    "approach": {
+     "idea": "把课程依赖建成有向图（先修课指向后继课），统计每门课的入度。用队列装所有入度为 0 的课，逐个出队并把后继入度减 1，减到 0 就继续入队。若最终出队课程数等于 numCourses，说明无环、能修完；否则存在环。",
+     "steps": [
+      "1. 建立邻接表 graph 与入度数组 indeg，遍历 prerequisites 时把 b→a 加入 graph 并让 indeg[a]+=1",
+      "2. 把所有 indeg 为 0 的课程（含无依赖的孤立课程）放入队列",
+      "3. 循环出队：每出队一门课 done 加一",
+      "4. 对该课的每个后继 v：indeg[v] 减 1，若减到 0 则把 v 入队",
+      "5. 返回 done == numCourses"
+     ],
+     "whyItWorks": "入度为 0 表示该课没有任何未满足的先修要求，可以立刻修。修完一门课后删除它出发的所有边，即后继入度各减 1；当某后继入度归零，说明其全部先修都已完成。若图中存在环，环上课程互为先修，入度永远不小于 1，永远不会入队，于是出队数严格小于课程总数，判为 false。",
+     "alternatives": [
+      {
+       "name": "DFS 三色标记",
+       "complexity": "O(V+E) / O(V)",
+       "when": "想省掉入度数组、或需要顺带做后序处理时；遇到灰色节点即判环"
+      },
+      {
+       "name": "反复扫描入度为 0 的节点（不做队列优化）",
+       "complexity": "O(V^2+E) / O(V)",
+       "when": "课程数很小、只想快速写一个直观版本时"
+      }
+     ]
+    },
+    "solution": {
+     "python": "from collections import deque, defaultdict\n\ndef canFinish(numCourses, prerequisites):\n    graph = defaultdict(list)\n    indeg = [0] * numCourses\n    for a, b in prerequisites:      # 先修 b -> 后继 a\n        graph[b].append(a)\n        indeg[a] += 1\n\n    q = deque(i for i in range(numCourses) if indeg[i] == 0)\n    done = 0\n    while q:\n        u = q.popleft()\n        done += 1\n        for v in graph[u]:\n            indeg[v] -= 1\n            if indeg[v] == 0:\n                q.append(v)\n    return done == numCourses",
+     "python_alt": "from collections import defaultdict\n\ndef canFinish_dfs(numCourses, prerequisites):\n    graph = defaultdict(list)\n    for a, b in prerequisites:\n        graph[b].append(a)\n\n    color = [0] * numCourses   # 0 白：未访问, 1 灰：递归栈中, 2 黑：已完成\n\n    def dfs(u):\n        if color[u] == 1:\n            return False       # 遇到灰色节点 => 有环\n        if color[u] == 2:\n            return True        # 已完成，直接复用结论\n        color[u] = 1\n        for v in graph[u]:\n            if not dfs(v):\n                return False\n        color[u] = 2\n        return True\n\n    return all(dfs(i) for i in range(numCourses))",
+     "notes": "BFS 版务必用「出队计数 done」是否等于 numCourses 来判断，而不是「队列是否为空」——图不连通时无依赖的孤立课程也必须被访问到。建边方向 a、b 的语义（prerequisites[i]=[a,b] 表示先修 b 再修 a）是最容易搞反的地方。"
+    },
+    "complexity": {
+     "time": "O(V + E)",
+     "space": "O(V + E)",
+     "why": "每个节点入队出队一次、每条边被检查一次；空间存邻接表与入度数组，最坏 O(V+E)。"
+    },
+    "pitfalls": [
+     "边的方向建反，把「先修→后继」写成「后继→先修」，入度统计全错",
+     "只用「队列为空」判断而不比较出队计数，图不连通时误判",
+     "初始化队列时只收集 prerequisites 里出现过的课，漏掉无依赖的孤立课程",
+     "重复边导致入度偏大，使本可入队的节点一直不为 0"
+    ],
+    "edgeCases": [
+     "prerequisites 为空：没有依赖，直接返回 true",
+     "numCourses = 1：单门课无依赖，返回 true",
+     "存在两门及以上互相依赖形成的环：返回 false",
+     "依赖图不连通：所有连通分量都要被遍历到，靠出队计数才能不漏判"
+    ],
+    "interviewTips": "先一句话点明「判断能否修完等价于判断依赖图是否有环」，再写 Kahn 算法。写完强调两个细节：一是入度数组要按 numCourses 初始化以覆盖孤立课程，二是用出队计数而非队列空否来判定。面试官若质疑，可切到 DFS 三色版说明「遇到灰色节点即有环」，两条路线交替讲通常能加分。"
+   }
+  },
+  {
+   "id": "a4c8cc97dd754931",
+   "tldr": "Zig 编写的本地 LLM 推理引擎，面向 Metal、CUDA 与 Vulkan 三种后端直接跑模型权重。",
+   "keyPoints": [
+    "一句话定位：面向 Metal / CUDA / Vulkan 的 LLM 推理引擎",
+    "主语言为 Zig（仓库标签含 Zig）",
+    "由 ashhart 开源在 GitHub，仓库名 TensorFold",
+    "定位是「推理引擎」而非训练框架，服务于本地部署",
+    "多后端意味着同一引擎要为三种硬件分别准备内核"
+   ],
+   "why": "对推理基础设施方向求职者，读懂一个多后端推理引擎的模块划分（权重→内核→服务接口）比记单个算子更有迁移价值。",
+   "difficulty": "hard",
+   "tags": [
+    "llm",
+    "inference-engine",
+    "zig",
+    "metal",
+    "cuda",
+    "vulkan"
+   ],
+   "entities": [
+    "TensorFold",
+    "Zig",
+    "Metal",
+    "CUDA",
+    "Vulkan",
+    "ashhart"
+   ],
+   "diagram": {
+    "kind": "architecture",
+    "title": "TensorFold 分层结构",
+    "caption": "记住这条主线：启动服务 → 读权重 → 选后端内核 → 逐 token 输出。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='TensorFold 分层：启动命令行读模型目录、加载 checkpoint 权重、按硬件选择 Metal CUDA Vulkan 内核、经 HTTP 接口逐 token 输出'>\n<rect x='24' y='16' width='432' height='42' rx='8' fill='none' stroke='var(--accent)' stroke-width='1.4'/>\n<text x='40' y='42' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>① 启动 tensorfold serve</text>\n<text x='440' y='42' font-size='13' text-anchor='end' fill='currentColor'>指定模型目录或缓存</text>\n<line x1='240' y1='58' x2='240' y2='66' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,74 236,66 244,66' fill='var(--line-1)'/>\n<rect x='24' y='74' width='432' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='40' y='100' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>② 读取 checkpoint</text>\n<text x='440' y='100' font-size='13' text-anchor='end' fill='currentColor'>加载量化权重并打包</text>\n<line x1='240' y1='116' x2='240' y2='124' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,132 236,124 244,124' fill='var(--line-1)'/>\n<rect x='24' y='132' width='432' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='40' y='158' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>③ 后端内核三选一</text>\n<text x='440' y='158' font-size='13' text-anchor='end' fill='currentColor'>Metal / CUDA / Vulkan</text>\n<line x1='240' y1='174' x2='240' y2='182' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,190 236,182 244,182' fill='var(--line-1)'/>\n<rect x='24' y='190' width='432' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='40' y='216' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>④ 逐 token 输出</text>\n<text x='440' y='216' font-size='13' text-anchor='end' fill='currentColor'>经 HTTP 推理接口返回</text>\n</svg>",
+    "alt": "四层架构：启动命令行、读取 checkpoint 权重、按硬件选择 Metal/CUDA/Vulkan 内核、经 HTTP 接口逐 token 输出结果。"
+   },
+   "concepts": [
+    {
+     "name": "多后端推理引擎（Multi-Backend Inference Engine）",
+     "readable": "同一套推理引擎，为 Metal、CUDA、Vulkan 三种硬件各写一套计算内核；上层的模型加载、请求调度与采样逻辑共用，只有算子层按硬件分叉。",
+     "analogy": "同一份菜谱分别配电磁炉、燃气灶、柴火灶：食材和步骤不变，只是加热方式换一个，炉子不同就换对应的火控。",
+     "analogyBreaksDown": "换炉子只需改火候，而换 GPU 后端要改内存层级、线程模型与同步方式，内核往往必须重写并重新调优；把「后端」当成可无痛替换的插件会严重低估工作量。",
+     "mechanism": "把「加载权重 → 组装计算图 → 逐 token 前向 → 采样」做成后端无关的公共管线，仅把张量算子抽象成后端接口。这样新增一种硬件的成本集中在内核实现，而不是整条链路。",
+     "visual": "从顶层读起：先读 README / 部署说明搞清怎么起一个服务，再进 zig/ 目录找原生引擎与后端内核，最后看 tools/ 与打包脚本如何产出可执行文件。数据流：模型目录 → 权重加载与打包 → 逐 token 前向 → 采样 → HTTP 响应。",
+     "prerequisites": [
+      "CUDA 或 Metal 编程基础",
+      "LLM 推理流程（prefill / decode）",
+      "Zig 或 C 的系统编程阅读能力"
+     ],
+     "selfTest": [
+      "为什么不同后端不能共用同一套内核？",
+      "推理引擎里哪一层最适合抽象复用、哪一层必须按硬件分叉？",
+      "多后端引擎的测试为什么比单后端更难？"
+     ],
+     "formula": ""
+    },
+    {
+     "name": "投机解码（Speculative Decoding）",
+     "readable": "用一个小而快的草稿模型先猜出后续若干个 token，再让目标大模型一次前向并行验证这些猜测，猜对的就整段接受，从而把多步解码压缩成一两步。",
+     "analogy": "秘书先按格式把几句话说好，老板只过目、改掉不对的部分，比老板从空白开始逐字写要快得多。",
+     "analogyBreaksDown": "草稿若整段被推翻，反而比老板自己写更慢；能否提速高度依赖草稿与目标分布是否接近，重复性强的文本（代码、模板）收益大，开放式创作收益小。",
+     "mechanism": "草稿模型按采样规则生成若干个候选 token，目标模型一次前向同时算出这些位置的分布并逐位校验；接受则保留、拒绝则回退重新采样。理论上可保持与目标模型逐 token 解码一致的输出分布，只是改变了计算的组织方式。",
+     "visual": "先读仓库里关于「精确解码」的说明，再看引擎中草稿与验证两条路径。数据流：prompt → 草稿模型生成候选 → 目标模型一次前向验证 → 接受或回退 → 输出 token。",
+     "prerequisites": [
+      "自回归解码",
+      "top-k / top-p 采样",
+      "KV cache 原理"
+     ],
+     "selfTest": [
+      "投机解码为什么能在理论上不改变输出分布？",
+      "草稿长度是不是越长越好？",
+      "什么负载下投机解码会得不偿失？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [],
+   "selfCheck": {
+    "claims": [
+     "条目标题为 ashhart/TensorFold - LLM Inference Engine for Metal, CUDA and Vulkan",
+     "输入摘要为「LLM Inference Engine for Metal, CUDA and Vulkan.」",
+     "仓库标签包含 Zig、llm、llm-inference、llm-tools、ai、ai-tools"
+    ],
+    "uncertain": [
+     "输入摘要仅一句话，无模块/文件信息；concepts 与 teaching 中的结构细节来自仓库公开页面（WebFetch 读取）与检索结果，核心文件与入口路径待核实",
+     "「逐字节精确的投机解码」「不依赖 Python 运行时」「OpenAI 兼容接口与本地端口」等说法来自仓库 README 与第三方评测，未在输入摘要中确认，待核实",
+     "仓库主语言标签为 Zig，但仓库可能同时存在历史 Python 实现分支，具体以原仓库当前状态为准（待核实）"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "一个用 Zig 写的本地大模型推理引擎，能在苹果芯片和英伟达显卡上跑模型。"
+     },
+     {
+      "level": "入门",
+      "text": "它负责把训练好的大模型权重读进来，在本地硬件上高速生成文字。因为苹果芯片和英伟达显卡的计算方式完全不同，它准备了 Metal、CUDA、Vulkan 三套「计算内核」，换硬件就换一套，但加载模型、调度请求这些上层逻辑是共用的。"
+     },
+     {
+      "level": "进阶",
+      "text": "把它看成分层引擎：最上面是服务接口（对外提供推理请求），中间是模型加载、权重打包与请求调度，最下面是按硬件分叉的算子内核。这样设计的价值是「新增一种硬件只需补内核层」，代价是内核必须针对每种硬件重写和调优，测试面也随之扩大。仓库用 Zig 实现，通常是为了同时拿到接近 C 的性能与更好的构建/内存控制。"
+     },
+     {
+      "level": "专家",
+      "text": "这类引擎的核心竞争力有两块：一是内核质量（量化格式支持、内存布局、算子融合），二是调度与解码策略（批处理、KV cache 管理、投机解码）。据仓库自述，TensorFold 强调「精确投机解码」，即草稿被接受与否的判断严格对齐串行解码，使输出逐字节可复现——这对要可重现输出的代码生成、流水线类应用很关键。阅读时建议从「怎么起服务」入手，再顺着一次前向调用向下追到具体内核，避免一上来就陷进 SIMD/线程细节。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么推理引擎要按硬件分后端，而不是写一套通用代码？",
+      "a": "不同硬件的内存层级、并行粒度和指令集差异极大，通用代码无法榨干性能；抽象只保留在「权重加载与调度」这类后端无关的层，算子必须逐硬件优化。"
+     },
+     {
+      "q": "投机解码既然不改变输出，为什么不是所有场景都开？",
+      "a": "它用额外的草稿计算换解码步数，只有当草稿接受率高、草稿成本远低于目标模型时才净赚；开放式生成接受率低时反而更慢。"
+     }
+    ],
+    "mechanism": "必须分层的根本原因是「可移植性只存在于高层、性能只存在于低层」：权重加载、请求编排、采样这些逻辑与硬件无关，抽象一次收益长期；而算子内核的每一点加速都依赖对具体硬件内存与并行模型的理解，无法跨后端复用。把这条分界线划在算子层，才能让新增后端的工作量收敛到可控范围。",
+    "boundary": "多后端引擎的适用前提是「你要在多种硬件上部署」。若只跑一种硬件，直接针对它优化即可，多后端带来的抽象开销与维护成本反而不划算。此外支持的后端越多，越容易在某些组合（特定量化格式 × 特定芯片）上缺少覆盖，部署前必须逐一核对支持矩阵。",
+    "analogyBoundary": "换炉子类比让人以为后端可以「即插即换」，但真实情况是内核要重写、性能要重新调优、数值结果甚至可能随量化格式与后端不同而出现差异；类比完全掩盖了「不同后端可能给出不同输出」这一工程现实。",
+    "misconceptions": [
+     "把推理引擎当成训练框架，以为它负责训练和微调",
+     "以为多后端就是一份内核代码换编译目标，忽略内核需按硬件重写",
+     "以为开了投机解码一定更快，忽略草稿接受率与草稿成本的制约。"
+    ],
+    "ownAnalysis": "（推断）TensorFold 这类「Zig/C++ 原生多后端引擎」与 vLLM、llama.cpp 处在同一赛道：前者代表性路径是 Python + 定制 CUDA 内核，后者靠统一量化格式与跨平台内核。TensorFold 用 Zig 并把后端扩到 Metal/Vulkan，明显是在争夺「本地 / 边缘部署、不依赖 Python 环境」的位置。对求职者，价值不在背 API，而在理解「权重格式 → 内核 → 调度 → 可复现输出」这条链路，因为面试中「推理引擎怎么提速」几乎都会落到这几层。",
+    "officialNotes": [
+     {
+      "position": "仓库自述为一句话定位：LLM Inference Engine for Metal, CUDA and Vulkan，语言标签为 Zig；据仓库公开页面（WebFetch 读取），代码存在 zig/、tools/、packaging/、docs/ 等目录，构建脚本为 build.zig 系列，部署说明见 RUNBOOK.md（具体路径待核实）",
+      "source": "https://github.com/ashhart/TensorFold"
+     }
+    ],
+    "interviewAnswer": "我会把 TensorFold 描述成三层结构：上层是与硬件无关的服务接口与请求调度，中间是模型加载、权重打包与采样，底层是分别针对 Metal、CUDA、Vulkan 写的算子内核。它的关键设计是把可移植性留在上层、把性能压到下层，所以新增硬件只需要补内核。仓库用 Zig 实现，兼顾性能与构建可控。它主打精确投机解码，即草稿接受严格对齐串行解码、输出逐字节可复现。这套分层也是看任何推理引擎的通用框架。",
+    "studyPath": {
+     "prerequisites": [
+      "LLM 自回归解码与 KV cache",
+      "CUDA 或 Metal 基础",
+      "理解量化（INT4/INT8）基本概念"
+     ],
+     "nextSteps": [
+      "对比 llama.cpp 与 vLLM 的后端抽象方式",
+      "读一个最小 CUDA kernel 了解 prefill/decode 差异",
+      "手写一遍投机解码的接受/回退逻辑"
+     ]
+    }
+   }
+  },
+  {
+   "id": "bbb40282c7cfc434",
+   "tldr": "基于 vLLM 扩展的大规模 LLM 推理引擎，提供连续批处理、分页 KV cache、量化、投机解码与分布式服务。",
+   "keyPoints": [
+    "面向 Hugging Face 兼容的语言与多模态模型提供推理服务",
+    "基于 vLLM 扩展：补充模型与量化格式、采样方法、内核与平台支持",
+    "核心机制为连续批处理与分页 KV-cache 管理，默认开启前缀缓存",
+    "支持张量、流水线、数据与专家并行，多机部署可不依赖 Ray",
+    "支持投机解码、LoRA 适配器服务与 OpenAI 兼容 API"
+   ],
+   "why": "推理服务是算法岗工程面高频考点；连续批处理、分页 KV cache、投机解码是读懂 vLLM 系引擎的通用钥匙。",
+   "difficulty": "hard",
+   "tags": [
+    "llm",
+    "inference-engine",
+    "vllm",
+    "cuda",
+    "lora",
+    "serving"
+   ],
+   "entities": [
+    "sonar",
+    "vLLM",
+    "aphrodite",
+    "Hugging Face",
+    "CUDA",
+    "ROCm",
+    "NIXL",
+    "LoRA",
+    "OpenAI API",
+    "PygmalionAI"
+   ],
+   "diagram": {
+    "kind": "architecture",
+    "title": "sonar 请求主干",
+    "caption": "记住主线：请求进来 → 调度批处理 → 内核计算 → 分布式后端出 token。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='sonar 推理引擎架构四层：命令行入口与 API、调度器做连续批处理和分页 KV cache、csrc 计算内核、后端与并行策略'>\n<rect x='24' y='16' width='432' height='42' rx='8' fill='none' stroke='var(--accent)' stroke-width='1.4'/>\n<text x='40' y='42' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>① 入口 aphrodite serve</text>\n<text x='440' y='42' font-size='13' text-anchor='end' fill='currentColor'>OpenAI 兼容 API</text>\n<line x1='240' y1='58' x2='240' y2='66' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,74 236,66 244,66' fill='var(--line-1)'/>\n<rect x='24' y='74' width='432' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='40' y='100' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>② 调度器</text>\n<text x='440' y='100' font-size='13' text-anchor='end' fill='currentColor'>连续批处理 + 分页 KV cache</text>\n<line x1='240' y1='116' x2='240' y2='124' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,132 236,124 244,124' fill='var(--line-1)'/>\n<rect x='24' y='132' width='432' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='40' y='158' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>③ 计算内核 csrc/</text>\n<text x='440' y='158' font-size='13' text-anchor='end' fill='currentColor'>量化权重 / FP8 KV / 注意力</text>\n<line x1='240' y1='174' x2='240' y2='182' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,190 236,182 244,182' fill='var(--line-1)'/>\n<rect x='24' y='190' width='432' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='40' y='216' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>④ 后端与并行</text>\n<text x='440' y='216' font-size='13' text-anchor='end' fill='currentColor'>CUDA / ROCm / Intel / Metal</text>\n</svg>",
+    "alt": "四层架构：命令行与 API 入口、做连续批处理与分页 KV cache 的调度器、csrc 中的计算内核、以及 CUDA/ROCm/Intel/Metal 后端与并行策略。"
+   },
+   "concepts": [
+    {
+     "name": "连续批处理与分页 KV Cache（Continuous Batching & Paged KV Cache）",
+     "readable": "连续批处理让每个请求一个新 token 生成完就立刻换下一个请求进来，不必等整批一起结束；分页 KV cache 把每个请求的键值缓存切成固定大小的页，按需分配，避免预留整段显存造成浪费。",
+     "analogy": "食堂打饭：连续批处理是「谁吃完谁就走、新来的人立刻补位」，而不是等一桌人全吃完才收桌；分页 KV cache 是把仓库按固定货架出租，谁需要多少就租几格，不用给每人预留一整个大房间。",
+     "analogyBreaksDown": "食堂补位不需要搬运已有的餐具，而分页 KV cache 要维护「逻辑序列位置 → 物理页」的映射表，页共享与回收都有额外管理成本；类比没有体现这种间接寻址的记账开销。",
+     "mechanism": "生成的瓶颈在显存带宽与碎片：批处理静态化会让短请求陪跑长请求，KV cache 连续分配会因长度未知而预留过多或反复拷贝。把批粒度降到「单步」、把缓存切成页并用页表寻址，就能提高显存利用率与吞吐，代价是调度器与页表的实现复杂度。",
+     "visual": "先读 README 的功能清单定位「batch / cache」相关模块，再进入 Python 包与服务端目录看调度与缓存管理代码。数据流：请求入队 → 调度器组批 → 分配 KV 页 → 内核逐 token 计算 → 完成后页回收。",
+     "prerequisites": [
+      "Transformer 自注意力与 KV cache",
+      "批处理与显存占用估算",
+      "基本的操作系统内存分页概念"
+     ],
+     "selfTest": [
+      "连续批处理相比静态批处理为什么吞吐更高？",
+      "页表寻址多了一层间接，为什么反而更省显存？",
+      "前缀缓存默认开启后，什么样的请求最容易命中？"
+     ],
+     "formula": ""
+    },
+    {
+     "name": "投机解码（Speculative Decoding）",
+     "readable": "用一个便宜的草稿模型或启发式方法一次猜出多个 token，再让目标模型一次前向并行验证，猜对的整段接受，从而把多次串行解码压缩成少数几步。",
+     "analogy": "抢答环节：先让助手把几道题的答案一口气写出来，老师一次性批改，对的划掉，错的只重做那一道，比每道题都从头推导快得多。",
+     "analogyBreaksDown": "助手若答得太偏，老师批改的收益会被大量重做抵消；现实中助手水平稳定，而这里草稿模型与目标模型分布差距越大、接受率越低，加速就越不确定。",
+     "mechanism": "解码的瓶颈是每生成一个 token 都要一次完整前向；把小模型或 n-gram 等廉价方法生成的候选交给目标模型一次前向批量验证，接受则跳过若干步、拒绝则回退。收益取决于接受率与草稿成本，需要在草稿长度上做权衡。",
+     "visual": "在功能清单里定位 speculative decoding 相关模块，再看草稿与验证两条路径的调用关系。数据流：prompt → 草稿生成多个候选 token → 目标模型一次前向验证 → 接受或回退 → 输出。",
+     "prerequisites": [
+      "自回归解码与采样",
+      "KV cache 复用",
+      "理解 top-k / top-p 采样"
+     ],
+     "selfTest": [
+      "为什么投机解码能在不改输出分布的前提下加速？",
+      "草稿长度增加会带来什么副作用？",
+      "什么类型的负载最适合启用投机解码？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [],
+   "selfCheck": {
+    "claims": [
+     "条目标题与摘要均为「Large-scale LLM inference engine」（大规模 LLM 推理引擎）",
+     "仓库标签包含 cuda、rocm、inferentia、intel、lora、api-rest、inference-engine、Python 等",
+     "仓库由 dphnAI 开源在 GitHub，仓库名 sonar"
+    ],
+    "uncertain": [
+     "输入摘要仅一句话、无技术细节；本条的机制说明与核心目录来自仓库 README（WebFetch 读取），需核对是否与当前主分支一致（待核实）",
+     "「基于 vLLM」「默认监听 127.0.0.1:2242」「默认开启前缀缓存」等具体数值与说法来自 README，未在输入摘要中确认（待核实）",
+     "构建入口（CMakeLists.txt / setup.py）与各语言目录的职责划分为按公开文件结构推断（推断）"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "一个跑在服务器上的大模型推理引擎，同时服务很多请求还能尽可能快。"
+     },
+     {
+      "level": "入门",
+      "text": "它负责把大模型部署起来对外提供接口，然后同时接待大量用户请求。关键难点有两个：一是怎么让长短不一的请求高效地共享显卡，二是怎么把模型算得又快又省显存。它给出的答案是连续批处理、分页 KV cache、量化和投机解码。它基于成熟的 vLLM 扩展而来，增加了更多模型、量化格式和硬件支持。"
+     },
+     {
+      "level": "进阶",
+      "text": "把请求处理想成一条流水线：请求先进入调度器组批，调度器决定这一步算哪些请求、KV cache 的页怎么分配；随后计算内核执行前向，把每个请求的新 token 产出；最后经 OpenAI 兼容接口返回。想提升吞吐，就要让这条流水线不断档（连续批处理）并少占显存（分页 KV cache、量化）；想降低单请求延迟，就要减少串行解码步数（投机解码）。"
+     },
+     {
+      "level": "专家",
+      "text": "sonar 的定位是在 vLLM 之上补生态：更多模型与量化格式、更多硬件平台（CUDA / ROCm / Intel XPU / Metal / TPU）、更细的部署能力（多机不用 Ray、prefill/decode 分离、LoRA 服务、多模态输入）。阅读这类引擎的通用框架是「入口 → 调度与缓存 → 内核 → 后端并行」四层：调度层决定吞吐，内核层决定单步速度，后端层决定能跑多大、跑在哪。面试里能把这三层的取舍讲清，比背某个参数有用得多。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么静态批处理会浪费算力？",
+      "a": "同一批里长短请求混在一起，短请求早早结束却要等长请求跑完，剩余步里它占的算力被浪费；连续批处理让完成的请求立刻退出、新请求补位，从而持续打满。"
+     },
+     {
+      "q": "为什么要做 prefill/decode 分离？",
+      "a": "预填充阶段算力密集、解码阶段访存密集，两者混在同一批里会互相干扰；拆到不同实例上各自优化，能分别贴近算力或带宽瓶颈，提升整体利用率。"
+     }
+    ],
+    "mechanism": "推理服务的瓶颈在「显存带宽 + 显存容量 + 批处理效率」三者的相互挤压：显存装不下更多请求就无法提高批量，批量不够就跑不满算力，显存碎片又会白白吃掉可用容量。分页 KV cache 解决碎片与预留浪费，连续批处理解决批内空转，量化解决权重与 KV 的带宽占用，投机解码则专门对串行解码这条延迟瓶颈下手。这四项各自打一个瓶颈，才是引擎整体提速的来源。",
+    "boundary": "这类引擎面向「高并发服务」；单条离线推理、超长上下文或需要频繁权重更新（如在线继续训练）的场景，收益与适用性都要重新评估。量化、FP8 KV cache 等会带来数值精度损失，对输出质量敏感的评测需先验证；多硬件支持虽广，但不同「模型 × 量化 × 硬件」组合的可用性必须逐项核对支持矩阵。",
+    "analogyBoundary": "食堂打饭类比让缓存看起来「随便放」，但分页 KV cache 需要页表维护逻辑位置到物理页的映射，页共享、引用计数与回收都会引入开销；类比也完全没体现「量化会损失精度」这一代价，容易让人以为提速是免费的。",
+    "misconceptions": [
+     "把 sonar 当成独立自研引擎，忽略它是基于 vLLM 扩展而来",
+     "以为量化只是省显存，忽略其对精度的潜在影响",
+     "以为硬件支持越多越好，忽视不同组合需要逐一验证可用性。"
+    ],
+    "ownAnalysis": "（推断）sonar 的差异化不在重造调度器，而在「vLLM 的广度扩展」：补模型、补量化格式、补硬件平台、补部署形态（多机无 Ray、prefill/decode 分离、LoRA 服务、多模态）。这与本批次 TensorFold 的「Zig 原生重写」路线形成对照，两条路线分别代表「在成熟框架上做生态扩张」与「为特定硬件/环境重写内核」。对求职者，理解这两种取舍有助于在面试里回答「为什么不用现成的 vLLM」这类开放问题。",
+    "officialNotes": [
+     {
+      "position": "README 称 sonar 是面向 Hugging Face 兼容语言与多模态模型的推理引擎，基于 vLLM，提供 continuous batching、paged KV-cache、量化、投机解码与分布式服务；命令行入口为 aphrodite（如 aphrodite serve），服务默认监听 127.0.0.1:2242 并提供 OpenAI 兼容 API",
+      "source": "https://github.com/dphnAI/sonar"
+     },
+     {
+      "position": "README 列出的目录包含 aphrodite/、csrc/、rust/、cmake/、docs/、examples/、benchmarks/、docker/、requirements/、tests/、tools/ 以及 CMakeLists.txt、setup.py、pyproject.toml、config.yaml 等",
+      "source": "https://github.com/dphnAI/sonar"
+     }
+    ],
+    "interviewAnswer": "我会把 sonar 讲成基于 vLLM 的推理引擎，分层来看：入口是 aphrodite 命令与 OpenAI 兼容 API；调度层做连续批处理和分页 KV cache，这是吞吐的主要来源；内核层在 csrc/ 里处理量化权重、FP8 KV cache 和注意力计算；后端层支持 CUDA、ROCm、Intel、Metal 等，并做张量/流水线/专家并行。它还支持投机解码和 prefill/decode 分离来压延迟。相比 TensorFold 那种为特定硬件重写内核的路线，sonar 更像是在成熟框架上做生态与平台扩展。",
+    "studyPath": {
+     "prerequisites": [
+      "Transformer 前向与 KV cache",
+      "GPU 显存与带宽的基本估算",
+      "vLLM 或同类引擎的使用经验"
+     ],
+     "nextSteps": [
+      "读 vLLM 的 PagedAttention 论文理解分页缓存",
+      "对比 TensorFold 的原生重写路线",
+      "跑一次 continue batching 与静态批处理的吞吐对比实验"
+     ]
+    }
+   }
+  }
+ ],
+ "skipped": []
+}

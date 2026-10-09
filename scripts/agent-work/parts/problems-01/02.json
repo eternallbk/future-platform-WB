@@ -1,0 +1,137 @@
+{
+  "id": "218d3e48bbac3784",
+  "tldr": "用双指针迭代把链表每个节点的 next 反向，O(n) 时间 O(1) 空间；递归版则靠栈回溯改指针。",
+  "keyPoints": [
+    "核心动作：保存 cur.next，再把 cur.next 指向 prev",
+    "三个指针 prev / cur / nxt 依次右移，直到 cur 为空",
+    "迭代法空间 O(1)，返回值为新的头节点 prev",
+    "递归法写法短但递归栈占 O(n) 空间",
+    "双指针与递归是该题最常见的两种解法"
+  ],
+  "why": "反转链表指针操作是链表题的基本功，206 是字节/腾讯高频；K 个一组翻转、回文链表都建立在它之上。",
+  "difficulty": "easy",
+  "tags": ["leetcode", "linked-list", "two-pointers", "recursion"],
+  "entities": ["ListNode", "双指针", "递归"],
+  "diagram": {
+    "kind": "flow",
+    "title": "反转链表的指针移动",
+    "caption": "每一轮固定三件事：存 nxt、反转 cur.next、prev 与 cur 一起右移一格。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='反转链表的双指针过程：prev 与 cur 之间箭头反向，三指针逐格右移'>\n<text x='24' y='30' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>初始：prev=None, cur=1, nxt=2</text>\n<rect x='60' y='46' width='60' height='36' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='90' y='69' font-size='14' text-anchor='middle' fill='currentColor'>1</text>\n<rect x='150' y='46' width='60' height='36' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='180' y='69' font-size='14' text-anchor='middle' fill='currentColor'>2</text>\n<rect x='240' y='46' width='60' height='36' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='270' y='69' font-size='14' text-anchor='middle' fill='currentColor'>3</text>\n<line x1='120' y1='64' x2='148' y2='64' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='150,64 143,60 143,68' fill='var(--line-1)'/>\n<line x1='210' y1='64' x2='238' y2='64' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,64 233,60 233,68' fill='var(--line-1)'/>\n<line x1='240' y1='104' x2='126' y2='104' stroke='var(--accent)' stroke-width='1.6'/>\n<polygon points='120,104 128,100 128,108' fill='var(--accent)'/>\n<text x='184' y='120' font-size='13' text-anchor='middle' fill='currentColor'>把 1.next 反向指向 prev(None)</text>\n<text x='24' y='152' font-size='13' text-anchor='start' fill='currentColor'>右移后：prev=1, cur=2, nxt=3，再重复同一动作</text>\n<rect x='60' y='168' width='60' height='36' rx='6' fill='none' stroke='var(--accent)' stroke-width='1.6'/>\n<text x='90' y='191' font-size='14' text-anchor='middle' fill='currentColor'>1</text>\n<rect x='150' y='168' width='60' height='36' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='180' y='191' font-size='14' text-anchor='middle' fill='currentColor'>2</text>\n<rect x='240' y='168' width='60' height='36' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='270' y='191' font-size='14' text-anchor='middle' fill='currentColor'>3</text>\n<line x1='150' y1='186' x2='122' y2='186' stroke='var(--accent)' stroke-width='1.6'/>\n<polygon points='120,186 128,182 128,190' fill='var(--accent)'/>\n<text x='240' y='226' font-size='13' text-anchor='middle' fill='currentColor'>cur 走到空时，prev 就是反转后的新头节点</text>\n</svg>",
+    "alt": "链表 1→2→3 中 prev 与 cur 双指针逐格右移，每步把 cur.next 反向指回 prev，最终 prev 成为新头。"
+  },
+  "concepts": [
+    {
+      "name": "双指针原地反转（In-place Pointer Reversal）",
+      "readable": "用 prev 表示已反转部分的头、cur 表示待处理节点；每轮先存好 cur.next，再把 cur.next 指向 prev，然后两指针一起前移。",
+      "analogy": "把一列手拉手的队伍掉头：你只需要让每个人改牵身后那个人，从头一个个改过去，队伍就整条反向，不用重新排队。",
+      "analogyBreaksDown": "真人换手可以同时松两手抓两手，链表必须先存住原 next 再改写，否则后面的链会断掉再也找不到。",
+      "mechanism": "反转会在改写 cur.next 的瞬间丢失去路，所以必须先用 nxt 暂存后继节点；有了暂存，改指与推进就能安全进行，全程只用三个指针。",
+      "visual": "画一排方框表示节点，用两种箭头颜色区分已反转边与未反转边，标出 prev、cur、nxt 三个指针随步骤右移。",
+      "prerequisites": ["链表节点与 next 指针", "循环写法"],
+      "selfTest": ["为什么改写 cur.next 之前必须先保存 cur.next？", "循环结束时应该返回 prev 还是 cur？", "空链表或单节点时循环会怎么走？"],
+      "formula": ""
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-reverse-list-state-transition",
+      "name": "反转链表的指针状态转移（Pointer State Transition）",
+      "category": "engineering",
+      "latex": "(\\mathrm{prev}, \\mathrm{cur}, \\mathrm{nxt}) \\leftarrow (\\mathrm{cur},\\ \\mathrm{nxt},\\ \\mathrm{cur.next})",
+      "symbols": [["\\mathrm{prev}", "已反转部分的头节点"], ["\\mathrm{cur}", "当前待处理节点"], ["\\mathrm{nxt}", "cur 的原始后继节点"]],
+      "derivation": [
+        "第 1 步：反转前先暂存 nxt = cur.next，保住后续链表入口",
+        "第 2 步：改写 cur.next = prev，把当前节点并入已反转部分",
+        "第 3 步：把 prev 推进到 cur，cur 推进到 nxt，循环不变量保持成立",
+        "第 4 步：当 cur 为空时，prev 指向整条链表的新头，返回 prev"
+      ],
+      "analogy": "传递接力棒：先握住下一棒，再把身体转向后方，然后前进一个人位。",
+      "pitfalls": ["先写 cur.next = prev 再存 nxt，链表断在半路", "循环结束后返回 cur（此时是 None）而不是 prev"],
+      "code": "prev, cur = None, head\nwhile cur:\n    nxt = cur.next\n    cur.next = prev\n    prev, cur = cur, nxt\nreturn prev",
+      "sources": [{"title": "206.反转链表 · 题解", "url": "https://programmercarl.com/algo/linked-list/0206-reverse-linked-list.html"}]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "该题摘要明确提到用双指针法与递归法实现指针方向的反转",
+      "bankTopics 为双指针与链表；被记录为字节跳动/腾讯等合计 721 次",
+      "难度标注为简单；最近一次出现于 2026-09-21"
+    ],
+    "uncertain": [
+      "源 summary 未给完整题面与示例，statement 与 examples 依 LeetCode 206 惯例重述并自行构造，代码已验证",
+      "每题在各公司的具体次数以采集层为准（待核实）"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "把一条单向链表的箭头全部掉头，像把一整列火车反向接起来。"},
+      {"level": "入门", "text": "用两个指针：prev 指向已反转部分的头，cur 指向还没处理的节点。每轮先记下 cur 的下一个，再把 cur 指回 prev，最后两个指针都往前挪一格。"},
+      {"level": "进阶", "text": "关键顺序是先存 nxt 再改 cur.next，否则会丢掉后面整条链。改完并推进后，prev 始终是已反转部分的头；cur 走空时，prev 就是新链表的头。全程只用常数个指针。"},
+      {"level": "专家", "text": "迭代法时间 O(n)、额外空间 O(1)，是标准答案；递归法 reverseList(head.next) 后让 head.next.next=head、head.next=None，写法优雅但递归栈占 O(n)。K 个一组翻转只是在本题外面套一层分组，回文链表则用快慢指针找到中点后反转后半段再比较。"}
+    ],
+    "socratic": [
+      {"q": "如果先写 cur.next = prev 再保存后继会怎样？", "a": "cur 与后方的连接被切断，nxt 位置丢失，剩余节点再也访问不到，链表从中间断裂。"},
+      {"q": "为什么返回 prev 而不是 head？", "a": "head 是原头节点，反转后它变成尾部、next 为 None；prev 才是走到最后的新头节点。"}
+    ],
+    "mechanism": "反转的难点不是改指针，而是改指针会丢失去路。因此设计一定先声明 nxt 暂存后继，再改指，最后推进——用一次额外变量换取整条链的可达性。",
+    "boundary": "迭代法对任意长度链表都成立。递归法在链表很长时会因递归深度爆栈（Python 默认约 1000 层），工程上长链应改用迭代。",
+    "analogyBoundary": "队伍掉头类比里每个人可以同时松开并重新牵手，而链表一次只能改一个 next，必须先暂存后继；两者对操作顺序的容错完全不同。",
+    "misconceptions": ["把 prev 初值写成 head，导致第一个节点自指成环", "循环条件写成 while cur.next 而漏掉最后一个节点", "递归版忘记把 head.next 置为 None，结果原头和新头成环"],
+    "ownAnalysis": "这道题是链表题的「hello world」，但暗含一个通用模式：凡是原地改写指针的操作，都要先保住未处理部分的入口。（推断）刷完本题应立即做 K 个一组翻转（LC 25）与回文链表（LC 234），三题共享同一套「存后继—反向—推进」骨架。",
+    "officialNotes": [
+      {"position": "代码随想录该题解给出双指针法与递归法两种实现", "source": "https://programmercarl.com/algo/linked-list/0206-reverse-linked-list.html"}
+    ],
+    "interviewAnswer": "我用双指针迭代。prev 初始为 None，cur 初始为 head。循环里先存 nxt = cur.next，把 cur.next 指向 prev，再把 prev 和 cur 一起右移；循环结束 cur 为空，prev 就是反转后的头节点。全程只改指针，时间 O(n)、额外空间 O(1)。如果面试官想看递归，我可以再给一版：先递归反转 head.next，让 head.next.next 指回 head，并把 head.next 置空。",
+    "studyPath": {
+      "prerequisites": ["链表基本操作", "循环与指针"],
+      "nextSteps": ["K 个一组翻转链表（LC 25）", "回文链表（LC 234）", "两两交换链表中的节点（LC 24）"]
+    }
+  },
+  "problem": {
+    "title": "反转链表",
+    "number": 206,
+    "difficulty": "easy",
+    "statement": "给定单链表的头节点 head，请反转整条链表并返回反转后的头节点。链表节点定义为含有 val 与 next 指针的结构；输入可能为空链表。要求尽量原地完成，不去新建等量节点（因此额外空间应为 O(1)）。",
+    "examples": [
+      {"input": "head = [1,2,3,4,5]", "output": "[5,4,3,2,1]", "why": "每个节点的 next 指向反转，原头 1 变尾"},
+      {"input": "head = []", "output": "[]", "why": "空链表直接返回 None"}
+    ],
+    "approach": {
+      "idea": "维护 prev（已反转部分头）与 cur（待处理节点）。每轮先暂存 cur.next，再把 cur.next 指向 prev，随后 prev 与 cur 一起前移一格；cur 为空时 prev 即新头。",
+      "steps": [
+        "1. 初始化 prev = None，cur = head",
+        "2. 当 cur 不为空时循环",
+        "3. 暂存 nxt = cur.next 保住后继",
+        "4. 改写 cur.next = prev，把当前节点接到已反转部分前面",
+        "5. prev = cur，cur = nxt，两指针右移",
+        "6. 循环结束返回 prev"
+      ],
+      "whyItWorks": "循环不变量：prev 指向原链表中已处理区间反转后的头，且其尾部 next 为 None；每轮把 cur 并入该区间，区间左端后移一位。区间覆盖全链后 prev 即整条链的新头。",
+      "alternatives": [
+        {"name": "递归", "complexity": "O(n) / O(n)", "when": "想写更短代码、链表不长且允许递归栈时"},
+        {"name": "头插法重建", "complexity": "O(n) / O(n)", "when": "允许新建节点、或需要保留原链表时（面试一般不要求）"}
+      ]
+    },
+    "solution": {
+      "python": "class ListNode:\n    def __init__(self, val=0, next=None):\n        self.val = val\n        self.next = next\n\ndef reverseList(head: ListNode) -> ListNode:\n    prev = None\n    cur = head\n    while cur:\n        nxt = cur.next      # 1) 暂存后继\n        cur.next = prev     # 2) 反向\n        prev = cur          # 3) 推进\n        cur = nxt\n    return prev",
+      "python_alt": "def reverseList(head: ListNode) -> ListNode:\n    if not head or not head.next:\n        return head\n    new_head = reverseList(head.next)\n    head.next.next = head\n    head.next = None\n    return new_head",
+      "notes": "迭代版用常数空间，是面试首选。递归版终止条件是空节点或单节点；注意 must 把 head.next 置为 None，否则新尾节点仍指向 head，链表会成环。"
+    },
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "每个节点访问并改一次指针，共 n 次；迭代只额外用 prev、cur、nxt 三个变量（递归版栈空间为 O(n)）。"
+    },
+    "pitfalls": [
+      "改写 cur.next 前没保存 cur.next，链表断裂",
+      "返回 cur（此时为 None）而不是 prev",
+      "递归版忘记 head.next = None 导致成环"
+    ],
+    "edgeCases": [
+      "head 为空，应返回 None",
+      "只有一个节点，应原样返回",
+      "两个节点，验证 prev/cur 推进是否正确"
+    ],
+    "interviewTips": "先说清三个指针各自含义，再写循环体，边写边强调「先存后继再反向」。写完主动讲一句「返回的是 prev，因为 cur 最后是 None」。若面到回文链表等变体，可顺势提「这套骨架可复用在 K 个一组翻转上」加分。"
+  }
+}

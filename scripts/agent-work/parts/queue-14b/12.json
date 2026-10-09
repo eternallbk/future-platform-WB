@@ -1,0 +1,170 @@
+{
+  "id": "b4159e72c6a7bcaf",
+  "tldr": "求最长格式正确且连续的括号子串长度：用索引栈记录未匹配下标，弹栈后空则重置基准，否则用当前下标减栈顶更新答案。",
+  "keyPoints": [
+    "字符串只含 '(' 与 ')'，求最长有效且连续的子串长度",
+    "索引栈：先压 -1 作哨兵基准，再压未匹配左括号的下标",
+    "遇 ')' 先弹栈；若栈空则把当前下标压入作为新基准",
+    "有效长度 = 当前下标 - 栈顶下标，全程取最大",
+    "DP 写法：dp[i] 表示以 s[i] 结尾的最长有效长度",
+    "长度上限 3×10^4，一次 O(n) 扫描即可"
+  ],
+  "why": "括号匹配是最经典的手撕题，考的是把匹配问题转成下标作差；栈/DP/O(1) 空间三解法能被追问三层，高频出现在大厂一面。",
+  "difficulty": "hard",
+  "tags": ["leetcode", "stack", "dynamic-programming", "string", "parentheses"],
+  "entities": ["LeetCode 32", "索引栈", "动态规划", "最长有效括号"],
+  "diagram": {
+    "kind": "flow",
+    "title": "索引栈四步扫描",
+    "caption": "记住两个关键动作：遇 '(' 压下标、弹栈后空则重置基准，其余全靠『i 减栈顶』算长度。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='最长有效括号的索引栈扫描流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--accent)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>① 初始化</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>栈 = [-1] 作哨兵基准</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>② 遇 '('</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>把下标 i 压栈</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>③ 遇 ')'</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>弹出栈顶，得其边界</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>④ 判空与更新</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>空→压 i；否则 best = i - 栈顶</text>\n</svg>",
+    "alt": "竖排四步：初始化哨兵 -1、遇左括号压栈、遇右括号弹栈、栈空则重置否则用当前下标减栈顶更新最大长度。"
+  },
+  "concepts": [
+    {
+      "name": "索引栈（Index Stack for Matching）",
+      "readable": "栈里压的是下标而不是括号字符：一旦匹配，就能用『当前下标 - 栈顶下标』直接得到这段有效子串的长度。",
+      "analogy": "给排队的人发号码牌，谁配对成功就报出自己的号码；一旦发现空号牌，就把基准线挪到当前位置，前面那段全部作废。",
+      "analogyBreaksDown": "发号类比假设配对只在相邻之间发生，而括号既能嵌套也能串接；嵌套靠栈的先进后出隐式处理，串接靠基准重置隐式处理，类比看不到这两层。",
+      "mechanism": "把匹配问题转成下标作差：栈内始终保存尚未匹配的位置，栈顶即最近一个未匹配边界；空栈说明前缀已作废，此时补一个哨兵下标把基准重置到当前位置。",
+      "visual": "在字符串下方画一条下标数轴，栈用一列格子实时显示，扫描箭头每移动一格就更新这列格子与最大长度。",
+      "prerequisites": ["栈（LIFO）", "字符串下标遍历"],
+      "selfTest": ["为什么栈里要保存下标而不是字符？", "弹栈后栈空代表什么？", "为什么初始化要压入 -1？"],
+      "formula": "\\mathrm{best} = \\max(\\mathrm{best},\\; i - \\mathrm{stack}[-1])"
+    },
+    {
+      "name": "线性 DP 的边界跳跃（DP with Boundary Jump）",
+      "readable": "dp[i] 表示以 s[i] 结尾的最长有效括号子串长度；只有 s[i] 是 ')' 时才可能非零，转移要能跳过前面整段已匹配的块。",
+      "analogy": "砌墙：新砖要么直接贴着上一块，要么先绕过一段已经砌好的整段墙，再贴到它的外侧。",
+      "analogyBreaksDown": "砌墙类比暗示必须紧邻，而 dp 会跳过整段有效块再拼接，跳跃距离由 dp[i-1] 决定，并不总是相邻的两格。",
+      "mechanism": "用 dp[i-1] 定位与当前 ')' 配对的 '('：它在 i-dp[i-1]-1。若该位置确实是 '('，长度等于 dp[i-1] + 2，再补上它外侧已匹配的 dp[i-dp[i-1]-2]。",
+      "visual": "在字符串上叠加 dp 数组折线，用箭头标出每格如何引用前两格：i-1 与 i-dp[i-1]-2。",
+      "prerequisites": ["动态规划", "字符串下标"],
+      "selfTest": ["dp[i] 在 s[i]=='(' 时为什么一定是 0？", "为什么要再加上 dp[i-dp[i-1]-2]？", "越界时该补什么值？"],
+      "formula": "\\mathrm{dp}[i] = \\mathrm{dp}[i-1] + 2 + \\mathrm{dp}[i-\\mathrm{dp}[i-1]-2]"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-longest-valid-parens-stack",
+      "name": "索引栈长度公式（Index-Stack Length）",
+      "category": "engineering",
+      "latex": "\\mathrm{best} = \\max(\\mathrm{best},\\; i - \\mathrm{stack}[-1])",
+      "symbols": [["i", "当前扫描到的字符下标"], ["\\mathrm{stack}[-1]", "栈顶保存的最近未匹配位置下标"], ["\\mathrm{best}", "已找到的最长有效子串长度"]],
+      "derivation": [
+        "第 1 步：栈保存所有尚未匹配的位置下标，栈顶即最近一个未匹配边界",
+        "第 2 步：遇到 ')' 弹栈后，若栈非空，则 (栈顶, i] 区间内的括号已完全配对",
+        "第 3 步：该区间长度为 i 减去栈顶下标，用它更新答案的最大值"
+      ],
+      "analogy": "像用一把会移动的卡尺：左卡脚始终是最近一处没配对的位置，右卡脚是当前位置，两者之差就是当前这段已配对长度。",
+      "pitfalls": ["弹栈后不判空，栈空时直接访问栈顶会越界（Python 取 [-1] 是不对的旧值）", "把栈顶当成左边界本身，实际它是左边界的前一个位置，差值是 i - 栈顶"],
+      "code": "def longest(s):\n    stack, best = [-1], 0\n    for i, ch in enumerate(s):\n        if ch == '(':\n            stack.append(i)\n        else:\n            stack.pop()\n            if not stack:\n                stack.append(i)\n            else:\n                best = max(best, i - stack[-1])\n    return best",
+      "sources": [{"title": "最长有效括号（LeetCode 32）· 大厂高频手撕题", "url": "https://leetcode.cn/problems/longest-valid-parentheses"}]
+    },
+    {
+      "id": "f-longest-valid-parens-dp",
+      "name": "最长有效括号 DP 转移（Longest Valid Parentheses DP）",
+      "category": "engineering",
+      "latex": "\\mathrm{dp}[i] = \\mathrm{dp}[i-1] + 2 + \\mathrm{dp}[i - \\mathrm{dp}[i-1] - 2]",
+      "symbols": [["\\mathrm{dp}[i]", "以 i 结尾的最长有效括号子串长度"], ["i - \\mathrm{dp}[i-1] - 1", "与 s[i] 配对的左括号下标"], ["i - \\mathrm{dp}[i-1] - 2", "配对左括号左侧一格的下标"]],
+      "derivation": [
+        "第 1 步：只有在 s[i] 是 ')' 时才可能形成新的有效后缀，其余 dp[i]=0",
+        "第 2 步：若 s[i-1] 是 '('，则这对相邻括号贡献 2，外面再叠加 dp[i-2]",
+        "第 3 步：否则跳过 dp[i-1] 整段，检查 i-dp[i-1]-1 是否为 '('",
+        "第 4 步：若可配对，则 dp[i] 等于内层 dp[i-1] 加 2，再加外层 dp[i-dp[i-1]-2]，越界按 0 处理"
+      ],
+      "analogy": "拼积木：新积木要么直接扣在旁边那块上（相邻配对），要么先跨过一整块已经拼好的结构，再扣到它外侧的凹槽上。",
+      "pitfalls": ["忘记加外侧的 dp[i-dp[i-1]-2]，导致像 ()(()) 这类串接情形少算", "下标越界未用 0 兜底，负下标在 Python 会取到数组末尾造成错误"],
+      "code": "def longest_dp(s):\n    n, best, dp = len(s), 0, [0] * (len(s) + 1)\n    for i in range(1, n + 1):\n        if s[i-1] == ')':\n            if s[i-2] == '(':\n                dp[i] = (dp[i-2] if i >= 2 else 0) + 2\n            elif i - dp[i-1] - 2 >= 0 and s[i - dp[i-1] - 2] == '(':\n                dp[i] = dp[i-1] + 2 + (dp[i - dp[i-1] - 3] if i - dp[i-1] - 3 >= 0 else 0)\n            best = max(best, dp[i])\n    return best",
+      "sources": [{"title": "最长有效括号（LeetCode 32）· 大厂高频手撕题", "url": "https://leetcode.cn/problems/longest-valid-parentheses"}]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "题目定义：给定只含 '(' 与 ')' 的字符串，求最长格式正确且连续的括号子串长度",
+      "示例 1：s = \"(()\" 输出 2，最长有效子串为 \"()\"",
+      "示例 3：s = \"\" 输出 0",
+      "约束：0 ≤ s.length ≤ 3×10^4，s[i] 为 '(' 或 ')'"
+    ],
+    "uncertain": [
+      "摘要示例 2 显示为 s = ')())' 输出 4，字面不自洽（该串最长有效只有 2）；应为 ')()())' 的截断，本条目按 LeetCode 32 原题采用 ')()())' 并用参考代码验证通过（待核实输入原文）",
+      "示例 2 为按原题采用的自洽版本，其余示例与摘要一致"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "在一串括号里，找出最长的一段连续且能完全配对的长度。"},
+      {"level": "入门", "text": "从左到右扫，用一个栈只记下标。遇左括号把下标压进去；遇右括号先弹一次，如果栈空了说明这段作废，就把当前下标压进去当新起点；没空就用当前下标减去栈顶，得到这一段长度。"},
+      {"level": "进阶", "text": "关键是栈里存的都是『还没被匹配的位置』。压入 -1 当哨兵，是为了让第一段合法子串也能用 i 减栈顶算长度。遇到右括号弹栈后栈空，说明当前位置之前全部作废，把基准重置到 i。一次扫描即可，时间 O(n)、空间 O(n)。"},
+      {"level": "专家", "text": "同题有三种 O(n) 解法：索引栈、线性 DP（dp[i] 以 i 结尾的最长有效长度，转移要跳过 dp[i-1] 整段再拼接外侧 dp[i-dp[i-1]-2]）、以及左右两次计数扫描（空间 O(1)）。栈法最直观、DP 最能展示转移推导、双扫描最省空间。面试建议先给栈法，被追问空间优化再上双扫描。"}
+    ],
+    "socratic": [
+      {"q": "为什么栈里要先压一个 -1？", "a": "它是哨兵边界。若不加，当第一段就是合法子串时栈会为空，算长度时没有可减的基准，需要在代码里特判起始位置。"},
+      {"q": "遇到右括号后栈空了，为什么还要把当前下标压回去？", "a": "空栈表示从上一个基准到 i 为止都无法再与后面匹配，i 及其左边都已作废；把 i 设为新基准，后续长度才从 i+1 起算。"}
+    ],
+    "mechanism": "栈法的本质是把匹配转成下标作差：栈天然维护了未匹配位置的 LIFO 集合，栈顶就是当前有效段的左边界前一位。它一次扫描就统一处理嵌套与串接，因为嵌套由先进后出完成、串接由基准重置完成，不需要额外判断子串结构。",
+    "boundary": "n 达 3×10^4 时栈法空间 O(n) 无压力；若要严格 O(1) 空间需换左右双向计数法，但该法对『多余的左括号』方向必须从右再扫一遍。若题面不要求子串连续（允许删除字符），本题三种解法全部失效。",
+    "analogyBoundary": "发号类比假设配对总是相邻的，而括号可以嵌套也能串接；真实处理靠栈的 LIFO 与基准重置两层结构，类比看不到这两层，容易误以为只要比较相邻字符。",
+    "misconceptions": [
+      "只数左右括号数量而忽略『连续』要求，把 “)()(” 之类算错。",
+      "弹栈后忘记空栈重置基准，导致非法前缀被计入后续长度。",
+      "栈里存字符而非下标，得到长度时还要额外结构换算。"
+    ],
+    "ownAnalysis": "（推断）这类括号匹配题与编译器的语法分析、表达式求值同源，栈都是核心工具；把索引栈推广到『最近未匹配位置』可迁移到柱状图最大矩形、股票跨度等问题。DP 版本的价值在于练习『跳跃引用历史状态』，这在嵌套结构建模里是常见模式。",
+    "officialNotes": [
+      {"position": "原题要求返回最长有效括号子串长度，字符串仅含 '(' 与 ')'，长度上限 3×10^4", "source": "https://leetcode.cn/problems/longest-valid-parentheses"}
+    ],
+    "interviewAnswer": "我用一个栈存下标，先压 -1 作哨兵。扫到左括号就把下标压栈；扫到右括号先 pop，若栈空了说明到这里的括号段全废，把当前下标压回去当新基准；没空就用 i 减去栈顶更新最大值。多出来的 -1 保证第一段合法子串也能算长度。时间 O(n)、空间 O(n)。",
+    "studyPath": {
+      "prerequisites": ["栈的基本操作", "字符串遍历"],
+      "nextSteps": ["LeetCode 20 有效的括号", "LeetCode 22 括号生成", "左右双向计数 O(1) 空间写法"]
+    }
+  },
+  "problem": {
+    "title": "最长有效括号",
+    "number": 32,
+    "difficulty": "hard",
+    "statement": "给定一个只包含 '(' 和 ')' 的字符串 s，找出其中最长的一个格式正确且连续的括号子串的长度。格式正确指每个左括号都有对应的右括号将其闭合，例如 (()()) 合法；子串必须连续。若不存在这样的子串返回 0。约束：0 ≤ s.length ≤ 3×10^4，s[i] 仅为 '(' 或 ')'。",
+    "examples": [
+      {"input": "s = \"(()\"", "output": "2", "why": "最长有效子串为 \"()\""},
+      {"input": "s = \")()())\"", "output": "4", "why": "最长有效子串为 \"()()\""},
+      {"input": "s = \"\"", "output": "0", "why": "空串没有有效子串"}
+    ],
+    "approach": {
+      "idea": "用栈保存『尚未匹配的下标』，栈顶就是当前有效段的左边界前一位。遇 '(' 压下标；遇 ')' 弹出一次，若栈空则把当前下标压入作为新基准，否则用『当前下标 - 栈顶』更新答案。",
+      "steps": [
+        "1. 初始化 stack = [-1]，答案 best = 0",
+        "2. 从左到右遍历下标 i 与字符 ch",
+        "3. ch == '(' ：把 i 压栈",
+        "4. ch == ')' ：先 pop；若栈空把 i 压栈（重置基准），否则 best = max(best, i - stack[-1])",
+        "5. 遍历结束返回 best"
+      ],
+      "whyItWorks": "任一时刻栈中保存的是所有尚未匹配的位置。弹栈后若栈非空，栈顶就是上一个未匹配位置，i 与它之间的括号段已被完全配对；若栈空，说明 i 之前没有可用左边界，i 即新的作废边界。",
+      "alternatives": [
+        {"name": "线性 DP", "complexity": "O(n) / O(n)", "when": "面试官要求展示状态转移推导时"},
+        {"name": "左右双向计数扫描", "complexity": "O(n) / O(1)", "when": "需要 O(1) 额外空间，或被追问空间优化时"}
+      ]
+    },
+    "solution": {
+      "python": "def longestValidParentheses(s: str) -> int:\n    stack = [-1]           # 哨兵：最早边界的前一位\n    best = 0\n    for i, ch in enumerate(s):\n        if ch == '(':\n            stack.append(i)\n        else:\n            stack.pop()\n            if not stack:          # 空栈：前面全废，重置基准\n                stack.append(i)\n            else:\n                best = max(best, i - stack[-1])\n    return best",
+      "python_alt": "def longestValidParentheses(s: str) -> int:\n    n = len(s)\n    dp = [0] * n           # dp[i]：以 i 结尾的最长有效长度\n    best = 0\n    for i in range(1, n):\n        if s[i] != ')':\n            continue\n        if s[i - 1] == '(':\n            dp[i] = (dp[i - 2] if i >= 2 else 0) + 2\n        elif i - dp[i - 1] - 1 >= 0 and s[i - dp[i - 1] - 1] == '(':\n            dp[i] = dp[i - 1] + 2 + (dp[i - dp[i - 1] - 2] if i - dp[i - 1] - 2 >= 0 else 0)\n        best = max(best, dp[i])\n    return best",
+      "notes": "栈法最直观：pop 之后必须判空，空则压 i 重置基准。DP 法的坑在第三项——拼接外侧已匹配块 dp[i-dp[i-1]-2]，漏掉它 ()(()) 这类串接就会少算。两种写法各跑示例 )()()) 均得 4。"
+    },
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "一次线性扫描，每字符摊还 O(1)；栈或 dp 数组最坏保存 n 个下标/长度。"
+    },
+    "pitfalls": [
+      "弹栈后忘记判空：栈空必须重置基准，否则非法前缀会被并入后续长度",
+      "初始未压 -1 哨兵，导致以合法子串开头的字符串长度少算",
+      "把『格式正确』理解成只需左右数量相等，忽略连续约束"
+    ],
+    "edgeCases": [
+      "s = \"\" 返回 0",
+      "s = \")(\" 或全为右括号，返回 0",
+      "s = \"()(()\" 返回 2；n 取到 3×10^4 时 O(n) 仍可通过"
+    ],
+    "interviewTips": "先讲栈里存的是下标、栈顶是左边界前一位，再写代码；重点强调 -1 哨兵与『弹栈后判空重置』两处。被问空间优化就切到左右双向计数法，并说明要从两个方向各扫一遍。卡住时先写出 get 长度那一步的公式 best = i - stack[-1]，通常能顺势补齐其余分支。"
+  }
+}

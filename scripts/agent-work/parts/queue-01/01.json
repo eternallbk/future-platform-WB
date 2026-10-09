@@ -1,0 +1,176 @@
+{
+  "id": "633640aabf0338eb",
+  "tldr": "给智能体装一个可复用的隐式心智模型，用它推断对手的隐藏信念与意图，并在信念条件奖励下学策略。",
+  "keyPoints": [
+    "多智能体需在部分可观测下推断对手知道什么、想做什么",
+    "现有系统靠提示设计、记忆、端到端行为塑造，不学可复用伙伴状态",
+    "提出心智模型智能体：从交互历史推断隐藏信念、意图与可能反应",
+    "用摊销递归 ToM 表征，含一阶与二阶心智状态结构",
+    "联合信念条件奖励模型，语言与多模态基准上交互质量与 ToM 均提升"
+  ],
+  "why": "多智能体与心智理论是 agent 方向高频面试点；「学习可复用伙伴状态」这一归纳偏置可迁移到多模态协作与博弈式后训练。",
+  "difficulty": "hard",
+  "tags": [
+    "agent",
+    "multi-agent",
+    "theory-of-mind",
+    "rl",
+    "foundation-model"
+  ],
+  "entities": [
+    "mental-model-enabled agents",
+    "Theory-of-Mind",
+    "belief-conditioned reward model"
+  ],
+  "diagram": {
+    "kind": "flow",
+    "title": "心智模型智能体流水线",
+    "caption": "从观测历史推断伙伴心智状态，再用信念条件奖励学策略，推理期无需伙伴在线。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='心智模型智能体四层流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>交互历史</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>部分可观测的观测与动作</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>摊销递归心智模型</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>一阶/二阶信念与意图</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>信念条件奖励</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>按推断对手状态评候选动作</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>策略学习</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>推理期可独立行动</text>\n</svg>",
+    "alt": "四层竖排流程：交互历史→摊销递归心智模型→信念条件奖励→策略学习，推理期可独立行动。"
+  },
+  "concepts": [
+    {
+      "name": "Amortized Recursive Theory-of-Mind（摊销递归心智理论）",
+      "readable": "把「对手现在在想什么」学成一个网络：吃进交互历史直接吐出对手的隐藏信念与意图，不必每遇到新对手就现场重新推理。",
+      "analogy": "像老练的棋手：不用每盘从头推演对手棋风，看前面几步就能大致知道对方想干什么。",
+      "analogyBreaksDown": "棋手可观察成千上万盘共享经验，而这里的心智模型是对某伙伴群体摊销学出来的；遇到分布外风格的对手，「一眼看穿」会失效。",
+      "mechanism": "用一次前向代替逐次在线推理（摊销），并让心智状态随时间递归更新；同时保留一阶（我对你的信念）与二阶（我以为你对我的信念）结构，使表征能承载嵌套推理。",
+      "visual": "横轴为交互步 t，纵轴为心智状态向量；一阶与二阶信念各画一条随时间的轨迹，颜色深浅表示置信度，二阶状态在关键互动后波动更大。",
+      "prerequisites": [
+        "强化学习与 MDP 基础",
+        "部分可观测下的信念状态概念",
+        "序列建模隐状态（RNN / Transformer）"
+      ],
+      "selfTest": [
+        "摊销在这里省掉的是什么计算？",
+        "一阶与二阶心智状态差别在哪？",
+        "为什么心智模型要与奖励模型联合学习？"
+      ],
+      "formula": "b_{t+1} = f_{\\phi}(h_{1:t+1}), \\quad b_t = (b^{(1)}_t,\\ b^{(2)}_t)"
+    },
+    {
+      "name": "Belief-Conditioned Reward Model（信念条件奖励模型）",
+      "readable": "评价动作时不仅看状态与动作，还看「我推断出的对手当前心智状态」，于是同一动作对不同对手、不同时刻的收益可以不同。",
+      "analogy": "像给不同性格的同事提建议：同样措辞对急性子与慢性子效果完全不同，先判断对方状态再决定怎么说。",
+      "analogyBreaksDown": "人际判断里对方状态由真实心理决定，而这里奖励用的是推断出的信念估计，估计错了奖励就打偏并传导到策略。",
+      "mechanism": "把推断出的伙伴心智状态作为奖励模型的额外输入，使奖励显式地相对伙伴状态打分；策略在该信念感知信号下学习，从而把伙伴建模收益固化进策略。",
+      "visual": "三维散点：x 轴动作、y 轴推断心智状态、z 轴奖励值，同一动作在 y 轴不同位置呈现不同高度的色块。",
+      "prerequisites": [
+        "奖励塑形与逆强化学习基本概念",
+        "条件期望与折扣回报"
+      ],
+      "selfTest": [
+        "奖励依赖推断信念会带来什么风险？",
+        "为什么策略掌握该奖励后可独立行动？",
+        "移除信念输入后奖励模型退化成什么？"
+      ],
+      "formula": "r_t = r_{\\theta}(s_t, a_t, \\hat{b}_t)"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-tom-recursive-belief",
+      "name": "递归心智状态更新（Recursive Mental-State Update）",
+      "category": "agent",
+      "latex": "b_{t+1} = f_{\\phi}(h_{1:t+1}), \\quad b_t = (b^{(1)}_t,\\ b^{(2)}_t)",
+      "symbols": [
+        ["h_{1:t+1}", "截至 t+1 步的交互历史（观测与动作）"],
+        ["b_t", "t 时刻推断出的伙伴心智状态向量"],
+        ["b^{(1)}_t", "一阶：我对伙伴信念/意图的估计"],
+        ["b^{(2)}_t", "二阶：我认为伙伴对我有怎样的信念"],
+        ["f_{\\phi}", "可学习的摊销递归推断网络"]
+      ],
+      "derivation": [
+        "第 1 步：部分可观测下看不到伙伴心智，只能用历史作证据。",
+        "第 2 步：逐次在线推理代价高，改用网络一次前向摊销掉该推理。",
+        "第 3 步：把心智状态拆成一阶与二阶分量，以表示嵌套的相互推断。",
+        "第 4 步：递归接入新观测得到 b_{t+1}，供奖励与策略共用。"
+      ],
+      "analogy": "像读连载小说：每读一章就更新对角色动机的猜测，还会猜「角色也在猜别人怎么看他」。",
+      "pitfalls": [
+        "把摊销做成逐任务重新推理，丢掉跨任务复用的核心卖点",
+        "只建一阶状态就宣称能处理递归信念，能力上限被卡住",
+        "误以为心智状态有真实标签监督，其实多为联合优化学出"
+      ],
+      "code": "import torch, torch.nn as nn\nclass ToM(nn.Module):\n    def __init__(self, d_in, d_h=64):\n        super().__init__()\n        self.rnn = nn.GRU(d_in, d_h, batch_first=True)\n        self.head1, self.head2 = nn.Linear(d_h, d_h), nn.Linear(d_h, d_h)\n    def forward(self, hist):          # hist: [B,T,d_in]\n        h, _ = self.rnn(hist)\n        return self.head1(h[:, -1]), self.head2(h[:, -1])",
+      "sources": [
+        {"title": "Mental-Models for Multi-Agent Systems", "url": "https://arxiv.org/abs/2610.12453v1"}
+      ]
+    },
+    {
+      "id": "f-belief-conditioned-reward",
+      "name": "信念条件奖励与策略目标（Belief-Conditioned Reward）",
+      "category": "agent",
+      "latex": "r_t = r_{\\theta}(s_t, a_t, \\hat{b}_t), \\quad \\pi^{*} = \\arg\\max_{\\pi} \\mathbb{E}\\left[\\sum_{t} \\gamma^{t} r_t\\right]",
+      "symbols": [
+        ["s_t", "t 时刻自身状态"],
+        ["a_t", "候选动作"],
+        ["\\hat{b}_t", "心智模型推断出的伙伴状态估计"],
+        ["r_{\\theta}", "信念条件奖励模型"],
+        ["\\gamma", "折扣因子"],
+        ["\\pi^{*}", "该奖励下的最优策略"]
+      ],
+      "derivation": [
+        "第 1 步：普通奖励只依赖 (s,a)，无法区分对手不同意图下的最优动作。",
+        "第 2 步：把推断伙伴状态加进奖励输入，使打分相对伙伴状态。",
+        "第 3 步：在信念感知奖励下最大化折扣回报得到策略。",
+        "第 4 步：训练后策略可直接前向决策，无需推理期再跑伙伴推断。"
+      ],
+      "analogy": "像带对手资料下棋：棋谱评分会参考「我判断对手是什么风格」，同一落点对不同风格评分不同。",
+      "pitfalls": [
+        "忽略推断误差会直接污染奖励，误当噪声处理",
+        "有了奖励模型就以为不需要策略，忘了推理期要独立行动",
+        "把折扣回报写成不含期望的形式，随机性上出错"
+      ],
+      "code": "import torch, torch.nn as nn\nclass Reward(nn.Module):\n    def __init__(self, d_s, d_a, d_b):\n        super().__init__()\n        self.net = nn.Sequential(nn.Linear(d_s+d_a+d_b,128), nn.ReLU(), nn.Linear(128,1))\n    def forward(self, s, a, b_hat):\n        return self.net(torch.cat([s, a, b_hat], dim=-1))",
+      "sources": [
+        {"title": "Mental-Models for Multi-Agent Systems", "url": "https://arxiv.org/abs/2610.12453v1"}
+      ]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "当前智能体多靠提示设计、记忆或端到端行为塑造，不学显式可复用的伙伴状态表征",
+      "方法学习摊销递归心智理论表征，含一阶与二阶心智状态结构",
+      "方法联合信念条件奖励模型，按推断伙伴状态评估候选动作",
+      "策略在信念感知信号下学习，推理期可独立行动",
+      "在仅语言与多模态两类基准上，显式心智建模持续提升交互质量与 ToM 表现",
+      "代码公开于 github.com/hananshafi/Mental-Models"
+    ],
+    "uncertain": [
+      "心智状态维度与一阶/二阶参数化摘要未给，公式为按摘要重建的通用形式，需核对原文",
+      "心智模型与奖励「联合」训练的具体损失与权重摘要未说明，待核实",
+      "基准名称与具体提升数值摘要未给出，待核实"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "给 AI 装一个会猜「对方在想什么」的模型，再据此决定怎么做。"},
+      {"level": "入门", "text": "多智能体里 AI 常看不到对方真实想法。这个方法让 AI 从交互历史学出隐式心智状态，推断对手信念与意图并当决策变量用，因此在语言与多模态任务上互动更好。"},
+      {"level": "进阶", "text": "三个关键设计：一是摊销，用网络一次前向替代逐次在线推理，得到可跨任务复用的伙伴状态；二是递归结构，心智状态随时间滚动更新；三是把推断状态喂进奖励模型打分，策略在该信号下学习，于是推理期不必再跑对手模型也保留建模收益。"},
+      {"level": "专家", "text": "相比提示工程、记忆、端到端塑造，它把伙伴建模变成显式可复用的决策变量，并用一阶、二阶嵌套结构承载相互推断。代价是对手分布漂移时摊销会失准，且奖励依赖估计信念会传导误差。与经典逐次 ToM 相比它用摊销换效率；与纯 RL 对手建模相比它把心智状态与奖励解耦成可复用中间量。摘要称在语言与多模态基准上一致提升，未给具体指标。"}
+    ],
+    "socratic": [
+      {"q": "如果不学显式心智状态、只靠端到端策略会怎样？", "a": "行为能被调好，但伙伴状态没被显式表示，跨任务无法复用，遇到新对手要从头学，也难解释为何选该动作。"},
+      {"q": "为什么不能每遇到一个对手就现场推理一次？", "a": "逐次推理部署时太慢且不可复用；摊销把成本前置到训练，一次前向即得，代价是分布外对手会失准。"}
+    ],
+    "mechanism": "部分可观测下伙伴心智是隐变量，自然做法是每步在线推断，但既慢又不可跨任务迁移。作者把推断摊销成前向网络并让其递归滚动，得到可复用低维心智状态；关键是把该状态作为奖励模型输入，使伙伴建模的收益通过奖励固化为策略能力，而非停留在推理阶段的临时判断。",
+    "boundary": "当伙伴行为分布与训练差异很大、或历史过短不足以推断时，摊销心智状态会失准，信念条件奖励也随之打偏。任务若几乎没有策略互动，显式心智建模收益有限。",
+    "analogyBoundary": "棋手类比在「对手不变、规则固定」时成立；现实中对手策略会随我而变，形成互相建模的反馈回路，此时把对方当固定对象推断会失效。",
+    "misconceptions": [
+      "以为心智状态有人工标注——通常是联合优化里学出的隐表征。",
+      "把 ToM 等同于读心准确率，忽略它真正用途是当决策变量。",
+      "认为推理期仍要在线跑对手模型——优势恰在推理期可独立行动。"
+    ],
+    "ownAnalysis": "最值得迁移的是「把隐藏对手状态显式化并当决策变量」这一归纳偏置（推断），它与多模态 agent 对用户意图建模、后训练里博弈式偏好优化同构。可疑处：摘要只说持续提升却不给数值与基准；信念条件奖励存在自我强化风险——心智猜错会经奖励固化。是否用真实伙伴状态做过上限消融，摘要未提，需核对原文。",
+    "officialNotes": [
+      {"position": "显式心智状态建模是一般多智能体系统有用的归纳偏置，在语言与多模态设置上一致提升交互质量与 ToM 表现", "source": "arxiv: 2610.12453v1"}
+    ],
+    "interviewAnswer": "问题是这样：多智能体在部分可观测下，传统做法靠提示、记忆或端到端塑形，不学可复用的伙伴状态。这篇把「对手在想什么」做成隐变量，用摊销递归网络从历史一次前向推断一阶、二阶心智状态，再作为奖励模型输入，策略在信念感知奖励下学习，所以推理期能独立行动还保留建模收益。它的价值是一个归纳偏置：显式伙伴建模带来可复用决策变量。边界是对手分布外会失准。",
+    "studyPath": {
+      "prerequisites": ["强化学习与部分可观测基础", "序列建模与隐状态", "多智能体博弈基本概念"],
+      "nextSteps": ["读原文与 github.com/hananshafi/Mental-Models", "对比逐次 ToM 与摊销推断的效率精度取舍", "思考把心智状态接口接到多模态 agent 规划模块"]
+    }
+  }
+}

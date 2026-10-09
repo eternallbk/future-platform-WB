@@ -1,0 +1,196 @@
+{
+ "batchId": "problems-03",
+ "mode": "full",
+ "items": [
+  {
+   "id": "d5f812800250910d",
+   "title": "买卖股票的最佳时机",
+   "category": "coding",
+   "channel": "codetop",
+   "url": "https://leetcode.cn/problems/best-time-to-buy-and-sell-stock",
+   "sources": [
+    {
+     "url": "https://leetcode.cn/problems/best-time-to-buy-and-sell-stock",
+     "name": "codetop"
+    }
+   ],
+   "tags": [
+    "leetcode",
+    "手撕",
+    "算法题",
+    "高频面试题",
+    "字节跳动",
+    "腾讯",
+    "拼多多"
+   ],
+   "kind": "problem",
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 148 次、腾讯 29 次、拼多多 9 次、京东 4 次、亚马逊 2 次（共 192 次）；难度 简单；最近一次出现 2026-07-14",
+   "needsFetch": false,
+   "bankKey": "lc-121",
+   "problemNumber": 121,
+   "examFrequency": 192,
+   "askingCompanies": [
+    "字节跳动",
+    "腾讯",
+    "拼多多",
+    "京东",
+    "亚马逊"
+   ],
+   "lastAsked": "2026-07-14",
+   "bankTopics": [
+    "动态规划"
+   ],
+   "analysisStatus": "partial",
+   "bankSources": [
+    {
+     "title": "买卖股票的最佳时机（LeetCode 121）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/best-time-to-buy-and-sell-stock"
+    }
+   ]
+  },
+  {
+   "id": "18112dcf61f4af70",
+   "title": "二叉树的最近公共祖先",
+   "category": "coding",
+   "channel": "codetop",
+   "url": "https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree",
+   "sources": [
+    {
+     "url": "https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree",
+     "name": "codetop"
+    }
+   ],
+   "tags": [
+    "leetcode",
+    "手撕",
+    "算法题",
+    "高频面试题",
+    "字节跳动",
+    "快手",
+    "微软"
+   ],
+   "kind": "problem",
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 133 次、快手 22 次、微软 21 次、亚马逊 3 次（共 179 次）；难度 中等；最近一次出现 2026-09-29",
+   "needsFetch": false,
+   "bankKey": "lc-236",
+   "problemNumber": 236,
+   "examFrequency": 179,
+   "askingCompanies": [
+    "字节跳动",
+    "快手",
+    "微软",
+    "亚马逊"
+   ],
+   "lastAsked": "2026-09-29",
+   "bankTopics": [
+    "二叉树",
+    "回溯"
+   ],
+   "analysisStatus": "partial",
+   "bankSources": [
+    {
+     "title": "二叉树的最近公共祖先（LeetCode 236）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree"
+    },
+    {
+     "title": "236. 二叉树的最近公共祖先 · 题解",
+     "url": "https://programmercarl.com/algo/binary-tree/0236-lowest-common-ancestor-of-a-binary-tree.html"
+    }
+   ]
+  },
+  {
+   "id": "a64a5cde474031d8",
+   "title": "螺旋矩阵",
+   "category": "coding",
+   "channel": "programmercarl",
+   "url": "https://leetcode.cn/problems/spiral-matrix",
+   "sources": [
+    {
+     "url": "https://programmercarl.com/algo/other/0054-spiral-matrix.html",
+     "name": "programmercarl"
+    }
+   ],
+   "tags": [
+    "算法题",
+    "题解",
+    "leetcode",
+    "手撕",
+    "algo"
+   ],
+   "kind": "problem",
+   "summary": "矩阵按顺时针螺旋顺序遍历所有元素，通过模拟顺时针画矩阵过程，坚持循环不变量和左闭右开原则，处理长方形矩阵的边界条件。",
+   "needsFetch": false,
+   "bankKey": "lc-54",
+   "problemNumber": 54,
+   "examFrequency": 161,
+   "askingCompanies": [
+    "字节跳动",
+    "拼多多",
+    "京东",
+    "商汤"
+   ],
+   "lastAsked": "2026-09-16",
+   "bankTopics": [
+    "二叉树",
+    "数学与模拟"
+   ],
+   "analysisStatus": "partial",
+   "bankSources": [
+    {
+     "title": "54.螺旋矩阵 · 题解",
+     "url": "https://programmercarl.com/algo/other/0054-spiral-matrix.html"
+    },
+    {
+     "title": "螺旋矩阵（LeetCode 54）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/spiral-matrix"
+    }
+   ]
+  },
+  {
+   "id": "d17aeca17c9ceb7f",
+   "title": "合并K个排序链表",
+   "category": "coding",
+   "channel": "codetop",
+   "url": "https://leetcode.cn/problems/merge-k-sorted-lists",
+   "sources": [
+    {
+     "url": "https://leetcode.cn/problems/merge-k-sorted-lists",
+     "name": "codetop"
+    }
+   ],
+   "tags": [
+    "leetcode",
+    "手撕",
+    "算法题",
+    "高频面试题",
+    "字节跳动",
+    "快手",
+    "拼多多"
+   ],
+   "kind": "problem",
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 112 次、快手 27 次、拼多多 8 次、京东 6 次（共 153 次）；难度 困难；最近一次出现 2026-08-21",
+   "needsFetch": false,
+   "bankKey": "lc-23",
+   "problemNumber": 23,
+   "examFrequency": 153,
+   "askingCompanies": [
+    "字节跳动",
+    "快手",
+    "拼多多",
+    "京东"
+   ],
+   "lastAsked": "2026-08-21",
+   "bankTopics": [
+    "链表",
+    "排序与TopK"
+   ],
+   "analysisStatus": "partial",
+   "bankSources": [
+    {
+     "title": "合并K个排序链表（LeetCode 23）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/merge-k-sorted-lists"
+    }
+   ]
+  }
+ ]
+}

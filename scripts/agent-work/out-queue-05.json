@@ -1,0 +1,1235 @@
+{
+ "batchId": "queue-05",
+ "entries": [
+  {
+   "id": "8f2f9a8185514295",
+   "tldr": "统一图像/视频深度研究智能体 OneSearch-VL，用视觉锚定证据图 VGEG 贯穿数据构造、过程监督与操作级评估。",
+   "keyPoints": [
+    "单图/多图/视频操作不同，但共享「视觉定位—外部检索—事实组合」流程",
+    "VGEG 把视觉锚点、实体关系、来源事实、答案操作编码为依赖图",
+    "VGEG 数据引擎构造并校验多图/视频问题，并过滤专家轨迹",
+    "由 VGEG 导出 EVGR 奖励，在 RL 中监督证据可追溯与视觉锚定",
+    "8B 模型在两个新基准超 Qwen3-VL-8B 20.2 / 17.6 个百分点"
+   ],
+   "why": "多模态深度研究是 agent×多模态交叉热点；「证据图 + 可追溯奖励」的建模方式可迁移到多模态 RAG 与后训练奖励设计，面试常考。",
+   "difficulty": "hard",
+   "tags": [
+    "multimodal",
+    "agent",
+    "deep-research",
+    "multimodal-rag",
+    "rl",
+    "evidence-graph"
+   ],
+   "entities": [
+    "OneSearch-VL",
+    "Visually Grounded Evidence Graph (VGEG)",
+    "EVGR reward",
+    "Qwen3-VL-8B",
+    "OneSearch-MI-Bench",
+    "OneSearch-Video-Bench",
+    "OneSearch-VL-SFT-110K",
+    "OneSearch-VL-RL-10K"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "OneSearch-VL 证据图工作流",
+    "caption": "同一张 VGEG 证据图贯穿数据构造、过程监督与评估，使定位与检索的依赖不被压平。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='OneSearch-VL 证据图工作流四层'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>图/视频 + 问题</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>单图/多图/视频统一输入</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>视觉锚定 + 外部检索</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>定位锚点、取回来源</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>VGEG 证据图</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>锚点/实体/事实/操作依赖</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>SFT + RL(EVGR)</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>证据可追溯奖励</text>\n</svg>",
+    "alt": "四层竖排流程：图/视频+问题→视觉锚定与外部检索→VGEG 证据图→SFT+RL(EVGR)。"
+   },
+   "concepts": [
+    {
+     "name": "Visually Grounded Evidence Graph（视觉锚定证据图）",
+     "readable": "把一次多模态深究拆成一张依赖图：节点是定位到的图像区域、实体、来源支持的事实和产出答案的操作，边表示它们之间的依赖关系。",
+     "analogy": "像侦探的线索板：照片上的关键区域、人物关系、查到的档案和最终推理用红线连成一张网，而不是只写一句结论。",
+     "analogyBreaksDown": "线索板靠人脑连线，这里的节点类别与依赖边是数据引擎构造并校验出来的结构化标注，可被程序遍历，人类手画达不到这种一致性。",
+     "mechanism": "用同一张任务级图同时充当三种角色：数据构造（生成并校验多图/视频问题）、过程监督（约束轨迹）、操作级评估，使依赖在训练与评测间保持一致。",
+     "visual": "画一张有向图：底层是图像/视频帧上的锚定框，中层是实体与来源事实节点，顶层是答案操作节点；边用不同颜色区分「依赖/证据支持/操作」三类关系。",
+     "prerequisites": [
+      "多模态视觉定位（grounding）基础",
+      "检索增强生成（RAG）",
+      "图结构与依赖建模"
+     ],
+     "selfTest": [
+      "VGEG 的节点有哪几类？",
+      "为什么把数据构造、监督、评估统一到一张图？",
+      "删掉依赖边后评估会失去什么？"
+     ],
+     "formula": "G=(V,E),\\quad V=V_{\\mathrm{anchor}}\\cup V_{\\mathrm{entity}}\\cup V_{\\mathrm{fact}}\\cup V_{\\mathrm{op}}"
+    },
+    {
+     "name": "Evidence-aware Visual-Grounded Rubric Reward（证据感知视觉锚定评分奖励）",
+     "readable": "从 VGEG 标注里导出的一条可打分奖励规则，在 RL 中奖励「证据可追溯」与「视觉锚定正确」，而不只看最终答案对不对。",
+     "analogy": "像老师改证明题：不只看结论对不对，还要看每一步引用是否有出处、图形指认是否对准。",
+     "analogyBreaksDown": "老师能凭经验给主观分，这里的 rubric 是把 VGEG 依赖翻译成程序可算的分项加权，无法覆盖图中未编码的评价维度。",
+     "mechanism": "把图级依赖拆成分项（锚定、可追溯、事实支持）加权求和作为 RL 奖励，使策略在生成过程中显式保持证据链完整，而非仅拟合答案。",
+     "visual": "画分项柱状图：横轴为锚定、可追溯、事实支持三项，纵轴为分数，同一次 rollout 各分项同色，加权和决定奖励。",
+     "prerequisites": [
+      "强化学习奖励设计",
+      "多模态 grounding 的评估指标"
+     ],
+     "selfTest": [
+      "EVGR 比答案对错奖励多监督了什么？",
+      "为什么要从 VGEG 导出 rubric？",
+      "分项权重失衡会带来什么后果？"
+     ],
+     "formula": "r_{\\mathrm{EVGR}}=\\lambda_{g}s_{\\mathrm{ground}}+\\lambda_{t}s_{\\mathrm{trace}}+\\lambda_{f}s_{\\mathrm{fact}}"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-vgeg-evidence-graph",
+     "name": "视觉锚定证据图（Visually Grounded Evidence Graph）",
+     "category": "multimodal",
+     "latex": "G=(V,E),\\quad V=V_{\\mathrm{anchor}}\\cup V_{\\mathrm{entity}}\\cup V_{\\mathrm{fact}}\\cup V_{\\mathrm{op}}",
+     "symbols": [
+      [
+       "V_{\\mathrm{anchor}}",
+       "定位到的视觉锚点（图像/视频区域）集合"
+      ],
+      [
+       "V_{\\mathrm{entity}}",
+       "实体及其关系节点集合"
+      ],
+      [
+       "V_{\\mathrm{fact}}",
+       "来源支持的事实节点集合"
+      ],
+      [
+       "V_{\\mathrm{op}}",
+       "产出答案的检索/推理操作节点集合"
+      ],
+      [
+       "E",
+       "连接上述节点、表示依赖关系的边集合"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：多模态深究的答案依赖若干中间量（定位、检索、事实、操作），需要显式表示。",
+      "第 2 步：把这些中间量建成节点，按语义分成锚点、实体、事实、操作四类。",
+      "第 3 步：用边编码它们之间的依赖，得到任务级有向图。",
+      "第 4 步：同一张图同时用于数据构造、过程监督与操作级评估。"
+     ],
+     "analogy": "像把侦探的线索板结构化：每条线索是节点，线索之间「谁支撑谁」的关系是边。",
+     "pitfalls": [
+      "把图当成事后可视化，忘记它同时是数据与监督的规范",
+      "节点粒度不一致，导致跨任务无法复用",
+      "忽略边类型，把依赖关系压平成无结构集合"
+     ],
+     "code": "def vgeg(anchors, entities, facts, ops, edges):\n    V = {\n        'anchor': anchors, 'entity': entities,\n        'fact': facts, 'op': ops,\n    }\n    E = edges  # [(src, dst, rel), ...]\n    return {'nodes': V, 'edges': E}\n\ng = vgeg(['box0'], ['Eiffel'], ['height=330m'], ['compare'],\n         [('box0', 'Eiffel', 'grounds')])",
+     "sources": [
+      {
+       "title": "OneSearch-VL: Unified Multimodal Deep Research Agent for Image and Video",
+       "url": "https://arxiv.org/abs/2610.12419v1"
+      }
+     ]
+    },
+    {
+     "id": "f-evgr-rubric-reward",
+     "name": "证据感知视觉锚定评分奖励（Evidence-aware Visual-Grounded Rubric Reward）",
+     "category": "multimodal",
+     "latex": "r_{\\mathrm{EVGR}}=\\lambda_{g}s_{\\mathrm{ground}}+\\lambda_{t}s_{\\mathrm{trace}}+\\lambda_{f}s_{\\mathrm{fact}}",
+     "symbols": [
+      [
+       "s_{\\mathrm{ground}}",
+       "视觉锚定正确性得分（是否指对区域）"
+      ],
+      [
+       "s_{\\mathrm{trace}}",
+       "证据可追溯性得分（引文/来源是否可追）"
+      ],
+      [
+       "s_{\\mathrm{fact}}",
+       "事实与来源一致性得分"
+      ],
+      [
+       "\\lambda_{g},\\lambda_{t},\\lambda_{f}",
+       "各分项权重"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：多模态深究仅奖励最终答案对错，无法约束过程，易生成无依据内容。",
+      "第 2 步：把 VGEG 的图级依赖拆成锚定、可追溯、事实支持三个可计算分项。",
+      "第 3 步：按权重加权求和，得到逐条 rollout 的奖励。",
+      "第 4 步：把该奖励接入 RL，使策略在生成时维持证据链与视觉锚定。"
+     ],
+     "analogy": "像改证明题按步骤给分：结论对但引用错、指认错，仍要扣分。",
+     "pitfalls": [
+      "只看答案对错，忽视证据链是否完整",
+      "把 rubric 分项当硬约束，导致训练信号过强、探索受限",
+      "默认权重可直接照搬，忽略不同任务分项尺度不同"
+     ],
+     "code": "def evgr(s_ground, s_trace, s_fact,\n         lg=1.0, lt=1.0, lf=1.0):\n    return lg * s_ground + lt * s_trace + lf * s_fact\n\n# 单次 rollout 的三项得分 -> 标量奖励\nr = evgr(0.9, 0.6, 0.8)\nprint(r)  # 2.3",
+     "sources": [
+      {
+       "title": "OneSearch-VL: Unified Multimodal Deep Research Agent for Image and Video",
+       "url": "https://arxiv.org/abs/2610.12419v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "单图、多图、视频深度研究操作不同但共享视觉定位、外部检索、事实组合的工作流",
+     "VGEG 把视觉锚点、实体关系、来源事实与答案操作编码为共享依赖图",
+     "VGEG 数据引擎构造并校验多图/视频问题并过滤专家轨迹，产出 SFT-110K 与 RL-10K",
+     "由 VGEG 标注导出 EVGR 奖励，在 RL 中监督证据可追溯与视觉锚定",
+     "构造了 OneSearch-MI-Bench 与 OneSearch-Video-Bench，按 VGEG 操作组织问题",
+     "OneSearch-VL-8B 在两个新基准上比 Qwen3-VL-8B（带工具）高 20.2 / 17.6 个百分点，并在 7 个图像基准与 VideoDR 上提升"
+    ],
+    "uncertain": [
+     "EVGR 三项是否恰为我所列的锚定/可追溯/事实支持、以及分项权重取值，摘要未给，公式为按摘要重建的通用形式，需核对原文",
+     "VGEG 四类节点与边类型的具体定义摘要未展开，待核实",
+     "数据引擎过滤专家轨迹的具体准则（成功/可验证比例等）摘要未说明，待核实",
+     "「20.2/17.6」对应的两个基准分别哪个摘要未明确，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "给能看图的 AI 一张「证据线索板」，让它边查边指认、答案有据可依。"
+     },
+     {
+      "level": "入门",
+      "text": "图像或视频深度研究要做视觉定位、外部检索和事实组合。这篇把这几步的依赖画成一张结构化证据图 VGEG，并用它造数据、约束训练、做评估，最后按图给 RL 奖励，8B 模型在两个新基准显著超过带工具的 Qwen3-VL-8B。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键设计是「一图三用」：VGEG 同时当数据构造规范、过程监督信号和操作级评测基准，避免训练与评测的依赖定义不一致。训练上先 SFT-110K 再 RL-10K，RL 用从 VGEG 导出的 EVGR 奖励，把「证据可追溯」和「视觉锚定」变成可打分信号，而不是只奖励最终答案。"
+     },
+     {
+      "level": "专家",
+      "text": "与常规多模态 RAG/agent 相比，它没有把定位、检索、事实压平成文本上下文，而是保留为带类型的节点与依赖边，因此可以逐操作评估与细粒度监督。代价是图构造与校验成本高，且 rubric 只能覆盖图中已编码的维度。对求职者，它的迁移点是：把中间证据显式结构化，再由此设计过程奖励——这正是多模态 agent 与后训练奖励建模的结合部。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "如果只用最终答案对错做 RL 会怎样？",
+      "a": "模型可能给出正确结论但指认了错误区域或编造来源；过程错误无法被发现和纠正，证据可追溯性也无从优化。"
+     },
+     {
+      "q": "为什么不直接把检索到的文本拼进上下文？",
+      "a": "那会丢失「哪条证据支撑哪步操作」的依赖结构，既难做操作级评估，也无法把依赖转成分项奖励。"
+     }
+    ],
+    "mechanism": "多模态深究的难点不在单步能力，而在锚点、检索、事实、操作之间的依赖容易在压平成文本后被抹掉。作者把依赖固化成任务级图，使数据生成、轨迹监督与评估共用同一套结构；再把图翻译成分项 rubric 奖励，让 RL 能直接惩罚「定位错/来源不可追」，从而把过程正确性写进策略而不是事后检查。",
+    "boundary": "当问题本身不需要外部检索（纯感知题）或证据依赖极浅时，VGEG 的图结构收益有限；rubric 奖励也只覆盖图中已编码维度，未编码的错误不会被纠正。图构建若有误，会污染数据、监督与评估三处。",
+    "analogyBoundary": "线索板类比在「线索有限、关系稀疏」时成立；真实深究里证据可能互相矛盾或需要多跳加权，此时二元「有边/无边」的图信息量不足，需引入置信度与冲突处理。",
+    "misconceptions": [
+     "以为 VGEG 只是可视化——它同时是数据构造与监督的规范。",
+     "把 EVGR 当成答案正确率奖励——它监督的是过程证据与锚定。",
+     "认为两个新基准的提升等于通用能力提升——它们是按 VGEG 操作组织的专项评测。"
+    ],
+    "ownAnalysis": "最有迁移价值的是「先把中间证据结构化，再据此设计过程奖励」（推断），这与其说是一个 agent 框架，不如说是一套可复用的监督协议，和 RLHF 里从偏好转 rubric、以及多模态 RAG 的引用一致性评估同构。可疑处：摘要只给两个新基准的百分比提升，未给与纯答案奖励的消融，因此 EVGR 的独立贡献无法从摘要判断（待核实）；VGEG 由数据引擎构造，其正确性依赖引擎质量，摘要未提人工校验比例。",
+    "officialNotes": [
+     {
+      "position": "VGEG 作为共享任务级引用，统一数据构造、过程监督与操作级评估；OneSearch-VL-8B 在两个新基准上比带工具的 Qwen3-VL-8B 高 20.2 与 17.6 个百分点",
+      "source": "arxiv: 2610.12419v1"
+     }
+    ],
+    "interviewAnswer": "我理解这篇的核心不是又一个多模态 agent，而是把「视觉定位、检索、事实、操作」的依赖固定成一张证据图 VGEG。它一图三用：造数据、监督轨迹、做操作级评估。训练是先 SFT 后 RL，RL 的奖励 EVGR 从图里导出，分项奖励锚定正确和证据可追溯，而不是只看答案。效果是 8B 在两个新基准超带工具的 Qwen3-VL-8B 二十个百分点上下。我会记住的迁移点是：把中间证据显式结构化，再据此设计过程奖励，这套思路可以直接搬到多模态 RAG 的奖励设计里。",
+    "studyPath": {
+     "prerequisites": [
+      "多模态 grounding 与视觉问答基础",
+      "RAG 与工具调用 agent",
+      "RLHF/RL 奖励设计入门"
+     ],
+     "nextSteps": [
+      "读原文与 github.com/appletea233/OneSearch-VL",
+      "对比纯答案奖励与 EVGR 的消融（待原文补充）",
+      "思考把 VGEG 结构接到自有多模态 agent 的证据链评估"
+     ]
+    }
+   }
+  },
+  {
+   "id": "2399d927c5394cb9",
+   "tldr": "在冻结音视频扩散骨干上，把流式因果适配器与现成少步适配器并行训练、推理时直接相加，得到实时少步音视频生成。",
+   "keyPoints": [
+    "实时交互生成需两个能力：分块自回归注意力（可流式）与少步采样（每块便宜）",
+    "常规做法是链式蒸馏：先因果化再少步（或反向），后一目标会破坏前一能力",
+    "借助模型合并思想，在冻结骨干上并行分别获得两种能力",
+    "预测并验证两个适配器的权重更新方向近似正交，无需显式正交约束",
+    "推理时直接相加，无联合训练；480×832 下约 26 fps，可连续生成 30 秒"
+   ],
+   "why": "音视频联合生成与「多能力合并而不互相干扰」是生成式方向热点；正交更新的直接和思路可迁移到多任务微调与适配器合并，面试常被追问。",
+   "difficulty": "hard",
+   "tags": [
+    "generative",
+    "diffusion",
+    "adapter",
+    "streaming",
+    "model-merging",
+    "audio-video"
+   ],
+   "entities": [
+    "block-autoregressive attention",
+    "causal adapter",
+    "few-step adapter",
+    "parallel adapter composition",
+    "direct sum",
+    "packed audio-video backbone"
+   ],
+   "diagram": {
+    "kind": "architecture",
+    "title": "并行适配器组合架构",
+    "caption": "冻结骨干上并行训练因果与少步两个适配器，权重更新近似正交，故推理时直接相加即可。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='音视频并行适配器组合架构'>\n<rect x='56' y='12' width='368' height='34' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='34' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>冻结音视频扩散骨干</text>\n<text x='408' y='34' font-size='13' text-anchor='end' fill='currentColor'>参数不再更新</text>\n<line x1='240' y1='46' x2='240' y2='58' stroke='var(--line-1)' stroke-width='1.6'/>\n<line x1='144' y1='58' x2='336' y2='58' stroke='var(--line-1)' stroke-width='1.6'/>\n<line x1='144' y1='58' x2='144' y2='70' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='144,78 140,70 148,70' fill='var(--line-1)'/>\n<line x1='336' y1='58' x2='336' y2='70' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='336,78 332,70 340,70' fill='var(--line-1)'/>\n<rect x='56' y='78' width='176' height='44' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='98' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>因果适配器</text>\n<text x='72' y='114' font-size='13' text-anchor='start' fill='currentColor'>对冻结骨干训练，带来流式</text>\n<rect x='248' y='78' width='176' height='44' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='264' y='98' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>少步适配器</text>\n<text x='264' y='114' font-size='13' text-anchor='start' fill='currentColor'>现成的少步采样能力</text>\n<line x1='144' y1='122' x2='144' y2='132' stroke='var(--line-1)' stroke-width='1.6'/>\n<line x1='336' y1='122' x2='336' y2='132' stroke='var(--line-1)' stroke-width='1.6'/>\n<line x1='144' y1='132' x2='336' y2='132' stroke='var(--line-1)' stroke-width='1.6'/>\n<line x1='240' y1='132' x2='240' y2='142' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,150 236,142 244,142' fill='var(--line-1)'/>\n<rect x='56' y='150' width='368' height='36' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='172' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>直接相加（ΔW 近似正交）</text>\n<text x='408' y='172' font-size='13' text-anchor='end' fill='currentColor'>无需联合训练</text>\n<line x1='240' y1='186' x2='240' y2='196' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,204 236,196 244,196' fill='var(--line-1)'/>\n<rect x='56' y='204' width='368' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='224' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>实时流式少步音视频 ≈26 fps</text>\n</svg>",
+    "alt": "冻结骨干向下分出因果适配器与少步适配器两条并行支路，两者直接相加后输出实时流式少步音视频。"
+   },
+   "concepts": [
+    {
+     "name": "Parallel Adapter Composition（并行适配器组合）",
+     "readable": "把「会流式」和「少步快」两个能力分别训成两个适配器，训练时互不干扰，推理时把两个适配器的权重加在一起，一次前向同时具备两种能力。",
+     "analogy": "像给同一辆车分别加装「能倒车入库」和「能省油」两个选装件，装完两者互不影响，一起用即可。",
+     "analogyBreaksDown": "选装件之间物理独立，而这里两个适配器作用在同一批权重上，只有当它们的更新方向近似正交时相加才不会互相抵消，否则直接和会把两个能力一起弄坏。",
+     "mechanism": "在冻结骨干上，一个适配器针对因果/流式目标训练，另一个直接用现成的少步适配器；因为二者编辑的是不同的功能轴，更新方向近乎正交，故按 direct sum 相加即可，省去链式微调中后一目标覆盖前一能力的问题。",
+     "visual": "画两个高维向量箭头（ΔW_causal 与 ΔW_fs）从同一起点出发，夹角接近 90°；把两箭头首尾相加得到合成的 ΔW，长度接近两者之和、方向不互相抵消。",
+     "prerequisites": [
+      "扩散模型与采样步数概念",
+      "适配器/LoRA 微调",
+      "向量内积与正交性"
+     ],
+     "selfTest": [
+      "为什么链式蒸馏会「后面覆盖前面」？",
+      "两个适配器能直接相加的前提是什么？",
+      "正交是训练时强加的还是事后观测到的？"
+     ],
+     "formula": "W_{\\mathrm{comp}}=W_{0}+\\alpha\\,\\Delta W_{\\mathrm{causal}}+\\beta\\,\\Delta W_{\\mathrm{fs}}"
+    },
+    {
+     "name": "Block-Autoregressive Streaming Attention（分块自回归流式注意力）",
+     "readable": "把整段音视频切成块，每块只因果地看之前的块，于是不用等整段生成完就能先输出已完成的块，实现流式。",
+     "analogy": "像直播字幕：不用等整场讲完，讲一句就出几句，后面的内容只依赖前面出现过的。",
+     "analogyBreaksDown": "直播字幕的因果是天然按时间排的，而扩散生成每一块内部仍是并行的双向去噪，只有块与块之间是因果的，「流式」指的块级而非帧级因果。",
+     "mechanism": "把双向教师蒸馏为块级因果注意力，使第 k 块生成时只条件于前 k-1 块，从而可以边生成边输出；它与少步采样是两个正交能力，各自对应注意力掩码与采样步数两个不同轴。",
+     "visual": "画一个下三角块状注意力掩码矩阵：横纵轴为块编号，块内为实心（可双向），块间只允许看左上区域，右上半区被遮住。",
+     "prerequisites": [
+      "自回归生成与 KV cache",
+      "注意力掩码",
+      "扩散采样流程"
+     ],
+     "selfTest": [
+      "块内为什么要保留双向注意力？",
+      "流式能力对应哪个张量/掩码改变？",
+      "为什么流式与少步是正交能力？"
+     ],
+     "formula": "\\mathrm{Attn}(Q_{k},K_{\\le k},V_{\\le k})=\\mathrm{softmax}\\!\\left(\\frac{Q_{k}K_{\\le k}^{\\top}}{\\sqrt{d}}\\right)V_{\\le k}"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-parallel-adapter-direct-sum",
+     "name": "并行适配器直接组合（Parallel Adapter Direct Sum）",
+     "category": "generative",
+     "latex": "W_{\\mathrm{comp}}=W_{0}+\\alpha\\,\\Delta W_{\\mathrm{causal}}+\\beta\\,\\Delta W_{\\mathrm{fs}},\\quad \\langle \\Delta W_{\\mathrm{causal}},\\Delta W_{\\mathrm{fs}}\\rangle\\approx 0",
+     "symbols": [
+      [
+       "W_{0}",
+       "冻结的音视频扩散骨干权重"
+      ],
+      [
+       "\\Delta W_{\\mathrm{causal}}",
+       "因果（流式）适配器的权重更新"
+      ],
+      [
+       "\\Delta W_{\\mathrm{fs}}",
+       "少步采样适配器的权重更新"
+      ],
+      [
+       "\\alpha,\\beta",
+       "两个适配器的缩放系数"
+      ],
+      [
+       "\\langle\\cdot,\\cdot\\rangle",
+       "权重更新的内积，衡量是否互相干扰"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：链式蒸馏里后一目标微调前一阶段权重，可能覆盖已有能力。",
+      "第 2 步：若两能力对应不同的功能轴，则各自的权重更新方向近似正交。",
+      "第 3 步：正交更新相加时几乎不互相抵消，可视为 direct sum 直接求和。",
+      "第 4 步：推理时把两个适配器加到冻结骨干上，即同时得到流式与少步能力。"
+     ],
+     "analogy": "像两个互不干扰的旋钮：一个管方向、一个管速度，各自拧动不改变对方的效果，故可以叠加。",
+     "pitfalls": [
+      "误以为正交是训练时用约束强加的——摘要强调它是被观测验证的",
+      "忽略缩放系数 α、β，直接相加可能量级失配",
+      "把 direct sum 当成任意两适配器都可相加，忽略「不同功能轴」这一前提"
+     ],
+     "code": "import torch\nW0 = torch.randn(64, 64)\ndW_causal = torch.randn(64, 64) * 0.01\ndW_fs = torch.randn(64, 64) * 0.01\nalpha, beta = 1.0, 1.0\nW_comp = W0 + alpha * dW_causal + beta * dW_fs\ncos = (dW_causal * dW_fs).sum() / (\n    dW_causal.norm() * dW_fs.norm())\nprint(float(cos))  # 近似 0 表示近乎正交",
+     "sources": [
+      {
+       "title": "Real-Time Joint Audio-Video Generation by Parallel Adapter Composition",
+       "url": "https://arxiv.org/abs/2610.10343v1"
+      }
+     ]
+    },
+    {
+     "id": "f-orthogonal-update-cosine",
+     "name": "权重更新正交性度量（Orthogonality of Weight Updates）",
+     "category": "generative",
+     "latex": "\\cos\\theta=\\frac{\\langle \\Delta W_{A},\\Delta W_{B}\\rangle_{F}}{\\lVert \\Delta W_{A}\\rVert_{F}\\,\\lVert \\Delta W_{B}\\rVert_{F}}\\approx 0",
+     "symbols": [
+      [
+       "\\Delta W_{A}",
+       "适配器 A 的权重更新矩阵"
+      ],
+      [
+       "\\Delta W_{B}",
+       "适配器 B 的权重更新矩阵"
+      ],
+      [
+       "\\langle\\cdot,\\cdot\\rangle_{F}",
+       "Frobenius 内积"
+      ],
+      [
+       "\\lVert\\cdot\\rVert_{F}",
+       "Frobenius 范数"
+      ],
+      [
+       "\\cos\\theta",
+       "两个更新方向的余弦相似度"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：判断两更新是否互相干扰，等价于看它们的夹角。",
+      "第 2 步：用 Frobenius 内积与范数定义向量夹角的余弦。",
+      "第 3 步：余弦接近 0 说明方向近似正交，相加不抵消。",
+      "第 4 步：无需在训练中加正交约束，只需事后验证。"
+     ],
+     "analogy": "像两条互相垂直的力，合力的效果就是两份效果之和，不会因为方向相反而抵消。",
+     "pitfalls": [
+      "用逐元素内积代替 Frobenius 内积，维度对不上",
+      "只算余弦不作规模检验，忽略范数量级差异",
+      "把「近似正交」当成精确正交，忽略残差干扰"
+     ],
+     "code": "import torch\ndef cos_sim(A, B):\n    return (A * B).sum() / (A.norm() + 1e-8) / (B.norm() + 1e-8)\n\nA = torch.randn(128, 128)\nB = torch.randn(128, 128)\nB = B - (A * B).sum() / (A * A).sum() * A  # 去掉 A 分量\nprint(float(cos_sim(A, B)))  # 约 0",
+     "sources": [
+      {
+       "title": "Real-Time Joint Audio-Video Generation by Parallel Adapter Composition",
+       "url": "https://arxiv.org/abs/2610.10343v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "实时交互生成需要块自回归注意力（可流式）与少步采样（每块便宜）两种能力",
+     "常规流式视频做法是链式蒸馏：双向教师→因果学生→少步，或反向；后一目标可能撤销前一能力",
+     "方法在打包音视频骨干上让两种能力并行获得：因果适配器对冻结骨干训练，少步适配器直接取现成",
+     "作者预测并验证两个适配器的权重更新方向近似正交，且训练中无显式正交约束",
+     "正交更新可直接相加（direct sum），推理时两适配器简单相加，无需联合训练",
+     "最终系统实时生成联合音视频，480×832 下约 26 fps（未量化），可持续 30 秒且画质稳定"
+    ],
+    "uncertain": [
+     "因果适配器与少步适配器的具体结构、注入位置、参数量摘要未给，待核实",
+     "正交性是逐层验证还是整体验证、余弦的具体数值摘要未给，待核实",
+     "「画质追平双向教师」「多数指标匹配或超过链式基线」的具体指标与数值摘要未给，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "把「会流式」和「跑得快」两个能力分开训，用的时候加在一起，互不打架。"
+     },
+     {
+      "level": "入门",
+      "text": "实时音视频生成要同时会流式（边生成边播）和少步（每块便宜）。传统办法是一段段蒸馏，后一段会把前一段的能力弄坏。这篇把两个能力分别做成适配器，在冻结骨干上并行训练，因为更新方向近似垂直，推理时直接相加即可，得到一个约 26 fps 的实时流式系统。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键观察是：流式对应注意力掩码这一功能轴，少步对应采样步数这一功能轴，二者编辑的参数方向近乎正交，所以可以在冻结骨干上各自训练而不需要联合训练，也不会互相覆盖。作者不是强行加正交约束，而是先预测再验证。推理时按 direct sum 相加即可，画质能追平双向教师。"
+     },
+     {
+      "level": "专家",
+      "text": "与链式蒸馏相比，它把「能力获取」从串行改为并行，避免了灾难性遗忘式的相互覆盖；与一般模型合并相比，它利用的是「不同功能轴→权重正交」这一结构性先验，因此可以不做联合微调。边界是：一旦两个适配器作用在同一功能轴或正交性不成立，直接相加就会互相抵消。对求职者，这是「多能力合并/多任务微调」的一个干净案例。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么链式蒸馏会丢掉已有能力？",
+      "a": "后一阶段直接微调前一阶段产出的权重，优化目标只关心新能力，会把上一层学到的功能方向改掉，形成覆盖。"
+     },
+     {
+      "q": "为什么不加正交约束直接联合训练两个适配器？",
+      "a": "联合训练需同时优化两目标且要调权重，成本高且可能互相牵制；而实证表明两者自然近似正交，分开训再相加更简单。"
+     }
+    ],
+    "mechanism": "问题的本质是两个能力若走串行微调会互相覆盖。作者的选择是解耦：把每个能力绑定到骨干上一条不同的功能轴，用冻结骨干保证公共底座不变，各自只更新一条低维适配器。因为不同轴上的梯度方向近乎正交，两个更新相加近似为不干扰的叠加，于是不用联合训练也能同时获得两种能力，把「多能力共存」降为一次向量相加。",
+    "boundary": "当两个能力实际共享同一功能轴（例如都主要改注意力温度），更新不再正交，直接相加会互相抵消；训练数据分布差异过大时正交性也可能不成立。此外流式的块大小、少步的步数都由各自适配器限制，超出其训练范围效果会退化。",
+    "analogyBoundary": "旋钮类比假设两个能力完全独立；实际上它们共享同一骨干的前向路径，只是更新方向近似垂直，仍存在小的非正交残差，长序列或极端采样步数下这部分残差可能累积显现。",
+    "misconceptions": [
+     "以为加了显式正交正则——摘要明确说训练中无正交约束。",
+     "把直接相加当成混合两个模型的输出——这里是权重级 direct sum。",
+     "认为推理仍需跑两遍模型——两个适配器合成后仍是一次前向。"
+    ],
+    "ownAnalysis": "这篇把「模型合并」的先验用得很漂亮：不是先合并再验证，而是先论证两能力位于不同功能轴、预测更新正交，再实证验证（推断这与很多 LoRA 合并可加性成立的机理一致）。可疑处：摘要说「近似正交」，但未给余弦数值或逐层统计，若某些层不满足，直接相加的稳健性存疑（待核实）；此外画质「追平双向教师」缺少具体指标。",
+    "officialNotes": [
+     {
+      "position": "在打包音视频骨干上，流式与少步两能力可并行获得；两适配器权重更新近似正交、无需显式正交约束，推理直接相加，得到约 26 fps、可持续 30 秒的实时流式音视频",
+      "source": "arxiv: 2610.10343v1"
+     }
+    ],
+    "interviewAnswer": "实时音视频生成要两个能力：块自回归的流式注意力，和少步采样。传统做法是串行蒸馏，先因果化再少步，问题是后一步会把前一步的能力破坏掉。这篇借模型合并的思路，把两个能力做成两个适配器，在冻结骨干上并行训练，理由是它们编辑的是不同功能轴，权重更新方向近乎正交，所以推理时直接相加就行，不用联合训练。结果是一个约 26 fps 的实时流式系统，画质能追平双向教师。我会强调两个词：功能轴解耦、正交可加。",
+    "studyPath": {
+     "prerequisites": [
+      "扩散模型与少步蒸馏（如 consistency/distill 采样）",
+      "自回归注意力和 KV cache",
+      "LoRA/适配器与模型合并"
+     ],
+     "nextSteps": [
+      "读原文，核对正交性的验证方式与数值",
+      "对比链式蒸馏基线的具体指标",
+      "在自己的多任务微调里试「分轴训练 + 权重相加」"
+     ]
+    }
+   }
+  },
+  {
+   "id": "83a0a88895a87397",
+   "tldr": "H-CDLM 让 token 与「token 聚类」两层粒度在连续空间里并行扩散，低开销提升连续扩散语言模型质量。",
+   "keyPoints": [
+    "连续扩散/流匹配语言模型是顺序无关的并行文本生成路径",
+    "H-CDLM 借鉴图像联合扩散，把多种「模态」并行去噪",
+    "两种模态是不同语义粒度：token 本身，与预训练 token 嵌入的粗聚类",
+    "框架允许逐模态设置采样器与调度，增强模态间互动",
+    "迁到 CoBit 得 H-CoBit：LM1B GenPPL 49.4、OWT 50.4，GSM8K 27.4%"
+   ],
+   "why": "连续扩散语言模型是生成式方向的对 LLM 范式挑战；「多粒度联合扩散 + 逐模态调度」是可直接迁移的建模范式，面试可考扩散与自回归的对比。",
+   "difficulty": "hard",
+   "tags": [
+    "generative",
+    "diffusion",
+    "language-model",
+    "flow-matching",
+    "discrete-diffusion",
+    "continuous"
+   ],
+   "entities": [
+    "Hierarchical Continuous Diffusion Language Models (H-CDLMs)",
+    "H-CoBit",
+    "H-FLM",
+    "CoBit",
+    "FLM",
+    "MAUVE",
+    "GenPPL"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "层次连续扩散语言模型",
+    "caption": "token 与 token 聚类两层粒度在同一连续空间并行扩散，用逐模态采样器协调生成。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='H-CDLM 四层流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>文本 token 嵌入</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>预训练嵌入空间</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>粒度聚类 + 并行扩散</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>token 层与聚类层同时去噪</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>逐模态采样器 / 调度</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>强化模态间互动</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>连续去噪 → 生成文本</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>顺序无关、可并行</text>\n</svg>",
+    "alt": "四层竖排流程：文本 token 嵌入→粒度聚类与并行扩散→逐模态采样器与调度→连续去噪生成文本。"
+   },
+   "concepts": [
+    {
+     "name": "Joint Continuous Diffusion over Hierarchical Granularities（层次粒度联合连续扩散）",
+     "readable": "不只对最终的 token 序列加噪去噪，还同时对一个「更粗的版本」——把 token 嵌入做聚类得到的簇——加噪去噪，让粗粒度和细粒度两个尺度互相帮忙。",
+     "analogy": "像同时画草图和细节：先把握整张画的构图（粗聚类），再在其约束下补像素级细节（token），两者一起迭代而不是先后两步。",
+     "analogyBreaksDown": "画草图和细节是人为分工，这里的聚类层由「预训练 token 嵌入的聚类」客观定义，且两层在同一个连续扩散过程里同步加噪，不存在谁先谁后的严格先后关系。",
+     "mechanism": "把 token 与「token 所在聚类」视为不同语义粒度的两种模态，在连续扩散空间并行去噪；由于是同一去噪过程，粗层可对细层施加语义约束，从而提升生成质量，且开销与参数增加极小。",
+     "visual": "画两条平行的去噪轨迹：上轨迹是 token 嵌入（细、抖动大），下轨迹是聚类中心（粗、平滑），两条轨迹用竖线相连表示互相约束，随扩散步数 t 从纯噪声走向数据。",
+     "prerequisites": [
+      "连续扩散/DDPM 基本形式",
+      "流匹配与连续时间生成",
+      "离散扩散语言模型（DLM）基础"
+     ],
+     "selfTest": [
+      "「两种模态」在这里指哪两种粒度？",
+      "为什么粗聚类能约束细化？",
+      "和图像多模态联合扩散的异同是什么？"
+     ],
+     "formula": "\\mathcal{L}=\\sum_{m}w_{m}\\,\\mathbb{E}_{t,x_{0},\\epsilon}\\!\\left[\\lVert \\epsilon-\\epsilon_{\\theta}^{(m)}(x_{t}^{(m)},t)\\rVert^{2}\\right]"
+    },
+    {
+     "name": "Per-Modality Sampler and Schedule（逐模态采样器与调度）",
+     "readable": "不同粒度的模态不必共用同一套加噪强度与采样步数，可以各自设置采样器和噪声调度，使粗层与细层以不同节奏去噪。",
+     "analogy": "像合唱里不同声部用不同的谱：粗声部节奏慢、负责定调，细声部节奏快、负责装饰，各自按自己的拍子走却合成一首歌。",
+     "analogyBreaksDown": "合唱各声部彼此独立，而这里两种模态必须同步收敛到各自的目标分布；调度若配合不当，粗层还没稳定细层已经定型，反而引入不一致。",
+     "mechanism": "为每个模态单独配置采样器与噪声调度，让它们在去噪早期/晚期承担不同角色，从而控制模态间的信息交换节奏；这是把「跨模态互动强度」变成可调超参，而非固定耦合。",
+     "visual": "画一张横轴为扩散时间、纵轴为噪声强度的折线图，两条曲线斜率不同（粗层更平缓、细层更陡），用阴影标注两条曲线差距最大的阶段即模态间强互动区。",
+     "prerequisites": [
+      "扩散噪声调度（β 或 SNR 曲线）",
+      "采样器（DDIM/Euler 等）概念"
+     ],
+     "selfTest": [
+      "为什么不同粒度要不同调度？",
+      "调度不当会发生什么？",
+      "把两个模态调度设为相同会退化成什么？"
+     ],
+     "formula": "x_{t}^{(m)}=\\sqrt{\\bar{\\alpha}_{t}^{(m)}}\\,x_{0}^{(m)}+\\sqrt{1-\\bar{\\alpha}_{t}^{(m)}}\\,\\epsilon^{(m)}"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-hcdlm-joint-diffusion-loss",
+     "name": "层次联合扩散损失（Hierarchical Joint Diffusion Loss）",
+     "category": "generative",
+     "latex": "\\mathcal{L}=\\sum_{m}w_{m}\\,\\mathbb{E}_{t,x_{0}^{(m)},\\epsilon^{(m)}}\\!\\left[\\lVert \\epsilon^{(m)}-\\epsilon_{\\theta}^{(m)}(x_{t}^{(m)},t)\\rVert^{2}\\right]",
+     "symbols": [
+      [
+       "m",
+       "模态索引（token 层 / 聚类层）"
+      ],
+      [
+       "x_{0}^{(m)}",
+       "模态 m 的干净数据（token 嵌入或聚类表示）"
+      ],
+      [
+       "x_{t}^{(m)}",
+       "模态 m 在时间 t 的加噪状态"
+      ],
+      [
+       "\\epsilon^{(m)}",
+       "采样注入的噪声"
+      ],
+      [
+       "\\epsilon_{\\theta}^{(m)}",
+       "模型对模态 m 预测的噪声"
+      ],
+      [
+       "w_{m}",
+       "各模态损失权重"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：连续扩散在干净数据上加噪，训练网络预测所加噪声。",
+      "第 2 步：把 token 与其粗聚类视为两个模态，各自加噪。",
+      "第 3 步：对两个模态的预测噪声损失加权求和，构成联合目标。",
+      "第 4 步：两模态在同一过程里去噪，粗层对细层施加语义约束。"
+     ],
+     "analogy": "像同时纠正一张画和马赛克版画：细图与粗图都要对上原图，粗图帮细图定大结构。",
+     "pitfalls": [
+      "只对 token 层做扩散，忽略聚类层，退化为普通连续 DLM",
+      "权重 w_{m} 失衡，粗层主导导致细粒度被抹平",
+      "误以为两模态共享同一噪声——它们各自采样"
+     ],
+     "code": "import torch, torch.nn.functional as F\ndef hcdlm_loss(eps_pred, eps, ws=(1.0, 1.0)):\n    # eps_pred, eps: list of [M] tensors, one per modality\n    loss = 0.0\n    for w, ep, e in zip(ws, eps_pred, eps):\n        loss = loss + w * F.mse_loss(ep, e)\n    return loss",
+     "sources": [
+      {
+       "title": "Denoising Hierarchical Representations: Joint Continuous Diffusion for Language Modeling",
+       "url": "https://arxiv.org/abs/2610.08738v1"
+      }
+     ]
+    },
+    {
+     "id": "f-hcdlm-flow-matching-velocity",
+     "name": "逐模态流匹配速度目标（Per-Modality Flow Matching Velocity）",
+     "category": "generative",
+     "latex": "x_{t}^{(m)}=(1-t)\\,x_{0}^{(m)}+t\\,x_{1}^{(m)},\\quad \\mathcal{L}_{\\mathrm{FM}}=\\sum_{m}w_{m}\\mathbb{E}\\lVert v_{\\theta}^{(m)}(x_{t}^{(m)},t)-(x_{1}^{(m)}-x_{0}^{(m)})\\rVert^{2}",
+     "symbols": [
+      [
+       "x_{0}^{(m)}",
+       "模态 m 的源分布样本（噪声）"
+      ],
+      [
+       "x_{1}^{(m)}",
+       "模态 m 的目标数据"
+      ],
+      [
+       "v_{\\theta}^{(m)}",
+       "模态 m 的预测速度场"
+      ],
+      [
+       "t",
+       "连续时间（0 到 1）"
+      ],
+      [
+       "w_{m}",
+       "模态损失权重"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：流匹配在源与目标间取线性插值路径。",
+      "第 2 步：该路径上目标速度恒为 x_{1}-x_{0}，与 t 无关。",
+      "第 3 步：训练网络回归该速度，得到每个模态的向量场。",
+      "第 4 步：H-CDLM 把该目标套用到每层粒度，得到 H-FLM。"
+     ],
+     "analogy": "像给两辆不同起点的车规划到各自终点的直路，训练模型在任何时刻都知道该往哪个方向、以多快走。",
+     "pitfalls": [
+      "把速度目标写反（x_{0}-x_{1}），训练方向错误",
+      "误以为线性插值路径是唯一选择，忽略一般高斯路径",
+      "两模态共用同一速度网络却不加模态标识，导致混淆"
+     ],
+     "code": "import torch, torch.nn.functional as F\ndef fm_loss(v_pred, x0, x1, t):\n    # t: [B,1]; 线性插值路径\n    x_t = (1 - t) * x0 + t * x1\n    target_v = x1 - x0\n    return F.mse_loss(v_pred, target_v)\n\n# 每个模态各调一次后加权求和即为 H-FLM 损失",
+     "sources": [
+      {
+       "title": "Denoising Hierarchical Representations: Joint Continuous Diffusion for Language Modeling",
+       "url": "https://arxiv.org/abs/2610.08738v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "连续扩散与流匹配语言模型近期取得实质进展，靠精心设计的 token 表示与扩散/流空间",
+     "H-CDLM 借鉴离散 DLM 与连续图像扩散的联合扩散思路，对多个模态并行扩散",
+     "两种模态是不同语义粒度：token 本身，与预训练 token 嵌入聚类得到的粗簇",
+     "框架允许逐模态的采样器与调度，以增强模态间互动",
+     "应用到 CoBit 得 H-CoBit，在数据集熵下 MAUVE 提升，LM1B GenPPL 49.4、OWT GenPPL 50.4（较基线改善 24.2 与 20.7 点）",
+     "GSM8K 上达 27.4% 准确率，超过此前连续扩散/流匹配模型；应用到 FLM 得 H-FLM 也一致提升"
+    ],
+    "uncertain": [
+     "聚类层实现细节（聚类数、聚类算法、簇表示如何参数化）摘要未给，待核实",
+     "逐模态采样器与调度的具体形式与超参摘要未给，公式为按摘要重建的通用形式，需核对原文",
+     "「改善 24.2 与 20.7 点」针对 GenPPL 还是 GenPPL 对应的基线值，表述需核对原文"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "让模型同时对「词」和「词的粗分类」两层粒度加噪去噪，生成更好的文本。"
+     },
+     {
+      "level": "入门",
+      "text": "连续扩散语言模型把文本放进连续空间，靠顺序无关的并行去噪生成。H-CDLM 在这个基础上多加一层「粗粒度」：把 token 嵌入做聚类得到簇表示，让 token 层和簇层一起并行扩散，再各自设采样器和调度，于是粗结构约束细粒度，指标提升而开销很小。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键设计有三：一是把「不同语义粒度」当成不同模态做联合扩散，借的是图像多模态扩散的经验；二是粗层为细层提供语义约束，改善生成分布（MAUVE、GenPPL）；三是允许逐模态采样器与调度，把跨层互动节奏变成可调超参。它在 CoBit 上得到 H-CoBit，在 FLM 上得到 H-FLM，说明对扩散与流匹配两种范式都适用。"
+     },
+     {
+      "level": "专家",
+      "text": "与离散 DLM 相比，连续扩散在连续空间去噪，H-CDLM 进一步用层次粒度补上「全局语义」这一弱项；与普通连续扩散相比，它多了一条粗粒度监督通路，代价极小。它与图像领域多模态联合扩散同构，但「模态」换成了同一文本的不同语义粒度，这是它比较巧的地方。边界在于：若聚类粒度与 token 语义不对齐，粗层会误导细层；逐模态调度也带来额外超参。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "只对 token 做连续扩散不够吗？",
+      "a": "不够。token 层缺乏全局语义约束，长程一致性弱；引入粗聚类层提供高层结构信号，能改善分布质量与困惑度。"
+     },
+     {
+      "q": "为什么不让两层共用同一调度？",
+      "a": "两层收敛节奏不同，共用调度会使粗层未稳而细层已定；分开调度可控制互动时机，避免过早冻结细节。"
+     }
+    ],
+    "mechanism": "连续扩散语言模型的短板是缺少显式的全局语义约束。作者复用图像多模态联合扩散的思想，但把「模态」重新定义为同一段文本的不同语义粒度：token 与其预训练嵌入的粗聚类。两层在同一扩散过程并行去噪，粗层天然提供高层的语义条件；再允许二者用不同采样器与调度，使这种条件在恰当阶段发生，从而在几乎不增开销下提升生成质量。",
+    "boundary": "若聚类粒度与下游任务的语义需求不匹配（例如需要精细数值推理时粗聚类贡献有限），收益会下降；逐模态调度引入额外超参，调不好反而破坏一致性。此外该框架是在既有连续 DLM/流匹配之上的增量，无法解决连续扩散本身在精确复制类任务上的固有弱点。",
+    "analogyBoundary": "草图—细节类比隐含「粗层一定正确」；若聚类把语义相关的词分到不同簇，粗层的「构图」就是错的，会反过来把细层带偏。类比也掩盖了同步扩散这一事实——两层是同时去噪而非先后两步。",
+    "misconceptions": [
+     "把两种模态理解成文本与图像——这里指同一文本的两个语义粒度。",
+     "以为 H-CDLM 是全新的模型——它是在 CoBit/FLM 上的低开销框架增量。",
+     "认为层次粒度必然提升所有任务——GSM8K 等推理任务收益与语义对齐强相关。"
+    ],
+    "ownAnalysis": "这篇最可迁移的是「把同一输入的不同语义粒度当作模态做联合扩散」（推断），它把图像里的多模态联合扩散迁移到文本的层级表示，思路上与层级 VAE、多尺度扩散一致。可疑处：摘要强调 GenPPL/MAUVE 提升，但未给聚类质量或消融，无法判断粗层贡献是否来自聚类本身的语义（待核实）；GSM8K 27.4% 相对绝对值仍不高，说明连续扩散在推理类任务上仍是短板。",
+    "officialNotes": [
+     {
+      "position": "H-CDLM 通过对多粒度模态并行扩散并逐模态设采样器/调度，在 CoBit 上得 H-CoBit：LM1B GenPPL 49.4、OWT GenPPL 50.4，GSM8K 27.4%，并在 FLM 上得 H-FLM 一致提升",
+      "source": "arxiv: 2610.08738v1"
+     }
+    ],
+    "interviewAnswer": "连续扩散语言模型靠并行去噪生成文本，优点是不依赖从左到右的顺序。H-CDLM 的点子是层次粒度：不但对 token 嵌入加噪去噪，还把它聚类成一个粗粒度表示，两层一起并行扩散，粗层给细层提供全局语义约束；而且两层可以各自设采样器和噪声调度，控制互动节奏。这个框架套到 CoBit 得到 H-CoBit，LM1B 和 OWT 的 GenPPL 分别到 49.4 和 50.4，套到 FLM 得到 H-FLM 也有提升。它的价值在于用极小开销引入层级语义监督。",
+    "studyPath": {
+     "prerequisites": [
+      "DDPM/连续扩散与噪声调度",
+      "流匹配",
+      "离散扩散语言模型与连续扩散语言模型区别"
+     ],
+     "nextSteps": [
+      "读原文与 github.com/matol-16/HCDLM",
+      "复现 CoBit 基线并加聚类层消融",
+      "对比离散 DLM 与连续扩散在推理任务上的差距"
+     ]
+    }
+   }
+  },
+  {
+   "id": "3dfb657c98f58e43",
+   "tldr": "PrimitiveCAD 用图元感知的 token 化、操作对齐损失与特征线对齐奖励，多阶段提升点云到 CAD 的重建精度。",
+   "keyPoints": [
+    "现有方法把点云到 CAD 当成通用点云编码 + token 预测，忽视 CAD 图元的专用监督",
+    "第一阶段：图元感知的点云 token 化模型，学更鲁棒的几何表示",
+    "第二阶段：LLM 监督微调，加操作对齐损失对齐关键 CAD 操作频率，保住全局形状",
+    "第三阶段：引入 RL 与特征线对齐奖励，降低随机性、保住细粒度几何特征",
+    "在 DeepCAD 与 Fusion360 上，代码有效性、几何精度、特征保真度均达 SOTA"
+   ],
+   "why": "点云到 CAD 是「LLM+RL 做结构化生成」的典型；操作对齐损失与特征线奖励的设计可迁移到其它结构化输出任务，RL 微调是大方向高频考点。",
+   "difficulty": "hard",
+   "tags": [
+    "rl",
+    "llm",
+    "cad",
+    "point-cloud",
+    "sft",
+    "3d-generation"
+   ],
+   "entities": [
+    "PrimitiveCAD",
+    "primitive-aware point cloud tokenization",
+    "operation alignment loss",
+    "feature-line alignment reward",
+    "DeepCAD",
+    "Fusion360"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "PrimitiveCAD 三阶段流水线",
+    "caption": "从图元感知 token 化，到操作对齐的 SFT，再到特征线对齐奖励的 RL，逐阶段补足 CAD 几何保真。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='PrimitiveCAD 四层流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>CAD 点云输入</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>工业设计目标</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>图元感知 token 化</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>学鲁棒几何表示</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>LLM SFT + 操作对齐</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>对齐关键操作频率</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>RL + 特征线对齐奖励</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>输出 CAD 代码</text>\n</svg>",
+    "alt": "四层竖排流程：CAD 点云输入→图元感知 token 化→LLM SFT 与操作对齐→RL 与特征线对齐奖励。"
+   },
+   "concepts": [
+    {
+     "name": "Primitive-Aware Point Cloud Tokenization（图元感知点云 token 化）",
+     "readable": "把点云编码成 LLM 能吃的离散/连续 token 时，不是笼统地切块，而是围绕 CAD 的几何图元（线、面等基本形状）来组织，使编码更贴合 CAD 结构。",
+     "analogy": "像把乐高模型拆件时不是按体积平均切，而是沿真实积木块的分界拆开，这样每块都对应一个有意义的零件。",
+     "analogyBreaksDown": "乐高零件边界是明确的，而点云里图元边界要靠模型自己学；若图元检测本身有误，token 化会把错误的边界固化进后续 LLM。",
+     "mechanism": "通用点云 token 化丢失 CAD 图元结构，导致 LLM 拿到的是「几何无关」的 token。作者改成图元感知的 token 化，让编码单元对应 CAD 基本几何，从而在下游生成时更容易复原典型图元结构。",
+     "visual": "画同一物体的两种切分：左图按规则体素平均切块（忽略结构），右图沿图元边界切分（每块对应一个平面/圆柱面），颜色标出不同图元，对比哪种切分更贴几何。",
+     "prerequisites": [
+      "点云表示与特征学习",
+      "3D 形状的 CAD 参数化（草图—拉伸/旋转等操作）"
+     ],
+     "selfTest": [
+      "图元感知 token 化与通用点云编码差在哪？",
+      "为什么 token 化会决定下游重建精度？",
+      "图元检测错误会怎样传导？"
+     ],
+     "formula": "z_{i}=\\mathrm{Enc}_{\\phi}\\!\\left(\\{p_{j}\\in \\mathrm{Prim}_{i}\\}\\right)"
+    },
+    {
+     "name": "Operation Alignment Loss（操作对齐损失）",
+     "readable": "在 LLM 微调时额外加一项损失，专门对齐「各类 CAD 操作被使用的频率」，让模型不要漏用或少用某些关键操作，从而保住整体形状。",
+     "analogy": "像训练一个厨师不只要求成品对，还统计他各道工序的用量是否和标准菜谱一致，避免偷工减料导致成品走样。",
+     "analogyBreaksDown": "菜谱里工序用量是固定标准，而 CAD 数据里操作频率是数据集统计量，不同数据集分布不同；强行对齐可能压制合理的少数操作。",
+     "mechanism": "仅做 token 级交叉熵训练，模型易偏向高频、简单的操作序列，丢掉决定全局形状的关键操作。操作对齐损失把生成序列与数据集中关键操作的频率分布对齐，从而在形状层面保真。",
+     "visual": "画条形图对比两组操作频率：横轴是各类 CAD 操作，纵轴是出现频率，两根柱分别代表数据集真实分布与模型生成分布，损失就是把两组柱的差异压小。",
+     "prerequisites": [
+      "监督微调与交叉熵损失",
+      "分布差异度量（L1/KL）"
+     ],
+     "selfTest": [
+      "只做 token 级 SFT 会遗漏什么？",
+      "操作频率对齐为什么能保住全局形状？",
+      "对齐过强有什么副作用？"
+     ],
+     "formula": "\\mathcal{L}_{\\mathrm{op}}=\\sum_{k=1}^{K}\\left|\\hat{p}_{k}-p_{k}\\right|"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-cad-operation-alignment-loss",
+     "name": "操作频率对齐损失（Operation Alignment Loss）",
+     "category": "rl",
+     "latex": "\\mathcal{L}_{\\mathrm{op}}=\\sum_{k=1}^{K}\\left|\\hat{p}_{k}-p_{k}\\right|",
+     "symbols": [
+      [
+       "\\hat{p}_{k}",
+       "模型生成的样本中第 k 类 CAD 操作出现频率"
+      ],
+      [
+       "p_{k}",
+       "数据集中第 k 类 CAD 操作的真实频率"
+      ],
+      [
+       "K",
+       "CAD 操作类别数"
+      ],
+      [
+       "\\mathcal{L}_{\\mathrm{op}}",
+       "操作对齐损失（L1 形式）"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：纯 token 级 SFT 只约束逐 token 概率，不约束整体操作组合，易偏向高频简单操作。",
+      "第 2 步：统计数据集里每类关键操作的频率 p_k 作为目标分布。",
+      "第 3 步：统计生成序列里相同操作的频率 p̂_k。",
+      "第 4 步：用 L1（或 KL）对齐两分布，把该损失加到 SFT 目标上，保住全局形状特征。"
+     ],
+     "analogy": "像校对菜谱各工序的用量：不只看每句话对错，还要看整体配料比例是否符合标准。",
+     "pitfalls": [
+      "与 token 级损失同权重相加，导致频率对齐压过语言建模目标",
+      "忽略不同数据集操作分布不同，跨数据集复用同一目标频率",
+      "用频率对齐替代几何监督，误以为频率对就等于形状对"
+     ],
+     "code": "import torch\ndef op_align_loss(p_gen, p_data, eps=1e-8):\n    # p_gen, p_data: [K] 归一化后的操作频率分布\n    p_gen = p_gen / (p_gen.sum() + eps)\n    p_data = p_data / (p_data.sum() + eps)\n    return (p_gen - p_data).abs().sum()\n\nlg = torch.tensor([0.1, 0.6, 0.3])\nld = torch.tensor([0.2, 0.5, 0.3])\nprint(float(op_align_loss(lg, ld)))",
+     "sources": [
+      {
+       "title": "PrimitiveCAD: An LLM-Based Point-to-CAD Reconstruction with Primitive-Aware Tokenization and Operation Alignment",
+       "url": "https://arxiv.org/abs/2610.08698v1"
+      }
+     ]
+    },
+    {
+     "id": "f-cad-feature-line-reward",
+     "name": "特征线对齐奖励（Feature-Line Alignment Reward）",
+     "category": "rl",
+     "latex": "R_{\\mathrm{line}}=-\\sum_{l=1}^{L}d\\!\\left(\\hat{\\ell}_{l},\\ \\ell_{l}\\right)",
+     "symbols": [
+      [
+       "\\hat{\\ell}_{l}",
+       "生成 CAD 模型中的第 l 条特征线"
+      ],
+      [
+       "\\ell_{l}",
+       "真值 CAD 模型中的第 l 条特征线"
+      ],
+      [
+       "d(\\cdot,\\cdot)",
+       "两条特征线之间的距离度量"
+      ],
+      [
+       "L",
+       "特征线数量"
+      ],
+      [
+       "R_{\\mathrm{line}}",
+       "特征线对齐奖励（越大越好）"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：SFT 后模型仍存在随机性，细粒度几何特征易漂移。",
+      "第 2 步：特征线是决定零件细节的关键几何要素。",
+      "第 3 步：度量生成与真值特征线的距离，取负作为奖励。",
+      "第 4 步：用 RL 最大化该奖励，降低随机性并提升细粒度保真。"
+     ],
+     "analogy": "像给临摹者打分：不看整体轮廓，而是逐条比对关键线条是否压在原图上。",
+     "pitfalls": [
+      "特征线数量不定时直接逐条配对，需先做匹配",
+      "只用这一项奖励，模型可能牺牲整体形状换取局部线条",
+      "距离度量选得不当（如未归一化）会让奖励尺度失控"
+     ],
+     "code": "import torch\ndef feature_line_reward(gen_lines, gt_lines):\n    # gen_lines, gt_lines: [L, D] 特征线参数化\n    d = (gen_lines - gt_lines).pow(2).sum(-1).sqrt()\n    return -d.mean()\n\ng = torch.randn(5, 3)\nt = torch.randn(5, 3)\nprint(float(feature_line_reward(g, t)))",
+     "sources": [
+      {
+       "title": "PrimitiveCAD: An LLM-Based Point-to-CAD Reconstruction with Primitive-Aware Tokenization and Operation Alignment",
+       "url": "https://arxiv.org/abs/2610.08698v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "现有点云到 CAD 方法多把问题当成通用点云编码与 token 预测，忽视针对 CAD 图元的 token 化与监督，导致难以准确重建复杂图元结构",
+     "PrimitiveCAD 是多阶段范式，目标是提升生成 CAD 的几何精度并更好保留关键几何特征",
+     "第一阶段：图元感知的点云 token 化模型，从 CAD 点云学更鲁棒的几何表示",
+     "第二阶段：对 LLM 做监督微调，引入操作对齐损失对齐关键 CAD 操作频率，改善全局形状特征保留",
+     "第三阶段：引入 RL 与特征线对齐奖励，降低随机性并增强细粒度几何特征保留",
+     "在 DeepCAD 与 Fusion360 上，代码有效性、几何精度、几何特征保真度均达 SOTA"
+    ],
+    "uncertain": [
+     "操作对齐损失的具体形式（是否 L1/KL、是否加权）与特征线对齐奖励的距离定义摘要未给，两条公式为按摘要重建的通用形式，需核对原文",
+     "RL 算法（PPO/GRPO 等）与奖励组合方式摘要未给，待核实",
+     "「SOTA」对应的具体指标与数值摘要未给，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "把点云变成 CAD 代码：先按图元切块，再对齐操作习惯，最后用奖励抠细节。"
+     },
+     {
+      "level": "入门",
+      "text": "点云到 CAD 生成过去被当成普通点云编码加 token 预测，忽略了 CAD 是由基本图元和操作搭出来的。PrimitiveCAD 分三步：先用图元感知的方式把点云 token 化；再微调 LLM 并加一个操作频率对齐损失保住整体形状；最后用强化学习加特征线对齐奖励抠细粒度。它在 DeepCAD 和 Fusion360 上做到最佳。"
+     },
+     {
+      "level": "进阶",
+      "text": "三个阶段各补一个短板：图元感知 token 化解「编码不含 CAD 结构」；操作对齐损失解「只用 token 交叉熵会丢关键操作、全局形状走样」；特征线对齐奖励解「SFT 后仍有随机性、细节漂移」。三者叠加分别作用于表示、整体形状与细粒度几何，因此代码有效性、几何精度与特征保真三方面同时提升。"
+     },
+     {
+      "level": "专家",
+      "text": "这篇的价值在于把「结构化生成」的每个失败模式对应到一层专门监督：表示层用图元感知 token 化，分布层用操作频率对齐，样本层用特征线奖励做 RL 精修。相比只堆更大模型或更多数据，它更像是一套针对 CAD 领域先验的损失工程。边界是这些先验都依赖 CAD 数据集的图元与操作定义，换到非 CAD 的结构化任务需重新设计对齐量与奖励项。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么通用点云编码不够？",
+      "a": "通用编码不含 CAD 图元与操作的先验，token 与几何结构脱节，模型难以重建规则图元，生成的 CAD 结构易失真。"
+     },
+     {
+      "q": "有了操作对齐损失，为什么还要 RL？",
+      "a": "操作对齐只约束整体操作频率，不约束细粒度几何；RL 用特征线奖励直接惩罚线条错位，才能压住随机性、保住细节。"
+     }
+    ],
+    "mechanism": "CAD 重建的难点是「整体结构」与「局部细节」两类错误来源不同：整体走样源于模型偏爱高频简单操作组合，局部漂移源于采样随机性。作者没有用一个统一损失硬扛，而是分层对症：token 化层引入图元先验，SFT 层用操作频率对齐固定整体分布，RL 层用特征线奖励收紧局部几何。三阶段分别作用于表示、分布与样本，因此互不冲突、可叠加。",
+    "boundary": "当输入的 CAD 图元类型或操作集合与训练数据差异大时，图元感知 token 化与操作频率目标会失配；特征线奖励要求能可靠匹配生成与真值特征线，几何复杂或拓扑变化大时匹配困难。此外三阶段训练成本高，摘要未给可复现的计算量说明。",
+    "analogyBoundary": "「按积木分界拆件」类比假设图元边界可清晰判定；真实 CAD 点云中边界模糊且存在倒角、混合面等非标准图元，此时图元感知 token 化退化为带噪声的启发式切分，优势缩小。",
+    "misconceptions": [
+     "以为它是端到端单阶段模型——实际是三阶段（token 化 / SFT / RL）流水线。",
+     "把操作对齐损失当成几何损失——它对齐的是操作频率而非坐标。",
+     "认为 RL 阶段可有可无——摘要明确它用于降随机性与保细粒度。"
+    ],
+    "ownAnalysis": "这更像是「领域先验驱动的损失工程」（推断）：把 CAD 的图元结构与操作文法当作强归纳偏置注入三阶段，思路可迁移到其它有结构化操作序列的任务（如代码生成、分子合成）。可疑处：摘要未给各阶段的消融与数值，无法判断三阶段各自贡献（待核实）；操作频率对齐是数据集统计量，跨数据集迁移时的鲁棒性存疑。",
+    "officialNotes": [
+     {
+      "position": "PrimitiveCAD 以图元感知 token 化、操作对齐损失与特征线对齐奖励构成多阶段范式，在 DeepCAD 与 Fusion360 上于代码有效性、几何精度与几何特征保真度取得 SOTA",
+      "source": "arxiv: 2610.08698v1"
+     }
+    ],
+    "interviewAnswer": "点云到 CAD 之前被当成通用点云编码加 token 预测，问题是没利用 CAD 由图元和操作构成这一先验。PrimitiveCAD 分三阶段：第一步做图元感知的点云 token 化，学到更贴几何的表示；第二步微调 LLM 时加一个操作对齐损失，把生成序列里各类 CAD 操作的频率对齐到数据集，保住整体形状；第三步上 RL，用特征线对齐奖励惩罚细节线条的错位，压低随机性。三方面分别管表示、整体和局部，所以在 DeepCAD 和 Fusion360 上代码有效性、几何精度、特征保真都做到了最好。",
+    "studyPath": {
+     "prerequisites": [
+      "点云特征学习与 3D 表示",
+      "LLM 监督微调",
+      "RLHF/RL 微调与奖励设计"
+     ],
+     "nextSteps": [
+      "读原文，核对操作对齐损失与特征线奖励的确切形式",
+      "复现 DeepCAD 基线并做三阶段消融",
+      "思考把操作文法先验迁移到其它结构化生成任务"
+     ]
+    }
+   }
+  },
+  {
+   "id": "d8f5c2a4bdc33bac",
+   "tldr": "SlimWise 按推理阶段分配专家池：预填充用全量模型，解码用剪枝模型并直接复用预填充 KV，解码吞吐最高提升 1.81x。",
+   "keyPoints": [
+    "MoE 每 token 激活少量专家，但批量解码几乎访问整个专家池，专家权重流量成瓶颈",
+    "常规专家剪枝连计算受限的预填充也剪，牺牲质量却换不来吞吐",
+    "SlimWise 分阶段：预填充用全量，解码用剪枝并直接复用预填充 KV，无需转换",
+    "免训练的 KV 交接在多种设置下显著缩小与全量模型的精度差",
+    "低开销蒸馏只在全模型 KV 上继续生成并更新少量参数；vLLM 实现，支持 PD 分离与共置"
+   ],
+   "why": "MoE 推理服务与专家剪枝是 infra 方向高频题；「按阶段区分计算/访存瓶颈」和「复用 KV」是面试常问的系统级权衡。",
+   "difficulty": "medium",
+   "tags": [
+    "engineering",
+    "moe",
+    "serving",
+    "pruning",
+    "kv-cache",
+    "distillation"
+   ],
+   "entities": [
+    "SlimWise",
+    "Mixture-of-Experts (MoE)",
+    "expert pruning",
+    "KV cache handoff",
+    "vLLM",
+    "PD disaggregation",
+    "Qwen3.6-35B-A3B"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "SlimWise 分阶段服务",
+    "caption": "预填充用全量专家池、解码用剪枝专家池并直接复用 KV，针对两阶段的不同瓶颈分别优化。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='SlimWise 分阶段服务四层'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>Prefill：完整专家池</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>计算受限，不剪</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>产出全模型 KV cache</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>供解码直接复用</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>Decode：剪枝专家池（免转换 KV）</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>访存受限</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>低开销蒸馏校正</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>解码吞吐最高 1.81x</text>\n</svg>",
+    "alt": "四层竖排流程：预填充用完整专家池→产出全模型 KV cache→解码用剪枝专家池并免转换复用 KV→低开销蒸馏校正。"
+   },
+   "concepts": [
+    {
+     "name": "Phase-Aware Expert Pruning（分阶段专家剪枝）",
+     "readable": "同一个 MoE 模型，在预填充阶段用全部专家、在解码阶段才用剪过的专家池。因为两个阶段的瓶颈不同：预填充算力不够，解码是专家权重搬运太慢。",
+     "analogy": "像搬家和日常取用：搬家时把仓库全开、一趟趟搬（算力受限）；平时只留常用物品在手边的小柜子（省得每次去大仓库翻）。",
+     "analogyBreaksDown": "搬家和取用是不同物品集合，而这里两个阶段用的是同一个模型、同一套权重，只是解码时换了个更小的专家子集；两者的输入表示必须一致，否则解码会因分布不匹配而失准。",
+     "mechanism": "常规剪枝对预填充和解码一视同仁，但预填充是计算受限，剪枝省不了多少且伤质量。SlimWise 只剪访存受限的解码阶段，预填充保持全量，从而把剪枝收益集中到真正的瓶颈上，避免无谓的质量损失。",
+     "visual": "画两列专家方块堆：左列「预填充」全满（每个专家都亮），右列「解码」只点亮一半方块，用箭头标出这一半是解码时的专家池，预填充那列不剪。",
+     "prerequisites": [
+      "MoE 架构与 top-k 路由",
+      "LLM 推理两阶段（prefill/decode）的瓶颈差异"
+     ],
+     "selfTest": [
+      "为什么预填充不该剪？",
+      "分阶段剪枝的前提假设是什么？",
+      "解码剪枝的收益来自减少什么流量？"
+     ],
+     "formula": "y=\\sum_{e\\in \\mathrm{TopK}(g(x))}g_{e}(x)\\,E_{e}(x),\\quad e\\in \\mathcal{S}\\subset\\{1,\\dots,N\\}"
+    },
+    {
+     "name": "Training-Free KV Cache Handoff（免训练 KV 缓存交接）",
+     "readable": "预填充用全量模型算出的 KV 缓存，解码阶段直接拿来用，不做任何转换或重新计算，就让剪枝后的解码模型接着生成。",
+     "analogy": "像接力赛交接棒：前一棒跑完手里就有棒，下一棒直接握住继续跑，不需要把棒重新做一遍。",
+     "analogyBreaksDown": "接力棒对两棒都通用，而 KV 是预填充「全量专家池」产出的中间量；解码用剪枝池，专家子集不一致，KV 与解码模型并非天然匹配，交接能成立依赖于实验验证的兼容性，换模型需重验。",
+     "mechanism": "若解码需要重算或转换 KV，就抵消了剪枝省下的开销。作者让解码直接复用预填充的 KV，跳过转换，这既省算力又保持上下文一致；再用低开销蒸馏让解码器学会从全模型 KV 继续，弥补残余精度损失。",
+     "visual": "画一条时间线：预填充段通过全量专家池并写出 KV 方块，箭头把 KV 方块原样搬进解码段，解码段用较少的专家方块消费该 KV，中间没有「转换」方块。",
+     "prerequisites": [
+      "Transformer 注意力与 KV cache",
+      "MoE 服务与 PD 分离部署"
+     ],
+     "selfTest": [
+      "为什么交接要「免转换」？",
+      "KV 与剪枝解码模型为何可能不匹配？",
+      "蒸馏阶段想弥补什么？"
+     ],
+     "formula": "\\mathrm{Attn}_{\\mathrm{dec}}(q_{t})=\\mathrm{softmax}\\!\\left(\\frac{q_{t}K^{\\top}}{\\sqrt{d}}\\right)V,\\quad (K,V)=\\mathrm{KV}_{\\mathrm{prefill}}"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-moe-topk-routing-pruning",
+     "name": "MoE 路由与专家池剪枝（Top-K Routing with Pruned Expert Pool）",
+     "category": "engineering",
+     "latex": "y=\\sum_{e\\in \\mathrm{TopK}(g(x))}g_{e}(x)\\,E_{e}(x),\\quad e\\in \\mathcal{S}\\subset\\{1,\\dots,N\\}",
+     "symbols": [
+      [
+       "x",
+       "当前 token 的隐状态"
+      ],
+      [
+       "g(x)",
+       "路由打分（门控网络输出）"
+      ],
+      [
+       "\\mathrm{TopK}(\\cdot)",
+       "取分数最高的 k 个专家"
+      ],
+      [
+       "g_{e}(x)",
+       "专家 e 的门控权重"
+      ],
+      [
+       "E_{e}",
+       "第 e 个专家的前向函数"
+      ],
+      [
+       "\\mathcal{S}",
+       "解码阶段保留的专家子集（剪枝后的池）"
+      ],
+      [
+       "N",
+       "专家总数"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：MoE 每 token 只激活 top-k 专家，但批量解码会命中几乎整个专家池，专家权重搬运成瓶颈。",
+      "第 2 步：缩小专家池 S 可直接减少访存量，从而提升解码吞吐。",
+      "第 3 步：常规做法连预填充一起剪，但预填充是计算受限，收益小而伤质量。",
+      "第 4 步：只在解码阶段限制 e∈S，预填充保留全量 N，把收益集中到访存瓶颈。"
+     ],
+     "analogy": "像图书馆：借阅高峰期（解码）只把你常看的书架开放以加快取书，编目整理期（预填充）仍开放全部书架。",
+     "pitfalls": [
+      "以为剪枝总是省时间——预填充阶段剪枝几乎不增益还掉点",
+      "忽略批量解码会命中大部分专家这一事实，低估访存瓶颈",
+      "剪枝后不做任何校正，残余精度损失累积到下游任务"
+     ],
+     "code": "import torch, torch.nn.functional as F\ndef moe_forward(x, gate, experts, S):\n    # x:[B,d], gate:[B,N], experts:list of fns\n    logits = gate(x)\n    topk = logits.topk(k=2, dim=-1)\n    out = torch.zeros_like(x)\n    for idx, w in zip(topk.indices.T, topk.values.T):\n        for i, ei in enumerate(idx):\n            if int(ei) in S:\n                out[i] += w[i] * experts[int(ei)](x[i])\n    return out, topk",
+     "sources": [
+      {
+       "title": "SlimWise: Decoupling Expert Pruning Across Prefill and Decode for Efficient MoE Serving",
+       "url": "https://huggingface.co/papers/2609.34117"
+      },
+      {
+       "title": "SlimWise (canonical)",
+       "url": "https://arxiv.org/abs/2609.34117"
+      }
+     ]
+    },
+    {
+     "id": "f-slimwise-kv-handoff",
+     "name": "免转换 KV 交接与蒸馏校正（KV Handoff and Distillation）",
+     "category": "engineering",
+     "latex": "\\mathcal{L}_{\\mathrm{distill}}=\\mathrm{KL}\\!\\left(p_{\\mathrm{full}}(\\cdot\\mid \\mathrm{KV}_{\\mathrm{prefill}})\\,\\|\\,p_{\\mathrm{dec}}(\\cdot\\mid \\mathrm{KV}_{\\mathrm{prefill}})\\right)",
+     "symbols": [
+      [
+       "\\mathrm{KV}_{\\mathrm{prefill}}",
+       "预填充阶段由全量模型产出的 KV 缓存"
+      ],
+      [
+       "p_{\\mathrm{full}}",
+       "全量模型在给定 KV 下的下一 token 分布（教师）"
+      ],
+      [
+       "p_{\\mathrm{dec}}",
+       "剪枝解码模型的下一 token 分布（学生）"
+      ],
+      [
+       "\\mathcal{L}_{\\mathrm{distill}}",
+       "蒸馏损失（KL 散度）"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：解码若需重算或转换预填充 KV，会抵消剪枝省下的开销，所以要求免转换直接复用。",
+      "第 2 步：复用会带来全量 KV 与剪枝解码器之间的分布不匹配与残余精度损失。",
+      "第 3 步：用全量模型作教师，让学生从同一份全量 KV 继续生成。",
+      "第 4 步：只更新少量参数，低开销地把解码器对齐回教师分布。"
+     ],
+     "analogy": "像接棒后先照原队员的节奏跑一会儿（蒸馏对齐），再按自己更省力的姿势继续。",
+     "pitfalls": [
+      "对 KV 做投影或重算——违背免转换初衷，抵消吞吐收益",
+      "蒸馏更新全部参数，成本高且可能破坏剪枝结构",
+      "忽略「基准精度可能掩盖生成长度变化」，只看准确率会误判剪枝影响"
+     ],
+     "code": "import torch, torch.nn.functional as F\ndef distill_loss(p_full, p_dec):\n    # 均为对词表的 log-prob 分布\n    return F.kl_div(p_dec, p_full.exp(),\n                    reduction='batchmean')\n\nlogits_t = torch.randn(4, 100)\nlogits_s = torch.randn(4, 100)\nlt = F.log_softmax(logits_t, -1)\nls = F.log_softmax(logits_s, -1)\nprint(float(distill_loss(lt, ls)))",
+     "sources": [
+      {
+       "title": "SlimWise: Decoupling Expert Pruning Across Prefill and Decode for Efficient MoE Serving",
+       "url": "https://huggingface.co/papers/2609.34117"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "MoE 每 token 激活少量专家，但批量解码可访问几乎整个专家池，使专家权重流量成为主要瓶颈",
+     "常规专家剪枝也会剪计算受限的预填充，牺牲质量却换不来多少吞吐",
+     "SlimWise 按推理阶段定制专家池：预填充用全量模型，解码用剪枝模型并直接复用预填充 KV，无需转换",
+     "在两种 MoE 骨干与三种剪枝准则下，免训练 KV 交接在多种设置下显著缩小与全量模型的精度差",
+     "基准精度可能掩盖剪枝引起的生成长度变化",
+     "SlimWise 引入低开销蒸馏阶段，让解码器从全模型 KV 继续，仅更新少量参数；在 vLLM 实现，支持 PD 分离与共置",
+     "在 Qwen3.6-35B-A3B 上，50% 专家剪枝时解码吞吐最高提升 1.81x，精度损失极小"
+    ],
+    "uncertain": [
+     "KV 交接能免转换复用的前提（如 KV 维度/布局一致、是否只对部分层生效）摘要未给，待核实",
+     "蒸馏更新的「少量子集」具体指哪些参数（路由/注意力/部分专家）与更新比例摘要未给，待核实",
+     "1.81x 对应的批大小、序列长度与硬件摘要未给，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "MoE 服务里，只在真正费流量的解码阶段剪专家，预填充照旧用全部专家。"
+     },
+     {
+      "level": "入门",
+      "text": "MoE 每个 token 只点亮少数专家，但一次解码很多 token 时几乎会用到所有专家，把专家权重搬进显存成了瓶颈。常规剪枝连算力受限的预填充也剪，得不偿失。SlimWise 让预填充跑全量模型、解码跑剪枝模型，并让解码直接复用预填充算好的 KV，不做转换，再用一点蒸馏补精度，解码吞吐最高提升 1.81x。"
+     },
+     {
+      "level": "进阶",
+      "text": "核心判断是：预填充是计算受限、解码是访存受限，所以剪枝只对解码有意义。工程上的关键是「免转换 KV 交接」——如果解码还要重算或投影 KV，省下的开销就被抵消。它还用基准之外的观察指出：剪枝会改变生成长度，光看准确率会误判。最后用低开销蒸馏让学生解码器从全模型 KV 继续，弥补残余损失。"
+     },
+     {
+      "level": "专家",
+      "text": "与「统一剪枝」相比，SlimWise 的贡献是把剪枝收益绑定到正确的瓶颈阶段，并解决阶段切换时的 KV 一致性。与「重新训练小 MoE」相比，它训练免费得多，只在解码器上做少量参数蒸馏。与「不改模型只调调度」相比，它是权重级的改造。边界是免转换交接依赖 KV 与剪枝解码器兼容，且蒸馏需要教师模型在线或预先缓存 KV，部署形态（PD 分离/共置）会影响实现。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么常规剪枝在预填充上没用？",
+      "a": "预填充是计算受限而非访存受限，剪专家省不到关键资源，却降低了模型容量，质量下降而吞吐几乎不变。"
+     },
+     {
+      "q": "为什么 KV 交接必须免转换？",
+      "a": "若解码要转换或重算 KV，就要再跑一遍注意力相关计算，正好把剪枝省下的访存时间还回去，收益归零。"
+     }
+    ],
+    "mechanism": "MoE 推理的两个阶段瓶颈不同：预填充吃算力，解码吃专家权重带宽。剪枝只对带宽瓶颈有效，因此作者把剪枝限定在解码阶段，预填充保持全量以避免无谓降质。真正的工程难点是阶段切换时的中间量一致性——解码若不重算 KV 就要直接复用预填充的 KV，这要求两者表示兼容；残余的不匹配再用针对解码器的低开销蒸馏补上，形成「分阶段剪枝 + KV 交接 + 蒸馏校正」的闭环。",
+    "boundary": "当解码负载很轻（小批量、短序列）时专家权重流量不是瓶颈，剪枝收益有限；当预填充本身也是瓶颈（如超长上下文）时保留全量预填充成本较高。免转换 KV 交接依赖 KV 维度与解码器结构兼容，跨模型或改结构后需重新验证；蒸馏还引入教师推理或 KV 存储开销。",
+    "analogyBoundary": "「只开常用书架」类比假设常用专家子集稳定；实际不同请求触发的专家不同，固定子集可能对某些输入次优，剪枝准则若选得不好会伤特定任务。类比也掩盖了 KV 必须是预填充全量产出的这一强约束。",
+    "misconceptions": [
+     "以为剪枝越多越快——预填充阶段剪枝几乎不增吞吐还掉质量。",
+     "把 KV 交接理解成可以任意换模型——它要求 KV 与解码器兼容。",
+     "只看 benchmark 准确率判断剪枝好坏——摘要明确精度会掩盖生成长度变化。"
+    ],
+    "ownAnalysis": "这篇最有价值的是「按瓶颈归因来分配优化」这一系统思路（推断），它把模型压缩从「一刀切」变成「阶段自适应」，与 PD 分离、chunked prefill 等 serving 技术一脉相承。可疑处：摘要说「免训练 KV 交接」但未说明 KV 与剪枝解码器为何兼容（是否因为剪枝不改注意力维度），也未给 1.81x 的批大小与序列长度（待核实）；此外「精度损失极小」缺具体数值。",
+    "officialNotes": [
+     {
+      "position": "SlimWise 预填充用全量模型、解码用剪枝模型并直接复用预填充 KV（免转换），并用低开销蒸馏校正；在 Qwen3.6-35B-A3B 上 50% 专家剪枝时解码吞吐最高提升 1.81x 且精度损失极小",
+      "source": "hf_papers: 2609.34117"
+     }
+    ],
+    "interviewAnswer": "MoE 推理里有个反直觉的点：单 token 只激活几个专家，但批量解码几乎会用到全部专家，专家权重流量就成了瓶颈。常规专家剪枝连预填充一起剪，可预填充是计算受限，剪了既省不到关键资源又掉质量。SlimWise 的做法是按阶段裁剪：预填充用全量模型，解码用剪枝模型，而且解码直接复用预填充产出的 KV、不做转换，否则省下的开销又被换算回去；最后用一个低开销蒸馏阶段，让学生在老师 KV 上继续生成，只更新少量参数。在 Qwen3.6-35B-A3B 上 50% 剪枝还能把解码吞吐提到 1.81x，精度损失很小。",
+    "studyPath": {
+     "prerequisites": [
+      "Transformer 注意力与 KV cache",
+      "MoE 架构与路由",
+      "LLM 推理两阶段的显存/算力特性与 vLLM 部署"
+     ],
+     "nextSteps": [
+      "读原文，核对 KV 交接前提与蒸馏更新范围",
+      "在自己的 MoE 服务里对比统一剪枝与分阶段剪枝",
+      "调研 PD 分离/共置下 KV 传输的实现"
+     ]
+    }
+   }
+  }
+ ],
+ "skipped": []
+}

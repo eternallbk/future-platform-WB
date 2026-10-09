@@ -1,0 +1,198 @@
+{
+  "id": "da3810f62ad3a0bc",
+  "tldr": "把机器人决策写成纯代码：代码从相机和本体感觉估计状态并决策，循环里不放 VLM/VLA，RoboDojo 42 任务成功率 70.24%。",
+  "keyPoints": [
+    "把世界看成具身图灵机：纸带是机器人+环境状态，规则即策略",
+    "若状态能被准确表示，决策可以完全写成代码（COAP）",
+    "三优势：状态显式、可执行可控、库可继承扩展",
+    "同一个库跨 episode、跨任务复用，测试时无模型在环",
+    "RoboDojo 42 个双臂任务达 70.24% 成功率；上界取决于状态表示精度"
+  ],
+  "why": "具身智能「模型在环 vs 代码在环」是 world model 与 embodied 方向的核心辩论；状态显式表示与 RSI 闭环对做世界模型、机器人策略的求职者都是高频概念。",
+  "difficulty": "hard",
+  "tags": [
+    "worldmodel",
+    "embodied",
+    "robot-policy",
+    "code-as-policy",
+    "self-improvement"
+  ],
+  "entities": [
+    "COAP",
+    "Embodied Turing Machine",
+    "Agent-as-Policy",
+    "Harness VLA",
+    "RoboDojo",
+    "VLA",
+    "VLM"
+  ],
+  "diagram": {
+    "kind": "architecture",
+    "title": "COAP 代码即策略闭环",
+    "caption": "状态被显式写进代码，决策由代码逻辑给出，测试时循环里没有 VLM/VLA。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='COAP 从感知到代码决策再到执行的闭环结构'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>相机图像 + 本体感觉</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>观测</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>代码估计并跟踪状态</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>显式状态</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>代码规则决策动作</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>无模型在环</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>下游 VLA / Agent Harness 复用</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>能力累积</text>\n</svg>",
+    "alt": "COAP 闭环：相机与本体感觉输入，代码估计显式状态，代码规则决策动作，无模型在环，产出可被 VLA 与 Agent Harness 复用的库。"
+  },
+  "concepts": [
+    {
+      "name": "Embodied Turing Machine（具身图灵机）",
+      "readable": "把机器人+环境当成一台图灵机：纸带上写的是机器人与环境的真实状态，规则手册就是策略；状态记得准，决策就能全用代码表达。",
+      "analogy": "像一台老式自动售货机——内部凸轮记录着状态，金属结构定义规则，投币后无需「大脑」就完成动作。",
+      "analogyBreaksDown": "图灵机要求状态可被有限符号精确表示，但真实视觉状态含噪声、遮挡与连续物理量，用代码表示必然丢信息，这正是 COAP 自认的上界，类比在这里失效。",
+      "mechanism": "它把「决策需要模型」的问题重述为「状态表示是否足够」，从而把研究焦点从学一个策略网络，转到如何用代码精确测量与跟踪机器人、环境、任务状态。",
+      "visual": "左侧画一条水平纸带，格子里写着状态变量；中间一个方块是规则（if-else 代码）；右侧一个读写头指向纸带，表示按规则更新状态。",
+      "prerequisites": [
+        "图灵机与状态转移的基本概念",
+        "机器人视觉与本体感觉（proprioception）"
+      ],
+      "selfTest": [
+        "这台「图灵机」的纸带和规则分别对应什么？",
+        "为什么决策能否纯代码化取决于状态表示？",
+        "状态表示不准时会发生什么？"
+      ],
+      "formula": "(s_{t+1}, a_t) = \\delta\\big(s_t, o_t\\big)"
+    },
+    {
+      "name": "Code-Only-as-Policy (COAP)",
+      "readable": "干脆不用 VLM/VLA 进循环，让一段代码直接从相机与本体感觉估计状态、再按代码逻辑决策，同一份代码跨 episode、跨任务复用。",
+      "analogy": "用一套写死的流水线程序控制机械臂，而不是每次都现场请一位「专家」看屏幕下指令。",
+      "analogyBreaksDown": "流水线程序只适合固定工况；真实任务里光照、视角、物体摆放都在变，代码的 if-else 无法穷举这些变化，靠堆分支会迅速失控。",
+      "mechanism": "把状态显式存进代码变量、决策写成可读可控的逻辑，从而能灵活从失败恢复、在线跑得又快又便宜；新任务可继承或扩展共享库，使能力跨任务累积，这也是它能作为 RSI 载体的原因。",
+      "visual": "画一个库文件树：顶层是共享原语（抓取、对位），下层是任务代码调用原语；箭头表示新任务「继承/扩展」已有节点，节点数随任务累积增长。",
+      "prerequisites": [
+        "机器人任务与动作空间",
+        "VLA 与 Agent Harness 的常规做法"
+      ],
+      "selfTest": [
+        "COAP 相对 VLA 省掉了什么？",
+        "「能力累积」靠什么机制实现？",
+        "为什么测试时无模型反而可能更快更便宜？"
+      ],
+      "formula": "\\mathrm{SR} = \\frac{1}{N}\\sum_{i=1}^{N} \\mathbf{1}[\\text{task}_i\\ \\text{succeeded}]"
+    },
+    {
+      "name": "Recursive Self-Improvement (RSI)",
+      "readable": "让编码智能体在闭环里持续开发这个代码库，每一次改动都是显式、可控的，于是能力可以一轮轮自我累积。",
+      "analogy": "像开源项目由一群贡献者持续迭代：每提一个 PR 只改一小块、可评审、可回滚，项目功能慢慢变强。",
+      "analogyBreaksDown": "开源项目里人类评审能判断改动好坏；这里评判改动是否更好依赖机器人实机成功率，而实机试验昂贵且有噪声，反馈信号本身不干净，类比失效。",
+      "mechanism": "把「改进策略」这个动作也变成对代码库的编辑，因为代码是显式的，每次改了什么、是否回退都可追踪，这比更新一个隐含在权重里的策略更可控。",
+      "visual": "画一个闭环：代码库 → 在任务上 rollout → 收集失败 → 编码智能体改代码 → 回到代码库，箭头旁标注「显式、可控」。",
+      "prerequisites": [
+        "代码智能体与自动化改代码",
+        "闭环评测与回归测试"
+      ],
+      "selfTest": [
+        "为什么说代码是比权重更适合 RSI 的载体？",
+        "RSI 闭环的反馈来自哪里？",
+        "闭环里最脆弱的一环是什么？"
+      ],
+      "formula": "c_{t+1} = \\mathrm{Improve}\\big(c_t,\\ \\mathrm{Rollout}(c_t, \\mathcal{T})\\big)"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-embodied-tm-transition",
+      "name": "具身图灵机状态转移（Embodied Turing Machine Transition）",
+      "category": "worldmodel",
+      "latex": "(s_{t+1}, a_t) = \\delta\\big(s_t,\\ o_t\\big), \\qquad s_{t+1} = f_{\\mathrm{code}}(s_t, o_t)",
+      "symbols": [
+        ["s_t", "代码中显式维护的机器人+环境+任务状态"],
+        ["o_t", "相机图像与本体感觉观测"],
+        ["\\delta", "由代码实现的策略/规则函数"],
+        ["a_t", "在状态 s_t 下由代码决定并输出的动作"],
+        ["f_{\\mathrm{code}}", "用代码写成的状态更新逻辑"]
+      ],
+      "derivation": [
+        "第 1 步：把具身决策类比成图灵机，纸带即状态、规则即策略。",
+        "第 2 步：状态转移只依赖当前状态与当前观测，不含隐式神经网络。",
+        "第 3 步：决策 a_t 由同一份代码依据 s_t 给出，测试时无模型在环。",
+        "第 4 步：状态 s_t 表示得越准，代码决策越可靠，这正是 COAP 的上界。"
+      ],
+      "analogy": "像用记账本记下库存（状态），再照规则手册发货（动作），整个过程不需要一个「会思考」的大脑。",
+      "pitfalls": [
+        "误以为 δ 就是学出来的策略网络——这里的规则是显式代码",
+        "忽略状态 s_t 是估计出来的、含误差，把它当真实状态看"
+      ],
+      "code": "from dataclasses import dataclass\n@dataclass\nclass State:\n    obj_xy: tuple; gripper: float; done: bool = False\ndef step(state: State, obs) -> State:\n    state.obj_xy = detect(obs['rgb'])      # 代码估计状态\n    state.gripper = obs['proprio'][-1]     # 本体感觉\n    return state\ndef policy(s: State):\n    return 'grasp' if near(s.obj_xy, s.gripper) else 'approach'",
+      "sources": [
+        {"title": "Embodied Turing Machines: Stateful Code for Robot Recursive Self-Improvement", "url": "https://huggingface.co/papers/2610.12369"}
+      ]
+    },
+    {
+      "id": "f-coap-rsi-loop",
+      "name": "代码库自我改进闭环（RSI Code-Library Loop）",
+      "category": "worldmodel",
+      "latex": "c_{t+1} = \\mathrm{Improve}\\big(c_t,\\ \\mathrm{Rollout}(c_t, \\mathcal{T})\\big), \\quad \\mathrm{SR}(c) = \\frac{1}{|\\mathcal{T}|}\\sum_{i\\in\\mathcal{T}} \\mathbf{1}[\\mathrm{success}_i]",
+      "symbols": [
+        ["c_t", "第 t 轮的代码库（策略）"],
+        ["\\mathcal{T}", "任务集合（如 RoboDojo 的 42 个双臂任务）"],
+        ["\\mathrm{Rollout}", "在任务上执行代码库并收集结果"],
+        ["\\mathrm{Improve}", "编码智能体依据失败对代码库做可控修改"],
+        ["\\mathrm{SR}", "平均成功率"]
+      ],
+      "derivation": [
+        "第 1 步：用当前代码库在任务集合上 rollout，得到逐任务成败。",
+        "第 2 步：把失败案例交给编码智能体，对代码库做显式修改。",
+        "第 3 步：新代码库替代旧的，循环往复，能力跨任务累积。",
+        "第 4 步：用平均成功率 SR 度量闭环推进效果，摘要报告 70.24%。"
+      ],
+      "analogy": "像开源项目不断提 PR 迭代：每轮只改一小块、可回滚，整体功能逐步增强。",
+      "pitfalls": [
+        "以为闭环一定单调变好——实机噪声会让某轮改动反而更差",
+        "忽略 rollout 成本，实机试验昂贵且有破坏性"
+      ],
+      "code": "def rsi_loop(tasks, library, rounds=5):\n    for _ in range(rounds):\n        results = [run(library, t) for t in tasks]   # rollout\n        fails = [t for t, r in zip(tasks, results) if not r]\n        library = coding_agent.edit(library, fails)  # 显式可控修改\n    return library",
+      "sources": [
+        {"title": "Embodied Turing Machines: Stateful Code for Robot Recursive Self-Improvement", "url": "https://arxiv.org/abs/2610.12369"}
+      ]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "主流做法是 VLA 把观测映射到动作、由 Agent Harness 在运行时查询 VLM 做决策",
+      "论文提出把具身世界看作具身图灵机：纸带是机器人与环境状态，规则是策略",
+      "若状态能被准确表示，决策可以完全写成代码（COAP）",
+      "COAP 用代码从相机图像与本体感觉测量并跟踪状态，再据此做全部决策",
+      "同一份代码跨 episode 适用，不同任务共享一个库，循环里没有 VLM 或 VLA",
+      "论文分析三个优势：显式状态、可执行（可控/可恢复/快且便宜）、可扩展（库继承累积）",
+      "该框架适合递归自我改进，编码智能体在闭环里开发代码库，每次改动显式可控",
+      "在 RoboDojo 的 42 个双臂任务上成功率 70.24%，测试时无模型在环",
+      "上界取决于状态表示精度与代码逻辑的鲁棒性",
+      "由于其跨 episode 适用，也可作为 VLA 与 Agent Harness 的高效数据引擎"
+    ],
+    "uncertain": [
+      "状态转移公式为按摘要重建的通用形式（把图灵机表述写成代码状态更新），原文的确切形式需核对",
+      "「显式状态」「可执行」的具体实现细节与代码库规模摘要未给，待核实",
+      "70.24% 是双臂任务平均成功率，其统计口径与基线对比摘要未给出，待核实"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "不再让视觉语言模型现场决策，而是把机器人状态和规则都写成代码来执行。"},
+      {"level": "入门", "text": "现在多数机器人策略是 VLA：把画面映射成动作，或者让一个 Agent Harness 在运行时去问 VLM。这篇换了思路——把世界看作一台图灵机，只要能用代码准确测出机器人和环境的状态，决策就可以完全用代码写。"},
+      {"level": "进阶", "text": "关键设计是把研究问题从「学一个策略网络」重述成「状态表示得准不准」。COAP 用代码从相机和本体感觉维护状态，所有决策由代码规则给出，测试时循环里没有模型。这带来三个好处：状态显式可存、执行可控可恢复且在线跑得快、新任务能继承扩展共享库使能力累积。"},
+      {"level": "专家", "text": "与 VLA / Agent Harness 相比，COAP 把不确定性从「模型权重」搬到「状态表示与代码鲁棒性」上：它承认上界就是状态估计精度。与隐含式策略相比，显式代码让每次改动都可追踪，因而适合递归自我改进——编码智能体在闭环里开发库。它在 RoboDojo 42 个双臂任务上达到 70.24% 且测试时无模型，但也意味着对未见工况的泛化全靠状态表示和代码逻辑，而非模型泛化。"}
+    ],
+    "socratic": [
+      {"q": "为什么把决策写成代码会更快更便宜？", "a": "循环里省去了每一步都跑 VLM/VLA 的推理开销，代码在 CPU 上直接算，在线延迟和成本都大幅下降。"},
+      {"q": "既然代码可行，为什么还需要 VLA？", "a": "代码依赖状态可被准确表示；状态无法可靠估计时，学习式策略更鲁棒，论文也把 COAP 定位为可复用数据引擎而非全面替代。"}
+    ],
+    "mechanism": "常规 VLA/Agent Harness 让模型持续留在控制回路里，代价是每次决策都要推理、且决策不可解释不可控。COAP 的前提观察是：具身决策的本质是「状态 + 规则」。于是它把状态显式化到代码变量里、把规则写成可读逻辑，使决策可控、可恢复、在线更便宜，并让代码库成为可继承累积的资产，这也是递归自我改进得以进行的载体。",
+    "boundary": "当环境高度非结构化、状态无法从图像可靠估计，或需要细腻的接触动力学时，纯代码决策会失效；代码逻辑的复杂度会随任务多样性攀升而难以维护。摘要也明说上界在于状态表示精度与代码鲁棒性，且只在 RoboDojo 双臂任务上验证。",
+    "analogyBoundary": "「售货机/流水线程序」的类比在工况固定时成立；但真实机器人面临连续、带噪声、部分可观测的状态，且失败往往来自估计误差而非规则缺失，用代码穷举变化会撞上组合爆炸，类比失效。",
+    "misconceptions": [
+      "以为 COAP 完全不需要视觉模型——它仍用相机，只是把视觉用于估计状态而非决策。",
+      "把图灵机比喻当作严格等价，忽略真实状态不可精确符号化。",
+      "认为成功率 70.24% 说明代码优于模型，忽略论文只在一个仿真基准上验证。"
+    ],
+    "ownAnalysis": "（推断）这条本质是把「世界模型」从隐式神经网络改成显式符号状态，与经典任务规划、PDDL 一脉相承，但用现代感知（相机+本体感觉）来喂状态。可疑处有二：一是状态估计误差会直接传给决策，误差传播没有闭环纠正；二是「能力累积」依赖编码智能体的改动质量，而摘要没说由谁评判改动是否更好（推断）。它作为「数据引擎」的定位反而更现实：代码 rollout 便宜，可为 VLA 造数据。",
+    "officialNotes": [
+      {"position": "论文主张把具身世界视为具身图灵机并提出 COAP，认为若状态可准确表示则决策可完全由代码完成，且适合递归自我改进", "source": "hf_papers: https://huggingface.co/papers/2610.12369"}
+    ],
+    "interviewAnswer": "我理解这篇是在挑战「模型必须在环」的范式。主流 VLA 是把观测映射成动作，Agent Harness 则在运行时查 VLM。它提出把具身世界看成图灵机：纸带是机器人环境状态、规则是策略，于是只要状态能准确表示，决策就能全写成代码，测试时不需要模型。好处有三点：状态显式、执行可控可恢复、库能继承扩展。它在 RoboDojo 的 42 个双臂任务上做到 70.24% 且无模型在环，还因为跨 episode 适用可以当 VLA 的数据引擎。它自己承认上界是状态表示精度和代码鲁棒性。",
+    "studyPath": {
+      "prerequisites": ["VLA 与机器人策略基础", "图灵机/状态机概念", "机器人视觉与本体感觉"],
+      "nextSteps": ["读原文看状态如何从图像估计", "对比 VLA、Agent Harness 与 COAP 的失效模式", "思考代码库如何作为 VLA 的数据引擎"]
+    }
+  }
+}

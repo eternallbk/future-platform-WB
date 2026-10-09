@@ -1,0 +1,193 @@
+{
+  "id": "d5d810d0e17db7b0",
+  "tldr": "前缀和 + 哈希表一次遍历统计和为 k 的连续子数组个数，时间 O(n)；滑动窗口只在数组全非负时成立。",
+  "keyPoints": [
+    "统计连续非空子数组中和恰为 k 的个数",
+    "子数组和等于两个前缀和之差：pre[i] - pre[j] = k",
+    "哈希表记录每个前缀和出现次数，查 pre - k 即得个数",
+    "seen[0] = 1 覆盖从下标 0 开始的子数组",
+    "数组含负数时窗口和不单调，滑动窗口失效"
+  ],
+  "why": "「子数组和」类题的通用模板，大厂高频；前缀和 + 差值查表的思路可迁移到区间和、前缀计数等一大类题。",
+  "difficulty": "medium",
+  "tags": ["leetcode", "prefix-sum", "hash-map", "array", "interview"],
+  "entities": ["前缀和", "哈希表", "滑动窗口", "子数组", "pre", "seen"],
+  "diagram": {
+    "kind": "flow",
+    "title": "前缀和 + 哈希计数四步",
+    "caption": "核心是 seen[0]=1：它代表空前缀，让「从头到 i」的子数组也能被数到。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='前缀和加哈希表统计和为 k 的子数组四步：初始化 seen 0 为 1、累加前缀和、查 pre 减 k、登记前缀和'>\n<rect x='24' y='16' width='432' height='42' rx='8' fill='none' stroke='var(--accent)' stroke-width='1.4'/>\n<text x='40' y='42' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>① 初始化 seen = {0: 1}</text>\n<text x='440' y='42' font-size='13' text-anchor='end' fill='currentColor'>空前缀，覆盖从头开始的子数组</text>\n<line x1='240' y1='58' x2='240' y2='66' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,74 236,66 244,66' fill='var(--line-1)'/>\n<rect x='24' y='74' width='432' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='40' y='100' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>② pre += nums[i]</text>\n<text x='440' y='100' font-size='13' text-anchor='end' fill='currentColor'>得到当前位置的前缀和</text>\n<line x1='240' y1='116' x2='240' y2='124' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,132 236,124 244,124' fill='var(--line-1)'/>\n<rect x='24' y='132' width='432' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='40' y='158' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>③ count += seen[pre - k]</text>\n<text x='440' y='158' font-size='13' text-anchor='end' fill='currentColor'>差值命中几个就加几个</text>\n<line x1='240' y1='174' x2='240' y2='182' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,190 236,182 244,182' fill='var(--line-1)'/>\n<rect x='24' y='190' width='432' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='40' y='216' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>④ seen[pre] += 1</text>\n<text x='440' y='216' font-size='13' text-anchor='end' fill='currentColor'>登记本次前缀和的次数</text>\n</svg>",
+    "alt": "竖排四步：初始化哈希表 seen 为 0 记 1、累加当前前缀和、累加 seen[pre-k]、把当前前缀和计数加一。"
+  },
+  "concepts": [
+    {
+      "name": "前缀和（Prefix Sum）",
+      "readable": "预先（或边遍历边）算出「从第一个元素到当前位置的累加和」，任一段连续子数组的和都能由两个前缀和相减得到，避免每次重新求和。",
+      "analogy": "跑步机上显示累计公里数：想知道第 3 公里到第 7 公里跑了多少，不必重跑，用第 7 公里读数减去第 3 公里读数即可。",
+      "analogyBreaksDown": "里程只能单调增加，而这里 nums 可以为负，前缀和会上下起伏。所以「总里程差」的直觉不能推出窗内和随右端点单调递增，滑动窗口那套就靠不住。",
+      "mechanism": "定义 pre[i] 为前 i 个元素之和，则子数组 nums[j..i-1] 的和恰为 pre[i]-pre[j]。把「求区间和」这一步压成一次减法，使得后续可以用哈希表查历史前缀和，把 O(n²) 枚举降到 O(n)。",
+      "visual": "画一条从 0 到 n 的前缀和折线，横轴是下标、纵轴是累加值；任意两点之间的纵向落差就是这两点之间子数组的和。",
+      "prerequisites": ["数组遍历", "哈希表基本操作"],
+      "selfTest": ["pre[i] 与 pre[i-1] 的关系是什么？", "为什么要在 seen 里预先放入 0 对应的计数 1？", "子数组和为 k 等价于哪两个前缀和的关系？"],
+      "formula": "\\mathrm{pre}[i] = \\sum_{j=0}^{i-1} \\mathrm{nums}[j], \\quad \\mathrm{pre}[0] = 0"
+    },
+    {
+      "name": "差值查表（Difference Lookup）",
+      "readable": "把「找有多少个子数组和为 k」换成「对每个位置，历史上出现过多少次前缀和恰好等于当前前缀和减 k」，用哈希表 O(1) 回答。",
+      "analogy": "记账时想统计「最近收入多少」的次数，不去翻每一段，而是把每种累计余额出现过几次记在本子上；来一笔新账，只查「当前余额减目标」出现过几回。",
+      "analogyBreaksDown": "账本类比默认余额查询不重复计数；而这里必须严格控制「先查后登记」的顺序，否则 k=0 时会把当前这一笔也当成历史记录，凭空多算一个。",
+      "mechanism": "以右端点 i 为锚，所有以 i-1 结尾、和为 k 的子数组，其左端 j 必满足 pre[j]=pre[i]-k。遍历时此前所有 pre[j] 的计数已存入哈希表，查表即得个数；再登记当前 pre[i]，供后续位置使用。",
+      "visual": "画前缀和数组与一张哈希表并列：每次把当前 pre[i]-k 与表内键对齐，命中项的计数值累加进 count，然后把 pre[i] 写进表。",
+      "prerequisites": ["前缀和", "哈希表计数", "遍历顺序"],
+      "selfTest": ["为什么必须先 count += seen[pre-k]，再把 seen[pre] 加一？", "k=0 时这个顺序写反会多算什么？", "滑动窗口在含负数时为什么会漏解？"],
+      "formula": "\\mathrm{count} = \\sum_{i=1}^{n} \\mathrm{seen}[\\, \\mathrm{pre}[i] - k \\,]"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-prefix-sum-def",
+      "name": "前缀和定义（Prefix Sum）",
+      "category": "engineering",
+      "latex": "\\mathrm{pre}[i] = \\sum_{j=0}^{i-1} \\mathrm{nums}[j], \\quad \\mathrm{pre}[0] = 0",
+      "symbols": [
+        ["\\mathrm{pre}[i]", "前 i 个元素之和（第 i 个前缀和）"],
+        ["\\mathrm{nums}[j]", "下标 j 处的数组元素"],
+        ["n", "数组长度"],
+        ["i", "前缀和下标，取值 0 到 n"]
+      ],
+      "derivation": [
+        "第 1 步：想快速求任意连续子数组的和，先定义「从头累加到某个位置」的辅助值",
+        "第 2 步：令 pre[0]=0 表示空区间，pre[i] 表示前 i 项之和",
+        "第 3 步：于是 pre[i] = pre[i-1] + nums[i-1]，可在线性遍历中递推得到",
+        "第 4 步：任意子数组 nums[j..i-1] 的和 = pre[i] - pre[j]，一次减法即得"
+      ],
+      "analogy": "跑步机累计里程：想知道第 3 到第 7 公里跑了多远，用终点读数减起点读数就行，不必重跑一遍。",
+      "pitfalls": [
+        "下标口径混乱（pre[i] 是前 i 项还是前 i+1 项），导致差一",
+        "忘记 pre[0]=0，无法表达从下标 0 开始的子数组",
+        "以为前缀和只适用于非负数组——它对任意整数都成立"
+      ],
+      "code": "def build_prefix(nums):\n    pre = [0] * (len(nums) + 1)\n    for i, x in enumerate(nums):\n        pre[i + 1] = pre[i] + x\n    return pre\n\n# 子数组 nums[j:i] 的和\n# pre[i] - pre[j]",
+      "sources": [
+        {"title": "和为K的子数组（LeetCode 560）· 大厂高频手撕题", "url": "https://leetcode.cn/problems/subarray-sum-equals-k"}
+      ]
+    },
+    {
+      "id": "f-subarray-sum-count",
+      "name": "和为 k 的子数组计数（Count of Subarrays Summing to k）",
+      "category": "engineering",
+      "latex": "\\mathrm{count} = \\sum_{i=1}^{n} \\mathrm{seen}[\\, \\mathrm{pre}[i] - k \\,]",
+      "symbols": [
+        ["\\mathrm{count}", "和为 k 的子数组总数"],
+        ["\\mathrm{pre}[i]", "第 i 个前缀和"],
+        ["k", "目标和"],
+        ["\\mathrm{seen}[v]", "前缀和等于 v 的历史出现次数（哈希表）"],
+        ["n", "数组长度"]
+      ],
+      "derivation": [
+        "第 1 步：子数组 nums[j..i-1] 的和为 k，即 pre[i] - pre[j] = k",
+        "第 2 步：整理得 pre[j] = pre[i] - k，即左端点的前缀和必须等于 pre[i]-k",
+        "第 3 步：固定右端点 i，这样的子数组个数就等于历史前缀和中等于 pre[i]-k 的出现次数",
+        "第 4 步：对所有右端点求和，即得 count；seen 初始置 {0:1} 以覆盖 j=0 的情形"
+      ],
+      "analogy": "账本记下每种累计余额出现过几回，来一笔新账时只查「当前余额减目标」出现过几次，就数清了多少段账目恰好达到目标。",
+      "pitfalls": [
+        "先 seen[pre] 加一再去查 pre-k，k=0 时会把当前项算进历史，多算一个",
+        "漏掉 seen[0]=1，导致所有从下标 0 开始的合法子数组全部丢失",
+        "把「子数组」当「子序列」，忽略连续性要求"
+      ],
+      "code": "from collections import defaultdict\n\ndef subarraySum(nums, k):\n    count = 0\n    pre = 0\n    seen = defaultdict(int)\n    seen[0] = 1\n    for x in nums:\n        pre += x\n        count += seen[pre - k]  # 先查历史\n        seen[pre] += 1          # 再登记当前\n    return count",
+      "sources": [
+        {"title": "和为K的子数组（LeetCode 560）· 大厂高频手撕题", "url": "https://leetcode.cn/problems/subarray-sum-equals-k"}
+      ]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "题面要求统计并返回数组中和为 k 的子数组的个数，子数组是连续非空序列",
+      "示例 1：nums=[1,1,1], k=2 输出 2；示例 2：nums=[1,2,3], k=3 输出 2",
+      "约束：1 <= nums.length <= 2*10^4，-1000 <= nums[i] <= 1000，-10^7 <= k <= 10^7"
+    ],
+    "uncertain": [
+      "推荐解法（前缀和 + 哈希表）与滑动窗口的对比为通用算法常识补充，源摘要未涉及（待核实非题目原文结论）",
+      "示例均为题目自带示例，已用参考代码逐一验证通过"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "数一数数组里有多少段连续的和正好等于 k，用前缀和加哈希表一遍扫完。"},
+      {"level": "入门", "text": "连续子数组的和等于「右端前缀和减左端前缀和」。于是对每个位置，只要知道历史上出现过多少个前缀和等于「当前前缀和减 k」，就有多少段以它结尾、和为 k 的子数组。把这些历史前缀和的次数放进哈希表，就能 O(1) 查询，一遍遍历出答案。"},
+      {"level": "进阶", "text": "关键有两处：一是把「区间和」转成「前缀和之差」，把二重枚举降成一重；二是用哈希表存「每种前缀和出现过几次」，查询目标变成 pre-k 而不是 pre。还要记得初始化 seen={0:1}，否则从下标 0 开始的子数组全都数不到。整个解法时间 O(n)。"},
+      {"level": "专家", "text": "同样能 O(n) 的滑动窗口在这里不成立，因为 nums 含负数：右端点右移时窗口和不再单调，收缩左端点的判断失去依据，会漏解或错解。这正是「子数组和 + 允许负数」必须用前缀和 + 哈希的分水岭。面试里还应指出遍历顺序：必须先用 pre-k 查表再登记 pre，否则 k=0 时会把当前项误当历史，多算。空间上用一个哈希表记前缀和频次，最坏 O(n)。"}
+    ],
+    "socratic": [
+      {"q": "为什么不能直接用滑动窗口？", "a": "滑动窗口依赖「右移右端点，窗口和单调不减」这一性质来收缩左端点；数组含负数时窗口和上下波动，收缩条件失效，会漏掉合法子数组。"},
+      {"q": "seen[0]=1 到底代表什么？", "a": "它代表「空前缀」的计数。当 pre[i] 本身等于 k 时，pre[i]-k=0，查到的这个 1 正好对应从下标 0 开始的子数组。"}
+    ],
+    "mechanism": "必须这样设计，是因为「连续区间和」有两面：直接枚举是 O(n²)，而前缀和把它变成两个前缀值的差。只看差值就需要历史信息——不是「前缀和是多少」而是「某种前缀和出现过几次」。哈希表正好提供按值 O(1) 取计数，于是每步只做查表与登记，整体降到 O(n)。初始化 0 的计数是为了让「左端点在下标 0」也有对应的历史记录。",
+    "boundary": "前缀和 + 哈希对任意整数数组成立；滑动窗口版本只在 nums 全为非负时正确，遇到负数或题目要求长度/最值性质时会失效。若题目问的是「最长子数组」等带优化目标的问题，即使前缀和也对，往往还要额外维护首次出现位置，不能用计数直接解决。",
+    "analogyBoundary": "跑步机里程类比假定计数天然不重复，而本题必须严格「先查历史、再登记当前」；类比也没有体现前缀和会因负数而上下波动，正是这一点决定了滑动窗口不能用。",
+    "misconceptions": [
+      "用滑动窗口硬解含负数的用例，结果与答案不符",
+      "漏掉 seen[0]=1，把从下标 0 开始的所有子数组都数漏",
+      "先 seen[pre] 加一再去查 pre-k，k=0 时多算一个",
+      "把子数组理解成子序列，忽略连续性约束。"
+    ],
+    "ownAnalysis": "（推断）560 与前缀和模板题（如 LeetCode 303 前缀和查询、930 和相同的二元子数组）共用同一套「区间和转前缀差」的思维。它也是「一维前缀和 → 二维前缀和」的入口：二维版本里 pre[i][j] 换成矩形面积，差值查表换成四角容斥。把 560 吃透，二维矩阵的「和为某值」类题就有直接迁移路径。",
+    "officialNotes": [
+      {"position": "题面要求统计并返回数组中和为 k 的连续非空子数组个数，并给出示例 nums=[1,1,1],k=2 输出 2 与 nums=[1,2,3],k=3 输出 2", "source": "https://leetcode.cn/problems/subarray-sum-equals-k"}
+    ],
+    "interviewAnswer": "我用前缀和加哈希表。子数组 nums[j..i-1] 的和等于 pre[i]-pre[j]，要求和为 k 就是 pre[j]=pre[i]-k。所以遍历时维护当前前缀和 pre 和一张哈希表 seen，seen[0] 先置 1；每到一个元素，pre 加上它，答案累加 seen[pre-k]，再把 seen[pre] 加一。时间 O(n)，空间 O(n)。如果面试官问能不能用滑动窗口，我会说只有在数组全非负时才成立，含负数时窗口和不单调，会漏解。",
+    "studyPath": {
+      "prerequisites": ["数组与循环", "哈希表", "前缀和基本概念"],
+      "nextSteps": ["前缀和查询（LeetCode 303）", "和相同的二元子数组（LeetCode 930）", "二维前缀和与矩阵区域和"]
+    }
+  },
+  "problem": {
+    "title": "和为 K 的子数组",
+    "number": 560,
+    "difficulty": "medium",
+    "statement": "给定一个整数数组 nums 和一个整数 k，统计并返回该数组中和为 k 的连续子数组的个数。子数组是数组中元素的连续非空序列。约束：1 <= nums.length <= 2*10^4，-1000 <= nums[i] <= 1000，-10^7 <= k <= 10^7。",
+    "examples": [
+      {"input": "nums = [1,1,1], k = 2", "output": "2", "why": "两段长度为 2 的连续子数组和都是 2"},
+      {"input": "nums = [1,2,3], k = 3", "output": "2", "why": "[1,2] 与 [3] 两段和都为 3"}
+    ],
+    "approach": {
+      "idea": "用前缀和把「子数组和」变成「两个前缀和之差」。固定右端点 i 时，左端点前缀和必须等于 pre[i]-k。遍历时用哈希表记录每种前缀和已出现的次数，查 pre-k 的次数即得以当前位置结尾的合法子数组数，累加即可。",
+      "steps": [
+        "1. 初始化 count=0、pre=0，哈希表 seen = {0: 1}",
+        "2. 遍历 nums 的每个元素 x：pre += x",
+        "3. count += seen.get(pre - k, 0)，先把当前前缀和「减 k」当作目标去查历史",
+        "4. seen[pre] += 1，把当前前缀和登记进哈希表，供后面的位置使用",
+        "5. 遍历结束返回 count"
+      ],
+      "whyItWorks": "设 pre[i] 为前 i 个元素之和，则子数组 nums[j..i-1] 的和为 pre[i]-pre[j]。它等于 k 当且仅当 pre[j]=pre[i]-k。遍历到 i 时，所有 j<i 的 pre[j] 都已登记在 seen 中，因此 seen[pre[i]-k] 正是以 i-1 结尾、和为 k 的子数组个数；对所有 i 求和即覆盖全部子数组且每个只数一次。",
+      "alternatives": [
+        {"name": "滑动窗口（双指针）", "complexity": "O(n) / O(1)", "when": "仅当 nums 全为非负、窗口和单调时成立；含负数会漏解"},
+        {"name": "两重循环暴力枚举", "complexity": "O(n^2) / O(1)", "when": "n 很小或面试先要一个能跑的 baseline 时"}
+      ]
+    },
+    "solution": {
+      "python": "from collections import defaultdict\n\ndef subarraySum(nums, k):\n    count = 0\n    pre = 0\n    seen = defaultdict(int)   # 前缀和 -> 出现次数\n    seen[0] = 1               # 空前缀，覆盖从下标 0 开始的子数组\n    for x in nums:\n        pre += x\n        count += seen[pre - k]   # 先查历史\n        seen[pre] += 1           # 再登记当前\n    return count",
+      "python_alt": "# 滑动窗口版：仅当 nums 全为非负数时正确（含负数会漏解）\ndef subarraySum_nonneg(nums, k):\n    count = 0\n    left = 0\n    window = 0\n    for right, x in enumerate(nums):\n        window += x\n        while window > k and left <= right:\n            window -= nums[left]\n            left += 1\n        if window == k:\n            count += 1\n    return count",
+      "notes": "主实现必须严守住「先查 pre-k、再登记 pre」的顺序：若先登记再查，k=0 时会把当前前缀和自己算进历史，多算一个。seen 初始置 {0:1} 不可省略，否则所有从下标 0 开始的合法子数组都会丢失。python_alt 展示滑动窗口写法，并注明仅适用于非负数组。"
+    },
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "一次遍历，每步只做哈希表查询与写入（均摊 O(1)）；哈希表最坏存放 n+1 种不同前缀和。"
+    },
+    "pitfalls": [
+      "漏写 seen[0]=1，导致从下标 0 开始的子数组全部数不到",
+      "先 seen[pre] 加一再去查 pre-k，k=0 时多算一个",
+      "对含负数的用例改用滑动窗口，窗口收缩逻辑失效",
+      "把子数组误当子序列，忽略连续性要求"
+    ],
+    "edgeCases": [
+      "nums 只有一个元素：k 等于该元素时为 1，否则为 0",
+      "k = 0：需要 pre[i] = pre[j]，常见于前后缀和相等的场景",
+      "数组中含负数：前缀和非单调，必须用哈希方案而非滑动窗口"
+    ],
+    "interviewTips": "先给一句话思路「区间和转前缀差，差值查表」，再写代码。写完主动强调 seen[0]=1 与「先查后登记」这两个细节，这是最容易被追问的点。如果面试官提议用滑动窗口，先肯定它在非负数组下 O(1) 空间的优势，再指出本题允许负数、窗口和不单调，因此不能直接用。"
+  }
+}

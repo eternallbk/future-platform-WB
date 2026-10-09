@@ -1,0 +1,1033 @@
+{
+ "batchId": "queue-13",
+ "entries": [
+  {
+   "id": "3573d5a391326adf",
+   "tldr": "阿里 Java 一面按「慢SQL→MySQL索引→Redis→设计模式→进程线程→SpringBoot」逐层追问，重原理与排障闭环，几乎不含算法题。",
+   "keyPoints": [
+    "慢 SQL 排查：慢查询日志 → explain 执行计划 → 索引/配置优化",
+    "对比 B+ 树、B 树、二叉树，说明 InnoDB 为何选 B+ 树",
+    "Redis 核心结构 String/Hash/List 及其应用场景",
+    "观察者模式与装饰者模式的设计原理与实现",
+    "线程状态转换与 SpringBoot 自动装配机制"
+   ],
+   "why": "面经价值在「考点 + 追问链」；索引、缓存、并发、自动装配是后端与推理服务共用的工程底座，对做部署与工程化的算法实习面试有迁移价值。",
+   "difficulty": "medium",
+   "tags": [
+    "interview",
+    "java-backend",
+    "mysql",
+    "redis",
+    "spring",
+    "system-design"
+   ],
+   "entities": [
+    "阿里巴巴",
+    "MySQL",
+    "Redis",
+    "SpringBoot",
+    "B+树",
+    "B树",
+    "观察者模式",
+    "装饰者模式"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "阿里 Java 一面追问链",
+    "caption": "一面按「排障→结构→缓存→设计→并发→框架」逐层追问，每块都往原理深挖。",
+    "svg": "<svg viewBox='0 0 600 300' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='阿里 Java 一面追问链：慢SQL排查、MySQL索引、Redis、设计模式、进程线程到SpringBoot'><rect x='56' y='16' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>① 慢 SQL 排查</text><text x='528' y='40' font-size='13' text-anchor='end' fill='currentColor'>慢查询日志 + explain 执行计划</text><line x1='300' y1='54' x2='300' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,70 296,62 304,62' fill='var(--line-1)'/><rect x='56' y='70' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>② MySQL 索引</text><text x='528' y='94' font-size='13' text-anchor='end' fill='currentColor'>B+ 树 / B 树 / 二叉树对比</text><line x1='300' y1='108' x2='300' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,124 296,116 304,116' fill='var(--line-1)'/><rect x='56' y='124' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>③ Redis 数据结构</text><text x='528' y='148' font-size='13' text-anchor='end' fill='currentColor'>String / Hash / List 及应用场景</text><line x1='300' y1='162' x2='300' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,178 296,170 304,170' fill='var(--line-1)'/><rect x='56' y='178' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>④ 设计模式</text><text x='528' y='202' font-size='13' text-anchor='end' fill='currentColor'>观察者模式 / 装饰者模式</text><line x1='300' y1='216' x2='300' y2='224' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,232 296,224 304,224' fill='var(--line-1)'/><rect x='56' y='232' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='256' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>⑤ 进程·线程 → SpringBoot</text><text x='528' y='256' font-size='13' text-anchor='end' fill='currentColor'>线程状态转换 / 自动装配机制</text></svg>",
+    "alt": "自顶向下五层追问：慢SQL排查→MySQL索引→Redis数据结构→设计模式→进程线程到SpringBoot自动装配。"
+   },
+   "concepts": [
+    {
+     "name": "慢 SQL 排查闭环（Slow Query Diagnosis Loop）",
+     "readable": "先用慢查询日志找出耗时 SQL，再用 explain 看执行计划，判断是全表扫描还是索引失效，最后改索引或调数据库配置。",
+     "analogy": "像医生看病：先量体温（慢查询日志）锁定有问题的病人，再拍片（explain）看清病灶，最后开药（加索引 / 改配置）。",
+     "analogyBreaksDown": "看病常一次到位，而 SQL 优化要迭代：加了索引可能又引出回表或写放大，需反复 explain 验证，不是单向流程。",
+     "mechanism": "核心是把「哪条慢」与「为什么慢」分开：慢查询日志负责筛候选，explain 的 type/key/rows 负责定位原因（未走索引、filesort 等），据此才能精准优化而非盲目加索引。",
+     "visual": "画一条横向流程：慢查询日志→候选 SQL→explain→分叉出「全表扫描 / 索引失效 / filesort」→分别对应加索引、改查询、调配置。",
+     "prerequisites": [
+      "SQL 基础",
+      "索引基础",
+      "MySQL 执行计划概念"
+     ],
+     "selfTest": [
+      "怎么拿到慢查询日志？",
+      "explain 里哪个字段说明是否走索引？",
+      "为什么不能一上来就给所有列加索引？"
+     ],
+     "formula": ""
+    },
+    {
+     "name": "B+ 树索引（B+ Tree Index）",
+     "readable": "InnoDB 用 B+ 树组织索引：数据全在叶子层且叶子用链表相连，非叶节点只存键做导航，因此树矮、范围查询快。",
+     "analogy": "像多层图书馆导览牌：上层只写「去几号书架」，真正的书（数据）全在最底层，且底层书架彼此相连，方便一次取一排。",
+     "analogyBreaksDown": "图书馆书架是固定的，而 B+ 树插入会分裂、删除会合并，结构随数据动态变化；类比也体现不出磁盘页 I/O 这一真正成本来源。",
+     "mechanism": "相比 B 树把数据分散在各层，B+ 树把数据全放叶子，非叶节点更小、单页能装更多键，树更矮从而磁盘 I/O 更少；叶子链表让范围扫描无需回溯上层。",
+     "visual": "画三层树：根与中间层只标键，叶子层画成带前后箭头的链表，箭头表示范围扫描路径。",
+     "prerequisites": [
+      "二叉搜索树",
+      "磁盘页 / B 树基本概念"
+     ],
+     "selfTest": [
+      "为什么 InnoDB 选 B+ 树而非 B 树？",
+      "B+ 树叶子链表对范围查询有什么用？",
+      "树高越低为什么查询越快？"
+     ],
+     "formula": ""
+    },
+    {
+     "name": "SpringBoot 自动装配（Auto-configuration）",
+     "readable": "SpringBoot 启动时读 classpath 上的自动配置类，按条件（如某依赖是否存在）自动注册 Bean，省去手写大量 XML/注解配置。",
+     "analogy": "像买成套家具：厂家按你家户型（依赖）自动配好沙发、茶几，你只在需要改动时才动手，不必一件件自己组装。",
+     "analogyBreaksDown": "家具配套是静态的，而自动装配按运行时条件动态决定装不装，条件不满足时同一个配置类可能完全不生效。",
+     "mechanism": "关键在「约定 + 条件」：启动时加载自动配置候选类，再用条件注解按依赖与属性决定是否生效，实现开箱即用又不强绑。",
+     "visual": "画启动流程：应用启动→扫描自动配置候选→逐条判断条件注解→满足则注册 Bean→不满足则跳过。",
+     "prerequisites": [
+      "Spring IoC / Bean 概念",
+      "注解与反射基础"
+     ],
+     "selfTest": [
+      "自动装配的候选类从哪来？",
+      "条件注解起什么作用？",
+      "怎么关掉某个自动配置？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [],
+   "selfCheck": {
+    "claims": [
+     "本文整理阿里巴巴面试，覆盖慢SQL排查与优化、MySQL索引、Redis数据结构、设计模式、进程线程与SpringBoot自动装配",
+     "慢SQL部分给出慢查询日志、explain执行计划定位与索引优化、数据库配置调整等方案",
+     "对比了 B+树、B树、二叉树等数据结构差异",
+     "列出 Redis 的 String、Hash、List 等核心结构及应用场景",
+     "涵盖观察者模式、装饰者模式的原理与实现，以及线程状态转换与 SpringBoot 自动装配机制"
+    ],
+    "uncertain": [
+     "该面经偏 Java 后端八股（慢SQL/MySQL/Redis/设计模式/SpringBoot），与算法实习（多模态/后训练/生成式/世界模型）相关性有限（待核实是否含算法题）",
+     "摘要未给具体追问顺序与答案要点，本文的追问链为按摘要考点整理的合理顺序（待核实原文真实顺序）"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "阿里 Java 一面从数据库排障一路问到框架原理，考的是原理深度。"
+     },
+     {
+      "level": "入门",
+      "text": "一面覆盖六块：慢SQL排查、MySQL索引（B+树等）、Redis数据结构、设计模式、进程线程、SpringBoot自动装配。特点是先给具体场景，再顺着原理往下追问。"
+     },
+     {
+      "level": "进阶",
+      "text": "准备时按「现象→原因→方案」组织每块：慢SQL用慢查询日志加explain定位，索引讲清B+树为何优于B树，Redis按结构对场景，设计模式说清解决什么耦合，线程讲状态转换，SpringBoot讲按条件自动装配。"
+     },
+     {
+      "level": "专家",
+      "text": "这类一面考的不是名词而是取舍：B+树对B树的取舍是「牺牲非叶节点的数据换取更矮的树与顺序扫描」；自动装配的取舍是「开箱即用 vs 隐式魔法」。对算法岗而言，这些能力会在大模型推理服务的部署环节复现：缓存淘汰、并发调度、服务自动配置。面试答法应是先给结论再给边界，避免只背名词。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么面试官先问慢SQL而不是直接问索引？",
+      "a": "慢SQL是场景入口，先暴露现象再顺着「为什么慢」追问到索引结构，能检验是否真理解而非背结论。"
+     },
+     {
+      "q": "这些后端八股对算法岗有什么用？",
+      "a": "算法实习也要把模型跑在服务里，缓存、并发、自动装配是部署与推理服务的地基，理解它们能少踩工程坑。"
+     },
+     {
+      "q": "为什么不让所有列都建索引图省事？",
+      "a": "索引占空间且拖慢写入，还可能导致优化器选错执行计划；要按查询模式选择性建。"
+     }
+    ],
+    "mechanism": "这类一面考的是「把知识点放进真实故障现场」的能力：先给定慢SQL、线程异常等现象，再要求用原理（执行计划、B+树、锁与状态机）解释并给方案。真正拉开差距的是能说清「为什么这样设计」以及不同方案的取舍边界，而非罗列名词。",
+    "boundary": "八股答案高度依赖具体版本与配置：InnoDB 与 MyISAM、MySQL 5.7 与 8.0、SpringBoot 2 与 3 的加载方式都不同，脱离版本背结论容易答错；纯算法岗面试基本不会考这些。",
+    "analogyBoundary": "把一面比作「医院分诊」只帮助记忆顺序；真实面试不走固定流程，面试官常按你的回答即兴追问，也可能跳过某一块，类比会误导人以为有标准脚本。",
+    "misconceptions": [
+     "把慢SQL优化等同于「加索引」；实际要先 explain 定位原因，索引失效、回表、排序各有不同处理。",
+     "以为 B+ 树只是「更大的 B 树」；关键是数据全在叶子层且叶间成链，服务于磁盘 I/O 与范围查询。",
+     "把自动装配理解为「自动扫描包」；它依赖条件注解按需生效，不是无条件注册所有 Bean。"
+    ],
+    "ownAnalysis": "这份面经几乎全是后端工程八股，和读者方向（多模态/后训练/生成式/世界模型）的直接重叠很小（推断）。但把它当作「推理服务工程面」来用仍有价值：KV cache 淘汰、并发调度、服务自动配置这些能力，在把大模型布到线上时会反复用到（推断）。建议算法岗读者按较小精力浏览，重点记慢SQL排查闭环与缓存结构两条。",
+    "officialNotes": [
+     {
+      "position": "本文整理阿里巴巴面试中慢SQL排查、MySQL索引、Redis数据结构、设计模式、进程线程与SpringBoot自动装配等高频考点。",
+      "source": "https://notes.kamacoder.com/interview/java/alibaba-interview-11-23.html"
+     }
+    ],
+    "interviewAnswer": "我先把一面拆成六块准备。以慢SQL为例：先用慢查询日志筛出耗时SQL，再用explain看type/key/rows判断是否走索引或被filesort，然后针对性加索引或改查询、调配置。索引我讲清B+树数据全在叶子层、叶间成链，所以层数低、范围扫描快，优于把数据分散在各层的B树。Redis按String/Hash/List对场景，设计模式说清观察者、装饰者各解什么耦合，线程讲状态转换，SpringBoot讲按条件自动装配。",
+    "studyPath": {
+     "prerequisites": [
+      "SQL 与索引基础",
+      "Java / Spring 基础",
+      "操作系统进程线程"
+     ],
+     "nextSteps": [
+      "在本地 MySQL 复现一次慢SQL排查并写清单",
+      "用 explain 分析几条缓慢查询",
+      "读 SpringBoot 自动装配的源码或官方文档"
+     ]
+    }
+   }
+  },
+  {
+   "id": "6b1d855864495bbf",
+   "tldr": "用单调递减栈求每天「下一个更高温度」的天数差：栈存下标，遇到更高温即出栈结算，一遍遍历 O(n)。",
+   "keyPoints": [
+    "answer[i] 是第 i 天后首次出现更高温度的天数差，否则为 0",
+    "维护一个栈内温度自底向顶递减的下标栈",
+    "遇到比栈顶温度更高的当天温度，就出栈并结算下标差",
+    "栈里存下标而非温度值，才能直接算出天数差",
+    "n 最大 1e5，暴力 O(n^2) 会超时，须用单调栈"
+   ],
+   "why": "单调栈是「下一个更大元素」家族模板，处理数组里最近更大/更小问题；手撕高频，也是滑动窗口、柱状图等题的基础工具。",
+   "difficulty": "medium",
+   "tags": [
+    "leetcode",
+    "monotonic-stack",
+    "array",
+    "stack",
+    "hot100"
+   ],
+   "entities": [
+    "单调栈",
+    "temperatures",
+    "answer"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "下标栈的形态变化",
+    "caption": "以示例数组为例：遇到更高温时，所有等待中的更冷下标会在这一次统一出栈结算。",
+    "svg": "<svg viewBox='0 0 600 300' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='每日温度单调栈执行过程：遇到更高温时弹栈并结算天数差'><rect x='56' y='16' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>① 下标1 遇 74</text><text x='528' y='40' font-size='13' text-anchor='end' fill='currentColor'>74&gt;栈顶73 → 弹0，ans[0]=1</text><line x1='300' y1='54' x2='300' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,70 296,62 304,62' fill='var(--line-1)'/><rect x='56' y='70' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>② 下标2 遇 75</text><text x='528' y='94' font-size='13' text-anchor='end' fill='currentColor'>75&gt;栈顶74 → 弹1，ans[1]=1</text><line x1='300' y1='108' x2='300' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,124 296,116 304,116' fill='var(--line-1)'/><rect x='56' y='124' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>③ 下标3-4 遇 71,69</text><text x='528' y='148' font-size='13' text-anchor='end' fill='currentColor'>更冷 → 直接压栈，栈=[2,3,4]</text><line x1='300' y1='162' x2='300' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,178 296,170 304,170' fill='var(--line-1)'/><rect x='56' y='178' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>④ 下标5 遇 72</text><text x='528' y='202' font-size='13' text-anchor='end' fill='currentColor'>弹4、3 → ans[4]=1,ans[3]=2，压5</text><line x1='300' y1='216' x2='300' y2='224' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,232 296,224 304,224' fill='var(--line-1)'/><rect x='56' y='232' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='256' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>⑤ 下标6-7 遇 76,73</text><text x='528' y='256' font-size='13' text-anchor='end' fill='currentColor'>弹5、2 → ans[5]=1,ans[2]=4；末尾剩 0</text></svg>",
+    "alt": "五步演示：74、75、72、76 依次触发弹栈结算，最后剩余的 76、73 对应 answer 为 0。"
+   },
+   "concepts": [
+    {
+     "name": "单调栈（Monotonic Stack）",
+     "readable": "维护一个栈内元素单调的栈（这里是下标对应温度递减）；新元素进来时，把所有比它小的栈顶弹出并顺手结算，再把自己压入。",
+     "analogy": "像排队按身高从高到矮站：来个更高的人时，前面比他矮的都得走，因为他们各自等的「更高的人」到了。",
+     "analogyBreaksDown": "排队是人真的离开现场；单调栈里被弹出的下标只是「结算完成」，其答案已记录，数据并未丢失，栈只保留尚未找到更高温的下标。",
+     "mechanism": "关键在「每个下标只进出栈一次」：栈保持对应温度递减，一旦遇到更高温，所有等待中更冷的下标在这一次全部结算，均摊 O(1)，整体 O(n)。",
+     "visual": "横轴画数组下标，纵轴画温度折线；在折线下方同步画栈：下坡时压栈变高，上坡时把偏低的下标一次性弹出。",
+     "prerequisites": [
+      "栈的基本操作",
+      "数组遍历",
+      "均摊复杂度"
+     ],
+     "selfTest": [
+      "为什么栈里存下标而不是温度？",
+      "为什么用递减栈而不是递增栈？",
+      "每个元素最多进出栈几次？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [],
+   "selfCheck": {
+    "claims": [
+     "题目来自 LeetCode 739 每日温度",
+     "示例 temperatures=[73,74,75,71,69,72,76,73] 输出 [1,1,4,2,1,1,0,0]",
+     "示例 [30,40,50,60] 输出 [1,1,1,0]，[30,60,90] 输出 [1,1,0]",
+     "约束 1<=temperatures.length<=1e5，30<=temperatures[i]<=100"
+    ],
+    "uncertain": [
+     "摘要未给解题思路，题解为按单调栈标准做法自行推导（待核实是否有更优写法）",
+     "examples 直接取自摘要，未另行构造"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "每天往后看，第一次遇到更暖的天，就把相隔几天记下来。"
+     },
+     {
+      "level": "入门",
+      "text": "对每一天 i，要找它之后第一个温度更高的位置 j，答案是 j-i；找不到就填 0。暴力对每天往后扫是 O(n^2)，n 到 1e5 会超时，所以要用单调栈把「还没找到更高温的天」缓存起来。"
+     },
+     {
+      "level": "进阶",
+      "text": "用一个存下标的栈，保持栈内温度自底向顶递减。遍历到某天温度 t 时，只要栈顶温度比 t 低，说明栈顶那天第一次遇到更高温就是今天：弹出并记录下标差。反复弹到栈空或栈顶温度不低于 t，再把今天压栈。被弹出的下标不会再被用到，因此每个下标只进出栈各一次。"
+     },
+     {
+      "level": "专家",
+      "text": "这是「下一个更大元素」的模板：栈里保存的是「悬而未决的查询」，一旦更大的值出现就一次结算一批，属于单调栈的均摊分析——总出栈次数等于总入栈次数 n，故 O(n)。与单调队列（滑动窗口最值）相对：队列两侧都动，栈只在一侧进出。边界是求严格更大时弹出条件必须用严格小于，若误用小于等于会把相等的天也结算掉。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么暴力解法会慢？",
+      "a": "每一天都要往后扫到第一个更高温，最坏情况下遍历接近 n 次，总代价 O(n^2)，n 达 1e5 时太慢。"
+     },
+     {
+      "q": "为什么栈里只存还没找到更高温的下标？",
+      "a": "一旦某天遇到更高温就已结算，答案固定，再留着没用；栈里只保留仍在等待的下标，天然就是「未解决集合」。"
+     },
+     {
+      "q": "弹出条件为什么必须严格小于？",
+      "a": "题目要的是温度「更高」，相等的天不算更高；用 <= 会误把相等温度当成更高温，得到错误天数。"
+     }
+    ],
+    "mechanism": "核心是「延迟结算」：不在遍历时立刻回答每个下标，而是把待决的下标按温度顺序堆在栈里，等更高温出现时一次性结算这一批。因为每个下标只被压入、弹出各一次，均摊成本 O(1)，把暴力里重复的向后扫描省掉。",
+    "boundary": "求「下一个严格大于」用严格小于做弹出条件；若题目改成「下一个大于等于」，比较方向必须相应改为 <=。数组含大量相等元素时，严格与含等两种语义差别明显，容易写错。数据量小时暴力反而更省事。",
+    "analogyBoundary": "「排队比身高」忽略了两点：单调栈结算的是「下标差」而非人的去留，且弹出的下标其答案被写入数组，不是被删除；同时栈内元素并不真的有序排队，只是相对温度递减。",
+    "misconceptions": [
+     "栈里存温度值而不是下标，导致算不出相差的天数。",
+     "弹出条件写成 <=，把相等温度也算作「更高温」。",
+     "忘记把当前下标压栈，或遍历结束后未保留栈内下标的 0。"
+    ],
+    "ownAnalysis": "这道题是单调栈的入门模板，掌握后可直接迁移到「下一个更大元素 I/II」「柱状图中最大的矩形」「接雨水」等题（推断）。一个常见误区是把它和滑动窗口最值混淆：本题窗口右端由「更高温」动态决定，不是固定长度窗口，所以用栈而非单调队列更自然。",
+    "officialNotes": [
+     {
+      "position": "LeetCode 739 要求返回每天之后首次出现更高温度相隔的天数，若之后不再升高则为 0。",
+      "source": "https://leetcode.cn/problems/daily-temperatures"
+     }
+    ],
+    "interviewAnswer": "我用单调栈。维护一个存下标的栈，保证栈内对应温度自底向顶递减。遍历每天温度，当栈非空且栈顶温度比当前低，就弹出栈顶 j，答案就是 i 减 j，反复弹到栈空或栈顶不低于当前，再把 i 压入。因为每个下标只进出栈各一次，时间是 O(n)，空间最坏 O(n)。遍历结束后还在栈里的下标说明没遇到更高温，答案保持 0。",
+    "studyPath": {
+     "prerequisites": [
+      "栈的基本操作",
+      "数组遍历",
+      "均摊复杂度分析"
+     ],
+     "nextSteps": [
+      "下一个更大元素 I/II（496 / 503）",
+      "柱状图中最大的矩形（84）",
+      "接雨水（42）"
+     ]
+    }
+   },
+   "problem": {
+    "title": "每日温度",
+    "number": 739,
+    "difficulty": "medium",
+    "statement": "给定整数数组 temperatures 表示每天的温度，返回数组 answer，其中 answer[i] 表示第 i 天之后第一次出现更高温度相隔的天数；若之后都不会升高，则 answer[i] 为 0。",
+    "examples": [
+     {
+      "input": "temperatures = [73,74,75,71,69,72,76,73]",
+      "output": "[1,1,4,2,1,1,0,0]",
+      "why": "第3天(75)要等4天才遇到76"
+     },
+     {
+      "input": "temperatures = [30,40,50,60]",
+      "output": "[1,1,1,0]",
+      "why": "每天都次日更高，最后一天无更高为0"
+     },
+     {
+      "input": "temperatures = [30,60,90]",
+      "output": "[1,1,0]",
+      "why": "同上，末尾无更高温"
+     }
+    ],
+    "approach": {
+     "idea": "从左到右遍历，用一个存下标的栈维持栈内对应温度单调递减；遇到比栈顶温度更高的当天温度时，弹出栈顶并结算二者下标差，直到栈空或栈顶温度不低于当前，再把当前下标压栈。",
+     "steps": [
+      "1. 初始化 answer 全 0，空栈 stack",
+      "2. 从左到右枚举下标 i 与温度 t",
+      "3. while 栈非空且 temperatures[stack[-1]] < t：弹出 j，answer[j] = i - j",
+      "4. 把 i 压入 stack",
+      "5. 遍历结束，栈中剩余下标的 answer 保持 0"
+     ],
+     "whyItWorks": "栈里始终只保留还没找到更高温的下标，且其温度从栈底到栈顶递减。当 t 高于栈顶温度时，栈顶那天第一次遇到更高温正是 i，故 i-j 正确；反复弹出把该温度对应的所有等待一次结算，不漏解也不错位。",
+     "alternatives": [
+      {
+       "name": "暴力枚举",
+       "complexity": "O(n^2) / O(1)",
+       "when": "数据规模很小或只想先给一个可跑的 baseline"
+      },
+      {
+       "name": "从右往左单调栈",
+       "complexity": "O(n) / O(n)",
+       "when": "换方向推导，或题目改问「下一个更大元素」时通用写法"
+      }
+     ]
+    },
+    "solution": {
+     "python": "def dailyTemperatures(temperatures):\n    n = len(temperatures)\n    answer = [0] * n\n    stack = []  # 存下标，对应温度自底向顶严格递减\n    for i, t in enumerate(temperatures):\n        while stack and temperatures[stack[-1]] < t:\n            j = stack.pop()\n            answer[j] = i - j\n        stack.append(i)\n    return answer\n\nprint(dailyTemperatures([73, 74, 75, 71, 69, 72, 76, 73]))",
+     "python_alt": "def dailyTemperatures(temperatures):\n    n = len(temperatures)\n    answer = [0] * n\n    stack = []  # 单调递减栈，存下标\n    for i in range(n - 1, -1, -1):\n        while stack and temperatures[stack[-1]] <= temperatures[i]:\n            stack.pop()\n        if stack:\n            answer[i] = stack[-1] - i\n        stack.append(i)\n    return answer",
+     "notes": "栈必须存下标而非温度，否则算不出 i-j。弹出条件是严格小于（严格更高温）。从右往左的版本里，等于当前温度的下标要被弹掉（用 <=），因为它不可能成为当前天的「更高温」。"
+    },
+    "complexity": {
+     "time": "O(n)",
+     "space": "O(n)",
+     "why": "每个下标最多入栈一次、出栈一次，均摊 O(1)；栈最坏（温度严格递减）存下全部下标，answer 本身占 O(n)。"
+    },
+    "pitfalls": [
+     "弹出条件写成 <=，把相等温度误当作更高温。",
+     "栈里存温度值而不是下标，算不出相差的天数。",
+     "忘记把当前下标压栈，或结束后未保留栈内下标的 0。"
+    ],
+    "edgeCases": [
+     "长度为 1：answer 必为 [0]。",
+     "温度严格递减：所有 answer 为 0，栈最终装下全部下标。",
+     "温度严格递增：除最后一位外 answer 全为 1。"
+    ],
+    "interviewTips": "先口述「每个下标只进栈出栈一次」锁定 O(n)，再写代码。动笔前明确弹出条件是严格小于。卡住时先写暴力版并对拍小数据，再改成单调栈。面试官常追问「为什么是递减栈」，答：栈底到栈顶温度递减，遇到更高温就能一次结算所有等待中的更冷天。"
+   }
+  },
+  {
+   "id": "d49207d57f4e9e74",
+   "tldr": "HAD 把蒸馏目标从「模仿老师全部输出」改成「只学老师超出 harness 的能力」：对比同一老师带/不带 harness 信息的动作并做有效性校验。",
+   "keyPoints": [
+    "智能体总带 harness——管理上下文、工具与反馈的软件",
+    "蒸馏小模型时 harness 不变，学生只需老师独有、harness 给不了的能力",
+    "标准蒸馏模仿老师全部输出，把 harness 当成输入的一部分",
+    "HAD 用同一老师「带/不带 harness 信息」的动作做偏好对比",
+    "偏好分数在学生自己的推理之后打；有效性校验剔除与 harness 记录矛盾的对",
+    "无需任务奖励、成功标签或未来信息，长程任务上优于同 harness 的 on-policy 蒸馏"
+   ],
+   "why": "HAD 是后训练与 Agent 蒸馏的新范式，直接关系「小模型智能体如何利用环境与工具信息」，对做 post-training 与 agent 方向的实习面试是加分点。",
+   "difficulty": "hard",
+   "tags": [
+    "posttraining",
+    "distillation",
+    "agent",
+    "on-policy-distillation",
+    "preference-learning"
+   ],
+   "entities": [
+    "Harness-Aware Distillation",
+    "HAD",
+    "harness",
+    "on-policy distillation"
+   ],
+   "diagram": {
+    "kind": "architecture",
+    "title": "HAD 的蒸馏回路",
+    "caption": "harness 固定不动，蒸馏信号只取老师相对 harness 的增量：带/不带信息的动作对比，再经校验后更新学生。",
+    "svg": "<svg viewBox='0 0 600 300' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='HAD 架构：环境 harness 固定，学生行动，老师带与不带 harness 信息的动作构成偏好对，经有效性校验后更新学生'><rect x='56' y='16' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>① 环境 harness</text><text x='528' y='40' font-size='13' text-anchor='end' fill='currentColor'>管理上下文 / 工具 / 反馈</text><line x1='300' y1='54' x2='300' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,70 296,62 304,62' fill='var(--line-1)'/><rect x='56' y='70' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>② 学生模型行动</text><text x='528' y='94' font-size='13' text-anchor='end' fill='currentColor'>harness 保持不变</text><line x1='300' y1='108' x2='300' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,124 296,116 304,116' fill='var(--line-1)'/><rect x='56' y='124' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>③ 老师对照</text><text x='528' y='148' font-size='13' text-anchor='end' fill='currentColor'>同一老师 带 / 不带 harness 信息</text><line x1='300' y1='162' x2='300' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,178 296,170 304,170' fill='var(--line-1)'/><rect x='56' y='178' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>④ 有效性校验</text><text x='528' y='202' font-size='13' text-anchor='end' fill='currentColor'>剔除与 harness 记录矛盾的对</text><line x1='300' y1='216' x2='300' y2='224' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,232 296,224 304,224' fill='var(--line-1)'/><rect x='56' y='232' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='256' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>⑤ 学生更新</text><text x='528' y='256' font-size='13' text-anchor='end' fill='currentColor'>只学 harness 之外的增量能力</text></svg>",
+    "alt": "自上而下：固定的 harness→学生行动→老师带/不带信息的动作对照→有效性校验→学生只学超出 harness 的增量能力。"
+   },
+   "concepts": [
+    {
+     "name": "Harness（智能体外壳）",
+     "readable": "指围绕语言模型的软件层，负责管理它的上下文、可调用工具与反馈；模型本身只负责在这些信息基础上产出动作。",
+     "analogy": "像司机的驾驶舱：发动机是模型，仪表盘、挡把、导航就是 harness，司机（模型）靠它们才能把车开对。",
+     "analogyBreaksDown": "驾驶舱是固定硬件，而 harness 会随任务改写上下文、注入工具返回的反馈，是动态可编程的，类比体现不出它会主动构造输入。",
+     "mechanism": "关键设计是把「记什么、能调什么、拿到什么反馈」从模型权重里剥离到外部软件，于是同一模型换 harness 就能换行为；代价是模型必须学会正确读取 harness 提供的信息。",
+     "visual": "画三层：模型（中心）—harness（上下文/工具/反馈三块）—环境（任务世界），用箭头表示信息在三者间流动。",
+     "prerequisites": [
+      "LLM 智能体（如 ReAct）基本概念",
+      "上下文与工具调用"
+     ],
+     "selfTest": [
+      "harness 具体管哪三样东西？",
+      "为什么换 harness 会让同一模型行为不同？",
+      "学生模型为什么不能只靠模仿老师？"
+     ],
+     "formula": ""
+    },
+    {
+     "name": "Harness-Aware Distillation（外壳感知蒸馏）",
+     "readable": "蒸馏小模型时 harness 保留不动，学生只需学老师「超出 harness 的那部分能力」，比如如何正确利用 harness 信息，而不是把 harness 本身也背进权重。",
+     "analogy": "师傅和徒弟用同一套工具箱，徒弟该学的是「看图纸后怎么下刀」的手艺，而不是把工具箱重新买一遍。",
+     "analogyBreaksDown": "工具箱能力是固定的，但 harness 会随任务变化其输入；且偏好对比依赖「同一老师带/不带信息」的对照，现实中很难让师傅装傻再演示一遍。",
+     "mechanism": "把「带 harness 信息的老师动作」与「不带 harness 信息的老师动作」配成偏好对，偏好方向指向正确利用 harness 的那个动作；在学生自身推理之后打分，使信号对齐学生的实际决策点。",
+     "visual": "画两条并排轨迹：teacher+harness 与 teacher-harness，同一状态下分叉出两个动作，用 + / - 标注偏好，箭头指向学生策略更新。",
+     "prerequisites": [
+      "知识蒸馏基础",
+      "偏好优化 / DPO",
+      "on-policy distillation"
+     ],
+     "selfTest": [
+      "HAD 与标准蒸馏在目标上差在哪？",
+      "为什么偏好分数要在学生推理之后打？",
+      "为什么不直接用任务奖励？"
+     ],
+     "formula": "L_{\\mathrm{HAD}}=-\\mathbb{E}\\left[\\log\\sigma\\left(\\beta\\left(\\log\\pi_{\\theta}(a^{+}\\mid s,r)-\\log\\pi_{\\theta}(a^{-}\\mid s,r)\\right)\\right)\\right]"
+    },
+    {
+     "name": "Validity Check（有效性校验）",
+     "readable": "构造出偏好对后逐一核对：被判定为「更优」的动作是否与 harness 的记录相矛盾；矛盾的对直接丢弃，避免把错误偏好喂给模型。",
+     "analogy": "像校对员：别人写好的对照答案，先对照原始记录查一遍，发现自相矛盾的整条划掉，绝不拿错答案当范本。",
+     "analogyBreaksDown": "校对只查文字一致性，而这里的「矛盾」是动作与工具返回、环境状态冲突；且它只做过滤不修正动作，过滤后样本会变少。",
+     "mechanism": "关键设计是把「老师带 harness 的动作」当正例，但防止它本身与 harness 记录冲突（如声称调用了未调用的工具）；用一致性判定做硬过滤，保证偏好信号可信。",
+     "visual": "画一个漏斗：偏好对进入→按「与 harness 记录是否一致」分流→一致者进训练集，矛盾者丢弃。",
+     "prerequisites": [
+      "偏好数据构造",
+      "智能体轨迹与工具调用记录"
+     ],
+     "selfTest": [
+      "没有校验会引入什么错误？",
+      "校验为什么只丢不补？",
+      "它与奖励模型过滤有何区别？"
+     ],
+     "formula": "\\tilde{\\mathcal{D}}=\\{(a^{+},a^{-})\\in\\mathcal{D}:\\mathrm{Consistent}(a^{+},\\mathcal{H})=\\mathrm{true}\\}"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-had-action-preference",
+     "name": "Harness 感知的动作偏好损失（Harness-Aware Action Preference Loss）",
+     "category": "posttraining",
+     "latex": "L_{\\mathrm{HAD}}=-\\mathbb{E}_{(s,r)\\sim\\mathcal{D}}\\left[\\log\\sigma\\left(\\beta\\left(\\log\\pi_{\\theta}(a^{+}\\mid s,r)-\\log\\pi_{\\theta}(a^{-}\\mid s,r)\\right)\\right)\\right]",
+     "symbols": [
+      [
+       "s",
+       "智能体当前状态（含 harness 提供的上下文）"
+      ],
+      [
+       "r",
+       "学生模型自己的推理，打分发生在它之后"
+      ],
+      [
+       "a^{+}",
+       "偏好动作：同一老师带 harness 信息时的动作"
+      ],
+      [
+       "a^{-}",
+       "对照动作：同一老师不带 harness 信息时的动作"
+      ],
+      [
+       "\\pi_{\\theta}",
+       "学生策略，参数为 \\theta"
+      ],
+      [
+       "\\beta",
+       "偏好强度（温度）系数"
+      ],
+      [
+       "\\sigma",
+       "sigmoid 函数"
+      ],
+      [
+       "\\mathcal{D}",
+       "经有效性校验后的偏好对集合"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：动机——harness 固定，学生只需学老师超出 harness 的能力，故应对比「带/不带 harness 信息」的动作。",
+      "第 2 步：用同一老师在同一状态 s 下分别生成带信息与不带信息的动作，构成 a+ 与 a-。",
+      "第 3 步：在学生自己的推理 r 之后，用学生策略对两个动作分别打分。",
+      "第 4 步：套 DPO 式 sigmoid 损失，把学生策略推向 a+、远离 a-。",
+      "第 5 步：配合有效性校验过滤与 harness 记录矛盾的偏好对。"
+     ],
+     "analogy": "像让学生对比「查了资料写的答案」和「没查资料瞎猜的答案」，学的是「如何用资料」，而不是把资料本身背下来。",
+     "pitfalls": [
+      "误以为要模仿老师带 harness 的全部输出；HAD 只学超出 harness 的增量。",
+      "把 harness 信息当普通输入一起模仿（标准蒸馏），让学生把 harness 记录也背进权重。",
+      "忽略偏好对的有效性校验，正例与 harness 记录矛盾会污染训练。"
+     ],
+     "code": "import torch\nimport torch.nn.functional as F\n\ndef had_loss(logp_pos, logp_neg, beta=0.1):\n    # logp_pos/logp_neg: 学生策略对 a+ / a- 的对数概率\n    return -F.logsigmoid(beta * (logp_pos - logp_neg)).mean()\n\nlp_pos = torch.randn(8)  # 偏好动作（带 harness 信息）\nlp_neg = torch.randn(8)  # 对照动作（不带 harness 信息）\nprint(had_loss(lp_pos, lp_neg))",
+     "sources": [
+      {
+       "title": "Harness-Aware Distillation for Small Language Model Agents",
+       "url": "https://huggingface.co/papers/2610.02858"
+      }
+     ]
+    },
+    {
+     "id": "f-had-validity-check",
+     "name": "偏好对有效性校验（Preference Pair Validity Check）",
+     "category": "posttraining",
+     "latex": "\\tilde{\\mathcal{D}}=\\{(a^{+},a^{-})\\in\\mathcal{D}:\\mathrm{Consistent}(a^{+},\\mathcal{H})=\\mathrm{true}\\}",
+     "symbols": [
+      [
+       "\\mathcal{D}",
+       "原始偏好对集合"
+      ],
+      [
+       "\\tilde{\\mathcal{D}}",
+       "校验后保留的偏好对集合"
+      ],
+      [
+       "a^{+}",
+       "被判为偏好的动作"
+      ],
+      [
+       "\\mathcal{H}",
+       "harness 的记录（工具调用、环境状态等）"
+      ],
+      [
+       "\\mathrm{Consistent}(\\cdot)",
+       "一致性判定函数，返回布尔值"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：偏好对由老师动作构造，但老师动作可能与 harness 记录不一致。",
+      "第 2 步：用 harness 记录 H 核对偏好动作 a+ 是否自洽。",
+      "第 3 步：只保留一致的偏好对，矛盾的丢弃。",
+      "第 4 步：过滤后的集合用于训练，避免学到错误方向。"
+     ],
+     "analogy": "像筛简历：先按「是否与事实一致」把自相矛盾的一份直接筛掉，剩下的才进入面试流程。",
+     "pitfalls": [
+      "把校验当修正：它只丢弃不修补，样本会减少。",
+      "只校验 a+ 不看 a-，可能仍保留有噪声的对照动作。"
+     ],
+     "code": "def keep_valid(pairs, consistent):\n    # pairs: [(a_pos, a_neg), ...]; consistent(a_pos) -> bool\n    return [(p, n) for p, n in pairs if consistent(p)]\n\npairs = [('call_search()', 'call_search()'), ('call_calc()', 'call_search()')]\nconsistent = lambda a: a.startswith('call_')\nprint(keep_valid(pairs, consistent))",
+     "sources": [
+      {
+       "title": "Harness-Aware Distillation for Small Language Model Agents",
+       "url": "https://arxiv.org/abs/2610.02858"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "harness 是模型周围的软件，负责管理上下文、工具与反馈",
+     "蒸馏到小模型时 harness 保持不变，学生主要需要老师特有、harness 提供不了的能力",
+     "标准蒸馏模仿老师全部输出并把 harness 当输入",
+     "HAD 聚焦老师超出 harness 的增量，用带/不带 harness 信息的动作做偏好对比",
+     "偏好分数在学生自己的推理之后打分；有效性校验剔除与 harness 记录矛盾的偏好对",
+     "HAD 不需要任务奖励、成功标签或未来信息",
+     "在多个长程 agent 基准和模型上，HAD 优于同 harness 的 on-policy 蒸馏",
+     "分析显示 HAD 更少进入无效循环、更常从错误中恢复，并把可学习反馈留在权重、把状态信息交给 harness 读取"
+    ],
+    "uncertain": [
+     "摘要未给具体损失函数与公式，两条公式为按摘要语义重建的通用 DPO 式形式，需核对原文（待核实）",
+     "具体基准、模型规模与提升数值摘要未列出（待核实）",
+     "「带/不带 harness 信息」两种条件如何实现（例如屏蔽上下文）摘要未说明（待核实）"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "小模型智能体蒸馏时，只学老师「超出工具外壳」的那部分本事。"
+     },
+     {
+      "level": "入门",
+      "text": "智能体总连着 harness——管理上下文、工具和反馈的软件。把大模型蒸馏成小的时 harness 不变，所以学生要补的是老师独有的能力，比如怎么正确使用 harness 给的信息。"
+     },
+     {
+      "level": "进阶",
+      "text": "标准蒸馏让学生模仿老师全部输出，等于把 harness 也当输入一起背。HAD 改为对比：让同一老师在有 harness 信息和无 harness 信息两种条件下各出动作，偏好「有信息时」那个动作，而且在学生自己推理之后打分。再加一道有效性校验，把与 harness 记录矛盾的对丢掉。"
+     },
+     {
+      "level": "专家",
+      "text": "与 on-policy 蒸馏相比，HAD 的信号来自老师相对 harness 的增量而非老师的完整分布，因此不需要任务奖励或成功标签。代价是偏好对依赖「同一老师两次条件化」，且校验会减少样本。摘要指出它在长程基准上超出同 harness 的 on-policy 基线，并更少陷入无效循环、更常从错误中恢复，暗示它把可学习反馈留在权重，把状态信息交给 harness 读取。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "既然 harness 不变，为什么不直接让学生模仿老师的完整轨迹？",
+      "a": "老师的完整输出里混着大量 harness 自己提供的信息，学生照抄会把 harness 记录也背进权重，浪费容量且难泛化；HAD 只取增量。"
+     },
+     {
+      "q": "为什么偏好要在学生自己的推理之后打分？",
+      "a": "决策点发生在学生推理之后，只有在那时打分，偏好才对得上学生真实要优化的动作选择。"
+     },
+     {
+      "q": "有效性校验看起来多此一举，不做行不行？",
+      "a": "不行。老师动作可能声称调用了未调用的工具，若当正例会教坏学生；校验按 harness 记录过滤，保证信号可信。"
+     }
+    ],
+    "mechanism": "核心是「减法」：把老师能力拆成 harness 提供的部分与老师独有的部分，只蒸馏后者。做法是用同一老师的两次条件化（带/不带 harness 信息）构造动作偏好，把差异当成监督信号；再用有效性校验保证正例与 harness 记录自洽，从而在无任务奖励的情况下学到「正确使用工具与反馈」的行为。",
+    "boundary": "当 harness 信息对决策几乎无影响时，对比信号趋于噪声、收益有限；偏好对依赖「同一老师的不带信息版本」，若该版本退化到乱动则对照失效；校验只丢弃不修补，长尾任务可能样本稀少。摘要在若干长程基准上验证，其它任务类型待核实。",
+    "analogyBoundary": "「师傅徒弟共用工具箱」的类比忽略两点：harness 会动态改写输入，「带/不带信息」的对照在现实里很难让师傅装傻重演；且蒸馏是策略层面的偏好，不是把工具动作抄一遍。",
+    "misconceptions": [
+     "把 HAD 当成全新蒸馏损失替换品；它是在 on-policy 蒸馏上叠加动作偏好与校验。",
+     "以为要模仿老师带 harness 的完整输出；实际只取超出 harness 的增量。",
+     "以为需要任务奖励或成功标签；摘要明确说 HAD 不需要。"
+    ],
+    "ownAnalysis": "把「蒸馏什么」从「老师的全部」改成「老师相对环境的增量」，与机器人领域学增量策略、以及「环境已提供的信息不该进权重」的直觉一致（推断）。可疑点在于：不带 harness 信息的老师可能强依赖记忆，比出的差异未必只含「学用 harness 的能力」（待核实）。",
+    "officialNotes": [
+     {
+      "position": "HAD 只聚焦老师超出 harness 的增量，用带/不带 harness 信息的动作偏好对比并做有效性校验，无需任务奖励、成功标签或未来信息，在长程 agent 基准上优于同 harness 的 on-policy 蒸馏。",
+      "source": "https://huggingface.co/papers/2610.02858"
+     }
+    ],
+    "interviewAnswer": "智能体部署时总带着 harness——管理上下文、工具和反馈的软件。蒸馏小模型时 harness 不变，学生只需老师独有、harness 给不了的能力。标准蒸馏模仿老师全部输出、把 harness 当输入，会让学生把环境信息也背进权重。HAD 改为对比：同一老师在有/无 harness 信息下各出动作，在学生推理之后打分构造偏好，再加有效性校验剔除与 harness 记录矛盾的对。它不需要任务奖励或成功标签，在长程 agent 基准上超过同 harness 的 on-policy 蒸馏。",
+    "studyPath": {
+     "prerequisites": [
+      "知识蒸馏",
+      "偏好优化 / DPO",
+      "LLM 智能体（工具调用、上下文管理）"
+     ],
+     "nextSteps": [
+      "读 HAD 原文明确偏好对的构造与校验细节",
+      "复现 on-policy 蒸馏基线做对照",
+      "在带工具的长程任务上验证有效性校验的影响"
+     ]
+    }
+   }
+  },
+  {
+   "id": "10a9531f4231c1c1",
+   "tldr": "两指针分别从 headA、headB 出发，走到尽头就跳到另一条链头继续走；两者总步数相同，相遇点即交点，O(m+n) 时间、O(1) 空间。",
+   "keyPoints": [
+    "相交指从某节点起两条单链表共享同一段后继节点（引用相同）",
+    "pA、pB 各走 m+n 步，第二次遍历必然位置对齐",
+    "走完自己的链就切到对方链头，用来抵消长度差",
+    "判断相交必须比较节点引用，而不是节点值",
+    "另有哈希表记录与「先求长度差」两种等价解法"
+   ],
+   "why": "相交链表是链表双指针模板题，核心技巧「走到头换链」在多题通用；Hot 100 高频，是链表类手撕的入门必刷。",
+   "difficulty": "easy",
+   "tags": [
+    "leetcode",
+    "linked-list",
+    "two-pointers",
+    "hot100",
+    "hash-set"
+   ],
+   "entities": [
+    "相交链表",
+    "双指针",
+    "headA",
+    "headB"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "双指针换链求交点",
+    "caption": "两指针各走 m+n 步，长度差被「换链」抹平，有交点则在交点相遇，无交点则同时为 null。",
+    "svg": "<svg viewBox='0 0 600 300' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='相交链表双指针换链过程：两指针走完各自链表后跳到对方链头，最终在交点相遇'><rect x='56' y='16' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>① 起点</text><text x='528' y='40' font-size='13' text-anchor='end' fill='currentColor'>pA 在 headA，pB 在 headB</text><line x1='300' y1='54' x2='300' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,70 296,62 304,62' fill='var(--line-1)'/><rect x='56' y='70' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>② 换链</text><text x='528' y='94' font-size='13' text-anchor='end' fill='currentColor'>pA 到头跳 headB，pB 到头跳 headA</text><line x1='300' y1='108' x2='300' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,124 296,116 304,116' fill='var(--line-1)'/><rect x='56' y='124' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>③ 总步数相等</text><text x='528' y='148' font-size='13' text-anchor='end' fill='currentColor'>各走 m+n 步，长度差被抵消</text><line x1='300' y1='162' x2='300' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,178 296,170 304,170' fill='var(--line-1)'/><rect x='56' y='178' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>④ 相遇判定</text><text x='528' y='202' font-size='13' text-anchor='end' fill='currentColor'>有交点→在交点；无交点→同时为 null</text><line x1='300' y1='216' x2='300' y2='224' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,232 296,224 304,224' fill='var(--line-1)'/><rect x='56' y='232' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='256' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>⑤ 返回</text><text x='528' y='256' font-size='13' text-anchor='end' fill='currentColor'>返回相遇节点或 null</text></svg>",
+    "alt": "五步：两指针各自出发→走到头换到对方链头→两边都走 m+n 步→在交点或 null 处相遇→返回该节点。"
+   },
+   "concepts": [
+    {
+     "name": "双指针换链（Two-Pointer List Switching）",
+     "readable": "两个指针分别遍历两条链表，走完自己那条就跳到对方头继续走；这样两者总步数相同，必然要么在交点相遇，要么同时到达 null。",
+     "analogy": "两人从两条长短不同的跑道出发，跑到终点就换到对方跑道接着跑；总距离一样，所以会在岔路口汇合。",
+     "analogyBreaksDown": "换跑道只为凑总长，而这里关键在于交点之后两条链是同一段物理节点；若两链根本没有交点，两人只是同时到达终点，不会相遇。",
+     "mechanism": "设 A 独有段长 a、B 独有段长 b、公共段长 c。pA 走 a+c+b，pB 走 b+c+a，路径等长，故第二次遍历时两指针位置对齐：有交点落在第一个公共节点，无交点则同时为 null。",
+     "visual": "画两条不同长度的链并在尾部合并成一条公共链；标出 pA、pB 的路径箭头，用虚线箭头表示「走到头跳到另一条头」。",
+     "prerequisites": [
+      "单链表遍历",
+      "指针引用概念"
+     ],
+     "selfTest": [
+      "为什么两指针走的步数相同？",
+      "若两链无交点，循环会怎样结束？",
+      "为什么判断相交要用节点引用而不是节点值？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [],
+   "selfCheck": {
+    "claims": [
+     "条目标题为「160. 相交链表」，URL 指向代码随想录的该题题解页",
+     "题号为 LeetCode 160"
+    ],
+    "uncertain": [
+     "源 summary 为「代码随想录」站点通用介绍，未含本题题面；statement 依 LeetCode 160 惯例重述（待核实原题约束措辞）",
+     "examples 为按 LeetCode 160 经典示例自行构造，已用参考代码验证",
+     "题解为按双指针换链标准做法自行推导（待核实是否有遗漏边界）"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "两条链表合并在一起，找出它们第一次共用的那个节点。"
+     },
+     {
+      "level": "入门",
+      "text": "给两个单链表头指针，若它们从某个节点起共享同一段后继，就返回那个起始节点，否则返回 null。注意「相交」指物理上共用节点，看的是引用不是值。"
+     },
+     {
+      "level": "进阶",
+      "text": "最巧妙的是双指针换链：pA、pB 分别从头出发，各自走到 null 就跳到对方链的头继续走。设 A 独有段长 a、B 独有段 b、公共段 c，则 pA 走 a+c+b，pB 走 b+c+a，路径等长，第二次遍历时两指针必然对齐——有交点就落在交点，无交点就同时变成 null。"
+     },
+     {
+      "level": "专家",
+      "text": "这是「用等长路径消除长度差」的思路，O(m+n) 时间、O(1) 空间，比哈希表省内存、比先求长度差再同步更简洁。边界在于：两链无交点时必须保证循环能退出（两指针同时为 null 即可），以及必须用引用比较（is / ==）而非值比较。若链表可能成环，则需另加判环步骤。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么两个指针走的步数一定相同？",
+      "a": "pA 走完 A 再走 B，共 lenA+lenB 步；pB 走完 B 再走 A，共 lenB+lenA 步，两者相等，所以第二次遍历时位置对齐。"
+     },
+     {
+      "q": "如果两链不相交，循环怎么结束？",
+      "a": "两指针各自走完两条链后同时越过末尾变成 null，此时 pa is pb 成立，循环退出并返回 null。"
+     },
+     {
+      "q": "为什么不能比较节点的值？",
+      "a": "值相等的两个节点可能属于不同位置，相交要求是同一个物理节点（引用相同），比 value 会误判。"
+     }
+    ],
+    "mechanism": "核心是「用路径等长把长度差消掉」：单链表无法回溯，两链长度又不同，直接同步走会错位。让每个指针都遍历完整的两条链，等价于给两条路径补上对方的独有段，使二者总长一致，从而在同一位置对齐；交点之后的公共段更保证它们同时到达同一节点。",
+    "boundary": "链表含环时该法会死循环，需先判环或改用哈希表。若允许 O(m) 额外空间，哈希表法更直观且不受环影响。注意「相交」隐含两链共享尾部，若只在中间某个节点值相同但后继不同，不算相交。",
+    "analogyBoundary": "「换跑道」类比忽略了关键点：交点之后两链是同一段物理节点，而非各自独立的两条路；且若无交点，两人只是同时到达终点，类比会让人误以为总会相遇。",
+    "misconceptions": [
+     "用节点值相等判断交点，结果把值相同的不同节点误判为相交。",
+     "换链时直接写 pa = pa.next，走到 null 就崩溃，必须先判断 pa 是否存在。",
+     "以为两指针一定会在交点相遇；无交点时它们只是同时变成 null。"
+    ],
+    "ownAnalysis": "双指针换链的本质是把「对齐问题」转成「等长路径问题」，这个技巧同样出现在找链表环入口（快慢指针）等题里（推断）。相比哈希表解法，它用更少空间但更依赖对「引用相等」的理解；面试里若面试官只想要思路，先说哈希表再优化到双指针，能体现取舍。",
+    "officialNotes": [
+     {
+      "position": "LeetCode 160 要求返回两条单链表相交的起始节点，不相交返回 null。",
+      "source": "https://programmercarl.com/algo/other/0160-intersection-of-two-linked-lists.html"
+     }
+    ],
+    "interviewAnswer": "我用双指针。pA 从 headA、pB 从 headB 出发同步走，谁走到 null 就换到另一条链的头继续。这样两指针都会走完两条链，总步数都是 lenA+lenB，长度差被抹平。循环条件写成 pa is not pb，退出时要么停在第一个公共节点（交点），要么两者同时为 null（不相交）。时间和空间分别是 O(m+n) 和 O(1)。如果允许额外空间，也可以用哈希表先记录 A 的所有节点。",
+    "studyPath": {
+     "prerequisites": [
+      "单链表结构与遍历",
+      "指针/引用概念"
+     ],
+     "nextSteps": [
+      "环形链表 II（142）找环入口",
+      "合并两个有序链表（21）",
+      "用哈希表法重做本题对比两种取舍"
+     ]
+    }
+   },
+   "problem": {
+    "title": "相交链表",
+    "number": 160,
+    "difficulty": "easy",
+    "statement": "给定两个单链表 headA 和 headB，找出并返回它们相交的起始节点；若不相交返回 null。相交指从某个节点起两条链共享同一段后继节点（即引用相同的节点）。题目假设整条链表中没有环，且返回结果后必须保持原链表结构不变。",
+    "examples": [
+     {
+      "input": "A=[4,1,8,4,5], B=[5,0,1,8,4,5]，在值为 8 的节点相交",
+      "output": "值为 8 的那个节点",
+      "why": "从 8 起两条链共享同一段后继"
+     },
+     {
+      "input": "A=[1,9,1,2,4], B=[3,2,4]，在值为 2 的节点相交",
+      "output": "值为 2 的那个节点",
+      "why": "公共段 [2,4] 共享同一批节点"
+     },
+     {
+      "input": "A=[2,6,4], B=[1,5]，不相交",
+      "output": "null",
+      "why": "无公共节点，两指针最终同时为 null"
+     }
+    ],
+    "approach": {
+     "idea": "两个指针 pA、pB 分别从 headA、headB 出发同步前进；走到 null 就换到另一条链的头继续走。两指针总步数都是 lenA+lenB，第二次遍历时位置对齐，相遇点即交点，无交点则同时为 null。",
+     "steps": [
+      "1. 若 headA 或 headB 为空，直接返回 null",
+      "2. pA = headA，pB = headB",
+      "3. while pA is not pB：pA 走到 null 就设为 headB，否则 pA.next；pB 同理跳到 headA",
+      "4. 循环结束返回 pA（有交点则是交点节点，否则为 null）"
+     ],
+     "whyItWorks": "pA 走过 lenA+lenB 步，pB 走过 lenB+lenA 步，路径等长，故第二次经过各自独有段后两指针被对齐；有公共段时它们第一次同时到达的公共节点即交点，无公共段时同时越过末尾变为 null，循环安全退出。",
+     "alternatives": [
+      {
+       "name": "哈希表记录 A 的所有节点",
+       "complexity": "O(m+n) / O(m)",
+       "when": "不想推换链技巧、允许额外空间时最直观，也不受环影响"
+      },
+      {
+       "name": "先求长度差再过同步走",
+       "complexity": "O(m+n) / O(1)",
+       "when": "面试官想考「对齐」思路、或要求显式算长度差时"
+      }
+     ]
+    },
+    "solution": {
+     "python": "class ListNode:\n    def __init__(self, x):\n        self.val = x\n        self.next = None\n\ndef getIntersectionNode(headA, headB):\n    if not headA or not headB:\n        return None\n    pa, pb = headA, headB\n    while pa is not pb:\n        pa = pa.next if pa else headB\n        pb = pb.next if pb else headA\n    return pa",
+     "python_alt": "def getIntersectionNode(headA, headB):\n    seen = set()\n    cur = headA\n    while cur:\n        seen.add(cur)\n        cur = cur.next\n    cur = headB\n    while cur:\n        if cur in seen:\n            return cur\n        cur = cur.next\n    return None",
+     "notes": "换链时必须写成 pa.next if pa else headB，直接写 pa = pa.next 会在走到 null 时崩。循环条件用引用比较（is not / !=）而非值比较。哈希表版依赖 ListNode 默认按对象身份可哈希。"
+    },
+    "complexity": {
+     "time": "O(m+n)",
+     "space": "O(1)",
+     "why": "两个指针合计最多走 m+n 步（第二次遍历阶段即相遇或双双到 null）；只用了两个额外指针。"
+    },
+    "pitfalls": [
+     "换链时直接写 pa = pa.next，走到 null 就崩溃，必须先判空。",
+     "用节点值相等判断交点，会把值相同但非同一节点的位置误判为相交。",
+     "循环条件或返回写错，无交点时应返回 null 而不是某个链表尾节点。"
+    ],
+    "edgeCases": [
+     "任一链表为空 → 直接返回 null。",
+     "两链完全不相交 → 两指针同时为 null，返回 null。",
+     "交点恰为某一链的表头（例如 B 是 A 的后缀）。"
+    ],
+    "interviewTips": "先给哈希表思路（好写、好讲），再说「还能优化到 O(1) 空间」引出双指针换链，体现取舍能力。写双指针时明确「走到头换链」和「引用比较」两个关键点。卡住时可以先画两条链标出 a、b、c 三段长度，用等式说明为什么两次遍历后会相遇。"
+   }
+  },
+  {
+   "id": "8f0349de263db386",
+   "tldr": "模拟竖式乘法：用长度 m+n 的结果数组逐位累加 num1[i]*num2[j]，落在 i+j+1 位并把进位加到 i+j，全程不转整数。",
+   "keyPoints": [
+    "禁止使用自带大整数库，也不能把输入直接转成整数",
+    "结果长度最多 m+n，预先开一个全 0 数组",
+    "num1[i]*num2[j] 落在结果数组的 i+j+1 位",
+    "把当前位的进位加到 i+j 位，本位取模 10",
+    "最后去掉前导零，输入含 0 时直接返回 \"0\""
+   ],
+   "why": "字符串模拟大数乘法是手撕高频，考下标映射与进位处理；这种「逐位定位 + 就地进位」的思维在推理分块、注意力下标对齐等场景也通用。",
+   "difficulty": "medium",
+   "tags": [
+    "leetcode",
+    "string",
+    "math",
+    "simulation",
+    "hot100"
+   ],
+   "entities": [
+    "字符串相乘",
+    "竖式乘法",
+    "num1",
+    "num2"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "竖式乘法的下标映射",
+    "caption": "每一位乘积累加到 i+j+1，再把进位推给 i+j，从左往右去前导零即得结果。",
+    "svg": "<svg viewBox='0 0 600 300' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='字符串相乘流程：按位乘积定位到 i+j+1，进位推给 i+j，最后去前导零'><rect x='56' y='16' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>① 逐位相乘</text><text x='528' y='40' font-size='13' text-anchor='end' fill='currentColor'>num1[i] 乘 num2[j] 得 mul</text><line x1='300' y1='54' x2='300' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,70 296,62 304,62' fill='var(--line-1)'/><rect x='56' y='70' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>② 定位累加</text><text x='528' y='94' font-size='13' text-anchor='end' fill='currentColor'>res[i+j+1] += mul</text><line x1='300' y1='108' x2='300' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,124 296,116 304,116' fill='var(--line-1)'/><rect x='56' y='124' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>③ 处理进位</text><text x='528' y='148' font-size='13' text-anchor='end' fill='currentColor'>res[i+j] += res[i+j+1]//10</text><line x1='300' y1='162' x2='300' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,178 296,170 304,170' fill='var(--line-1)'/><rect x='56' y='178' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>④ 本位取模</text><text x='528' y='202' font-size='13' text-anchor='end' fill='currentColor'>res[i+j+1] %= 10 留在本位</text><line x1='300' y1='216' x2='300' y2='224' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,232 296,224 304,224' fill='var(--line-1)'/><rect x='56' y='232' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='256' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>⑤ 去前导零</text><text x='528' y='256' font-size='13' text-anchor='end' fill='currentColor'>拼成字符串，全零则返回 \"0\"</text></svg>",
+    "alt": "五步：逐位相乘→累加到 i+j+1→进位给 i+j→本位取模→去前导零拼成字符串。"
+   },
+   "concepts": [
+    {
+     "name": "按位乘法与下标映射（Digit-wise Multiplication with Index Mapping）",
+     "readable": "不把字符串转整数，而是像竖式那样逐位相乘：num1 第 i 位乘 num2 第 j 位的结果，落在结果数组第 i+j+1 位，进位加到 i+j 位。",
+     "analogy": "像算盘逐档相加：每位相乘得的数先放到对应档位，满十就往高位档位进一，最后从高位往下读。",
+     "analogyBreaksDown": "算盘是直观的十进制进位，程序里是先在整数数组中无进位地累加所有乘积，再统一或即时处理进位；且下标从左（高位）编号，与算盘右起相反，容易算错位。",
+     "mechanism": "关键设计：预先开 m+n 长度的数组（结果最长即 m+n），把每位乘积累加到 i+j+1，再在遍历中把当前位除以 10 归入进位、模 10 留在本位；每次只处理一位，避免出现中间大整数。",
+     "visual": "画一个 m+n 列的横向数组，用两条竖线把 num1[i]、num2[j] 指向第 i+j+1 格，再用箭头标出进位流向第 i+j 格。",
+     "prerequisites": [
+      "字符串遍历",
+      "数组与下标",
+      "竖式乘法"
+     ],
+     "selfTest": [
+      "为什么结果长度是 m+n 而不是 m+n-1？",
+      "乘积为什么落在 i+j+1 而不是 i+j？",
+      "怎么去掉前导零并处理输入为 0？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [],
+   "selfCheck": {
+    "claims": [
+     "题目为 LeetCode 43 字符串相乘",
+     "禁止使用任何内置 BigInteger 库，或直接把输入转换成整数",
+     "示例 num1=\"2\"、num2=\"3\" 输出 \"6\"；num1=\"123\"、num2=\"456\" 输出 \"56088\"",
+     "约束 1<=num1.length,num2.length<=200，仅含数字，除 0 本身外无前导零"
+    ],
+    "uncertain": [
+     "摘要未给具体解法，题解为按竖式模拟标准做法自行推导（待核实）"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "像小学竖式那样，一位一位乘、一位一位进位，最后拼成字符串。"
+     },
+     {
+      "level": "入门",
+      "text": "给两个用字符串表示的非负整数，不能转成整数，要算出它们的乘积字符串。位数最多 200 位，远超普通整数范围，所以要模拟手算乘法。"
+     },
+     {
+      "level": "进阶",
+      "text": "开一个长度 m+n 的结果数组。对每一对位 num1[i] 与 num2[j]，把乘积加到 res[i+j+1]，再把当前位除以 10 的商加到 res[i+j]、余数留在本位。因为高位位置编号小、低位编号大，累加与进位方向与竖式一致。"
+     },
+     {
+      "level": "专家",
+      "text": "位置映射的依据是位权：第 i 位（从高位数）位权为 10^(m-1-i)，第 j 位为 10^(n-1-j)，乘积位权为 10^(m+n-2-i-j)，恰对应结果数组下标 i+j+1 的位权，故累加位置正确。每步即时进位保证数组每位恒为 0-9，最终拼接即精确乘积。时间 O(m*n)，空间 O(m+n)。边界是输入含 \"0\" 要提前返回，以及末尾可能留前导零需跳过。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么结果数组长度是 m+n？",
+      "a": "两个 m 位与 n 位数相乘，结果最多 m+n 位（如 99*99=9801，四位）；开 m+n 足够，且首位可能为 0 需靠去前导零处理。"
+     },
+     {
+      "q": "为什么乘积落在 i+j+1 而不是 i+j？",
+      "a": "因为最低位相乘（i=m-1,j=n-1）应落在结果最低位，即下标 m+n-1，而 (m-1)+(n-1)+1=m+n-1，故偏移是 i+j+1。"
+     },
+     {
+      "q": "为什么可以先累加再统一进位？",
+      "a": "加法交换律保证先把所有乘积累加、再逐位进位，与逐对即时进位等价；两种写法结果相同。"
+     }
+    ],
+    "mechanism": "核心是「用位置编码位权」：把每一位的数值放到位权对应的数组下标里，加法与进位都退化成对数组的常数操作，从而在不使用大整数的前提下精确模拟竖式乘法，复杂度由位数决定而非数值大小决定。",
+    "boundary": "该法依赖输入为纯数字且无前导零的规范形式；若字符串含符号、空格或非法字符则要先清洗。结果首位为 0 时必须跳过，否则会输出多一位的前导零。输入任一为 \"0\" 时可短路返回 \"0\"，避免多余的零处理。",
+    "analogyBoundary": "算盘类比忽略了数组下标方向：程序里从左往右编号（左为高位），而算盘从右往左计算；且程序允许先无进位累加、最后统一进位，与算盘的即时进位不同。",
+    "misconceptions": [
+     "结果下标写成 i+j 而不是 i+j+1，导致整体错位。",
+     "累加后忘记对本位取模，数组元素超过 9，最终拼接出错。",
+     "忘记特判输入含 \"0\"，或去前导零时下标越界。"
+    ],
+    "ownAnalysis": "这道题考的是「把大数运算还原成位置运算」，与计算机里把数按位存放在数组的直觉一致（推断）。它和「两数相加」「大数加减」同属字符串模拟家族，掌握位置映射后可类推。实际工程中更常用大整数库，但面试考的是位权与进位的手工推演能力。",
+    "officialNotes": [
+     {
+      "position": "LeetCode 43 要求返回两数乘积的字符串形式，禁止使用内置大整数库或直接把输入转换为整数。",
+      "source": "https://leetcode.cn/problems/multiply-strings"
+     }
+    ],
+    "interviewAnswer": "我用竖式模拟。先特判任一输入为「0」直接返回「0」。开一个 m+n 长的数组。两层循环遍历 num1[i] 和 num2[j]，把 num1[i]*num2[j] 加到 res[i+j+1]，然后 res[i+j] 加上 res[i+j+1] 除以 10 的商，res[i+j+1] 对 10 取模。遍历完跳过前导零拼成字符串。时间 O(m*n)，空间 O(m+n)。关键是说清为什么落在 i+j+1 位。",
+    "studyPath": {
+     "prerequisites": [
+      "字符串遍历",
+      "数组与下标操作",
+      "竖式乘法"
+     ],
+     "nextSteps": [
+      "两数相加（2）与字符串相加（415）",
+      "大数加减法模拟",
+      "尝试「统一进位」的另一种写法并对拍"
+     ]
+    }
+   },
+   "problem": {
+    "title": "字符串相乘",
+    "number": 43,
+    "difficulty": "medium",
+    "statement": "给定两个以字符串形式表示的非负整数 num1 和 num2，返回它们的乘积，也用字符串表示。不能用任何内置的大整数库（如 BigInteger），也不能把输入直接转换成整数。数值范围远超普通整数类型，须模拟手算乘法。",
+    "examples": [
+     {
+      "input": "num1 = \"2\", num2 = \"3\"",
+      "output": "\"6\"",
+      "why": "个位相乘得 6"
+     },
+     {
+      "input": "num1 = \"123\", num2 = \"456\"",
+      "output": "\"56088\"",
+      "why": "逐位相乘、按位累加再进位"
+     }
+    ],
+    "approach": {
+     "idea": "模拟竖式乘法：开长度 m+n 的结果数组并全置 0；对每一对位 num1[i]、num2[j]，把乘积累加到 res[i+j+1]，随后把当前位除以 10 的商加到 res[i+j]、本位取模 10；最后去掉前导零拼成字符串。",
+     "steps": [
+      "1. 若 num1 或 num2 为 \"0\"，直接返回 \"0\"",
+      "2. m, n = len(num1), len(num2)，res = [0] * (m + n)",
+      "3. 从低位到高位双层循环遍历 num1[i] 与 num2[j]",
+      "4. mul = int(num1[i]) * int(num2[j])，p2 = i+j+1，p1 = i+j",
+      "5. res[p2] += mul；res[p1] += res[p2] // 10；res[p2] %= 10",
+      "6. 跳过前导零，''.join(map(str, res[start:])) 即结果"
+     ],
+     "whyItWorks": "第 i 位（从高位数）与第 j 位相乘，其真实位权为 10^(m-1-i) 乘 10^(n-1-j) 等于 10^(m+n-2-i-j)，恰对应结果数组下标 i+j+1 的位权，故累加位置正确；每步即时进位保证数组每位始终在 0-9，最终拼接即精确乘积。",
+     "alternatives": [
+      {
+       "name": "逐位累加后统一进位",
+       "complexity": "O(m*n) / O(m+n)",
+       "when": "先把所有乘积放进数组，再统一从低位进位，逻辑更直白"
+      },
+      {
+       "name": "模拟加法器累加 n 次",
+       "complexity": "O(m*n) / O(m+n)",
+       "when": "思路最朴素，但常数大、易写错，一般只作对照"
+      }
+     ]
+    },
+    "solution": {
+     "python": "def multiply(num1: str, num2: str) -> str:\n    if num1 == \"0\" or num2 == \"0\":\n        return \"0\"\n    m, n = len(num1), len(num2)\n    res = [0] * (m + n)\n    for i in range(m - 1, -1, -1):\n        for j in range(n - 1, -1, -1):\n            mul = int(num1[i]) * int(num2[j])\n            p2, p1 = i + j + 1, i + j\n            res[p2] += mul\n            res[p1] += res[p2] // 10\n            res[p2] %= 10\n    start = 0\n    while start < len(res) and res[start] == 0:\n        start += 1\n    return ''.join(map(str, res[start:])) or \"0\"\n\nprint(multiply(\"123\", \"456\"))",
+     "python_alt": "def multiply(num1: str, num2: str) -> str:\n    if num1 == \"0\" or num2 == \"0\":\n        return \"0\"\n    m, n = len(num1), len(num2)\n    res = [0] * (m + n)\n    for i in range(m - 1, -1, -1):\n        a = int(num1[i])\n        for j in range(n - 1, -1, -1):\n            res[i + j + 1] += a * int(num2[j])\n    for k in range(len(res) - 1, 0, -1):\n        res[k - 1] += res[k] // 10\n        res[k] %= 10\n    start = 0\n    while start < len(res) - 1 and res[start] == 0:\n        start += 1\n    return ''.join(map(str, res[start:]))",
+     "notes": "主实现边累加边进位，数组每位始终是 0-9；alt 版先全部累加再统一进位，逻辑更直观。两版都要特判输入含 \"0\"，并在拼接前去前导零；主实现用 `or \"0\"` 兜底空串。"
+    },
+    "complexity": {
+     "time": "O(m*n)",
+     "space": "O(m+n)",
+     "why": "两层循环各遍历两个字符串每一位，共 m*n 次乘加；结果数组长度为 m+n。"
+    },
+    "pitfalls": [
+     "结果下标写成 i+j 而不是 i+j+1，导致整体错位。",
+     "累加后忘记对当前位取模，数组元素超过 9 使拼接出错。",
+     "忘记特判输入为 \"0\"，或去前导零时下标越界。"
+    ],
+    "edgeCases": [
+     "任一输入为 \"0\" → 返回 \"0\"。",
+     "单个数字相乘，如 \"9\"*\"9\" 得 \"81\"。",
+     "结果首位为 0 需跳过（无进位时最高位为空 0）。"
+    ],
+    "interviewTips": "先说清「为什么乘积落在 i+j+1 位」这个位置映射，再动笔；这是本题最容易讲错也最能体现理解的点。实现上边遍历边进位最省事。卡住时先写「统一进位」版本（先累加再逐位进位），逻辑更直白，写完再优化成即时进位。面试官常追问复杂度，答 m*n 次乘加与 m+n 的空间。"
+   }
+  }
+ ],
+ "skipped": []
+}

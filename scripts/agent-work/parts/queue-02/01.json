@@ -1,0 +1,99 @@
+{
+  "id": "0a00d4e02dc50cc4",
+  "tldr": "VLA 对指令措辞极敏感，用 LLM 蒸馏改写规则、部署前重写指令，冻结策略即提升。",
+  "keyPoints": [
+    "VLA 对措辞敏感，不继承基础 VLM 的语言鲁棒性",
+    "一词之差可让成功率变动数十点",
+    "单编辑摆动 + oracle 短语搜索量化敏感度",
+    "LLM 蒸馏 10–20 条规则，部署时重写一次，免重训"
+  ],
+  "why": "VLA 是具身多模态前沿，指令鲁棒性属泛化高频考点；该法免训练、可接任意 VLA。",
+  "difficulty": "medium",
+  "tags": ["vla", "multimodal", "robustness", "instruction-following"],
+  "entities": ["Vision-Language-Action models", "π0.5", "π0", "LIBERO"],
+  "diagram": {
+    "kind": "flow",
+    "title": "规则重写式 VLA 流水线",
+    "caption": "少量任务蒸馏改写规则，部署时重写一次指令再喂冻结策略（不重训）。",
+    "svg": "<svg viewBox='0 0 480 178' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='规则重写式 VLA 三层流程'>\n<rect x='40' y='14' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='38' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>少量任务：对多种改写评分</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='40' y='70' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>LLM 蒸馏 10–20 条改写规则</text>\n<line x1='240' y1='110' x2='240' y2='118' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,126 236,118 244,118' fill='var(--line-1)'/>\n<rect x='40' y='126' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='150' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>部署：重写指令一次 → 冻结 VLA</text>\n</svg>",
+    "alt": "三层竖排流程：少量任务评分→LLM 蒸馏改写规则→部署时重写指令并交冻结 VLA 执行。"
+  },
+  "concepts": [
+    {
+      "name": "Instruction Phrasing Sensitivity（措辞敏感度）",
+      "readable": "同一任务换个说法，VLA 成功率能从接近满分掉到个位数。",
+      "analogy": "像点菜：同一后厨，换个说法就愣住。",
+      "analogyBreaksDown": "餐厅能澄清；策略权重没建语言不变性，措辞直接改内部视觉-语言对齐。",
+      "mechanism": "固定任务只替换措辞测成功率，用单词编辑摆动与 oracle 搜索证明差异源自措辞而非任务难度。",
+      "visual": "横轴措辞、纵轴成功率柱状，同任务柱子高低差极大，最低一根标红。",
+      "prerequisites": ["VLA 基础", "成功率评估"],
+      "selfTest": ["为何不继承 VLM 鲁棒性？", "oracle 搜索证明什么？", "单词摆动为何更有说明力？"],
+      "formula": "\\Delta=\\max_{e}|S(\\phi)-S(\\phi_e)|"
+    },
+    {
+      "name": "Rule-Distilled Instruction Rewriting（规则蒸馏重写）",
+      "readable": "不改策略：LLM 把「怎么换说法更稳」总结成 10–20 条规则，部署时重写指令再喂冻结 VLA。",
+      "analogy": "像给前台一张「客人这样说就那样翻译」的对照表。",
+      "analogyBreaksDown": "对照表靠离线评分蒸馏，新任务措辞差异大时覆盖不到，重写即失效。",
+      "mechanism": "少量任务给多改写评分，LLM 归纳规则；推理只改写一次，免重训、免逐步验证。",
+      "visual": "左列原句与改写、中间规则、右列重写后指令，高亮被改写的关键词。",
+      "prerequisites": ["少样本改写", "VLA 部署"],
+      "selfTest": ["为何用规则而非微调？", "规则凭什么零样本迁移？", "为何只改写一次？"],
+      "formula": "\\phi'=R(\\phi;\\ \\rho_{1:k})"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-rephrase-rule-distill",
+      "name": "规则蒸馏式指令重写（Rule-Distilled Rewriting）",
+      "category": "multimodal",
+      "latex": "\\rho_{1:k} = \\mathrm{Distill}\\!\\left(\\{(\\phi_j, S(\\pi,\\phi_j))\\}_{j=1}^{m}\\right),\\quad \\phi' = R(\\phi;\\ \\rho_{1:k})",
+      "symbols": [["\\phi", "原始指令"], ["R", "LLM 重写器"], ["\\rho_{1:k}", "10–20 条改写规则"], ["S", "训练任务成功率证据"], ["m", "被评分改写数"]],
+      "derivation": ["第 1 步：小规模训练任务上对大量措辞评分，得证据对 (φ_j,S)。", "第 2 步：让 LLM 从证据归纳 k 条显式改写规则 ρ。", "第 3 步：部署时按规则对每条指令重写一次得 φ'。", "第 4 步：冻结策略直接吃 φ'，免重训。"],
+      "analogy": "把「哪种说法旺单」抄成一份话术手册，一线照着念即可。",
+      "pitfalls": ["以为规则等价于训练出语言不变性", "把重写做成每步验证，丢失免验证优势"],
+      "code": "RULES = ['prefer verb over noun']\ndef rewrite(phi, llm):\n    return llm(f'rules={RULES}; rewrite once: {phi}')",
+      "sources": [{"title": "Rephrase Before You Act", "url": "https://arxiv.org/abs/2610.10526v1"}]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "VLA 对指令措辞高度敏感，不继承基础 VLM 的语言鲁棒性",
+      "π0.5 在 LIBERO 炉灶任务上「switch on the stove」100%、「switch on the hot plate」仅 2%",
+      "用改写增强微调的 π0 检查点仍有高达 61 点摆动",
+      "仅靠措辞即可几乎抹平 ID 与 OOD 间 21 点差距",
+      "不改策略、不重训、不做逐步验证，可零样本用于未见任务",
+      "规则使冻结 π0 在 12 个留出任务上相对提升 16–27%；π0.5 上 93.6%→97.8%"
+    ],
+    "uncertain": [
+      "敏感度指标与 oracle 搜索精确公式摘要未给，概念内公式为按摘要重建的通用形式，需核对原文",
+      "蒸馏所用 LLM 与规则生成细节摘要未说明，待核实"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "VLA 会因指令换说法而成功率暴跌，先按规则把话说顺再交给它。"},
+      {"level": "入门", "text": "同一任务改一个词就能让 VLA 从几乎全对掉到几乎全错，且不是从底层视觉语言模型继承的。作者先量化这种敏感度，再用大模型总结改写规则，部署时把指令改一遍再喂冻结策略。"},
+      {"level": "进阶", "text": "三点设计：用单编辑摆动与 oracle 短语搜索把敏感度做成可检验量；蒸馏成 10–20 条显式改写规则；只在部署前改写一次、不动权重，因此免重训、免逐步验证、可零样本迁移，增益集中在 OOD。"},
+      {"level": "专家", "text": "与在策略里微调不变性不同，这篇把问题定位为输入分布适配：改写增强后的 π0 仍有 61 点摆动，说明增强没内化不变性。价值是把措辞鲁棒性外包给免训练重写器，代价是规则覆盖面有限。摘要自述冻结 π0 相对提升 16–27%。"}
+    ],
+    "socratic": [
+      {"q": "为什么不直接做改写增强微调？", "a": "摘要指出改写增强后的 π0 仍有 61 点摆动，说明不变性没学进去，收益不稳且需重训。"},
+      {"q": "为何改写只需一次、不做逐步验证？", "a": "敏感度是指令级属性，改一次就能把输入搬到策略经验区间；逐步验证会增开销并丢失零样本优势。"}
+    ],
+    "mechanism": "VLA 的语言-动作对齐只在有限措辞分布上拟合，权重里没有内建语言不变性，输入措辞偏移直接移动内部表示。作者不改权重，而把「哪种说法更稳」当作可归纳规则，用少量任务评分蒸馏成显式规则，在输入端把指令搬到策略经验区间。",
+    "boundary": "规则从少数任务蒸馏，目标措辞分布差异过大时可能覆盖不到；策略能力不足或任务已饱和时收益有限。",
+    "analogyBoundary": "「话术手册」类比在固定菜单时成立；客人措辞不断出新，手册条目有限，未收录的表达仍失效。",
+    "misconceptions": [
+      "以为 VLA 敏感是因底层 VLM 语言差——它是不继承 VLM 的鲁棒性。",
+      "把该方法当微调——它完全不改策略权重。"
+    ],
+    "ownAnalysis": "最可迁移的是「把脆弱性当输入分布问题、用免训练模块修补」（推断），与多模态后训练用 prompt 做分布适配同构。可疑处：规则从少量任务蒸馏，可能过拟合其措辞风格；摘要只给相对提升，未说清留出任务措辞分布是否同源（待核实）。",
+    "officialNotes": [{"position": "VLA 对措辞高度敏感，仅靠措辞即可近乎抹平 ID/OOD 差距；不改策略的规则重写使冻结 π0 相对提升 16–27%", "source": "arxiv: 2610.10526v1"}],
+    "interviewAnswer": "现象是 VLA 换个说法成功率能掉几十点，同一炉灶任务「switch on the stove」100%、「switch on the hot plate」仅 2%，且它没继承底层 VLM 的语言鲁棒性。作者用单编辑摆动和 oracle 短语搜索量化，发现光靠措辞就能抹平 ID/OOD 间 21 点差距。做法不改策略：少量任务给多改写打分，让 LLM 蒸馏 10–20 条规则，部署时重写一次再喂冻结策略，免重训、可零样本迁移。",
+    "studyPath": {
+      "prerequisites": ["VLA / 视觉-语言-动作基本结构", "ID/OOD 泛化概念"],
+      "nextSteps": ["读原文与项目页", "复现单编辑敏感度度量"]
+    }
+  }
+}

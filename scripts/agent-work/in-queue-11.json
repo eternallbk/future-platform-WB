@@ -1,0 +1,111 @@
+{
+ "batchId": "queue-11",
+ "mode": "full",
+ "items": [
+  {
+   "id": "1c93aad3debbc2b5",
+   "title": "UNREAL: Unifying Retrieval and Long-Context with a Single Model",
+   "category": "foundation",
+   "channel": "hf_papers",
+   "url": "https://huggingface.co/papers/2610.08463",
+   "sources": [
+    {
+     "url": "https://huggingface.co/papers/2610.08463",
+     "name": "hf_papers"
+    },
+    {
+     "url": "https://arxiv.org/abs/2610.08463",
+     "name": "canonical"
+    }
+   ],
+   "tags": [],
+   "kind": "paper",
+   "summary": "Long-context inference and Retrieval-Augmented Generation (RAG) handle evidence selection at vastly different scales, from a single long prompt to an entire corpus. We ask whether a single model-internal mechanism can select evidence across this range. We introduce UNifying REtrieval And Long-Context with a Single Model (UNREAL), a model-native evidence selection framework to span corpus retrieval and long-context inference. UNREAL encodes chunks and derives retrieval queries directly from the frozen LLM's internal representations. It adds fewer than 500K trainable parameters and leaves the backbone unchanged. On a 3B-token, 21M-chunk Wikipedia index, all four dense and hybrid UNREAL backbones outperform state-of-the-art retriever-reranker systems. The best model raises recall from 49.1% to 73.2% on HotpotQA, from 31.7% to 60.1% on 2WikiMultiHopQA, and from 8.8% to 14.4% on MuSiQue. Applied to long-context tasks, the same selection mechanism removes distractors before generation, raising NoLiMa accuracy from 1.0% to 24.83% at its maximum context length of 128K tokens, and LV-Eval's F1 score from 49.97% to 54.66% at 256K. UNREAL also reduces FLOPs and time-to-first-token relative to full-context inference from roughly 32K tokens onward, with larger gains as context grows. Together, these results establish model-internal evidence selection as a common foundation for corpus retrieval and evidence-sparse long-context inference.",
+   "needsFetch": false
+  },
+  {
+   "id": "f363167fd97325e5",
+   "title": "Learning Discriminative Geometry for Drifting Models",
+   "category": "engineering",
+   "channel": "hf_papers",
+   "url": "https://huggingface.co/papers/2610.04703",
+   "sources": [
+    {
+     "url": "https://huggingface.co/papers/2610.04703",
+     "name": "hf_papers"
+    },
+    {
+     "url": "https://arxiv.org/abs/2610.04703",
+     "name": "canonical"
+    }
+   ],
+   "tags": [],
+   "kind": "paper",
+   "summary": "Recently proposed Drifting Models shift iterative distribution refinement from inference to training, enabling effective one-step generation. However, their performance on complex image datasets depends strongly on the representation used to construct the drifting field: pixel-space drifting performs poorly, whereas pretrained feature spaces substantially improve sample quality for reasons that remain unclear. We trace this gap to the discriminative geometry of the representation, which determines sample weighting in kernel density estimation (KDE) and, consequently drift. We introduce persistent representation learning, which continuously learns a more discriminative representation geometry as the generator evolves across batches. We further establish a current-step gradient equivalence between the KDE ratio loss and drift regression loss under matched conditions, connecting density-ratio-based generator optimization to empirical drifting and motivating direct control of the drifting velocity. Across multiple datasets, our method learns effective discriminative representations directly from pixels and reduces FID by approximately 82-95% over the original pixel-space Drifting Models, without pretrained encoders. Adapting pretrained representations and applying velocity clipping provide further gains.",
+   "needsFetch": false
+  },
+  {
+   "id": "9f3713206a7aa6ef",
+   "title": "Do LLMs Understand Sequential Structure? A Controlled Study of Inference and Generation",
+   "category": "engineering",
+   "channel": "hf_papers",
+   "url": "https://huggingface.co/papers/2610.04977",
+   "sources": [
+    {
+     "url": "https://huggingface.co/papers/2610.04977",
+     "name": "hf_papers"
+    },
+    {
+     "url": "https://arxiv.org/abs/2610.04977",
+     "name": "canonical"
+    }
+   ],
+   "tags": [],
+   "kind": "paper",
+   "summary": "Large language models (LLMs) are increasingly used as interactive agents and simulators, yet it remains unclear whether they can recover latent sequential structure beyond surface action frequencies. This distinction is critical for behavioral simulation, where actions are often shaped by prior context rather than marginal frequencies alone. We study this question using controlled two-player Rock--Paper--Scissors interactions and a one-player stochastic n-gram continuation task. Across these experiments, we test whether LLMs can identify latent strategies, follow simple Markov rules, and sustain higher-order conditional dependencies. Our framework separates distribution matching from conditional rule following. Results show that longer context does not improve identification, correct recognition does not ensure faithful simulation, and higher-order dependencies substantially degrade rule recovery. Apparent behavioral fidelity can therefore mask incorrect generative mechanisms.",
+   "needsFetch": false
+  },
+  {
+   "id": "2650022bd4635710",
+   "title": "Multilinguality in Hybrid Attention LLMs",
+   "category": "foundation",
+   "channel": "hf_papers",
+   "url": "https://huggingface.co/papers/2609.35378",
+   "sources": [
+    {
+     "url": "https://huggingface.co/papers/2609.35378",
+     "name": "hf_papers"
+    },
+    {
+     "url": "https://arxiv.org/abs/2609.35378",
+     "name": "canonical"
+    }
+   ],
+   "tags": [],
+   "kind": "paper",
+   "summary": "In response to the growing demand for long sequences in agentic and reasoning use cases, many state-of-the-art LLMs combine multiple variants of attention to mitigate the quadratic complexity of traditional softmax attention. These hybrid attention LLMs aim to balance the strengths and limitations of full attention and alternatives based on recurrence. This work presents a first study of how hybrid attention impacts the multilinguality of LLMs. Beyond the impact on long sequences in poorly tokenized languages, our study is motivated by the possibility that the inductive biases of the recurrent state alter linguistic processing. Our interpretability analysis confirms this, showing that cross-lingual representations in hybrid models develop in patterns tied to the ordering of recurrent and full-attention layers. Across diverse models, we notably observe a pronounced spike in cross-lingual alignment around the first full-attention layer. These findings lead us to question the conventional ordering of attention layers. In distillation experiments on multilingual data, all alternative layer orderings outperform the standard throughout training, learning up to 2.5X faster. These stark, replicable results prompt our theory that multilingual models would benefit from starting with a full-attention layer rather than recurrent layers.",
+   "needsFetch": false
+  },
+  {
+   "id": "a252f980703a2733",
+   "title": "Execution-Aligned Progressive Noise for Consistent Asynchronous Replanning in Generative Robot Policies",
+   "category": "multimodal",
+   "channel": "hf_papers",
+   "url": "https://huggingface.co/papers/2610.06090",
+   "sources": [
+    {
+     "url": "https://huggingface.co/papers/2610.06090",
+     "name": "hf_papers"
+    },
+    {
+     "url": "https://arxiv.org/abs/2610.06090",
+     "name": "canonical"
+    }
+   ],
+   "tags": [],
+   "kind": "paper",
+   "summary": "Continuous asynchronous replanning is essential for real-time generative robot policies, but independent stochastic initialization can cause mode switching and inconsistent continuation across action chunks. We propose Execution-Aligned Progressive Noise (EAPN), which introduces structured stochasticity at both inter-chunk and intra-chunk levels. Across replanning steps, EAPN propagates a shared noise trajectory and aligns it with the actual execution displacement, establishing execution-aligned inter-chunk correlation. Within each action chunk, it models temporal correlation along action time. The aligned stochastic history is further combined with committed action context to condition subsequent generation, allowing new chunks to continue from execution-consistent generative states rather than restart from independent noise. We evaluate EAPN on D3IL, Kinetix, LIBERO, and real-world manipulation tasks. EAPN improves multimodal behavior consistency on D3IL and achieves an average success rate of 88.59% on Kinetix. On LIBERO, it remains robust and maintains strong task performance even under long inference delays. Real-robot experiments further achieve 90.0% success on Object Storage and 96.7% on bimanual Cloth Folding, demonstrating reliable continuous execution under asynchronous replanning.",
+   "needsFetch": false
+  }
+ ]
+}

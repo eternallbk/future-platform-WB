@@ -1,0 +1,1261 @@
+{
+ "batchId": "queue-01",
+ "entries": [
+  {
+   "id": "633640aabf0338eb",
+   "tldr": "给智能体装一个可复用的隐式心智模型，用它推断对手的隐藏信念与意图，并在信念条件奖励下学策略。",
+   "keyPoints": [
+    "多智能体需在部分可观测下推断对手知道什么、想做什么",
+    "现有系统靠提示设计、记忆、端到端行为塑造，不学可复用伙伴状态",
+    "提出心智模型智能体：从交互历史推断隐藏信念、意图与可能反应",
+    "用摊销递归 ToM 表征，含一阶与二阶心智状态结构",
+    "联合信念条件奖励模型，语言与多模态基准上交互质量与 ToM 均提升"
+   ],
+   "why": "多智能体与心智理论是 agent 方向高频面试点；「学习可复用伙伴状态」这一归纳偏置可迁移到多模态协作与博弈式后训练。",
+   "difficulty": "hard",
+   "tags": [
+    "agent",
+    "multi-agent",
+    "theory-of-mind",
+    "rl",
+    "foundation-model"
+   ],
+   "entities": [
+    "mental-model-enabled agents",
+    "Theory-of-Mind",
+    "belief-conditioned reward model"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "心智模型智能体流水线",
+    "caption": "从观测历史推断伙伴心智状态，再用信念条件奖励学策略，推理期无需伙伴在线。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='心智模型智能体四层流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>交互历史</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>部分可观测的观测与动作</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>摊销递归心智模型</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>一阶/二阶信念与意图</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>信念条件奖励</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>按推断对手状态评候选动作</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>策略学习</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>推理期可独立行动</text>\n</svg>",
+    "alt": "四层竖排流程：交互历史→摊销递归心智模型→信念条件奖励→策略学习，推理期可独立行动。"
+   },
+   "concepts": [
+    {
+     "name": "Amortized Recursive Theory-of-Mind（摊销递归心智理论）",
+     "readable": "把「对手现在在想什么」学成一个网络：吃进交互历史直接吐出对手的隐藏信念与意图，不必每遇到新对手就现场重新推理。",
+     "analogy": "像老练的棋手：不用每盘从头推演对手棋风，看前面几步就能大致知道对方想干什么。",
+     "analogyBreaksDown": "棋手可观察成千上万盘共享经验，而这里的心智模型是对某伙伴群体摊销学出来的；遇到分布外风格的对手，「一眼看穿」会失效。",
+     "mechanism": "用一次前向代替逐次在线推理（摊销），并让心智状态随时间递归更新；同时保留一阶（我对你的信念）与二阶（我以为你对我的信念）结构，使表征能承载嵌套推理。",
+     "visual": "横轴为交互步 t，纵轴为心智状态向量；一阶与二阶信念各画一条随时间的轨迹，颜色深浅表示置信度，二阶状态在关键互动后波动更大。",
+     "prerequisites": [
+      "强化学习与 MDP 基础",
+      "部分可观测下的信念状态概念",
+      "序列建模隐状态（RNN / Transformer）"
+     ],
+     "selfTest": [
+      "摊销在这里省掉的是什么计算？",
+      "一阶与二阶心智状态差别在哪？",
+      "为什么心智模型要与奖励模型联合学习？"
+     ],
+     "formula": "b_{t+1} = f_{\\phi}(h_{1:t+1}), \\quad b_t = (b^{(1)}_t,\\ b^{(2)}_t)"
+    },
+    {
+     "name": "Belief-Conditioned Reward Model（信念条件奖励模型）",
+     "readable": "评价动作时不仅看状态与动作，还看「我推断出的对手当前心智状态」，于是同一动作对不同对手、不同时刻的收益可以不同。",
+     "analogy": "像给不同性格的同事提建议：同样措辞对急性子与慢性子效果完全不同，先判断对方状态再决定怎么说。",
+     "analogyBreaksDown": "人际判断里对方状态由真实心理决定，而这里奖励用的是推断出的信念估计，估计错了奖励就打偏并传导到策略。",
+     "mechanism": "把推断出的伙伴心智状态作为奖励模型的额外输入，使奖励显式地相对伙伴状态打分；策略在该信念感知信号下学习，从而把伙伴建模收益固化进策略。",
+     "visual": "三维散点：x 轴动作、y 轴推断心智状态、z 轴奖励值，同一动作在 y 轴不同位置呈现不同高度的色块。",
+     "prerequisites": [
+      "奖励塑形与逆强化学习基本概念",
+      "条件期望与折扣回报"
+     ],
+     "selfTest": [
+      "奖励依赖推断信念会带来什么风险？",
+      "为什么策略掌握该奖励后可独立行动？",
+      "移除信念输入后奖励模型退化成什么？"
+     ],
+     "formula": "r_t = r_{\\theta}(s_t, a_t, \\hat{b}_t)"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-tom-recursive-belief",
+     "name": "递归心智状态更新（Recursive Mental-State Update）",
+     "category": "agent",
+     "latex": "b_{t+1} = f_{\\phi}(h_{1:t+1}), \\quad b_t = (b^{(1)}_t,\\ b^{(2)}_t)",
+     "symbols": [
+      [
+       "h_{1:t+1}",
+       "截至 t+1 步的交互历史（观测与动作）"
+      ],
+      [
+       "b_t",
+       "t 时刻推断出的伙伴心智状态向量"
+      ],
+      [
+       "b^{(1)}_t",
+       "一阶：我对伙伴信念/意图的估计"
+      ],
+      [
+       "b^{(2)}_t",
+       "二阶：我认为伙伴对我有怎样的信念"
+      ],
+      [
+       "f_{\\phi}",
+       "可学习的摊销递归推断网络"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：部分可观测下看不到伙伴心智，只能用历史作证据。",
+      "第 2 步：逐次在线推理代价高，改用网络一次前向摊销掉该推理。",
+      "第 3 步：把心智状态拆成一阶与二阶分量，以表示嵌套的相互推断。",
+      "第 4 步：递归接入新观测得到 b_{t+1}，供奖励与策略共用。"
+     ],
+     "analogy": "像读连载小说：每读一章就更新对角色动机的猜测，还会猜「角色也在猜别人怎么看他」。",
+     "pitfalls": [
+      "把摊销做成逐任务重新推理，丢掉跨任务复用的核心卖点",
+      "只建一阶状态就宣称能处理递归信念，能力上限被卡住",
+      "误以为心智状态有真实标签监督，其实多为联合优化学出"
+     ],
+     "code": "import torch, torch.nn as nn\nclass ToM(nn.Module):\n    def __init__(self, d_in, d_h=64):\n        super().__init__()\n        self.rnn = nn.GRU(d_in, d_h, batch_first=True)\n        self.head1, self.head2 = nn.Linear(d_h, d_h), nn.Linear(d_h, d_h)\n    def forward(self, hist):          # hist: [B,T,d_in]\n        h, _ = self.rnn(hist)\n        return self.head1(h[:, -1]), self.head2(h[:, -1])",
+     "sources": [
+      {
+       "title": "Mental-Models for Multi-Agent Systems",
+       "url": "https://arxiv.org/abs/2610.12453v1"
+      }
+     ]
+    },
+    {
+     "id": "f-belief-conditioned-reward",
+     "name": "信念条件奖励与策略目标（Belief-Conditioned Reward）",
+     "category": "agent",
+     "latex": "r_t = r_{\\theta}(s_t, a_t, \\hat{b}_t), \\quad \\pi^{*} = \\arg\\max_{\\pi} \\mathbb{E}\\left[\\sum_{t} \\gamma^{t} r_t\\right]",
+     "symbols": [
+      [
+       "s_t",
+       "t 时刻自身状态"
+      ],
+      [
+       "a_t",
+       "候选动作"
+      ],
+      [
+       "\\hat{b}_t",
+       "心智模型推断出的伙伴状态估计"
+      ],
+      [
+       "r_{\\theta}",
+       "信念条件奖励模型"
+      ],
+      [
+       "\\gamma",
+       "折扣因子"
+      ],
+      [
+       "\\pi^{*}",
+       "该奖励下的最优策略"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：普通奖励只依赖 (s,a)，无法区分对手不同意图下的最优动作。",
+      "第 2 步：把推断伙伴状态加进奖励输入，使打分相对伙伴状态。",
+      "第 3 步：在信念感知奖励下最大化折扣回报得到策略。",
+      "第 4 步：训练后策略可直接前向决策，无需推理期再跑伙伴推断。"
+     ],
+     "analogy": "像带对手资料下棋：棋谱评分会参考「我判断对手是什么风格」，同一落点对不同风格评分不同。",
+     "pitfalls": [
+      "忽略推断误差会直接污染奖励，误当噪声处理",
+      "有了奖励模型就以为不需要策略，忘了推理期要独立行动",
+      "把折扣回报写成不含期望的形式，随机性上出错"
+     ],
+     "code": "import torch, torch.nn as nn\nclass Reward(nn.Module):\n    def __init__(self, d_s, d_a, d_b):\n        super().__init__()\n        self.net = nn.Sequential(nn.Linear(d_s+d_a+d_b,128), nn.ReLU(), nn.Linear(128,1))\n    def forward(self, s, a, b_hat):\n        return self.net(torch.cat([s, a, b_hat], dim=-1))",
+     "sources": [
+      {
+       "title": "Mental-Models for Multi-Agent Systems",
+       "url": "https://arxiv.org/abs/2610.12453v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "当前智能体多靠提示设计、记忆或端到端行为塑造，不学显式可复用的伙伴状态表征",
+     "方法学习摊销递归心智理论表征，含一阶与二阶心智状态结构",
+     "方法联合信念条件奖励模型，按推断伙伴状态评估候选动作",
+     "策略在信念感知信号下学习，推理期可独立行动",
+     "在仅语言与多模态两类基准上，显式心智建模持续提升交互质量与 ToM 表现",
+     "代码公开于 github.com/hananshafi/Mental-Models"
+    ],
+    "uncertain": [
+     "心智状态维度与一阶/二阶参数化摘要未给，公式为按摘要重建的通用形式，需核对原文",
+     "心智模型与奖励「联合」训练的具体损失与权重摘要未说明，待核实",
+     "基准名称与具体提升数值摘要未给出，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "给 AI 装一个会猜「对方在想什么」的模型，再据此决定怎么做。"
+     },
+     {
+      "level": "入门",
+      "text": "多智能体里 AI 常看不到对方真实想法。这个方法让 AI 从交互历史学出隐式心智状态，推断对手信念与意图并当决策变量用，因此在语言与多模态任务上互动更好。"
+     },
+     {
+      "level": "进阶",
+      "text": "三个关键设计：一是摊销，用网络一次前向替代逐次在线推理，得到可跨任务复用的伙伴状态；二是递归结构，心智状态随时间滚动更新；三是把推断状态喂进奖励模型打分，策略在该信号下学习，于是推理期不必再跑对手模型也保留建模收益。"
+     },
+     {
+      "level": "专家",
+      "text": "相比提示工程、记忆、端到端塑造，它把伙伴建模变成显式可复用的决策变量，并用一阶、二阶嵌套结构承载相互推断。代价是对手分布漂移时摊销会失准，且奖励依赖估计信念会传导误差。与经典逐次 ToM 相比它用摊销换效率；与纯 RL 对手建模相比它把心智状态与奖励解耦成可复用中间量。摘要称在语言与多模态基准上一致提升，未给具体指标。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "如果不学显式心智状态、只靠端到端策略会怎样？",
+      "a": "行为能被调好，但伙伴状态没被显式表示，跨任务无法复用，遇到新对手要从头学，也难解释为何选该动作。"
+     },
+     {
+      "q": "为什么不能每遇到一个对手就现场推理一次？",
+      "a": "逐次推理部署时太慢且不可复用；摊销把成本前置到训练，一次前向即得，代价是分布外对手会失准。"
+     }
+    ],
+    "mechanism": "部分可观测下伙伴心智是隐变量，自然做法是每步在线推断，但既慢又不可跨任务迁移。作者把推断摊销成前向网络并让其递归滚动，得到可复用低维心智状态；关键是把该状态作为奖励模型输入，使伙伴建模的收益通过奖励固化为策略能力，而非停留在推理阶段的临时判断。",
+    "boundary": "当伙伴行为分布与训练差异很大、或历史过短不足以推断时，摊销心智状态会失准，信念条件奖励也随之打偏。任务若几乎没有策略互动，显式心智建模收益有限。",
+    "analogyBoundary": "棋手类比在「对手不变、规则固定」时成立；现实中对手策略会随我而变，形成互相建模的反馈回路，此时把对方当固定对象推断会失效。",
+    "misconceptions": [
+     "以为心智状态有人工标注——通常是联合优化里学出的隐表征。",
+     "把 ToM 等同于读心准确率，忽略它真正用途是当决策变量。",
+     "认为推理期仍要在线跑对手模型——优势恰在推理期可独立行动。"
+    ],
+    "ownAnalysis": "最值得迁移的是「把隐藏对手状态显式化并当决策变量」这一归纳偏置（推断），它与多模态 agent 对用户意图建模、后训练里博弈式偏好优化同构。可疑处：摘要只说持续提升却不给数值与基准；信念条件奖励存在自我强化风险——心智猜错会经奖励固化。是否用真实伙伴状态做过上限消融，摘要未提，需核对原文。",
+    "officialNotes": [
+     {
+      "position": "显式心智状态建模是一般多智能体系统有用的归纳偏置，在语言与多模态设置上一致提升交互质量与 ToM 表现",
+      "source": "arxiv: 2610.12453v1"
+     }
+    ],
+    "interviewAnswer": "问题是这样：多智能体在部分可观测下，传统做法靠提示、记忆或端到端塑形，不学可复用的伙伴状态。这篇把「对手在想什么」做成隐变量，用摊销递归网络从历史一次前向推断一阶、二阶心智状态，再作为奖励模型输入，策略在信念感知奖励下学习，所以推理期能独立行动还保留建模收益。它的价值是一个归纳偏置：显式伙伴建模带来可复用决策变量。边界是对手分布外会失准。",
+    "studyPath": {
+     "prerequisites": [
+      "强化学习与部分可观测基础",
+      "序列建模与隐状态",
+      "多智能体博弈基本概念"
+     ],
+     "nextSteps": [
+      "读原文与 github.com/hananshafi/Mental-Models",
+      "对比逐次 ToM 与摊销推断的效率精度取舍",
+      "思考把心智状态接口接到多模态 agent 规划模块"
+     ]
+    }
+   }
+  },
+  {
+   "id": "1081cf498cdb08fc",
+   "tldr": "首个面向智能仓库的 UAV VLA 框架与数据集，含 507 条遥操作飞行；四模型基准显示语言引导空中控制远未解决。",
+   "keyPoints": [
+    "VLA 在机械臂与地面导航已成功，但仓库无人机的语言控制几乎空白",
+    "缺口在于缺少兼顾连续低层飞行动作、细粒度语言描述、工业环境的基准",
+    "发布 507 条人遥操作飞行、8504 条 Isaac Sim 高分辨率 RGB 转换",
+    "每条配对人工外观描述与同步 4 自由度控制命令，覆盖接近与跟随两任务",
+    "四模型无泄漏 episode 级基准：连续动作建模优于离散令牌化，仅前向通道可靠可学"
+   ],
+   "why": "VLA 是世界模型/多模态方向核心求职赛道；「连续动作 vs 离散令牌化」「基座接口跨本体迁移差」是面试高频且可直接引用的结论。",
+   "difficulty": "medium",
+   "tags": [
+    "vla",
+    "world-model",
+    "robotics",
+    "multimodal",
+    "benchmark",
+    "uav"
+   ],
+   "entities": [
+    "WareFly-VLA",
+    "SmolVLA",
+    "GR00T N1.7",
+    "pi_0",
+    "OpenVLA",
+    "NVIDIA Isaac Sim"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "WareFly-VLA 数据与评测流程",
+    "caption": "从仿真采集到配对标注，再到四模型基准，最后落在「连续动作优于离散令牌」的结论上。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='WareFly-VLA 数据与评测四层流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>仿真采集</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>Isaac Sim 仓库场景</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>配对标注</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>外观描述 + 4-DoF 控制</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>四模型基准</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>SmolVLA/GR00T/pi_0/OpenVLA</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>结论</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>连续动作 &gt; 离散令牌</text>\n</svg>",
+    "alt": "四层竖排流程：Isaac Sim 仿真采集→外观描述与 4-DoF 控制配对标注→四个开源 VLA 基准→连续动作优于离散令牌的结论。"
+   },
+   "concepts": [
+    {
+     "name": "Continuous Action Modeling vs Discrete Action Tokenization（连续动作建模 vs 离散动作令牌化）",
+     "readable": "把飞行控制当成连续数值回归出来，还是先离散成一堆 token 再像说话一样预测。论文发现前者在无人机上明显更好。",
+     "analogy": "像调音量：连续旋钮可停在任意位置，按档位按钮只有几级，细调时档位就不够用。",
+     "analogyBreaksDown": "旋钮好坏固定，但离散 token 化能借用语言预训练权重；当动作空间被粗量化且数据充足时离散未必差，类比会误导。",
+     "mechanism": "低层飞行要求精细连续控制，离散化引入量化误差并在长序列上累积；连续动作头直接回归控制量，缩短 token 序列并减少误差传播，因此在长程搜索与跟随里更稳。",
+     "visual": "横轴为动作通道，纵轴为误差；离散令牌化呈跳变台阶，连续回归呈平滑小误差，并标出前向通道两者都低。",
+     "prerequisites": [
+      "VLA / 视觉语言模型结构",
+      "行为克隆与动作回归",
+      "自回归 token 预测"
+     ],
+     "selfTest": [
+      "为什么离散化会在长程任务上累积误差？",
+      "「只有前向通道可靠可学」说明单帧观测的什么问题？",
+      "连续动作头在推理时输出什么？"
+     ],
+     "formula": "L_{cont} = \\| a_{1:H} - \\pi_{\\theta}(o, l) \\|_{2}^{2}"
+    },
+    {
+     "name": "Leakage-free Episode-level Protocol（无泄漏的 episode 级评测协议）",
+     "readable": "划分数据时不按帧随机切，而按整段飞行 episode 切，保证测试集的场景与轨迹没在训练中出现过，从而真实衡量泛化。",
+     "analogy": "像按「整套卷子」划分复习与测试，而不是把每套卷子里的题混着分——后者等于提前见过考卷。",
+     "analogyBreaksDown": "现实中同一仓库会有重复场景，完全按 episode 切会过于严格；若场景高度相似，仍可能有隐性泄漏。",
+     "mechanism": "按 episode 而非按帧划分 train/test，避免同一段连续飞行的相邻帧落在两侧造成泄漏，并在两个控制频率下评测以暴露频率敏感性。",
+     "visual": "两条时间轴：上面按帧随机切（训练测试交错，标红为泄漏），下面按整段 episode 切（完全分离，标绿）。",
+     "prerequisites": [
+      "数据集划分与泄漏基本概念",
+      "泛化评测协议设计"
+     ],
+     "selfTest": [
+      "按帧随机切分会怎样高估性能？",
+      "为什么要在两个控制频率下评测？",
+      "episode 级划分能消除全部泄漏吗？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-action-token-vs-continuous",
+     "name": "动作令牌化损失 vs 连续动作回归损失（Action Tokenization vs Regression）",
+     "category": "worldmodel",
+     "latex": "L_{tok} = -\\sum_{i} \\log p_{\\theta}(c_i \\mid o_{1:t}, l), \\quad L_{cont} = \\| a_{1:H} - \\pi_{\\theta}(o_{1:t}, l) \\|_{2}^{2}",
+     "symbols": [
+      [
+       "c_i",
+       "离散化动作令牌序列第 i 个令牌"
+      ],
+      [
+       "p_{\\theta}(c_i \\mid o_{1:t}, l)",
+       "给定观测历史与语言指令预测令牌的概率"
+      ],
+      [
+       "a_{1:H}",
+       "未来 H 步连续 4-DoF 控制命令"
+      ],
+      [
+       "\\pi_{\\theta}",
+       "VLA 策略网络"
+      ],
+      [
+       "o_{1:t}",
+       "至 t 时刻的视觉观测"
+      ],
+      [
+       "l",
+       "自然语言目标描述"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：离散做法把每个动作维度量化成 token，用交叉熵自回归预测。",
+      "第 2 步：量化引入误差并在长程任务上累积，影响空中稳定性。",
+      "第 3 步：连续做法直接回归 H 步控制量，用 L2 监督，误差不随 token 长度放大。",
+      "第 4 步：论文在同一协议下对比两者，发现仓库无人机上连续建模一致更好。"
+     ],
+     "analogy": "像画曲线：离散令牌化是描点连线（点少就折角），连续回归是直接画平滑曲线。",
+     "pitfalls": [
+      "以为连续回归一定更好——结论文中限定在仓库空中控制场景",
+      "忽略 H（动作分块长度）对比较的影响",
+      "直接比较两个损失数值：交叉熵与 L2 尺度不同，只能比任务指标"
+     ],
+     "code": "import torch.nn.functional as F\ndef loss_tok(logits, tokens):        # logits:[B,H,V]\n    return F.cross_entropy(logits.reshape(-1, logits.size(-1)), tokens.reshape(-1))\ndef loss_cont(pred, target):\n    return F.mse_loss(pred, target)",
+     "sources": [
+      {
+       "title": "WareFly-VLA: A Vision-Language-Action Framework for UAV Navigation and Human Tracking in Smart Warehouses",
+       "url": "https://arxiv.org/abs/2610.08526v1"
+      }
+     ]
+    },
+    {
+     "id": "f-4dof-flight-command",
+     "name": "4 自由度飞行控制命令（4-DoF Flight Command）",
+     "category": "worldmodel",
+     "latex": "a_t = (v_{f}, v_{l}, v_{v}, \\omega_{y})",
+     "symbols": [
+      [
+       "a_t",
+       "t 时刻 4 自由度控制命令向量"
+      ],
+      [
+       "v_{f}",
+       "前向速度通道"
+      ],
+      [
+       "v_{l}",
+       "侧向速度通道"
+      ],
+      [
+       "v_{v}",
+       "垂直速度通道"
+      ],
+      [
+       "\\omega_{y}",
+       "偏航角速度通道"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：无人机低层控制需要比「移动到某点」更底层的动作表示。",
+      "第 2 步：论文采用 4 自由度命令，每条 RGB 转换配对一条同步控制命令。",
+      "第 3 步：逐通道分析发现仅前向通道可从单帧可靠学出。",
+      "第 4 步：该通道级结论直接解释语言引导空中控制为何仍困难。"
+     ],
+     "analogy": "像开车：油门方向一眼可判断，侧移与转向要结合路况和历史才知道该给多少。",
+     "pitfalls": [
+      "把 4 自由度错记成位置坐标——它属于速度/角速度层面",
+      "以为所有通道同等可学，忽略仅前向可靠的结论",
+      "混淆控制频率对同一命令语义的影响"
+     ],
+     "code": "import numpy as np\nnames = ['forward', 'lateral', 'vertical', 'yaw_rate']\nfor i, n in enumerate(names):\n    print(n, float(np.abs(pred[:, i] - gt[:, i]).mean()))",
+     "sources": [
+      {
+       "title": "WareFly-VLA: A Vision-Language-Action Framework for UAV Navigation and Human Tracking in Smart Warehouses",
+       "url": "https://arxiv.org/abs/2610.08526v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "VLA 在机械臂操作与地面导航已有成果，但智能仓库里 UAV 的语言条件控制基本未被探索",
+     "缺口在于缺少同时提供连续低层飞行动作、细粒度语言目标描述与真实工业环境的基准",
+     "数据集含 507 条人遥操作飞行 episode 与 8504 条 Isaac Sim 高分辨率 RGB 转换",
+     "每条数据配人工撰写外观描述与同步 4 自由度控制命令",
+     "覆盖目标接近与人员跟随两任务，含遮挡、长程搜索、高度变化与杂乱场景",
+     "对 SmolVLA、GR00T N1.7、pi_0、OpenVLA 建立无泄漏 episode 级基准，两个控制频率",
+     "连续动作建模一致优于离散令牌化，仅前向通道可从单帧可靠学出，基座接口跨本体迁移差"
+    ],
+    "uncertain": [
+     "4 自由度通道精确语义为按常规表述推断，需核对原文",
+     "两个控制频率数值、指标名称与各模型分数摘要未给出，待核实",
+     "「无泄漏」的划分比例与场景去重方式摘要未说明，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "给仓库里的无人机做了第一个「看图听指令飞行」的数据集和评测台。"
+     },
+     {
+      "level": "入门",
+      "text": "VLA 在地面机器人上已能用语言指挥，但无人机几乎没有。这篇用 Isaac Sim 造了智能仓库场景，采 507 条人操作飞行数据，每条配目标人物文字描述与 4 自由度控制命令，再拿四个开源 VLA 跑基准。"
+     },
+     {
+      "level": "进阶",
+      "text": "它同时补上数据与评测缺口：数据提供连续低层飞行动作、细粒度语言描述与工业环境；评测按整段 episode 划分并在两个控制频率下跑，避免按帧划分的虚高。结论很具体——严格泛化下性能大幅下降，连续动作建模优于离散令牌化，单帧只有前向通道可靠可学。"
+     },
+     {
+      "level": "专家",
+      "text": "价值不在某个模型更强，而在于把语言引导空中控制变成可复现的困难基准，并用四个模型证明基座接口从地面/人形迁到空中很差：本体差异导致的动作分布鸿沟无法仅靠冻结视觉语言接口弥合，离散化在需要精细连续控制的低层飞行上引入量化误差并随长程累积。适合作为「数据与评测比模型更稀缺」的案例，但摘要未给具体指标。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不能直接把地面机器人 VLA 拿来飞无人机？",
+      "a": "动作空间与动力学完全不同，空中对精细连续控制更敏感；摘要明确说基座接口从地面与人形迁移到空中表现很差。"
+     },
+     {
+      "q": "为什么按帧随机划分数据会高估性能？",
+      "a": "同一段连续飞行的相邻帧高度相似，按帧划分会让训练与测试共享几乎相同的信息，等价于提前见过测试内容。"
+     }
+    ],
+    "mechanism": "空中低层控制是连续、对误差累积敏感的问题，而语言模型范式偏好离散 token 自回归。论文把两者放进同一无泄漏协议对比，发现离散化的量化误差在长程任务被放大，故连续建模更稳；同时用 episode 级划分切断帧级泄漏，才让「严格泛化下大幅掉点」这一真实难度暴露出来。",
+    "boundary": "结论限定在智能仓库 UAV 场景与这四类基座。若动作空间本就离散或数据量极大，连续优于离散不一定成立；episode 级划分在场景高度重复时仍可能有隐性泄漏。",
+    "analogyBoundary": "「音量旋钮」类比忽略了 token 化能复用语言预训练权重这一事实；数据稀缺时离散未必更差，类比会把人引向「连续总是更好」的错觉。",
+    "misconceptions": [
+     "把这条当成「又提出一个更强的 VLA 模型」——核心交付是数据集与基准。",
+     "认为四个基座都被微调到最优，忽略统一接口迁移的局限。",
+     "以为性能下降只是数据不足，忽略本体差异的结构性鸿沟。"
+    ],
+    "ownAnalysis": "对求职者最有用的是评测意识（推断）：讲清为何用 episode 级划分、为何报两个控制频率，比背模型分数更能体现理解。可疑处：摘要只说「性能大幅下降」而无数字，也未说明四个基座是否同微调预算，若预算不同则横比不公平，需核对原文。",
+    "officialNotes": [
+     {
+      "position": "语言条件空中控制在仓库中远未解决：严格泛化下性能大幅下降，连续动作建模优于离散令牌化，仅前向通道可靠可学，基座接口跨本体迁移差",
+      "source": "arxiv: 2610.08526v1"
+     }
+    ],
+    "interviewAnswer": "我会把它当数据与评测方法讲：VLA 在地面与人形进展快，无人机是空白，卡在缺连续低层动作、细粒度语言、真实工业环境三者兼备的基准。WareFly-VLA 用 Isaac Sim 采 507 条飞行、8504 条转换，每条配外观描述与 4 自由度控制命令，再用四个开源 VLA 在按 episode 划分的无泄漏协议下评测。结论是空中语言控制远未解决、连续动作优于离散令牌化，且基座从地面迁到空中表现很差。",
+    "studyPath": {
+     "prerequisites": [
+      "VLA / 视觉语言模型基础",
+      "行为克隆与连续控制",
+      "数据集划分与泛化评测"
+     ],
+     "nextSteps": [
+      "读原文的数据卡与评测协议细节",
+      "复现连续 vs 离散动作建模对比",
+      "对比 ground / humanoid / aerial 三种本体的动作接口"
+     ]
+    }
+   }
+  },
+  {
+   "id": "ac0db2a7ed9bd053",
+   "tldr": "两阶段压缩视频自编码器：冻结 base latent、学残差 latent，并在冻结 DiT 特征空间对齐，使 Wan2.1 token 降 8x 而质量持平。",
+   "keyPoints": [
+    "更高压缩的视频自编码器能让 DiT 处理更少 token，从而加速视频扩散",
+    "但压缩比越高重建越差，补回来需更多通道，会拖慢 DiT 收敛",
+    "压缩后 latent 与 DiT 训练分布不同，必须重训或高成本适配",
+    "GRACE 保留冻结 base latent，另学残差 latent 承载强压缩丢失的信息",
+    "在冻结 DiT 特征空间对齐压缩 latent，再用非对称去噪轻量微调"
+   ],
+   "why": "视频生成加速是生成式方向的核心工程问题；「残差 latent + 特征空间对齐」是可直接复用的 DiT 适配套路，面试常问如何不重训 DiT 换高压缩 VAE。",
+   "difficulty": "hard",
+   "tags": [
+    "video-generation",
+    "diffusion",
+    "autoencoder",
+    "latent-compression",
+    "efficiency",
+    "dit"
+   ],
+   "entities": [
+    "GRACE",
+    "Wan2.1-I2V-14B",
+    "Diffusion Transformer",
+    "VBench"
+   ],
+   "diagram": {
+    "kind": "architecture",
+    "title": "GRACE 两阶段压缩与适配",
+    "caption": "冻结 base latent 保兼容，残差 latent 补细节，再在 DiT 特征空间对齐并轻量适配。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='GRACE 两阶段流程：冻结 base latent、残差 latent、特征对齐、非对称去噪'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>冻结 base latent</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>来自预训练编码器</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>学习残差 latent</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>承载强压缩丢失信息</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>DiT 特征空间对齐</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>为生成而优化自编码器</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>非对称去噪微调</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>base 先于 residual</text>\n</svg>",
+    "alt": "四层竖排架构：冻结 base latent→学习残差 latent→在 DiT 特征空间对齐→非对称去噪轻量微调。"
+   },
+   "concepts": [
+    {
+     "name": "Residual Latent Decomposition（残差潜变量分解）",
+     "readable": "不去改动已与 DiT 配套的旧潜变量，而是额外学一个新潜变量专门装「压缩太狠丢掉的细节」，两者相加还原。",
+     "analogy": "像修老照片：底片（base）不动，另存一层修复图层专门补细节，两层叠加就是成品。",
+     "analogyBreaksDown": "修图两层最终要能叠加还原；这里 base 被冻结且要与原 DiT 兼容，residual 不能任意大，否则会把 latent 推离 DiT 已学分布。",
+     "mechanism": "把 latent 拆成冻结的 base（保证与预训练 DiT 兼容）与可学 residual（补足强压缩丢失信息）。base 保证分布不漂移，residual 承担新增信息，从而在提高压缩比的同时避免 DiT 重训。",
+     "visual": "两条并排色带：下条是低分辨率 base（大色块），上条是稀疏残差（细碎高频点子），叠加后颜色丰富度恢复。",
+     "prerequisites": [
+      "变分自编码器与潜空间",
+      "扩散模型 / DiT 结构",
+      "残差连接思想"
+     ],
+     "selfTest": [
+      "为什么 base 必须冻结而不是一起微调？",
+      "residual 主要承载低频还是高频信息？",
+      "压缩比提高时 base 与 residual 各承担什么？"
+     ],
+     "formula": "z = z_{base} + z_{res}"
+    },
+    {
+     "name": "Generation-aware Alignment（面向生成的特征空间对齐）",
+     "readable": "只在重建指标上优化自编码器，latent 仍会跑偏；改在冻结 DiT 的特征空间里对齐，让新 latent 落在 DiT「看得懂」的位置。",
+     "analogy": "像给只会读特定字体的机器送稿：内容对不够，还得用它会读的字体写，它才不返工。",
+     "analogyBreaksDown": "字体是可逆的编码约定，而 DiT 特征空间是学出来的、难以解释；对齐到特征相似并不等于 latent 完全相同，仍可能有分布偏差。",
+     "mechanism": "把压缩后 latent 与预训练 latent 同时送进冻结 DiT，在特征空间做对齐损失。自编码器的目标从「像素重建好」变为「让 DiT 认为两者一致」，从根本上保证压缩 latent 与预训练 DiT 的兼容性。",
+     "visual": "二维特征散点：灰簇是预训练 latent 的 DiT 特征，红点是仅重建优化的压缩 latent（偏离），蓝点是对齐后的（贴合灰簇）。",
+     "prerequisites": [
+      "特征对齐 / 蒸馏损失",
+      "扩散模型中间特征的作用"
+     ],
+     "selfTest": [
+      "只在重建上优化为何会把 latent 推离 DiT 分布？",
+      "对齐为何放在 DiT 特征空间而非像素空间？",
+      "对齐损失与重建损失如何权衡？"
+     ],
+     "formula": "L_{align} = \\| f_{D}(z) - f_{D}(z_{base}) \\|_{2}^{2}"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-grace-latent-decomp",
+     "name": "残差潜变量分解与生成感知对齐（Residual Latent Decomposition and Alignment）",
+     "category": "generative",
+     "latex": "z = z_{base} + z_{res}, \\quad L = L_{rec} + \\lambda \\, \\| f_{D}(z) - f_{D}(z_{base}) \\|_{2}^{2}",
+     "symbols": [
+      [
+       "z_{base}",
+       "来自预训练编码器的冻结 base latent"
+      ],
+      [
+       "z_{res}",
+       "承载强压缩丢失信息的可学残差 latent"
+      ],
+      [
+       "z",
+       "压缩后最终 latent（base 与 residual 之和）"
+      ],
+      [
+       "L_{rec}",
+       "自编码器重建损失"
+      ],
+      [
+       "f_{D}",
+       "冻结的 Diffusion Transformer 特征提取"
+      ],
+      [
+       "\\lambda",
+       "对齐损失权重"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：压缩比越高重建越差，且压缩 latent 与 DiT 训练分布不同。",
+      "第 2 步：重训或高成本适配 DiT 代价太大，必须保住兼容性。",
+      "第 3 步：冻结 base 保证分布不漂移，另学 residual 补足丢失信息。",
+      "第 4 步：在冻结 DiT 特征空间对齐 z 与 z_base，并保留重建项。"
+     ],
+     "analogy": "像给熟悉的老接口加一层适配器：老信号原样保留，新信息走附加通道，最后统一成对方认得的格式。",
+     "pitfalls": [
+      "以为残差 latent 越大越好，忽略它会把 latent 推离预训练分布",
+      "只优化重建而不对齐，DiT 仍需重训",
+      "把对齐放在像素空间，等价于退化成普通重建约束"
+     ],
+     "code": "import torch.nn.functional as F\ndef grace_loss(x, enc_base, enc_res, dec, dit_feat, lam=1.0):\n    z_base = enc_base(x).detach()          # 冻结 base\n    z = z_base + enc_res(x)                # 可学残差\n    rec = F.mse_loss(dec(z), x)\n    align = F.mse_loss(dit_feat(z), dit_feat(z_base))\n    return rec + lam * align",
+     "sources": [
+      {
+       "title": "GRACE: Generation-aware latent compression for efficient video generation",
+       "url": "https://arxiv.org/abs/2610.10524v1"
+      }
+     ]
+    },
+    {
+     "id": "f-grace-asymmetric-denoise",
+     "name": "非对称去噪顺序（Asymmetric Denoising）",
+     "category": "generative",
+     "latex": "z_{t-1}^{b} = D_{\\theta}(z_{t}^{b}, t), \\quad z_{t-1}^{r} = D_{\\theta}(z_{t-1}^{b}, z_{t}^{r}, t)",
+     "symbols": [
+      [
+       "z_{t}^{b}",
+       "第 t 步 base 分量潜变量"
+      ],
+      [
+       "z_{t}^{r}",
+       "第 t 步 residual 分量潜变量"
+      ],
+      [
+       "D_{\\theta}",
+       "微调后的 DiT 去噪网络"
+      ],
+      [
+       "t",
+       "扩散时间步"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：base 与 residual 拼在一起去噪会让噪声预测互相干扰。",
+      "第 2 步：base 承载主体低频结构，residual 承载细节。",
+      "第 3 步：让 base 先在给定步被去噪，再以其结果为条件去噪 residual。",
+      "第 4 步：配合轻量微调，DiT 只需小改即可适配压缩后的 latent。"
+     ],
+     "analogy": "像画油画先铺大色块再点高光：先定结构再补细节，顺序反了细节会显得游离。",
+     "pitfalls": [
+      "把非对称理解成只用一次前向，忽略它仍按时间步展开",
+      "以为只微调自编码器而 DiT 完全不动，摘要明确说要轻量微调 DiT",
+      "混淆 base 与 residual 谁是条件、谁是被预测目标"
+     ],
+     "code": "# 非对称去噪示意：base 先走一步，residual 以其结果为条件\nfor t in reversed(range(T)):\n    z_b = dit(z_b, t)\n    z_r = dit(torch.cat([z_b, z_r], 1), t)\nz = z_b + z_r",
+     "sources": [
+      {
+       "title": "GRACE: Generation-aware latent compression for efficient video generation",
+       "url": "https://arxiv.org/abs/2610.10524v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "高压缩视频自编码器能让 DiT 处理更少 token 从而加速，但压缩比越高重建越差、补回需更多通道并拖慢 DiT 收敛",
+     "压缩后 latent 与 DiT 训练时的 latent 不同，预训练 DiT 必须重训或高成本适配",
+     "GRACE 是两阶段框架，在压缩预训练视频自编码器时保持与预训练 DiT 兼容",
+     "保留冻结 base latent，并学习残差 latent 表示强压缩下丢失的信息",
+     "在冻结 DiT 特征空间把压缩 latent 与预训练 latent 对齐，使自编码器为生成优化",
+     "对 DiT 做轻量微调并采用非对称去噪，base 先于 residual 被去噪",
+     "在 480x832x81 下把 Wan2.1-I2V-14B 的 token 数降 8x、延迟降 11.1x，VBench 质量与压缩前持平"
+    ],
+    "uncertain": [
+     "残差与 base latent 的通道/空间维数分配摘要未给出，待核实",
+     "对齐损失的具体形式与权重为按摘要重建的通用形式，需核对原文",
+     "非对称去噪的精确调度为推断，需核对原文",
+     "「质量持平」的具体 VBench 指标与得分摘要未给出，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "换个更省 token 的视频压缩器，还让原本的生成模型不用重训就能用。"
+     },
+     {
+      "level": "入门",
+      "text": "视频扩散的算力主要花在 DiT 处理的 token 上。压缩自编码器能减少 token，但压得越狠画质越差，且新 latent 与 DiT 学过的分布不一样，逼你重训。GRACE 保留原来那份 latent 不动，再学一份残差补细节，并在 DiT 特征空间对齐两者。"
+     },
+     {
+      "level": "进阶",
+      "text": "两阶段设计：第一阶段冻结 base latent，学残差 latent 承载强压缩丢失的信息，同时在冻结 DiT 特征空间把压缩 latent 对齐到预训练 latent，让自编码器目标从「重建好」变成「DiT 认」；第二阶段对 DiT 轻量微调并用非对称去噪——base 先于 residual 被去噪，避免两分量互相干扰。"
+     },
+     {
+      "level": "专家",
+      "text": "它解决扩散模型的一个工程两难：换更高效 tokenizer 就要重训大模型。做法是把 latent 分解为「兼容分量的冻结 base」加「信息补偿的可学 residual」，并用 DiT 特征空间对齐替代像素空间重建约束，本质是把自编码器纳入生成目标优化。代价是需要一次轻量 DiT 微调，非对称去噪引入顺序耦合。摘要称在 480x832x81 下把 Wan2.1-I2V-14B 的 token 降 8x、延迟降 11.1x 且 VBench 质量与压缩前持平，未给逐项指标。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不直接训一个更高压缩比的自编码器？",
+      "a": "重建变差只是一半问题；新 latent 与 DiT 训练分布不一致，仍要重训或高成本适配 DiT，等于没省。"
+     },
+     {
+      "q": "为什么对齐必须放在 DiT 的特征空间？",
+      "a": "像素/重建层面对齐只保证看起来像，不保证 DiT 认为两者一致；只有对齐它实际消费的特征，兼容性才有保障。"
+     }
+    ],
+    "mechanism": "扩散模型的兼容性约束不在像素而在条件分布：DiT 只认得训练时见过的那类 latent。所以加速的关键不是把自编码器压得更狠，而是让新 latent 落在 DiT 的特征邻域里。冻结 base 提供锚点、残差提供信息量、特征空间对齐提供兼容性，三者一起才使「高压缩 + 不重训 DiT」同时成立。",
+    "boundary": "方案依赖已存在训练好的 base 自编码器与配套 DiT；从零训练或没有兼容预训练模型时，残差分解失去锚点。压缩比继续拉高时 residual 需承载的信息单调增加，对齐损失可能压不住分布漂移。",
+    "analogyBoundary": "「修图双层」类比忽略了兼容性是单方向的：这里只要求 DiT 认得压缩 latent，不要求 residual 语义可读；把它当「可读修复图层」会高估其语义性。",
+    "misconceptions": [
+     "以为完全不需要碰 DiT——摘要明确说要轻量微调并改用非对称去噪。",
+     "把残差 latent 当可选增强，忽略它是压缩信息的主要载体。",
+     "认为对齐损失可以替换重建损失，实际是两者相加。"
+    ],
+    "ownAnalysis": "「冻结锚点 + 残差补偿 + 在消费方特征空间对齐」这套范式（推断）与扩散模型换 tokenizer、换本体、换分辨率时的适配高度同构，很可能成为通用工程套路。可疑处：摘要说质量持平却未给逐项 VBench 分数，「持平」可能掩盖某些维度下降；延迟 11.1x 是否为含自编码器与对齐开销的端到端测量未说明，需核对原文。",
+    "officialNotes": [
+     {
+      "position": "在压缩预训练视频自编码器的同时保持与预训练 DiT 兼容：冻结 base latent + 残差 latent + 特征空间对齐，再以轻量微调与非对称去噪适配 DiT",
+      "source": "arxiv: 2610.10524v1"
+     }
+    ],
+    "interviewAnswer": "视频扩散的算力瓶颈在 DiT 的 token 数，压缩自编码器能减 token，但压得太狠既掉画质又让 latent 偏离 DiT 分布，逼你重训。GRACE 保留原编码器 latent 作冻结 base，再学残差 latent 补强压缩丢的信息，并在冻结 DiT 特征空间把压缩 latent 对齐到原 latent，让自编码器为生成服务；第二阶段轻量微调 DiT 并用非对称去噪，base 先于 residual。结果是把 Wan2.1-I2V-14B 的 token 降 8x、延迟降 11.1x，VBench 质量持平。",
+    "studyPath": {
+     "prerequisites": [
+      "扩散模型与 DiT 结构",
+      "VAE / 潜空间扩散",
+      "残差连接与特征对齐/蒸馏"
+     ],
+     "nextSteps": [
+      "读原文的压缩比-质量曲线与消融",
+      "复现「冻结 base + 残差」对齐损失",
+      "对比重训 tokenizer、LoRA 适配等方案的代价"
+     ]
+    }
+   }
+  },
+  {
+   "id": "f5bf4f05b6144dc8",
+   "tldr": "把证据构造从「检索」升级为「跨源过滤/聚合/计算」的序列决策，用 SFT+GRPO 训 RouterLM，六族基准成功率 75.6%。",
+   "keyPoints": [
+    "LLM 越来越多被用在长、异构信息源上的任务",
+    "传统 RAG 靠固定相似度检索，agentic 变体仍以检索为中心",
+    "许多任务所需证据不在任一单一来源，需跨源过滤、聚合、计算导出",
+    "RECAST 把证据构造建模为异构检索与计算操作上的序列决策",
+    "轻量 RouterLM 选操作、冻结 CompilerLM 译代码、冻结 AnswerLM 作答，先 SFT 再 GRPO"
+   ],
+   "why": "后训练核心范式：SFT+GRPO 训小模型做路由、冻结大模型做编译与作答；「把检索升级为计算」与 GRPO 组内归一化都是面试高频。",
+   "difficulty": "hard",
+   "tags": [
+    "rag",
+    "posttraining",
+    "grpo",
+    "agent",
+    "tool-use",
+    "llm"
+   ],
+   "entities": [
+    "RECAST",
+    "RouterLM",
+    "CompilerLM",
+    "AnswerLM",
+    "Qwen3.5-9B",
+    "Gemini 3.5 Flash",
+    "GRPO"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "RECAST 证据构造回路",
+    "caption": "RouterLM 迭代挑操作，编译器把操作变成代码并执行出新证据，够了才交给 AnswerLM。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='RECAST 四层流程：查询与异构源、RouterLM 选操作、CompilerLM 编译执行、AnswerLM 作答'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>查询与异构源</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>长且表示各异</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>RouterLM 选操作</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>迭代构造证据</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>CompilerLM 编译执行</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>原语或自定义操作转代码</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>证据充分 → AnswerLM</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>输出最终解</text>\n</svg>",
+    "alt": "四层竖排流程：查询与异构源→RouterLM 迭代选操作→CompilerLM 编译执行→证据充分后交 AnswerLM 作答。"
+   },
+   "concepts": [
+    {
+     "name": "Evidence Construction as Sequential Decision（把证据构造当作序列决策）",
+     "readable": "不把「找证据」当成一次性检索，而是当成一步步做决定：先筛、再聚、再算，边做边判断够不够，不够就继续。",
+     "analogy": "像做财务尽调：不是搜一份现成报告，而是先筛流水、再汇总、再算比率，最后判断资料是否够出结论。",
+     "analogyBreaksDown": "尽调由人判断何时收手，这里收手是策略网络学出的停止决策；奖励稀疏或任务边界模糊时，学到的「够了」可能过早或过晚。",
+     "mechanism": "把检索与计算统一成异构操作空间，用马尔可夫式决策逐步构造证据：每步选一个操作并执行，结果并入历史，直到策略判定充分才交给答案模型。关键是让「计算」与「检索」同为动作，从而能导出跨源聚合结果。",
+     "visual": "一条从左到右的证据构建轨：每个节点是一个操作（filter/aggregate/compute），节点大小表示产出信息量，末端一个闸门表示「证据充分」判断，过闸门才进入作答区。",
+     "prerequisites": [
+      "RAG 基本流程",
+      "马尔可夫决策过程与策略网络",
+      "代码生成 / 工具调用"
+     ],
+     "selfTest": [
+      "为什么固定相似度检索无法回答需跨源聚合的问题？",
+      "「停止」为什么也必须是可学决策？",
+      "把计算当动作与当后处理有何本质差别？"
+     ],
+     "formula": "h_{k} = h_{k-1} \\cup \\{ \\mathrm{Exec}(c_{k}) \\}, \\quad c_{k} \\sim \\pi_{\\theta}(\\cdot \\mid q, h_{k-1})"
+    },
+    {
+     "name": "RouterLM / CompilerLM / AnswerLM 三角分工",
+     "readable": "只训一个小模型负责「决定做什么」，把「翻译成可执行代码」与「读完证据给答案」交给两个冻结大模型，训练成本低又能复用强模型能力。",
+     "analogy": "像剧组：导演（RouterLM）决定拍哪几场戏，专业团队（CompilerLM）落成实拍，剪辑师（AnswerLM）出成片。",
+     "analogyBreaksDown": "剧组三方都能被训，这里只有导演可学；若冻结的编译器或作答模型对接不上导演意图，导演再会规划也白搭。",
+     "mechanism": "RouterLM 负责操作选择与是否充分的判断，CompilerLM 把原语或自定义操作翻译为可执行代码，AnswerLM 依据接受的证据产出答案。只训 RouterLM 使梯度集中在决策上，冻结组件提供稳定的代码生成与问答能力。",
+     "visual": "三个方框：左小框 RouterLM（可训、高亮），中右两框 CompilerLM/AnswerLM（冻结、灰色），箭头从 RouterLM 到两者再回到 RouterLM 形成回路。",
+     "prerequisites": [
+      "SFT 与策略梯度基本概念",
+      "代码生成模型的使用方式"
+     ],
+     "selfTest": [
+      "为什么只训 RouterLM 而不端到端全训？",
+      "RouterLM 的两个职责分别是什么？",
+      "自定义操作为什么要交给 CompilerLM？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-grpo-objective",
+     "name": "组相对策略优化目标（Group Relative Policy Optimization）",
+     "category": "posttraining",
+     "latex": "J_{GRPO}(\\theta) = \\mathbb{E}\\left[\\frac{1}{G}\\sum_{i=1}^{G}\\min\\left(\\rho_{i} A_{i},\\ \\mathrm{clip}(\\rho_{i}, 1-\\epsilon, 1+\\epsilon) A_{i}\\right)\\right], \\quad \\rho_{i} = \\frac{\\pi_{\\theta}(o_{i} \\mid q)}{\\pi_{\\theta_{old}}(o_{i} \\mid q)}",
+     "symbols": [
+      [
+       "q",
+       "输入问题/任务"
+      ],
+      [
+       "o_{i}",
+       "同一问题下采样的第 i 条输出"
+      ],
+      [
+       "G",
+       "每个问题采样的输出组大小"
+      ],
+      [
+       "\\rho_{i}",
+       "新旧策略似然比"
+      ],
+      [
+       "A_{i}",
+       "组内相对优势，通常为 (r_{i} - 组内均值) / 组内标准差"
+      ],
+      [
+       "\\epsilon",
+       "裁剪超参数"
+      ],
+      [
+       "\\pi_{\\theta}",
+       "待优化策略（RouterLM）"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：PPO 需额外价值网络估计优势，对 LLM 显存与实现成本高。",
+      "第 2 步：GRPO 改为对同一问题采样一组输出，用组内奖励均值与标准差归一化得到优势。",
+      "第 3 步：沿用 PPO 的裁剪似然比目标，保证更新幅度受控。",
+      "第 4 步：无需价值网络即可估计相对好坏，适合答案可自动判分的任务。"
+     ],
+     "analogy": "像班级相对评分：不看绝对分数，而看你在同班同学里的相对位置，据此决定要不要多推一把。",
+     "pitfalls": [
+      "把组内归一化当批归一化，忽略归一化对象是同一问题的多条采样",
+      "忘记裁剪项只裁似然比，优势项不参与裁剪",
+      "以为 GRPO 完全不要基线，其实组内均值就是基线"
+     ],
+     "code": "import torch\ndef grpo_loss(logp, logp_old, rewards, eps=0.2):\n    adv = (rewards - rewards.mean()) / (rewards.std() + 1e-8)\n    ratio = torch.exp(logp - logp_old)\n    unclipped = ratio * adv\n    clipped = torch.clamp(ratio, 1-eps, 1+eps) * adv\n    return -torch.min(unclipped, clipped).mean()",
+     "sources": [
+      {
+       "title": "RECAST: Learning to Compute the Right Context through Adaptive Evidence Routing",
+       "url": "https://arxiv.org/abs/2610.10507v1"
+      }
+     ]
+    },
+    {
+     "id": "f-evidence-routing-policy",
+     "name": "证据路由的序贯策略（Evidence Routing Policy）",
+     "category": "agent",
+     "latex": "c_{k} \\sim \\pi_{\\theta}(\\cdot \\mid q, h_{k-1}), \\quad h_{k} = h_{k-1} \\cup \\{\\, \\mathrm{Exec}(c_{k}) \\,\\}, \\quad \\mathrm{stop} \\sim \\pi_{\\theta}(\\cdot \\mid q, h_{k})",
+     "symbols": [
+      [
+       "q",
+       "输入问题"
+      ],
+      [
+       "h_{k-1}",
+       "前 k-1 步累积的证据历史"
+      ],
+      [
+       "c_{k}",
+       "第 k 步选定的操作（检索/计算原语或自定义操作）"
+      ],
+      [
+       "\\mathrm{Exec}",
+       "由 CompilerLM 编译得到的可执行程序"
+      ],
+      [
+       "\\mathrm{stop}",
+       "策略输出的停止/继续决策"
+      ],
+      [
+       "\\pi_{\\theta}",
+       "可训的 RouterLM 策略"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：把任务所需证据视为状态的一部分、操作视为动作，构成序贯决策。",
+      "第 2 步：策略在给定问题与历史下选操作，执行结果并入历史。",
+      "第 3 步：累积到策略判定充分时输出停止信号。",
+      "第 4 步：停止后把接受的证据交给冻结 AnswerLM 生成最终解。"
+     ],
+     "analogy": "像侦探破案：每步选一个侦查动作（调档、比对、化验），线索够了才收网写结案报告。",
+     "pitfalls": [
+      "把停止当成固定步数截断，而不是可学决策",
+      "认为操作空间只有检索，忽略计算类操作才是关键",
+      "混淆 CompilerLM 与 AnswerLM 的职责"
+     ],
+     "code": "def recast_loop(router, compiler, answer, q, max_steps=6):\n    h = []\n    for k in range(max_steps):\n        c = router.propose(q, h)           # 选操作\n        if c is None:                      # 判定证据充分\n            break\n        h.append(exec(compiler.compile(c)))\n    return answer.solve(q, h)",
+     "sources": [
+      {
+       "title": "RECAST: Learning to Compute the Right Context through Adaptive Evidence Routing",
+       "url": "https://arxiv.org/abs/2610.10507v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "传统 RAG 依赖固定相似度检索，agentic 变体虽调整查询与工具但仍以检索为中心",
+     "许多任务所需证据不在任一单一来源，必须通过跨多个来源的过滤、聚合或计算导出",
+     "RECAST 把证据构造表述为异构检索与计算操作上的序列决策过程",
+     "轻量 RouterLM 迭代选择并构造原语操作，或为冻结 CompilerLM 指定自定义操作以翻译成可执行代码",
+     "RouterLM 判定证据充分后把接受的证据交给冻结 AnswerLM 产出最终解",
+     "RouterLM 用监督微调（SFT）后接组相对策略优化（GRPO）训练",
+     "六个异构基准族平均成功率 75.6%，比最强的大模型基线高 15.9%",
+     "训练使 Qwen3.5-9B RouterLM 超过免训练的 Gemini 3.5 Flash RouterLM 5.0%；三个留出基准平均提升 15.0%"
+    ],
+    "uncertain": [
+     "原语操作清单（哪些检索原语、哪些计算原语）摘要未给出，待核实",
+     "GRPO 所用奖励的具体形式摘要未说明，待核实",
+     "GRPO 目标为通用形式，需核对原文的优势估计与裁剪细节",
+     "六个基准族与三个留出基准的具体名称摘要未给出，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "不再只是搜资料，而是让模型学会一步步筛选、汇总、计算，凑齐证据再回答。"
+     },
+     {
+      "level": "入门",
+      "text": "很多问题的答案不在任何一份文档里，得跨多份资料做过滤、聚合甚至计算才能得到。传统 RAG 只会按相似度搜，搜不到就是搜不到。RECAST 让一个小模型逐步选择操作——可能是检索，也可能是写段代码去算——执行后把结果并进证据，判断够了再交给大模型作答。"
+     },
+     {
+      "level": "进阶",
+      "text": "它把证据构造建成序列决策：状态是问题加已累积证据，动作是异构检索或计算操作，停止也是动作。轻量 RouterLM 负责选动作与何时停；冻结 CompilerLM 把原语或自定义操作译成可执行代码；冻结 AnswerLM 依据接受证据给答案。RouterLM 先 SFT 再 GRPO，用组内归一化的相对优势更新，不需要价值网络。"
+     },
+     {
+      "level": "专家",
+      "text": "相比固定相似度 RAG 与检索为中心的 agentic 变体，RECAST 把「计算」提升为一等公民，能处理证据必须被导出而非被找到的任务。三角分工让梯度只落在决策上，冻结大模型提供稳定的代码生成与问答，训练成本低。摘要报告六个异构基准族平均成功率 75.6%、超最强基线 15.9%，且训练后 9B 的 RouterLM 反超免训练 Gemini 3.5 Flash RouterLM 5.0%。局限在于依赖冻结编译器的代码生成质量，奖励设计未披露。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不直接把所有文档塞进长上下文？",
+      "a": "证据需跨源聚合或计算才能导出，塞再多原文也不等于算出结果；而且上下文长度与成本不可控。"
+     },
+     {
+      "q": "为什么只训 RouterLM 而不端到端训练整条链路？",
+      "a": "冻结的编译与作答模型已具强生成和问答能力，端到端训练代价大且不稳；只训决策层能让梯度集中在选对操作上。"
+     }
+    ],
+    "mechanism": "当答案必须由多源证据导出时，检索与推理不能分离：搜什么取决于已有什么，算不算得下去取决于搜到了什么。因此必须把两者放进同一序贯决策，让策略同时决定做什么与何时停。冻结编译与作答模型则把不稳定的代码生成和生成式问答排除在可训参数外，使 SFT+GRPO 的信用只分配给规划决策。",
+    "boundary": "若所需证据本就存在于单一文档、或检索已足够，序列决策带来的额外开销与失败面反而不划算。方案强依赖 CompilerLM 的代码生成可靠性；自定义操作编译失败会直接截断证据链。奖励难以自动判定时，GRPO 优势估计会失准。",
+    "analogyBoundary": "「财务尽调」类比里人有领域常识，可在信息不足时凭经验拍板；而这里停止策略只看学到的分布，遇分布外任务可能过早停止或陷入循环。",
+    "misconceptions": [
+     "以为它只是更好的检索器——核心是把计算类操作纳入动作空间。",
+     "把 RouterLM 当通用大模型——它是轻量小模型，只负责路由与停止。",
+     "认为全部组件一起训练，忽略 CompilerLM 与 AnswerLM 是冻结的。"
+    ],
+    "ownAnalysis": "这条与后训练里「小模型做规划、大模型做执行」的趋势一致（推断）：把可训参数压到决策层，既省钱又让 RL 信号更集中。可疑处：摘要既称超过「最强的大模型基线」15.9%，又称 9B RouterLM 超过免训练 Gemini 3.5 Flash RouterLM 5.0%，两个对比对象不同、量纲可能不可比，且基准族各异，横比需谨慎；奖励设计未披露也使 GRPO 部分复现存在不确定性，需核对原文。",
+    "officialNotes": [
+     {
+      "position": "把证据构造表述为异构检索与计算操作上的序列决策，RouterLM 先 SFT 后 GRPO，六基准族平均成功率 75.6%，留出基准零样本泛化良好",
+      "source": "arxiv: 2610.10507v1"
+     }
+    ],
+    "interviewAnswer": "先界定问题：很多任务的证据不在任一单一来源，必须跨源过滤、聚合、计算才能导出，固定相似度 RAG 做不到。RECAST 把证据构造建成序列决策，状态是问题加已累积证据，动作是检索或计算操作，停止也是动作。RouterLM 负责选动作和判断充分性，CompilerLM 把操作编译成可执行代码，AnswerLM 依据接受的证据作答，后两者冻结。RouterLM 用 SFT 后接 GRPO 训练，不需要价值网络。六个异构基准族平均成功率 75.6%，超过最强基线 15.9%。",
+    "studyPath": {
+     "prerequisites": [
+      "RAG 与检索基础",
+      "策略梯度与 PPO/GRPO",
+      "工具调用与代码生成"
+     ],
+     "nextSteps": [
+      "读原文看原语操作清单与奖励设计",
+      "复现 GRPO 的组内归一化优势",
+      "对比 ReAct 等检索为中心 agent 的失败模式"
+     ]
+    }
+   }
+  },
+  {
+   "id": "f5c24c7fe049da47",
+   "tldr": "先做联合因子图标定造出 DROID-3D 度量深度数据，再训一个联合预测多视角 RGB 与深度的视频世界模型，RGB 预测反而涨 1.48 dB。",
+   "keyPoints": [
+    "世界模型用数据替代机器人仿真器，服务于策略评估、改进与规划",
+    "这些用途都要求忠实的 3D 几何，但视频世界模型只用 RGB 训练",
+    "逐帧看着对，rollout 拼起来却不构成一致的 3D 世界",
+    "缺口需大规模 3D 监督，以及不破坏预训练视频先验的架构",
+    "联合因子图标定产出 DROID-3D，DepthWorld 用空间 latent 分块联合预测 RGB 与深度"
+   ],
+   "why": "世界模型是机器人/具身方向热点；「几何一致性」与「不破坏预训练先验的适配」是面试区分点，且与视频生成、多视角一致性直接相通。",
+   "difficulty": "hard",
+   "tags": [
+    "world-model",
+    "robotics",
+    "3d",
+    "diffusion",
+    "depth",
+    "multiview"
+   ],
+   "entities": [
+    "DepthWorld",
+    "DROID-3D",
+    "DROID",
+    "Stable Video Diffusion",
+    "Variational Autoencoder"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "DepthWorld 数据与建模流程",
+    "caption": "先用联合因子图标定出带度量深度的数据，再让视频世界模型联合预测 RGB 与深度。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='DepthWorld 四层流程：多视角 RGB、联合因子图标定、DROID-3D、联合预测 RGB 与深度'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>多视角 RGB episode</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>同一物理机器人采集</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>联合因子图标定</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>共享运动学 + 每场景外参</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>DROID-3D</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>密集度量深度 + 重标定外参</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>DepthWorld 联合预测</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>多视角 RGB + 深度</text>\n</svg>",
+    "alt": "四层竖排流程：多视角 RGB episode→联合因子图标定→产出 DROID-3D 度量深度→DepthWorld 联合预测多视角 RGB 与深度。"
+   },
+   "concepts": [
+    {
+     "name": "Joint Factor Graph Calibration（联合因子图标定）",
+     "readable": "把同一机器人采集的所有 episode 放进一张优化图一起解，既求出这台机器人共享的运动学参数，也求出每个场景各自的相机外参。",
+     "analogy": "像用多部相机拍同一实验室：单看一部无法判断谁的镜头装歪了，把所有照片一起解，才能同时定出相机怎么装和实验室在哪。",
+     "analogyBreaksDown": "实验室是静态的，而机器人会动：必须区分「机器人自身运动学」与「场景外参」两类未知量，若运动学建模有偏，误差会被错误吸收进外参。",
+     "mechanism": "以学习式立体深度为观测量，把同一物理机器人跨 episode 的共享运动学参数与每场景外参写进一个联合因子图共同优化。共享参数跨场景提供强约束，提升标定精度，从而得到度量尺度可靠的深度与重标定外参。",
+     "visual": "一张二部图：左侧一个大圆是机器人共享运动学参数，右侧多个小圆是各场景外参，每个场景还挂着观测因子方块，边表示残差连接。",
+     "prerequisites": [
+      "相机模型与重投影误差",
+      "因子图 / 束调整（bundle adjustment）",
+      "立体深度估计"
+     ],
+     "selfTest": [
+      "为什么要把不同 episode 放在同一图里联合求解？",
+      "共享运动学参数与外参差别在哪？",
+      "用学习式立体深度作观测有什么风险？"
+     ],
+     "formula": "\\min_{T_{i}, \\xi} \\sum_{i,j} \\rho\\left( \\| \\pi(T_{i}, \\xi, X_{j}) - u_{ij} \\|^{2} \\right)"
+    },
+    {
+     "name": "Spatial Latent Tiling（空间潜变量分块）",
+     "readable": "把多视角的 RGB 与深度打包成一张带空间分块的潜变量，让原本的 VAE 完全不用改就能同时装下多个视角与深度。",
+     "analogy": "像把几张照片拼成一张大拼图送进同一台扫描仪：扫描仪不用认识这是拼图，照样按网格逐块处理。",
+     "analogyBreaksDown": "拼图块之间本来没关系，而不同视角是同一场景的不同投影，必须几何一致；仅靠分块拼接不保证跨视角一致，一致性要靠深度监督来拉。",
+     "mechanism": "在空间维度把多视角图像与深度图平铺进一个潜变量网格，使预训练 VAE 的接口与权重完全不变，从而在吸收新模态监督的同时不破坏视频先验；深度与 RGB 共享同一去噪骨干，实现联合预测。",
+     "visual": "一个网格矩形：左半是 RGB 视角块，右半是深度块，用不同填充纹样区分，外框标注「同一 VAE 潜空间」。",
+     "prerequisites": [
+      "潜空间扩散与 VAE 接口",
+      "多视角几何（外参与投影）",
+      "视频扩散模型结构"
+     ],
+     "selfTest": [
+      "为什么保持 VAE 不变很重要？",
+      "空间分块如何让一个模型同时处理 RGB 与深度？",
+      "只做分块而不加深度监督会缺什么？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-joint-factor-reproj",
+     "name": "联合因子图重投影误差最小化（Joint Factor Graph Reprojection）",
+     "category": "worldmodel",
+     "latex": "\\min_{T_{i}, \\xi} \\sum_{i,j} \\rho\\left( \\| \\pi(T_{i}, \\xi, X_{j}) - u_{ij} \\|^{2} \\right)",
+     "symbols": [
+      [
+       "T_{i}",
+       "第 i 个待估外参/位姿（每场景外参）"
+      ],
+      [
+       "\\xi",
+       "同一物理机器人跨 episode 共享的运动学参数"
+      ],
+      [
+       "X_{j}",
+       "第 j 个三维点（由学习式立体深度给出）"
+      ],
+      [
+       "u_{ij}",
+       "三维点在图像上的观测像素坐标"
+      ],
+      [
+       "\\pi(\\cdot)",
+       "相机投影函数"
+      ],
+      [
+       "\\rho(\\cdot)",
+       "鲁棒损失核，抑制外点"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：单条 episode 标定信息不足，容易把运动学误差吸收进外参。",
+      "第 2 步：同一机器人在所有 episode 共享同一套运动学参数，构成强约束。",
+      "第 3 步：把共享运动学与每场景外参写进同一因子图，观测来自学习式立体深度。",
+      "第 4 步：最小化重投影残差即同时恢复两类未知量，得到度量可靠的几何。"
+     ],
+     "analogy": "像集体调表：一个人的表不可信，但把所有人的表与共同标准一起对齐，就能同时校准每块表和公共偏差。",
+     "pitfalls": [
+      "把共享运动学当固定已知量，忽略它才是跨场景约束来源",
+      "不使用鲁棒核，深度外点会主导优化",
+      "混淆「度量深度」与「相对深度」，后者无法直接用于几何推理"
+     ],
+     "code": "import torch\ndef residual(X, T, xi, uv, project):\n    pred = project(X, T, xi)             # [N,2]\n    return (pred - uv).norm(dim=-1)\ndef robust_cost(r, delta=1.0):\n    return torch.where(r.abs() < delta, 0.5*r**2, delta*(r.abs()-0.5*delta)).sum()",
+     "sources": [
+      {
+       "title": "DepthWorld: 3D World Model for Robot Manipulation",
+       "url": "https://arxiv.org/abs/2610.08780v1"
+      }
+     ]
+    },
+    {
+     "id": "f-multiview-rgbd-joint",
+     "name": "多视角 RGB-深度联合去噪目标（Multi-view RGB-D Joint Denoising）",
+     "category": "worldmodel",
+     "latex": "L = \\mathbb{E}_{t, \\epsilon}\\left[ \\| \\epsilon - \\epsilon_{\\theta}(z_{t}, t, c) \\|_{2}^{2} \\right] + \\lambda \\, \\mathbb{E}_{t}\\left[ \\| d - d_{\\theta}(z_{t}, t, c) \\|_{1} \\right]",
+     "symbols": [
+      [
+       "z_{t}",
+       "加噪后的多视角潜变量（RGB 与深度分块共处同一潜空间）"
+      ],
+      [
+       "\\epsilon",
+       "加入的标准高斯噪声"
+      ],
+      [
+       "\\epsilon_{\\theta}",
+       "去噪网络对噪声的预测"
+      ],
+      [
+       "d",
+       "目标度量深度"
+      ],
+      [
+       "d_{\\theta}",
+       "网络对深度的预测"
+      ],
+      [
+       "c",
+       "条件（动作、时间步、视角编号等）"
+      ],
+      [
+       "\\lambda",
+       "深度损失权重"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：标准视频扩散目标只监督 RGB，rollout 逐帧像但无一致几何。",
+      "第 2 步：把深度作为额外监督通道，与 RGB 共享同一去噪骨干。",
+      "第 3 步：RGB 走噪声预测的 L2 目标，深度走 L1 目标（对深度异常更稳健）。",
+      "第 4 步：两项联合优化，使模型同时获得外观与几何预测能力。"
+     ],
+     "analogy": "像同时练写生与素描：只画外观会失真，加上结构与明暗约束反而让画面更准。",
+     "pitfalls": [
+      "以为加深度监督会牺牲 RGB 质量——摘要报告 RGB 反而提升 1.48 dB",
+      "深度用 L2 监督对离群深度敏感，通常更适合 L1",
+      "忘记深度分块与 RGB 分块共享 VAE 接口这一前提"
+     ],
+     "code": "import torch.nn.functional as F\ndef joint_loss(eps_pred, eps, d_pred, d_gt, lam=0.5):\n    l_rgb = F.mse_loss(eps_pred, eps)          # 噪声预测 L2\n    l_dep = F.l1_loss(d_pred, d_gt)            # 深度 L1\n    return l_rgb + lam * l_dep",
+     "sources": [
+      {
+       "title": "DepthWorld: 3D World Model for Robot Manipulation",
+       "url": "https://arxiv.org/abs/2610.08780v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "世界模型是传统仿真器的数据驱动替代，应用涵盖策略评估、改进与规划，且都依赖忠实的 3D 几何",
+     "当前基于视频的世界模型只用 RGB 训练，rollout 逐帧看似正确却无法组成一致的 3D 世界",
+     "补缺口需要面向操作的大规模 3D 监督，以及能在不扰动强预训练视频先验前提下吸收它的架构",
+     "标定流程结合学习式立体深度与联合因子图，把同一物理机器人的所有 episode 汇聚以恢复共享运动学参数与每场景外参",
+     "在 DROID 上得到 DROID-3D，提供密集度量深度与重标定多视角外参；外部相机在 90% episode 上重投影误差小于 0.7 px",
+     "DepthWorld 基于 Stable Video Diffusion，用空间潜变量分块联合预测多视角 RGB 与深度，且保持预训练 VAE 不变",
+     "深度监督使 RGB 预测在同预算下比相同 RGB-only 基线提升 +1.48 dB PSNR，同时给出准确的度量深度"
+    ],
+    "uncertain": [
+     "空间潜变量分块的具体平铺方式与视角数摘要未给出，待核实",
+     "联合去噪目标中深度损失形式与权重为按摘要重建的通用形式，需核对原文",
+     "因子图的具体因子构成与鲁棒核选择摘要未说明，待核实",
+     "「90% episode」的统计口径与内部相机情况摘要未说明，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "给视频世界模型补上真实深度，让它学会拼出一个一致的三维世界。"
+     },
+     {
+      "level": "入门",
+      "text": "机器人可用世界模型代替仿真器做策略评估与规划，但这些用途都要求几何正确。现在的视频世界模型只看 RGB，单帧看着挺像，连起来却不是前后一致的 3D 世界。DepthWorld 先用标定流程造出带度量深度的数据，再训一个同时预测多视角 RGB 与深度的模型。"
+     },
+     {
+      "level": "进阶",
+      "text": "数据侧用学习式立体深度当观测，把同一台机器人的所有 episode 放进一个联合因子图共同求解，得到共享运动学参数与每场景外参，从而产出带度量深度的 DROID-3D。模型侧基于 Stable Video Diffusion，用空间潜变量分块把多视角 RGB 与深度塞进同一潜空间，完全不动预训练 VAE，实现联合去噪预测。"
+     },
+     {
+      "level": "专家",
+      "text": "两个设计都指向同一原则：增加监督时要保护预训练先验。数据侧靠跨 episode 共享运动学约束把标定从不可辨识变为可辨识，得到度量尺度可靠的多视角几何；模型侧靠空间分块让 RGB 与深度共享冻结 VAE 接口，避免改 tokenizer 带来的分布漂移。结果是双赢——深度监督不仅给几何，还把 RGB 预测在同预算下提升 1.48 dB PSNR。局限在于仍依赖学习式立体深度质量，且标定流程假定「同一物理机器人」。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么视频世界模型逐帧看起来对却不能用？",
+      "a": "它只被 RGB 监督，学到的是外观连续性而非三维一致性；rollout 单看合理，跨帧或跨视角拼起来几何就崩。"
+     },
+     {
+      "q": "为什么不直接重训 VAE 让 latent 容纳深度？",
+      "a": "改 VAE 会让 latent 分布漂移并破坏预训练视频先验；用空间分块共享原接口，就能加监督而不动先验。"
+     }
+    ],
+    "mechanism": "几何一致性是 3D 世界里不能被外观损失替代的约束，但它又必须在不破坏预训练视频先验的前提上加进去。作者把「加监督」与「改接口」解耦：数据上靠跨 episode 共享运动学把标定变成可辨识问题，模型上靠空间分块复用冻结 VAE。于是深度监督只增加目标项、不改变 latent 语义，既保住先验又注入几何。",
+    "boundary": "标定流程要求数据来自同一台物理机器人且运动学可共享；多台机器人或运动学漂移时假设失效。空间分块要求各视角外参已知，标定误差会直接传导为几何误差。若任务不需要度量几何，额外深度监督收益有限。",
+    "analogyBoundary": "「拼图送进扫描仪」类比忽略了跨视角几何约束：扫描仪不在乎拼图块关系，而这里多视角必须严格一致，一致性完全由标定与深度监督承担，不能在类比里被省略。",
+    "misconceptions": [
+     "以为深度监督会拖累 RGB 生成——摘要报告 RGB 反而提升 1.48 dB。",
+     "把 DROID-3D 当成新采集的数据集——它是在已有 DROID 上做标定得到的。",
+     "认为改了 VAE 才能支持深度，忽略 VAE 明确保持不变。"
+    ],
+    "ownAnalysis": "最值得学的工程思想（推断）是「保护预训练先验的同时加新监督」：空间 latent tiling 与 GRACE 的残差 latent 思路相通，都不动 tokenizer 而扩展监督。可疑处：+1.48 dB 是「同等训练预算」下的比较，若深度标注成本未计入则不完全公平；DROID-3D 的深度来自学习式立体而非真值，重投影误差小于 0.7 px 衡量的是外参质量而非深度绝对精度，需核对原文确认二者区分。",
+    "officialNotes": [
+     {
+      "position": "标定流程在 DROID 上产出 DROID-3D；DepthWorld 基于 Stable Video Diffusion 用空间潜变量分块联合预测多视角 RGB 与深度并保持 VAE 不变，深度监督使 RGB 预测提升 1.48 dB PSNR",
+      "source": "arxiv: 2610.08780v1"
+     }
+    ],
+    "interviewAnswer": "我会从问题讲起：世界模型要替代仿真器做策略评估和规划，就必须有忠实的 3D 几何，但现有视频世界模型只用 RGB 训练，rollout 逐帧像、拼起来不一致。DepthWorld 分两步：数据上把同一台机器人的所有 episode 放进联合因子图，配合学习式立体深度恢复共享运动学参数与每场景外参，产出带度量深度的 DROID-3D；模型上基于 Stable Video Diffusion，用空间 latent 分块让多视角 RGB 与深度共用一个冻结 VAE，做联合去噪。有意思的是深度监督不仅给几何，还让 RGB 预测在同预算下涨了 1.48 dB。",
+    "studyPath": {
+     "prerequisites": [
+      "多视角几何与相机标定",
+      "扩散模型与潜空间扩散",
+      "视频生成 / 世界模型基础"
+     ],
+     "nextSteps": [
+      "读原文的标定流程与因子图设计",
+      "对比 RGB-only 与 RGB-D 联合预测的消融",
+      "思考如何把几何一致性用于机器人策略评估"
+     ]
+    }
+   }
+  }
+ ],
+ "skipped": []
+}

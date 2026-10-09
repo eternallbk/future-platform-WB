@@ -1,0 +1,156 @@
+{
+  "id": "0e4e04fc7b06e699",
+  "tldr": "利用「控制信号先于去噪到达」做免训练缓存，按动作变化给 chunk 分状态复用残差，DiT 主干提速 1.21–1.41x。",
+  "keyPoints": [
+    "交互式世界模型逐 chunk 自回归生成，每个 chunk 仍要跑若干次去噪",
+    "现有缓存只看模型内部去噪动态，没显式利用控制转换信号",
+    "相邻 chunk 在动作变化处结构相似度骤降，低频结构比高频更持久",
+    "把 chunk 标为 initial/transition/turning/steady，稳定态复用同一 chunk 最近完整残差",
+    "频率混合历史先验复用前一干净 latent，无需额外 DiT 前向",
+    "Matrix-Game 2.0 与 LingBot-World v1/v2 上 DiT 主干提速 1.21x–1.41x"
+  ],
+  "why": "「外部信号驱动的缓存调度 + 频域先验」是视频/世界模型部署加速的可迁移范式，生成式与 worldmodel 岗位面试高频。",
+  "difficulty": "medium",
+  "tags": ["worldmodel", "video-generation", "caching", "diffusion", "inference-speedup"],
+  "entities": ["CtrlCache", "Matrix-Game 2.0", "LingBot-World v1/v2", "DiT"],
+  "diagram": {
+    "kind": "flow",
+    "title": "控制感知缓存的调度流程",
+    "caption": "控制信号先到达，据此给 chunk 分状态：变化处全算、稳定处复用残差，再补低频先验。",
+    "svg": "<svg viewBox='0 0 480 250' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='控制序列驱动动作感知调度，chunk 分流为满算或残差复用，再加频率混合历史先验'>\n<rect x='40' y='14' width='400' height='36' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='240' y='37' font-size='14' text-anchor='middle' fill='currentColor' font-weight='bold'>控制序列 c：先于去噪到达，零前向成本</text>\n<line x1='240' y1='50' x2='240' y2='60' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,68 236,60 244,60' fill='var(--line-1)'/>\n<rect x='40' y='68' width='400' height='36' rx='8' fill='none' stroke='var(--accent)' stroke-width='1.6'/>\n<text x='240' y='91' font-size='14' text-anchor='middle' fill='currentColor' font-weight='bold'>动作变化检测 → chunk 状态标签</text>\n<line x1='240' y1='104' x2='240' y2='114' stroke='var(--line-1)' stroke-width='1.6'/>\n<line x1='129' y1='114' x2='351' y2='114' stroke='var(--line-1)' stroke-width='1.6'/>\n<line x1='129' y1='114' x2='129' y2='124' stroke='var(--line-1)' stroke-width='1.6'/>\n<line x1='351' y1='114' x2='351' y2='124' stroke='var(--line-1)' stroke-width='1.6'/>\n<rect x='24' y='124' width='210' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='129' y='142' font-size='13' text-anchor='middle' fill='currentColor' font-weight='bold'>initial / transition</text>\n<text x='129' y='159' font-size='13' text-anchor='middle' fill='currentColor'>整块完整计算</text>\n<rect x='246' y='124' width='210' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='351' y='142' font-size='13' text-anchor='middle' fill='currentColor' font-weight='bold'>turning / steady</text>\n<text x='351' y='159' font-size='13' text-anchor='middle' fill='currentColor'>复用最近完整残差</text>\n<line x1='129' y1='166' x2='129' y2='178' stroke='var(--line-1)' stroke-width='1.6'/>\n<line x1='351' y1='166' x2='351' y2='178' stroke='var(--line-1)' stroke-width='1.6'/>\n<rect x='40' y='178' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='240' y='203' font-size='13' text-anchor='middle' fill='currentColor'>频率混合历史先验：复用前一干净 latent</text>\n<text x='240' y='238' font-size='13' text-anchor='middle' fill='var(--accent)'>Matrix-Game 2.0 / LingBot-World：DiT 提速 1.21–1.41x</text>\n</svg>",
+    "alt": "控制序列先于去噪到达，检测动作变化给 chunk 打标签，initial/transition 全算、turning/steady 复用残差，再加频率混合历史先验，DiT 提速 1.21-1.41x。"
+  },
+  "concepts": [
+    {
+      "name": "Control-Aware Caching Schedule（控制感知缓存调度）",
+      "readable": "缓存要不要复用不再看模型内部去噪动态，而是看用户控制何时变化：动作一变就重算，动作稳定就复用上一步的中间结果。",
+      "analogy": "像开车导航：路况大改（转弯/岔口）时才重新规划，直路巡航时沿用旧路线省算力。",
+      "analogyBreaksDown": "导航重新规划是离散触发的；视频 chunk 的状态边界模糊，「转弯」可能跨 chunk 连续演变，硬分类会误判。",
+      "mechanism": "控制信号在 chunk 去噪前就到达，用它算调度不需要前向；按 initial/transition/turning/steady 四态决定整块全算还是复用同一 chunk 内最近一次完整计算的 transformer 残差。",
+      "visual": "横轴 chunk 序号、纵轴复用率；动作变化处标高（全算），平稳段标低（复用），整体呈脉冲加平台的曲线。",
+      "prerequisites": ["扩散/流匹配去噪", "自回归视频生成", "Transformer 残差"],
+      "selfTest": ["为什么用控制信号而非去噪动态做调度更省？", "四态里哪两态必须全算？", "复用的到底是同一 chunk 内哪个量？"],
+      "formula": "R_t^{(i)} = R_{t^*}^{(i)}\\ \\text{if}\\ s_i\\in\\{\\mathrm{turning},\\mathrm{steady}\\}"
+    },
+    {
+      "name": "Frequency-Mixed History Prior（频率混合历史先验）",
+      "readable": "稳定交互时低频结构（大致轮廓）变化慢，于是把前一个干净 latent 的低频信息混进来当先验，而不额外跑一次 DiT 前向。",
+      "analogy": "像做动画时保留上一帧的大构图、只改细节，而不是每帧从白纸重画。",
+      "analogyBreaksDown": "动画背景通常静止；世界模型里的「低频」仍可能因镜头整体移动而漂移，混入旧先验会带出拖影。",
+      "mechanism": "观察到高频细节比低频结构更易变，故从上一 clean latent 提取互补的低频成分补进当前步，既省一次 DiT 前向，又抑制长期漂移。",
+      "visual": "一张频谱图：低频区域跨 chunk 稳定高亮，高频区域在动作变化处闪烁；混合操作画成从上一帧指向当前帧的低频叠加箭头。",
+      "prerequisites": ["latent 扩散/流模型", "频域直觉（低/高频）", "视频时序一致性"],
+      "selfTest": ["为什么低频比高频更持久？", "引入历史先验为何「不需要额外前向」？", "它主要解决质量还是速度？"],
+      "formula": "z_t^{(i)} \\leftarrow z_t^{(i)} + \\lambda\\, \\mathrm{LP}\\big(z_0^{(i-1)}\\big)"
+    },
+    {
+      "name": "Training-Free Acceleration（免训练加速）",
+      "readable": "不改模型、不重训，只在推理时决定哪些去噪步真算、哪些复用，因此能即插即用挂到已有世界模型上。",
+      "analogy": "像给老空调加个智能开关：不动压缩机，只控制什么时候开、什么时候待机。",
+      "analogyBreaksDown": "开关假设启停无代价；缓存复用若判断错，画质会突降且已生成的整段 chunk 无法回退。",
+      "mechanism": "所有决策都基于已有的控制信号与残差，故无需额外训练或额外前向；代价是状态划分与阈值需要人工设计，且错误会沿 chunk 传播。",
+      "visual": "流程图：预训练世界模型冻结，外面套一层调度器，输入控制加噪声，输出「复用/重算」的开关决策。",
+      "prerequisites": ["扩散采样", "缓存复用", "推理加速"],
+      "selfTest": ["免训练加速与蒸馏加速的本质差别？", "为什么调度阈值需要人工设？", "一次误判会影响哪些后续 chunk？"],
+      "formula": ""
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-ctrlcache-state-reuse",
+      "name": "状态相关残差复用（State-Dependent Residual Reuse）",
+      "category": "worldmodel",
+      "latex": "R_t^{(i)} = \\begin{cases} F_\\theta\\big(x_t^{(i)}, c^{(i)}\\big) & s_i\\in\\{\\mathrm{init},\\mathrm{trans}\\} \\\\ R_{t^*}^{(i)} & s_i\\in\\{\\mathrm{turning},\\mathrm{steady}\\} \\end{cases}",
+      "symbols": [
+        ["R_t^{(i)}", "第 i 个 chunk 在第 t 步的 transformer 残差"],
+        ["x_t^{(i)}", "第 i 个 chunk 在第 t 步的 latent"],
+        ["c^{(i)}", "该 chunk 的控制信号（去噪前到达）"],
+        ["s_i", "chunk 状态：initial/transition/turning/steady"],
+        ["R_{t^*}^{(i)}", "同一 chunk 内最近一次完整计算的残差"]
+      ],
+      "derivation": [
+        "少步去噪仍要每个 chunk 跑若干次前向，成本集中在 transformer 主干上。",
+        "观察到两个事实：控制信号先到达；动作变化处多尺度结构相似度骤降。",
+        "据此给 chunk 打四态标签，变化态（initial/transition）必须完整计算。",
+        "稳定/转弯态复用同一 chunk 最近完整步的残差，从而省掉后续内部步的 transformer 前向。"
+      ],
+      "analogy": "像抄笔记：换章节时整页重抄，同一页里只补几笔、其余沿用已写好的内容。",
+      "pitfalls": [
+        "误以为复用是跨 chunk 的（实际是同 chunk 内最近完整步）",
+        "把 initial 也当成可复用态",
+        "把残差复用与 KV/特征缓存混为一谈"
+      ],
+      "code": "# 示意：按状态决定是否跳过内部去噪步的 DiT 前向\nstate = 'steady'  # init/transition/turning/steady\nif state in ('init', 'transition'):\n    residual = dit(x_t, t, control)\n    last_full = residual          # 记录最近完整残差\nelse:\n    residual = last_full          # 复用同一 chunk 最近完整残差\nx_next = update(x_t, residual)",
+      "sources": [{"title": "CtrlCache: Accelerating Interactive Video World Models with Control-Aware Caching", "url": "https://arxiv.org/abs/2610.08777"}]
+    },
+    {
+      "id": "f-ctrlcache-speedup",
+      "name": "DiT 主干加速比（DiT Backbone Speedup）",
+      "category": "worldmodel",
+      "latex": "S = \\frac{T_{\\mathrm{full}}}{T_{\\mathrm{ctrl}}} \\in [1.21,\\,1.41]",
+      "symbols": [
+        ["S", "DiT 主干加速比"],
+        ["T_{\\mathrm{full}}", "无缓存时的主干耗时"],
+        ["T_{\\mathrm{ctrl}}", "CtrlCache 调度后的主干耗时"]
+      ],
+      "derivation": [
+        "缓存把部分内部去噪步的 transformer 前向替换为残差复用。",
+        "节省的时间集中在主干，故以主干耗时之比定义加速比。",
+        "论文在 Matrix-Game 2.0 与 LingBot-World v1/v2 上测得 1.21x 到 1.41x。"
+      ],
+      "analogy": "像高峰期让部分车改走应急道：总里程不变，通行时间按可复用的比例压缩。",
+      "pitfalls": [
+        "把加速比当成端到端 wall-clock（原文明确是 DiT 主干）",
+        "只报提速不提画质代价：复用过多会降低结构相似度"
+      ],
+      "code": "T_full, T_ctrl = 1.0, 0.75  # 相对耗时示例\nspeedup = T_full / T_ctrl\nprint(f'{speedup:.2f}x')  # 1.33x",
+      "sources": [{"title": "CtrlCache: Accelerating Interactive Video World Models with Control-Aware Caching", "url": "https://huggingface.co/papers/2610.08777"}]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "系统使用 chunk 级自回归生成 + 少步去噪，每 chunk 仍需多次去噪迭代",
+      "现有缓存策略主要依据模型内部去噪动态，未显式利用控制转换",
+      "控制信号在 chunk 去噪前到达，据此做调度不需要前向",
+      "动作变化处结构相似度下降，低频结构比高频更持久",
+      "chunk 被分为 initial/transition/turning/steady 四态",
+      "论文在 Matrix-Game 2.0 与 LingBot-World v1/v2 上取得 1.21x–1.41x DiT 提速"
+    ],
+    "uncertain": [
+      "摘要被截断（结尾停在 faster than baseline），未给完整相对提升与画质指标",
+      "状态划分的具体阈值与检测算子摘要未给，属待核实",
+      "残差复用在内部步的具体位置（「一个选定内部去噪步」）细节需读正文"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "看用户控制变了没，稳定就少算，视频世界模型因此更快。"},
+      {"level": "入门", "text": "交互式世界模型逐段生成视频、每段要迭代去噪好几遍，很慢。CtrlCache 发现控制信号比去噪先到，就据此判断这段动作是否在变：变就认真算，稳就复用上一步结果。"},
+      {"level": "进阶", "text": "它把 chunk 分四态：初始与过渡态完整计算，转弯与稳定态复用同一 chunk 最近一次完整计算的 transformer 残差；并对稳定段引入频率混合历史先验，补上低频结构而无需额外 DiT 前向。全部免训练、即插即用。"},
+      {"level": "专家", "text": "核心洞见是「控制信号是免费的外部信号」——现有缓存只用内部去噪动态，浪费了它。实验上在 Matrix-Game 2.0 与 LingBot-World v1/v2 取得 1.21x–1.41x 的 DiT 主干加速。适用边界在于状态判定需准确，否则会把该重算的段误判为稳定而损失结构；摘要未给出画质退化数据。"}
+    ],
+    "socratic": [
+      {"q": "控制信号为什么能免费用来做调度？", "a": "因为它先于去噪到达，拿它算状态不需要跑任何前向。"},
+      {"q": "为什么不统一复用、把速度拉满？", "a": "动作变化处结构相似度骤降，统一复用会让画面崩坏，必须在变化处重算。"},
+      {"q": "低频先验为什么能省一次前向？", "a": "它直接取上一 clean latent 的低频成分，是查表式操作，不经过 DiT。"}
+    ],
+    "mechanism": "把调度信号从「模型内部去噪动态」换成「外部控制序列」，本质是把一个本就要发生的信号提前变现：控制先到，于是状态判定零成本；再按状态把「全算」与「残差复用」绑定到动作变化与否，使算力只花在真正发生变化的 chunk 上。",
+    "boundary": "依赖「动作变化处结构会跳变、稳定处低频更持久」这两个经验观察；若控制信号与画面变化弱相关、或场景本身频繁全域移动，四态划分会失效，复用将引入可见伪影。",
+    "analogyBoundary": "导航类比的失效点在于可逆性：路线规划错了可以重新导航，而被复用残差生成的 chunk 已经输出，错误无法回退，只能等下一段修正。",
+    "misconceptions": [
+      "「缓存是看模型内部置信度」——本文恰恰用的是外部控制信号",
+      "「复用可以跨 chunk」——实际复用的是同一 chunk 内最近完整步的残差",
+      "「提速是端到端」——摘要口径是 DiT 主干加速比"
+    ],
+    "ownAnalysis": "（推断）这条工作与「训练-free 缓存 + 外部条件调度」的思路同源：把条件/控制当作免费的先验来决定算力分配。值得注意的是它对「低频持久、高频易变」的假设与视频压缩、时序超分里的频域先验一致，可能对更长时序的世界模型同样有效；但摘要未给失败案例与画质曲线，需看正文判断状态阈值是否鲁棒。（待核实）",
+    "officialNotes": [
+      {"position": "训练-free、控制在环：动作感知调度把 chunk 标为 initial/transition/turning/steady", "source": "https://arxiv.org/abs/2610.08777"},
+      {"position": "在 Matrix-Game 2.0 与 LingBot-World v1/v2 上达 1.21x–1.41x DiT 主干加速", "source": "https://huggingface.co/papers/2610.08777"}
+    ],
+    "interviewAnswer": "CtrlCache 针对交互式视频世界模型：逐 chunk 生成加少步去噪，每段仍要多次迭代。它抓住一个免费信号——控制序列在去噪前就到达，于是按动作变化把 chunk 分为初始、过渡、转弯、稳定四态；变化态完整计算，稳定态复用同一 chunk 最近完整步的 transformer 残差，并加一个频率混合历史先验补低频。结果在 Matrix-Game 2.0 和 LingBot-World 上 DiT 主干提速 1.21x 到 1.41x，且完全免训练。",
+    "studyPath": {
+      "prerequisites": ["扩散/流匹配采样", "自回归视频生成与 DiT", "缓存复用思想"],
+      "nextSteps": ["在开源视频 DiT 上实现一个状态缓存开关", "复现频域先验的低频混合", "对比 KV 缓存、特征缓存的异同"]
+    }
+  }
+}

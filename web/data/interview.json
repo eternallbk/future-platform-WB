@@ -1,0 +1,2525 @@
+{
+ "generatedAt": "2026-10-09T18:10:51+08:00",
+ "source": "build_interview_index.py (deterministic rules, no LLM)",
+ "count": 138,
+ "note": "面经时效性最强，按发布时间倒序；公司/轮次/结果/主题由规则抽取，可逐条核对",
+ "companies": [
+  {
+   "name": "字节跳动",
+   "count": 29
+  },
+  {
+   "name": "旷视",
+   "count": 14
+  },
+  {
+   "name": "携程",
+   "count": 8
+  },
+  {
+   "name": "腾讯",
+   "count": 6
+  },
+  {
+   "name": "阿里巴巴",
+   "count": 5
+  },
+  {
+   "name": "商汤",
+   "count": 5
+  },
+  {
+   "name": "华为",
+   "count": 4
+  },
+  {
+   "name": "百度",
+   "count": 4
+  },
+  {
+   "name": "网易",
+   "count": 3
+  },
+  {
+   "name": "美团",
+   "count": 2
+  },
+  {
+   "name": "京东",
+   "count": 2
+  },
+  {
+   "name": "小米",
+   "count": 2
+  },
+  {
+   "name": "vivo",
+   "count": 1
+  },
+  {
+   "name": "小鹏汽车",
+   "count": 1
+  }
+ ],
+ "rounds": [
+  {
+   "name": "一面",
+   "count": 12
+  },
+  {
+   "name": "二面",
+   "count": 3
+  },
+  {
+   "name": "HR面",
+   "count": 1
+  }
+ ],
+ "topics": [
+  {
+   "name": "手撕/算法题",
+   "count": 118
+  },
+  {
+   "name": "工程/系统",
+   "count": 34
+  },
+  {
+   "name": "项目/论文深挖",
+   "count": 13
+  },
+  {
+   "name": "大模型/LLM",
+   "count": 9
+  },
+  {
+   "name": "Agent/RAG",
+   "count": 4
+  },
+  {
+   "name": "多模态/CV",
+   "count": 4
+  },
+  {
+   "name": "强化学习",
+   "count": 3
+  },
+  {
+   "name": "机器学习基础",
+   "count": 3
+  }
+ ],
+ "outcomes": [
+  {
+   "name": "通过",
+   "count": 18
+  },
+  {
+   "name": "未通过",
+   "count": 1
+  },
+  {
+   "name": "待定",
+   "count": 1
+  }
+ ],
+ "withCoding": 113,
+ "items": [
+  {
+   "id": "338ac3c14ab13ac9",
+   "title": "无重复字符的最长子串（LeetCode 3）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/longest-substring-without-repeating-characters",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-10-08T00:00:00+08:00",
+   "lastSeen": "2026-10-08T18:53:53+08:00",
+   "company": "字节跳动",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 692 次、腾讯 95 次、美团 75 次、阿里巴巴 65 次、快手 48 次、华为 46 次（共 1162 次）；难度 中等；最近一次出现 2026-10-08"
+  },
+  {
+   "id": "74b546c8e2d25647",
+   "title": "搜索旋转排序数组（LeetCode 33）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/search-in-rotated-sorted-array",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-10-07T00:00:00+08:00",
+   "lastSeen": "2026-10-09T18:10:17+08:00",
+   "company": "字节跳动",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 161 次、快手 21 次、阿里巴巴 18 次、微软 15 次、滴滴 14 次、京东 7 次（共 247 次）；难度 中等；最近一次出现 2026-10-07"
+  },
+  {
+   "id": "bbf388bcc19ae05a",
+   "title": "三数之和（LeetCode 15）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/3sum",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-10-06T00:00:00+08:00",
+   "lastSeen": "2026-10-09T18:10:17+08:00",
+   "company": "字节跳动",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 187 次、美团 66 次、百度 46 次、快手 34 次、腾讯 34 次、阿里巴巴 29 次（共 465 次）；难度 中等；最近一次出现 2026-10-06"
+  },
+  {
+   "id": "34943744e1ea5edd",
+   "title": "腾讯IEG后台开发实习一面面经（已过等二面通知中）",
+   "url": "https://nowcoder.com/discuss/932638301494738944",
+   "channel": "nowcoder",
+   "category": "coding",
+   "publishedAt": "2026-10-01T22:47:26+08:00",
+   "lastSeen": "2026-10-01T22:50:26+08:00",
+   "company": "腾讯",
+   "round": "二面",
+   "outcome": "通过",
+   "topics": [
+    "手撕/算法题",
+    "大模型/LLM",
+    "工程/系统",
+    "Agent/RAG",
+    "项目/论文深挖"
+   ],
+   "hasCoding": false,
+   "summary": "发面经攒人品前20min自我介绍+问项目，面试官不搞agent方面的东西所以主要是我在讲，主要追问是市面上同类型产品是怎么做的，以及为什么要做这样一个深度研究agent而不是直接用目前各个大模型给的深度学习功能15min算法：二叉树的最大路径和，dfs做法后20min八股+场景：1.说一下HTTP的_牛客网_牛客在手,offer不愁"
+  },
+  {
+   "id": "07bc5c3687968645",
+   "title": "携程AI应用开发实习一面（OC）",
+   "url": "https://nowcoder.com/discuss/933058120102739968",
+   "channel": "nowcoder",
+   "category": "job",
+   "publishedAt": "2026-10-01T18:50:15+08:00",
+   "lastSeen": "2026-10-01T18:51:42+08:00",
+   "company": "携程",
+   "round": "一面",
+   "outcome": "通过",
+   "topics": [
+    "Agent/RAG",
+    "项目/论文深挖"
+   ],
+   "hasCoding": false,
+   "summary": "9-23晚上一面，9-24早上OC。感觉是携程很多实习生离职了，很缺人。面试体验非常好，面试官还会帮我总结我说的东西，对问题的描述也非常清晰。40分钟自我介绍实习Agent上下文管理1.对Agent上下文管理有什么了解？2.除了工具压缩还有哪些压缩机制？3.保留什么？压缩什么？采用什么方式？4.什么_牛客网_牛客在手,offer不愁"
+  },
+  {
+   "id": "4870e270e1c6bf80",
+   "title": "微店 AI全栈开发 秋招一面",
+   "url": "https://nowcoder.com/discuss/932574691825287168",
+   "channel": "nowcoder",
+   "category": "coding",
+   "publishedAt": "2026-10-01T17:46:23+08:00",
+   "lastSeen": "2026-10-01T17:47:35+08:00",
+   "company": "",
+   "round": "一面",
+   "outcome": "通过",
+   "topics": [
+    "大模型/LLM",
+    "项目/论文深挖"
+   ],
+   "hasCoding": false,
+   "summary": "1. 请做一个简短的自我介绍2. 你在上段实习中，学了点什么, 怎么就呆了俩月3. 大模型应用中的召回率从 78% 提升到 89%，你会如何确认改动确实有效？不能只比较两个百分比，还要确认测试集一致、评估口径一致，并排除数据泄漏。首先需要固定一套评估集，包含：精确关键词问题。同义表达问题。多条件组合_牛客网_牛客在手,offer不愁"
+  },
+  {
+   "id": "153213a1b791c02b",
+   "title": "字节跳动 AI数据运营实习生（自动化方向）-AI数据与安全 一面面经",
+   "url": "https://nowcoder.com/discuss/932604724463882240",
+   "channel": "nowcoder",
+   "category": "job",
+   "publishedAt": "2026-10-01T17:00:33+08:00",
+   "lastSeen": "2026-10-01T17:01:32+08:00",
+   "company": "字节跳动",
+   "round": "一面",
+   "outcome": "通过",
+   "topics": [
+    "项目/论文深挖"
+   ],
+   "hasCoding": false,
+   "summary": "1、自我介绍2、提问因为我看你的简历上面写的都是项目经历嘛，把能不能介绍下哪个项目是，或者我们从最新的项目开始聊起，能不能讲讲多智能体项目的背景和想要解决的什么问题？你为什么选择这个架构，你想解决的问题是什么？是科研的搜索吗？那你当时是为什么会设计这样的架构，为什么是一个主智能体带3个子智能体，为什_牛客网_牛客在手,offer不愁"
+  },
+  {
+   "id": "7b54c87b34529597",
+   "title": "VIVO agent开发 秋招一面",
+   "url": "https://nowcoder.com/discuss/932565368587976704",
+   "channel": "nowcoder",
+   "category": "agent",
+   "publishedAt": "2026-10-01T16:56:43+08:00",
+   "lastSeen": "2026-10-01T16:57:41+08:00",
+   "company": "vivo",
+   "round": "一面",
+   "outcome": "通过",
+   "topics": [
+    "Agent/RAG"
+   ],
+   "hasCoding": false,
+   "summary": "1. 两分钟介绍下自己2. 创建工单的请求超时，但外部系统可能已经成功写入，Agent 应如何恢复？超时只能说明调用方没有拿到结果，不能证明外部操作失败。执行前应持久化逻辑操作 ID、参数摘要和执行意图，由工单服务通过唯一约束实现幂等；重试必须复用原操作 ID，而不是重新生成。恢复时优先按该 ID_牛客网_牛客在手,offer不愁"
+  },
+  {
+   "id": "e642b13b2a0d9d5e",
+   "title": "【面经】字节/AI 应用工程师 一面挂经……",
+   "url": "https://nowcoder.com/discuss/933023499399024640",
+   "channel": "nowcoder",
+   "category": "coding",
+   "publishedAt": "2026-10-01T16:54:29+08:00",
+   "lastSeen": "2026-10-01T16:55:32+08:00",
+   "company": "字节跳动",
+   "round": "一面",
+   "outcome": "未通过",
+   "topics": [
+    "手撕/算法题",
+    "多模态/CV",
+    "Agent/RAG",
+    "项目/论文深挖"
+   ],
+   "hasCoding": true,
+   "summary": "岗位：AI 应用工程师（飞书多维表格方向）轮次：一面形式：视频面时长：约 70 分钟一、开场自我介绍二、算法现场手写一道算法题（1～N个数中选k个，给出可能的答案）追问：时间复杂度和空间复杂度是多少？三、项目深挖Agent 相关：为什么项目不用 Claude Code？是否是自己搭建的Agent r_牛客网_牛客在手,offer不愁"
+  },
+  {
+   "id": "6869cced09ad15da",
+   "title": "9月21日字节tiktok社交一面",
+   "url": "https://nowcoder.com/discuss/932667730539343872",
+   "channel": "nowcoder",
+   "category": "coding",
+   "publishedAt": "2026-10-01T16:46:46+08:00",
+   "lastSeen": "2026-10-01T16:48:06+08:00",
+   "company": "字节跳动",
+   "round": "一面",
+   "outcome": "通过",
+   "topics": [
+    "项目/论文深挖"
+   ],
+   "hasCoding": false,
+   "summary": "复盘一下吧，这个实在是让我难受的一次面试，面完hr直接通知我秒挂，项目八股算法全部都答上来了，也面试了一个小时，面试官的态度也挺好的，捉摸不透，人飞书是隔了一天才挂的，他挂的这么迅速，搞不好还脏我面评，到底为啥呢。。。。。[牛泪][牛泪][牛泪]1.讲讲你实习期的项目2.有没有了解过关于你实习业务线_牛客网_牛客在手,offer不愁"
+  },
+  {
+   "id": "a269d242962e0bae",
+   "title": "腾讯IEG后台开发日常实习二面/HR面面经（已过等offer中）",
+   "url": "https://nowcoder.com/discuss/935191455750946816",
+   "channel": "nowcoder",
+   "category": "coding",
+   "publishedAt": "2026-10-01T16:43:08+08:00",
+   "lastSeen": "2026-10-01T16:44:10+08:00",
+   "company": "腾讯",
+   "round": "HR面",
+   "outcome": "待定",
+   "topics": [
+    "大模型/LLM",
+    "项目/论文深挖"
+   ],
+   "hasCoding": false,
+   "summary": "#发面经攒人品#二面：全程没有八股，只有35分钟项目，可以用做参考项目话术准备程度：你的深度研究项目相比较市面上的大模型的深度思考有什么优势；评估环节的覆盖率/来源质量/边际收益怎么怎么计算的；你微调训练模型的预训练模型从哪下载的，名字叫什么，各个参数是多少；你怎么知道训练后效果变好了，训练后的各项_牛客网_牛客在手,offer不愁"
+  },
+  {
+   "id": "386e53cdfcfe880e",
+   "title": "面经：腾讯混元多模态一面",
+   "url": "https://nowcoder.com/discuss/xxx",
+   "channel": "inbox",
+   "category": "coding",
+   "publishedAt": null,
+   "lastSeen": "2026-10-01T16:42:05+08:00",
+   "company": "腾讯",
+   "round": "一面",
+   "outcome": "",
+   "topics": [
+    "多模态/CV"
+   ],
+   "hasCoding": false,
+   "summary": "牛客网是互联网求职神器，C++、Java、前端、产品、运营技能学习/备考/求职题库，在线进行百度阿里腾讯网易等互联网名企笔试面试模拟考试练习,和牛人一起讨论经典试题,全面提升你的技术能力"
+  },
+  {
+   "id": "18112dcf61f4af70",
+   "title": "二叉树的最近公共祖先（LeetCode 236）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-29T00:00:00+08:00",
+   "lastSeen": "2026-10-09T18:10:17+08:00",
+   "company": "字节跳动",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 133 次、快手 22 次、微软 21 次、亚马逊 3 次（共 179 次）；难度 中等；最近一次出现 2026-09-29"
+  },
+  {
+   "id": "a77b0b38fd1be916",
+   "title": "LRU缓存机制（LeetCode 146）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/lru-cache",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-28T00:00:00+08:00",
+   "lastSeen": "2026-10-08T18:53:53+08:00",
+   "company": "字节跳动",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题",
+    "工程/系统"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 367 次、腾讯 193 次、阿里巴巴 99 次、快手 61 次、美团 47 次、百度 33 次（共 896 次）；难度 中等；最近一次出现 2026-09-28"
+  },
+  {
+   "id": "982e42ed0308cc45",
+   "title": "寻找两个正序数组的中位数（LeetCode 4）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/median-of-two-sorted-arrays",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-28T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "阿里巴巴",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：百度 16 次、阿里巴巴 12 次、微软 11 次、拼多多 8 次、京东 5 次、网易 3 次（共 55 次）；难度 困难；最近一次出现 2026-09-28"
+  },
+  {
+   "id": "ffdb3c49945af971",
+   "title": "零钱兑换（LeetCode 322）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/coin-change",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-26T00:00:00+08:00",
+   "lastSeen": "2026-10-05T00:27:23+08:00",
+   "company": "华为",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：华为 7 次、亚马逊 2 次、网易 2 次（共 11 次）；难度 中等；最近一次出现 2026-09-26"
+  },
+  {
+   "id": "8cfadace34fdffa0",
+   "title": "字符串相加（LeetCode 415）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/add-strings",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-24T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "415. 字符串相加 - 给定两个字符串形式的非负整数 num1 和num2 ，计算它们的和并同样以字符串形式返回。 你不能使用任何內建的用于处理大整数的库（比如 BigInteger）， 也不能直接将输入的字符串转换为整数形式。 示例 1： 输入：num1 = \"11\", num2 = \"123\" 输出：\"134\" 示例 2： 输入：num1 = \"456\", num2 = \"77\" 输出：\"533\" 示例 3： 输入：num1 = \"0\", num2 = \"0\" 输出：\"0\" 提示： * 1 <= num1.length, num2.length <= 104 * num1 和num2 都只包含数字 0-9 * num1 和num2 都不包含任何前导零"
+  },
+  {
+   "id": "820e5d46ff3a9ca9",
+   "title": "删除链表的倒数第N个节点（LeetCode 19）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/remove-nth-node-from-end-of-list",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-23T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "阿里巴巴",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：美团 36 次、阿里巴巴 19 次、滴滴 8 次、商汤 7 次、小米 4 次、京东 3 次（共 77 次）；难度 中等；最近一次出现 2026-09-23"
+  },
+  {
+   "id": "c116b6520e7722f4",
+   "title": "最大子数组和（LeetCode 53）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/maximum-subarray",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-22T00:00:00+08:00",
+   "lastSeen": "2026-10-09T18:10:17+08:00",
+   "company": "字节跳动",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 118 次、腾讯 69 次、美团 37 次、快手 26 次、阿里巴巴 23 次、百度 20 次（共 352 次）；难度 中等；最近一次出现 2026-09-22"
+  },
+  {
+   "id": "ae9b3bd5f0c0ec14",
+   "title": "合并两个有序数组（LeetCode 88）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/merge-sorted-array",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-22T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "美团",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：美团 94 次、快手 25 次、滴滴 10 次、小米 6 次、商汤 2 次（共 137 次）；难度 简单；最近一次出现 2026-09-22"
+  },
+  {
+   "id": "3deab4af259ac294",
+   "title": "反转链表（LeetCode 206）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/reverse-linked-list",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-21T00:00:00+08:00",
+   "lastSeen": "2026-10-08T18:53:53+08:00",
+   "company": "字节跳动",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 243 次、腾讯 109 次、美团 103 次、百度 75 次、快手 54 次、滴滴 34 次（共 721 次）；难度 简单；最近一次出现 2026-09-21"
+  },
+  {
+   "id": "2d66aa302d127346",
+   "title": "最长回文子串（LeetCode 5）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/longest-palindromic-substring",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-21T00:00:00+08:00",
+   "lastSeen": "2026-10-09T18:10:17+08:00",
+   "company": "字节跳动",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 138 次、快手 39 次、百度 35 次、腾讯 33 次、阿里巴巴 14 次、滴滴 12 次（共 304 次）；难度 中等；最近一次出现 2026-09-21"
+  },
+  {
+   "id": "ce573ed982fd7269",
+   "title": "重排链表（LeetCode 143）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/reorder-list",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-17T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题",
+    "工程/系统"
+   ],
+   "hasCoding": true,
+   "summary": "143. 重排链表 - 给定一个单链表 L 的头节点 head ，单链表 L 表示为： L0 → L1 → … → Ln - 1 → Ln 请将其重新排列后变为： L0 → Ln → L1 → Ln - 1 → L2 → Ln - 2 → … 不能只是单纯的改变节点内部的值，而是需要实际的进行节点交换。 示例 1： [https://pic.leetcode.cn/1626420311-PkUiGI-image.png] 输入：head = [1,2,3,4] 输出：[1,4,2,3] 示例 2： [https://pic.leetcode.cn/1626420320-YUiulT-image.png] 输入：head = [1,2,3,4,5] 输出：[1,5,2,4,3] 提示： * 链表的长度范围为 [1, 5 * 104] * 1 <= node.val <= 1000"
+  },
+  {
+   "id": "ce0ad6ab3e2e154a",
+   "title": "数组中的第K个最大元素（LeetCode 215）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/kth-largest-element-in-an-array",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-17T00:00:00+08:00",
+   "lastSeen": "2026-10-08T18:53:53+08:00",
+   "company": "字节跳动",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 205 次、美团 103 次、腾讯 62 次、百度 46 次、快手 34 次、阿里巴巴 34 次（共 567 次）；难度 中等；最近一次出现 2026-09-17"
+  },
+  {
+   "id": "6983847cd27af954",
+   "title": "相交链表（LeetCode 160）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/intersection-of-two-linked-lists",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-17T00:00:00+08:00",
+   "lastSeen": "2026-10-09T18:10:17+08:00",
+   "company": "字节跳动",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 116 次、携程 2 次（共 118 次）；难度 简单；最近一次出现 2026-09-17"
+  },
+  {
+   "id": "4850800a9f8bfcd8",
+   "title": "K 个一组翻转链表（LeetCode 25）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/reverse-nodes-in-k-group",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-16T00:00:00+08:00",
+   "lastSeen": "2026-10-08T18:53:53+08:00",
+   "company": "字节跳动",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 303 次、美团 68 次、腾讯 39 次、阿里巴巴 23 次、快手 22 次、滴滴 11 次（共 470 次）；难度 困难；最近一次出现 2026-09-16"
+  },
+  {
+   "id": "cef3f865b5e87e66",
+   "title": "全排列（LeetCode 46）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/permutations",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-16T00:00:00+08:00",
+   "lastSeen": "2026-10-09T18:10:17+08:00",
+   "company": "字节跳动",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 124 次、快手 30 次、百度 23 次、阿里巴巴 14 次、滴滴 12 次、华为 11 次（共 231 次）；难度 中等；最近一次出现 2026-09-16"
+  },
+  {
+   "id": "541b3f61c94a86a7",
+   "title": "最长上升子序列（LeetCode 300）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/longest-increasing-subsequence",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-16T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "字节跳动",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 109 次、腾讯 50 次、快手 30 次、百度 15 次、滴滴 9 次、拼多多 5 次（共 223 次）；难度 中等；最近一次出现 2026-09-16"
+  },
+  {
+   "id": "2261b0ca47b558ad",
+   "title": "螺旋矩阵（LeetCode 54）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/spiral-matrix",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-16T00:00:00+08:00",
+   "lastSeen": "2026-10-09T18:10:17+08:00",
+   "company": "字节跳动",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 138 次、拼多多 16 次、京东 5 次、商汤 2 次（共 161 次）；难度 中等；最近一次出现 2026-09-16"
+  },
+  {
+   "id": "bd4885b4390f3133",
+   "title": "二叉树的层序遍历（LeetCode 102）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/binary-tree-level-order-traversal",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-15T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "阿里巴巴",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：美团 84 次、快手 36 次、百度 19 次、阿里巴巴 15 次、小米 11 次、京东 6 次（共 180 次）；难度 中等；最近一次出现 2026-09-15"
+  },
+  {
+   "id": "034602d65c3c3d83",
+   "title": "合并两个有序链表（LeetCode 21）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/merge-two-sorted-lists",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-15T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "腾讯",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：美团 71 次、腾讯 61 次、快手 31 次、百度 21 次、京东 7 次、小米 7 次（共 202 次）；难度 简单；最近一次出现 2026-09-15"
+  },
+  {
+   "id": "b0a9a5de579bcd4a",
+   "title": "二叉树的锯齿形层次遍历（LeetCode 103）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/binary-tree-zigzag-level-order-traversal",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-15T00:00:00+08:00",
+   "lastSeen": "2026-10-08T18:53:53+08:00",
+   "company": "字节跳动",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 189 次、微软 12 次（共 201 次）；难度 中等；最近一次出现 2026-09-15"
+  },
+  {
+   "id": "09288facab92bc53",
+   "title": "复原IP地址（LeetCode 93）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/restore-ip-addresses",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-14T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "通过",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "93. 复原 IP 地址 - 有效 IP 地址 正好由四个整数（每个整数位于 0 到 255 之间组成，且不能含有前导 0），整数之间用 '.' 分隔。 * 例如：\"0.1.2.201\" 和 \"192.168.1.1\" 是 有效 IP 地址，但是 \"0.011.255.245\"、\"192.168.1.312\" 和 \"192.168@1.1\" 是 无效 IP 地址。 给定一个只包含数字的字符串 s ，用以表示一个 IP 地址，返回所有可能的有效 IP 地址，这些地址可以通过在 s 中插入 '.' 来形成。你 不能 重新排序或删除 s 中的任何数字。你可以按 任何 顺序返回答案。 示例 1： 输入：s = \"25525511135\" 输出：[\"255.255.11.135\",\"255.255.111.35\"] 示例 2： 输入：s = \"0000\" 输出：[\"0.0.0.0\"] 示例 3： 输"
+  },
+  {
+   "id": "d4f8de43bbc4838b",
+   "title": "合并区间（LeetCode 56）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/merge-intervals",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-14T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "56. 合并区间 - 以数组 intervals 表示若干个区间的集合，其中单个区间为 intervals[i] = [starti, endi] 。请你合并所有重叠的区间，并返回 一个不重叠的区间数组，该数组需恰好覆盖输入中的所有区间 。 示例 1： 输入：intervals = [[1,3],[2,6],[8,10],[15,18]] 输出：[[1,6],[8,10],[15,18]] 解释：区间 [1,3] 和 [2,6] 重叠, 将它们合并为 [1,6]. 示例 2： 输入：intervals = [[1,4],[4,5]] 输出：[[1,5]] 解释：区间 [1,4] 和 [4,5] 可被视为重叠区间。 示例 3： 输入：intervals = [[4,7],[1,4]] 输出：[[1,7]] 解释：区间 [1,4] 和 [4,7] 可被视为重叠区间。 提示： * 1 <= in"
+  },
+  {
+   "id": "d871f4a44fc6a38d",
+   "title": "最长公共子序列（LeetCode 1143）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/longest-common-subsequence",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-09T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "百度",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：快手 22 次、百度 20 次、滴滴 7 次、小米 5 次、网易 3 次（共 57 次）；难度 中等；最近一次出现 2026-09-09"
+  },
+  {
+   "id": "0a34bf1b8d4d244c",
+   "title": "两数之和（LeetCode 1）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/two-sum",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-07T00:00:00+08:00",
+   "lastSeen": "2026-10-09T18:10:17+08:00",
+   "company": "字节跳动",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 127 次、腾讯 30 次、阿里巴巴 27 次、百度 19 次、微软 12 次、华为 7 次（共 234 次）；难度 简单；最近一次出现 2026-09-07"
+  },
+  {
+   "id": "bc0ec1aea3e03eb1",
+   "title": "岛屿数量（LeetCode 200）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/number-of-islands",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-06T00:00:00+08:00",
+   "lastSeen": "2026-10-08T18:53:53+08:00",
+   "company": "字节跳动",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 191 次、百度 17 次、阿里巴巴 13 次、华为 11 次、滴滴 10 次、亚马逊 2 次（共 246 次）；难度 中等；最近一次出现 2026-09-06"
+  },
+  {
+   "id": "b4159e72c6a7bcaf",
+   "title": "最长有效括号（LeetCode 32）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/longest-valid-parentheses",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-02T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "32. 最长有效括号 - 给你一个只包含 '(' 和 ')' 的字符串，找出最长有效（格式正确且连续）括号 子串 的长度。 左右括号匹配，即每个左括号都有对应的右括号将其闭合的字符串是格式正确的，比如 \"(()())\"。 示例 1： 输入：s = \"(()\" 输出：2 解释：最长有效括号子串是 \"()\" 示例 2： 输入：s = \")()())\" 输出：4 解释：最长有效括号子串是 \"()()\" 示例 3： 输入：s = \"\" 输出：0 提示： * 0 <= s.length <= 3 * 104 * s[i] 为 '(' 或 ')'"
+  },
+  {
+   "id": "68cee1fb263dc177",
+   "title": "有效的括号（LeetCode 20）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/valid-parentheses",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-02T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "腾讯",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：腾讯 38 次、快手 26 次、百度 24 次、华为 16 次、阿里巴巴 13 次、滴滴 8 次（共 148 次）；难度 简单；最近一次出现 2026-09-02"
+  },
+  {
+   "id": "a12b4a1a2abd9e3b",
+   "title": "爬楼梯（LeetCode 70）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/climbing-stairs",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-09-01T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "70. 爬楼梯 - 假设你正在爬楼梯。需要 n 阶你才能到达楼顶。 每次你可以爬 1 或 2 个台阶。你有多少种不同的方法可以爬到楼顶呢？ 示例 1： 输入：n = 2 输出：2 解释：有两种方法可以爬到楼顶。 1. 1 阶 + 1 阶 2. 2 阶 示例 2： 输入：n = 3 输出：3 解释：有三种方法可以爬到楼顶。 1. 1 阶 + 1 阶 + 1 阶 2. 1 阶 + 2 阶 3. 2 阶 + 1 阶 提示： * 1 <= n <= 45"
+  },
+  {
+   "id": "d17aeca17c9ceb7f",
+   "title": "合并K个排序链表（LeetCode 23）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/merge-k-sorted-lists",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-08-21T00:00:00+08:00",
+   "lastSeen": "2026-10-09T18:10:17+08:00",
+   "company": "字节跳动",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 112 次、快手 27 次、拼多多 8 次、京东 6 次（共 153 次）；难度 困难；最近一次出现 2026-08-21"
+  },
+  {
+   "id": "fa012b290cb172ce",
+   "title": "环形链表（LeetCode 141）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/linked-list-cycle",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-08-17T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "通过",
+   "topics": [
+    "手撕/算法题",
+    "强化学习",
+    "工程/系统"
+   ],
+   "hasCoding": true,
+   "summary": "141. 环形链表 - 给你一个链表的头节点 head ，判断链表中是否有环。 如果链表中有某个节点，可以通过连续跟踪 next 指针再次到达，则链表中存在环。 为了表示给定链表中的环，评测系统内部使用整数 pos 来表示链表尾连接到链表中的位置（索引从 0 开始）。注意：pos 不作为参数进行传递 。仅仅是为了标识链表的实际情况。 如果链表中存在环 ，则返回 true 。 否则，返回 false 。 示例 1： [https://assets.leetcode.cn/aliyun-lc-upload/uploads/2018/12/07/circularlinkedlist.png] 输入：head = [3,2,0,-4], pos = 1 输出：true 解释：链表中有一个环，其尾部连接到第二个节点。 示例 2： [https://assets.leetcode.cn/aliyun-"
+  },
+  {
+   "id": "239a967411d7c011",
+   "title": "接雨水（LeetCode 42）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/trapping-rain-water",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-08-05T00:00:00+08:00",
+   "lastSeen": "2026-10-09T18:10:17+08:00",
+   "company": "字节跳动",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 130 次（共 130 次）；难度 困难；最近一次出现 2026-08-05"
+  },
+  {
+   "id": "7ac0334ed2ea47fc",
+   "title": "面试题 02.07. 链表相交 · 题解",
+   "url": "https://programmercarl.com/algo/linked-list/interview-02-07-linked-list-intersection.html",
+   "channel": "programmercarl",
+   "category": "coding",
+   "publishedAt": "2026-07-23T20:59:54+08:00",
+   "lastSeen": "2026-10-07T23:13:27+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": false,
+   "summary": "讲解力扣第 160 题链表相交的解法，使用双指针技巧高效找出两个单链表相交的起始节点，包括长度对齐法和巧妙双指针方法。"
+  },
+  {
+   "id": "51d45429d5e5c32e",
+   "title": "数组中重复的数据（LeetCode 442）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/find-all-duplicates-in-an-array",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-07-20T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "442. 数组中重复的数据 - 给你一个长度为 n 的整数数组 nums ，其中 nums 的所有整数都在范围 [1, n] 内，且每个整数出现 最多两次 。请你找出所有出现 两次 的整数，并以数组形式返回。 你必须设计并实现一个时间复杂度为 O(n) 且仅使用常量额外空间（不包括存储输出所需的空间）的算法解决此问题。 示例 1： 输入：nums = [4,3,2,7,8,2,3,1] 输出：[2,3] 示例 2： 输入：nums = [1,1,2] 输出：[1] 示例 3： 输入：nums = [1] 输出：[] 提示： * n == nums.length * 1 <= n <= 105 * 1 <= nums[i] <= n * nums 中的每个元素出现 一次 或 两次"
+  },
+  {
+   "id": "b4818f87973f1a83",
+   "title": "打家劫舍（LeetCode 198）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/house-robber",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-07-15T00:00:00+08:00",
+   "lastSeen": "2026-10-07T23:13:27+08:00",
+   "company": "网易",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：网易 2 次（共 2 次）；难度 中等；最近一次出现 2026-07-15"
+  },
+  {
+   "id": "d5f812800250910d",
+   "title": "买卖股票的最佳时机（LeetCode 121）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/best-time-to-buy-and-sell-stock",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-07-14T00:00:00+08:00",
+   "lastSeen": "2026-10-09T18:10:17+08:00",
+   "company": "字节跳动",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 148 次、腾讯 29 次、拼多多 9 次、京东 4 次、亚马逊 2 次（共 192 次）；难度 简单；最近一次出现 2026-07-14"
+  },
+  {
+   "id": "259992cc3c2440bd",
+   "title": "3.1 HTTP 常见面试题 · 八股",
+   "url": "https://xiaolincoding.com/network/2_http/http_interview.html",
+   "channel": "xiaolincoding",
+   "category": "exam",
+   "publishedAt": "2026-07-11T00:00:00+08:00",
+   "lastSeen": "2026-10-04T23:50:40+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "工程/系统"
+   ],
+   "hasCoding": false,
+   "summary": "图解计算机基础，覆盖 Java 后端面试，让天下没有难懂的八股文！"
+  },
+  {
+   "id": "51ad1df73787e81d",
+   "title": "两两交换链表中的节点（LeetCode 24）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/swap-nodes-in-pairs",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-06-10T00:00:00+08:00",
+   "lastSeen": "2026-10-05T00:27:23+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：拼多多 6 次（共 6 次）；难度 中等；最近一次出现 2026-06-10"
+  },
+  {
+   "id": "cc9024199418b8b6",
+   "title": "反转链表 II（LeetCode 92）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/reverse-linked-list-ii",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-06-09T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题",
+    "工程/系统"
+   ],
+   "hasCoding": true,
+   "summary": "92. 反转链表 II - 给你单链表的头指针 head 和两个整数 left 和 right ，其中 left <= right 。请你反转从位置 left 到位置 right 的链表节点，返回 反转后的链表 。 示例 1： [https://assets.leetcode.com/uploads/2021/02/19/rev2ex2.jpg] 输入：head = [1,2,3,4,5], left = 2, right = 4 输出：[1,4,3,2,5] 示例 2： 输入：head = [5], left = 1, right = 1 输出：[5] 提示： * 链表中节点数目为 n * 1 <= n <= 500 * -500 <= Node.val <= 500 * 1 <= left <= right <= n 进阶： 你可以使用一趟扫描完成反转吗？"
+  },
+  {
+   "id": "9c88c546a0a42c39",
+   "title": "26.1.22海康威视面经 · 面试题",
+   "url": "https://notes.kamacoder.com/interview/java/hikvision-interview-1-22.html",
+   "channel": "kamacoder_notes",
+   "category": "exam",
+   "publishedAt": "2026-05-25T15:50:35+08:00",
+   "lastSeen": "2026-10-03T02:51:14+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "工程/系统"
+   ],
+   "hasCoding": false,
+   "summary": "本文整理了海康威视Java开发岗位的面试真题与高频考点，涵盖Java注解、集合框架、SpringBoot自动装配、SpringCloud微服务、HTTP请求、MyBatis标签、Git命令及多线程创建等核心知识。内容聚焦大厂面试常见问题，如@Autowired与@Resource区别、线程安全集合类、GET与PUT差异等，并提供具体答案与对比分析，帮助求职者系统准备Java后端面试。"
+  },
+  {
+   "id": "ef0cffcf8009f99a",
+   "title": "字节跳动 Java 二面 面经 · 面试题",
+   "url": "https://notes.kamacoder.com/interview/java/bytedance-backend-interview-1-10-2.html",
+   "channel": "kamacoder_notes",
+   "category": "exam",
+   "publishedAt": "2026-05-25T15:50:35+08:00",
+   "lastSeen": "2026-10-03T02:29:26+08:00",
+   "company": "字节跳动",
+   "round": "二面",
+   "outcome": "",
+   "topics": [
+    "工程/系统"
+   ],
+   "hasCoding": false,
+   "summary": "字节跳动后端二面面经，涵盖慢SQL监控与优化、跳表原理、HashMap与ConcurrentHashMap线程安全、线程池设计要点、评论系统高并发架构设计、100G数据Top10场景题等，聚焦数据库优化、并发编程与系统设计核心考点。同时提炼面试官考察重点、技术追问方向和复习建议，适合准备Java后端、C++开发、大厂面经、校招、秋招和实习面试。"
+  },
+  {
+   "id": "3573d5a391326adf",
+   "title": "阿里巴巴 Java 一面 · 面试题",
+   "url": "https://notes.kamacoder.com/interview/java/alibaba-interview-11-23.html",
+   "channel": "kamacoder_notes",
+   "category": "exam",
+   "publishedAt": "2026-05-25T15:50:35+08:00",
+   "lastSeen": "2026-10-03T02:29:26+08:00",
+   "company": "阿里巴巴",
+   "round": "一面",
+   "outcome": "通过",
+   "topics": [
+    "手撕/算法题",
+    "工程/系统"
+   ],
+   "hasCoding": false,
+   "summary": "本文整理了阿里巴巴面试中关于慢SQL排查与优化、MySQL索引、Redis数据结构、设计模式、进程线程及SpringBoot自动装配等高频考点。详细解析了如何通过慢查询日志、explain执行计划定位慢SQL，并给出索引优化、数据库配置调整等解决方案。同时对比了B+树、B树、二叉树等数据结构差异，介绍了Redis的String、Hash、List等核心数据结构及其应用场景，以及观察者模式、装饰者模式的设计原理与实现。最后涵盖了线程状态转换和SpringBoot自动装配机制，是准备大厂面试的必备参考。"
+  },
+  {
+   "id": "ea7f4f63df99ef4d",
+   "title": "测试 · 面试题",
+   "url": "https://notes.kamacoder.com/interview/cpp/bytedance-backend-interview.html",
+   "channel": "kamacoder_notes",
+   "category": "exam",
+   "publishedAt": "2026-05-25T15:50:35+08:00",
+   "lastSeen": "2026-10-03T02:29:26+08:00",
+   "company": "字节跳动",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题",
+    "工程/系统"
+   ],
+   "hasCoding": true,
+   "summary": "本文整理了字节跳动面试中常见的高频考点，涵盖进程/线程/协程区别与应用场景、操作系统线程调度算法、MySQL InnoDB索引与事务隔离级别、主从复制原理、Raft算法与拜占庭问题对比、C++智能指针实现，以及一道数位DP/贪心算法题（用给定数字数组组成小于目标数的最大数）。内容聚焦大厂面试核心八股文与算法解题思路，帮助求职者系统复习操作系统、数据库、分布式与算法高频面试题。"
+  },
+  {
+   "id": "f228fcfd7135e465",
+   "title": "手撕Attention：不依赖框架从零实现注意力机制 · 大模型笔记",
+   "url": "https://notes.kamacoder.com/llm/transformer/attention_code.html",
+   "channel": "kamacoder_notes",
+   "category": "coding",
+   "publishedAt": "2026-05-25T15:50:35+08:00",
+   "lastSeen": "2026-10-04T23:50:40+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题",
+    "大模型/LLM",
+    "机器学习基础"
+   ],
+   "hasCoding": true,
+   "summary": "手撕Attention代码实现，从QKV矩阵计算、缩放点积注意力、Softmax归一化到加权求和完整拆解，不依赖深度学习框架，用纯Python理解注意力机制每一步的代码对应关系、输入输出维度和权重含义，适合准备Transformer原理和大模型面试手撕代码。"
+  },
+  {
+   "id": "32e22928e5f8f424",
+   "title": "手撕Transformer Block：把Attention、FFN、Norm拼起来 · 大模型笔记",
+   "url": "https://notes.kamacoder.com/llm/transformer/transformer_block_code.html",
+   "channel": "kamacoder_notes",
+   "category": "coding",
+   "publishedAt": "2026-05-25T15:50:35+08:00",
+   "lastSeen": "2026-10-04T23:50:40+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "通过",
+   "topics": [
+    "手撕/算法题",
+    "大模型/LLM",
+    "机器学习基础"
+   ],
+   "hasCoding": true,
+   "summary": "手撕Transformer Block代码实现，将Multi-Head Attention、FFN、LayerNorm、残差连接和Dropout等组件组装成一个完整Block，逐步理解Block内部数据流转、维度变化和前向计算逻辑，适合Transformer源码学习和大模型面试手撕代码。"
+  },
+  {
+   "id": "c73d5194d929ec92",
+   "title": "手撕FFN：Transformer前馈网络代码实现 · 大模型笔记",
+   "url": "https://notes.kamacoder.com/llm/transformer/fnn_code.html",
+   "channel": "kamacoder_notes",
+   "category": "coding",
+   "publishedAt": "2026-05-25T15:50:35+08:00",
+   "lastSeen": "2026-10-04T23:50:40+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题",
+    "大模型/LLM",
+    "工程/系统",
+    "项目/论文深挖"
+   ],
+   "hasCoding": true,
+   "summary": "手撕FFN代码实现，拆解Transformer前馈网络中的两层线性变换、ReLU激活、参数维度变化和逐Token计算过程，用简单Python代码理解Feed-Forward Network为什么能补充Attention表达能力，适合大模型面试和Transformer手撕代码复习。"
+  },
+  {
+   "id": "9262c69bc12f0945",
+   "title": "手撕LayerNorm与残差连接：别让基础组件被忽略 · 大模型笔记",
+   "url": "https://notes.kamacoder.com/llm/transformer/layernorm_residual_code.html",
+   "channel": "kamacoder_notes",
+   "category": "coding",
+   "publishedAt": "2026-05-25T15:50:35+08:00",
+   "lastSeen": "2026-10-04T23:50:40+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "通过",
+   "topics": [
+    "手撕/算法题",
+    "大模型/LLM"
+   ],
+   "hasCoding": true,
+   "summary": "手撕LayerNorm和残差连接代码实现，讲清LayerNorm均值方差计算、epsilon稳定项、可学习参数gamma和beta、残差连接加法操作以及它们在Transformer Block中的位置，帮助理解大模型训练稳定性和面试手撕代码。"
+  },
+  {
+   "id": "75ebbbbb519ddf80",
+   "title": "手撕Tiny Transformer：从零拼出一个完整模型 · 大模型笔记",
+   "url": "https://notes.kamacoder.com/llm/transformer/tiny_transformer_code.html",
+   "channel": "kamacoder_notes",
+   "category": "coding",
+   "publishedAt": "2026-05-25T15:50:35+08:00",
+   "lastSeen": "2026-10-04T23:50:40+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题",
+    "大模型/LLM"
+   ],
+   "hasCoding": true,
+   "summary": "手撕Tiny Transformer完整代码实现，把Attention、Multi-Head Attention、FFN、LayerNorm、残差连接和位置编码拼成一个可运行的小型Transformer模型，帮助理解各组件如何协同工作，适合大模型面试和Transformer源码入门。"
+  },
+  {
+   "id": "626fb94347658a17",
+   "title": "手撕Multi-Head Attention：从单头扩展到多头 · 大模型笔记",
+   "url": "https://notes.kamacoder.com/llm/transformer/mha_code.html",
+   "channel": "kamacoder_notes",
+   "category": "coding",
+   "publishedAt": "2026-05-25T15:50:35+08:00",
+   "lastSeen": "2026-10-04T23:50:40+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题",
+    "大模型/LLM"
+   ],
+   "hasCoding": true,
+   "summary": "手撕Multi-Head Attention代码实现，从单头注意力扩展到多头注意力，完整拆解QKV线性投影、head维度拆分、并行注意力计算、拼接合并、输出投影和张量维度变化过程，帮助理解Transformer核心组件和大模型面试手撕MHA代码。"
+  },
+  {
+   "id": "9fd31de19d017e94",
+   "title": "猜数字游戏（LeetCode 299）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/bulls-and-cows",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-05-21T00:00:00+08:00",
+   "lastSeen": "2026-10-07T23:13:27+08:00",
+   "company": "携程",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：携程 2 次（共 2 次）；难度 简单；最近一次出现 2026-05-21"
+  },
+  {
+   "id": "d5b5c17643a72510",
+   "title": "K 个不同整数的子数组（LeetCode 992）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/subarrays-with-k-different-integers",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-05-21T00:00:00+08:00",
+   "lastSeen": "2026-10-07T23:13:27+08:00",
+   "company": "携程",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：携程 1 次（共 1 次）；难度 困难；最近一次出现 2026-05-21"
+  },
+  {
+   "id": "6b1d855864495bbf",
+   "title": "每日温度（LeetCode 739）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/daily-temperatures",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-05-19T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "739. 每日温度 - 给定一个整数数组 temperatures ，表示每天的温度，返回一个数组 answer ，其中 answer[i] 是指对于第 i 天，下一个更高温度出现在几天后。如果气温在这之后都不会升高，请在该位置用 0 来代替。 示例 1: 输入: temperatures = [73,74,75,71,69,72,76,73] 输出: [1,1,4,2,1,1,0,0] 示例 2: 输入: temperatures = [30,40,50,60] 输出: [1,1,1,0] 示例 3: 输入: temperatures = [30,60,90] 输出: [1,1,0] 提示： * 1 <= temperatures.length <= 105 * 30 <= temperatures[i] <= 100"
+  },
+  {
+   "id": "1321bd001104e3b5",
+   "title": "编辑距离（LeetCode 72）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/edit-distance",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-05-17T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "百度",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：百度 15 次、小米 7 次、网易 3 次、商汤 2 次、携程 2 次（共 29 次）；难度 困难；最近一次出现 2026-05-17"
+  },
+  {
+   "id": "25052c937d781b08",
+   "title": "删除排序链表中的重复元素 II（LeetCode 82）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/remove-duplicates-from-sorted-list-ii",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-05-13T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题",
+    "工程/系统"
+   ],
+   "hasCoding": true,
+   "summary": "82. 删除排序链表中的重复元素 II - 给定一个 已排序 的链表的头节点 head。 删除原始链表中所有 重复 数字的节点，只留下 不同 的数字。 返回 已排序 的链表。 示例 1： [https://assets.leetcode.com/uploads/2021/01/04/linkedlist1.jpg] 输入：head = [1,2,3,3,4,4,5] 输出：[1,2,5] 示例 2： [https://assets.leetcode.com/uploads/2021/01/04/linkedlist2.jpg] 输入：head = [1,1,1,2,3] 输出：[2,3] 提示： * 链表中节点数目在范围 [0, 300] 内 * -100 <= Node.val <= 100 * 题目数据保证链表已经按升序 排列"
+  },
+  {
+   "id": "da957bee384af94c",
+   "title": "二分查找（LeetCode 704）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/binary-search",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-05-10T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "704. 二分查找 - 给定一个 n 个元素有序的（升序）整型数组 nums 和一个目标值 target ，写一个函数搜索 nums 中的 target，如果 target 存在返回下标，否则返回 -1。 你必须编写一个具有 O(log n) 时间复杂度的算法。 示例 1: 输入: nums = [-1,0,3,5,9,12], target = 9 输出: 4 解释: 9 出现在 nums 中并且下标为 4 示例 2: 输入: nums = [-1,0,3,5,9,12], target = 2 输出: -1 解释: 2 不存在 nums 中因此返回 -1 提示： 1. 你可以假设 nums 中的所有元素是不重复的。 2. n 将在 [1, 10000]之间。 3. nums 的每个元素都将在 [-9999, 9999]之间。"
+  },
+  {
+   "id": "8fdf14e71f03fa1d",
+   "title": "百度面经 · 面试题",
+   "url": "https://notes.kamacoder.com/interview/java/baidu-interview-4-28.html",
+   "channel": "kamacoder_notes",
+   "category": "coding",
+   "publishedAt": "2026-04-30T11:54:17+08:00",
+   "lastSeen": "2026-10-03T02:29:26+08:00",
+   "company": "百度",
+   "round": "",
+   "outcome": "通过",
+   "topics": [
+    "工程/系统"
+   ],
+   "hasCoding": false,
+   "summary": "百度Java面经，涵盖ThreadLocal实现原理、ThreadLocalMap弱引用与内存泄漏、垃圾回收器与GC Roots、MySQL存储引擎InnoDB、事务隔离级别、并发Update执行结果、OSI网络模型、数据链路层协议等面试题。"
+  },
+  {
+   "id": "832dd4c263c1763f",
+   "title": "字节跳动电商后端面经 · 面试题",
+   "url": "https://notes.kamacoder.com/interview/java/bytedance-ecommerce-backend-1-25.html",
+   "channel": "kamacoder_notes",
+   "category": "coding",
+   "publishedAt": "2026-04-30T11:54:17+08:00",
+   "lastSeen": "2026-10-03T02:29:26+08:00",
+   "company": "字节跳动",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "工程/系统"
+   ],
+   "hasCoding": false,
+   "summary": "字节跳动电商后端校招面经，涵盖流式读取与文件上传、Java四种引用、ConcurrentHashMap底层原理、volatile原理、B树与B+树区别、索引失效场景、RedoLog与UndoLog、Redis缓存穿透击穿雪崩、图判环算法等高频考点。"
+  },
+  {
+   "id": "7ec085fa926e899f",
+   "title": "用 Rand7() 实现 Rand10()（LeetCode 470）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/implement-rand10-using-rand7",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-04-27T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题",
+    "工程/系统"
+   ],
+   "hasCoding": true,
+   "summary": "470. 用 Rand7() 实现 Rand10() - 给定方法 rand7 可生成 [1,7] 范围内的均匀随机整数，试写一个方法 rand10 生成 [1,10] 范围内的均匀随机整数。 你只能调用 rand7() 且不能调用其他方法。请不要使用系统的 Math.random() 方法。 每个测试用例将有一个内部参数 n，即你实现的函数 rand10() 在测试时将被调用的次数。请注意，这不是传递给 rand10() 的参数。 示例 1: 输入: 1 输出: [2] 示例 2: 输入: 2 输出: [2,8] 示例 3: 输入: 3 输出: [3,8,10] 提示: * 1 <= n <= 105 进阶: * rand7()调用次数的 期望值 [https://en.wikipedia.org/wiki/Expected_value] 是多少 ? * 你能否尽量少调用 rand7()"
+  },
+  {
+   "id": "06a1257da6538f15",
+   "title": "字符串转换整数 (atoi)（LeetCode 8）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/string-to-integer-atoi",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-04-22T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "通过",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "8. 字符串转换整数 (atoi) - 请你来实现一个 myAtoi(string s) 函数，使其能将字符串转换成一个 32 位有符号整数。 函数 myAtoi(string s) 的算法如下： 1. 空格：读入字符串并丢弃无用的前导空格（\" \"） 2. 符号：检查下一个字符（假设还未到字符末尾）为 '-' 还是 '+'。如果两者都不存在，则假定结果为正。 3. 转换：通过跳过前置零来读取该整数，直到遇到非数字字符或到达字符串的结尾。如果没有读取数字，则结果为0。 4. 舍入：如果整数数超过 32 位有符号整数范围 [−231, 231 − 1] ，需要截断这个整数，使其保持在这个范围内。具体来说，小于 −231 的整数应该被舍入为 −231 ，大于 231 − 1 的整数应该被舍入为 231 − 1 。 返回整数作为最终结果。 示例 1： 输入：s = \"42\" 输出：42 解释：加粗"
+  },
+  {
+   "id": "09aa43068bb346b9",
+   "title": "求根到叶子节点数字之和（LeetCode 129）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/sum-root-to-leaf-numbers",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-04-21T00:00:00+08:00",
+   "lastSeen": "2026-10-06T20:08:32+08:00",
+   "company": "网易",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：网易 5 次（共 5 次）；难度 中等；最近一次出现 2026-04-21"
+  },
+  {
+   "id": "609e428dc2d5ab2d",
+   "title": "最大数（LeetCode 179）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/largest-number",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-04-19T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "179. 最大数 - 给定一组非负整数 nums，重新排列每个数的顺序（每个数不可拆分）使之组成一个最大的整数。 注意：输出结果可能非常大，所以你需要返回一个字符串而不是整数。 示例 1： 输入：nums = [10,2] 输出：\"210\" 示例 2： 输入：nums = [3,30,34,5,9] 输出：\"9534330\" 提示： * 1 <= nums.length <= 100 * 0 <= nums[i] <= 109"
+  },
+  {
+   "id": "0f5f6deb1e90836f",
+   "title": "括号生成（LeetCode 22）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/generate-parentheses",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-04-17T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "22. 括号生成 - 数字 n 代表生成括号的对数，请你设计一个函数，用于能够生成所有可能的并且 有效的 括号组合。 示例 1： 输入：n = 3 输出：[\"((()))\",\"(()())\",\"(())()\",\"()(())\",\"()()()\"] 示例 2： 输入：n = 1 输出：[\"()\"] 提示： * 1 <= n <= 8"
+  },
+  {
+   "id": "ed644b536e12fc98",
+   "title": "字节跳动一面 Java 面经 · 面试题",
+   "url": "https://notes.kamacoder.com/interview/java/bytedance-backend-interview-1-10.html",
+   "channel": "kamacoder_notes",
+   "category": "exam",
+   "publishedAt": "2026-04-16T09:43:37+08:00",
+   "lastSeen": "2026-10-03T02:29:26+08:00",
+   "company": "字节跳动",
+   "round": "一面",
+   "outcome": "",
+   "topics": [
+    "工程/系统"
+   ],
+   "hasCoding": false,
+   "summary": "本文解析字节跳动后端面试中MySQL主从同步、Binlog、ACID保证、性能监控、Redis一致性、进程线程协程、慢SQL优化、跳表原理、HashMap与ConcurrentHashMap区别、线程安全实现、设计模式应用、线程池设计要点及评论系统与大数据Top10场景题等高频考点，涵盖数据库、操作系统、数据结构、并发编程与系统设计核心知识，助力应对大厂技术面试。"
+  },
+  {
+   "id": "99bc16b2be745ea6",
+   "title": "滑动窗口最大值（LeetCode 239）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/sliding-window-maximum",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-04-16T00:00:00+08:00",
+   "lastSeen": "2026-10-05T00:27:23+08:00",
+   "company": "华为",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：华为 5 次、商汤 2 次（共 7 次）；难度 困难；最近一次出现 2026-04-16"
+  },
+  {
+   "id": "8f0349de263db386",
+   "title": "字符串相乘（LeetCode 43）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/multiply-strings",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-04-15T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "43. 字符串相乘 - 给定两个以字符串形式表示的非负整数 num1 和 num2，返回 num1 和 num2 的乘积，它们的乘积也表示为字符串形式。 注意：不能使用任何内置的 BigInteger 库或直接将输入转换为整数。 示例 1: 输入: num1 = \"2\", num2 = \"3\" 输出: \"6\" 示例 2: 输入: num1 = \"123\", num2 = \"456\" 输出: \"56088\" 提示： * 1 <= num1.length, num2.length <= 200 * num1 和 num2 只能由数字组成。 * num1 和 num2 都不包含任何前导零，除了数字0本身。"
+  },
+  {
+   "id": "89c412c833ced6e2",
+   "title": "二叉树中的最大路径和（LeetCode 124）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/binary-tree-maximum-path-sum",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-04-12T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题",
+    "工程/系统"
+   ],
+   "hasCoding": true,
+   "summary": "124. 二叉树中的最大路径和 - 二叉树中的 路径 被定义为一条节点序列，序列中每对相邻节点之间都存在一条边。同一个节点在一条路径序列中 至多出现一次 。该路径 至少包含一个 节点，且不一定经过根节点。 路径和 是路径中各节点值的总和。 给你一个二叉树的根节点 root ，返回其 最大路径和 。 示例 1： [https://assets.leetcode.com/uploads/2020/10/13/exx1.jpg] 输入：root = [1,2,3] 输出：6 解释：最优路径是 2 -> 1 -> 3 ，路径和为 2 + 1 + 3 = 6 示例 2： [https://assets.leetcode.com/uploads/2020/10/13/exx2.jpg] 输入：root = [-10,9,20,null,null,15,7] 输出：42 解释：最优路径是 15 -> 2"
+  },
+  {
+   "id": "ce5e27471954f321",
+   "title": "小鹏汽车嵌入式开发一面面经 · 面试题",
+   "url": "https://notes.kamacoder.com/interview/cpp/xpeng-embedded-interview-1.html",
+   "channel": "kamacoder_notes",
+   "category": "exam",
+   "publishedAt": "2026-03-30T18:31:25+08:00",
+   "lastSeen": "2026-10-03T02:29:26+08:00",
+   "company": "小鹏汽车",
+   "round": "一面",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题",
+    "工程/系统",
+    "项目/论文深挖"
+   ],
+   "hasCoding": false,
+   "summary": "本文记录了小鹏汽车嵌入式开发岗位一面的真实面试经历，涵盖C++、Python、数据库、数据结构与算法等高频考点。面试官不仅考察了面向对象三大特征（封装、继承、多态）、虚函数表、C++内存管理、vector与list底层区别等八股文，还深入追问了‘为什么vector内存连续’、‘数据库索引的优缺点及其原因’等底层原理。同时包含链表判环、反转链表、哈希表冲突解决等算法问题，以及Python列表与元组区别、深拷贝与浅拷贝等知识点。整体面试节奏快，注重知其然并知其所以然，适合准备嵌入式、C++后端等方向的大厂面试参考。"
+  },
+  {
+   "id": "3aade5cadbc0c493",
+   "title": "面试总结 · 面试题",
+   "url": "https://notes.kamacoder.com/interview/cpp/uniview-embedded-interview.html",
+   "channel": "kamacoder_notes",
+   "category": "coding",
+   "publishedAt": "2026-03-30T18:31:25+08:00",
+   "lastSeen": "2026-10-03T02:29:26+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题",
+    "多模态/CV",
+    "工程/系统",
+    "项目/论文深挖"
+   ],
+   "hasCoding": true,
+   "summary": "本文总结了一次嵌入式软件开发岗位的线下面试经历，涵盖C++/C语言项目深度考察、现场手撕代码等高频面试环节。具体涉及AI项目安全性检测（密码哈希加密、前端掩码）、数据库管理（SQLite操作）、嵌入式通信（UART/RS-485）、TCP/UDP区别、堆栈底层原理、进程线程区别与同步（互斥锁、共享内存），以及线性队列和线程安全访问的完整代码实现，为应对大厂技术面试提供实战参考。"
+  },
+  {
+   "id": "db53d0461c283e39",
+   "title": "Bytedance Interview 2 · 面试题",
+   "url": "https://notes.kamacoder.com/interview/cpp/bytedance-interview-2.html",
+   "channel": "kamacoder_notes",
+   "category": "coding",
+   "publishedAt": "2026-03-30T18:31:25+08:00",
+   "lastSeen": "2026-10-03T02:29:26+08:00",
+   "company": "字节跳动",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题",
+    "工程/系统",
+    "项目/论文深挖"
+   ],
+   "hasCoding": true,
+   "summary": "本文记录了字节跳动面试中关于转码背景、数据库内核实现、B+树索引原理、Raft选举算法、团队协作经验及LeetCode 93.复原IP地址算法题的详细回答。涵盖CMU 15-445数据库项目优化、InnoDB选择B+树的原因、Raft任期与超时机制等高频考点，适合准备大厂后端开发面试的求职者参考学习。"
+  },
+  {
+   "id": "5510a7b582cb82ec",
+   "title": "26.1.1字节跳动二面 · 面试题",
+   "url": "https://notes.kamacoder.com/interview/java/bytedance-interview-round2-1-1.html",
+   "channel": "kamacoder_notes",
+   "category": "exam",
+   "publishedAt": "2026-03-30T18:31:25+08:00",
+   "lastSeen": "2026-10-03T02:29:26+08:00",
+   "company": "字节跳动",
+   "round": "二面",
+   "outcome": "通过",
+   "topics": [
+    "强化学习",
+    "工程/系统"
+   ],
+   "hasCoding": false,
+   "summary": "本文整理了字节跳动Java后端二面高频面试题，涵盖并发编程核心考点：synchronized与ReentrantLock底层实现（偏向锁、轻量级锁、重量级锁、AQS）、volatile可见性与有序性原理、ThreadLocal内存泄漏原因、线程池参数配置与拒绝策略、JVM内存结构与GC Roots、CMS与G1垃圾回收器区别、MySQL事务隔离级别与索引类型、Redis缓存问题解决方案及LRU缓存实现逻辑，帮助求职者系统性准备大厂面试。"
+  },
+  {
+   "id": "c87ed18371d764d0",
+   "title": "Baidu Test Interview · 面试题",
+   "url": "https://notes.kamacoder.com/interview/cpp/baidu-test-interview.html",
+   "channel": "kamacoder_notes",
+   "category": "exam",
+   "publishedAt": "2026-03-30T18:31:25+08:00",
+   "lastSeen": "2026-10-03T02:29:26+08:00",
+   "company": "百度",
+   "round": "一面",
+   "outcome": "",
+   "topics": [
+    "工程/系统"
+   ],
+   "hasCoding": false,
+   "summary": "本文整理了百度测试开发一面的高频面试题，涵盖Python常用模块（numpy、pandas、requests）、数据结构（list、tuple、set区别）、C++多线程与并发、Linux常用命令、算法复杂度分析以及搜索框测试用例设计等核心考点。内容聚焦大厂面试实际考察点，帮助求职者系统准备测试开发岗位技术面试。"
+  },
+  {
+   "id": "0e6ec16a4d728100",
+   "title": "Xiao Software Interview 2 · 面试题",
+   "url": "https://notes.kamacoder.com/interview/cpp/xiao-software-interview-2.html",
+   "channel": "kamacoder_notes",
+   "category": "exam",
+   "publishedAt": "2026-03-30T18:31:25+08:00",
+   "lastSeen": "2026-10-03T02:29:26+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题",
+    "工程/系统",
+    "项目/论文深挖"
+   ],
+   "hasCoding": true,
+   "summary": "本文整理了小软面试中关于转码背景、数据库项目、B+树索引、Raft算法、团队协作与算法题的完整回答。涵盖CMU 15-445数据库实现优化、InnoDB选择B+树的原因与‘+’的含义、Raft选举机制与任期作用、DFS回溯解决IP地址划分问题等高频考点，适合准备大厂后端开发面试的求职者参考。"
+  },
+  {
+   "id": "b3830db25ddedb80",
+   "title": "阿里巴巴面经 · 面试题",
+   "url": "https://notes.kamacoder.com/interview/java/alibaba-interview.html",
+   "channel": "kamacoder_notes",
+   "category": "coding",
+   "publishedAt": "2026-03-30T18:31:25+08:00",
+   "lastSeen": "2026-10-03T02:29:26+08:00",
+   "company": "阿里巴巴",
+   "round": "",
+   "outcome": "通过",
+   "topics": [
+    "工程/系统"
+   ],
+   "hasCoding": false,
+   "summary": "本文整理了阿里巴巴面试中常见的高频考点，涵盖MySQL事务隔离级别、索引失效场景、进程与线程区别、Java锁机制、JVM内存结构与垃圾回收、TCP三次握手、分布式系统一致性问题及Raft算法等核心内容。详细解析了读未提交、读已提交、可重复读、串行化四种隔离级别的区别与适用场景，列举了模糊查询、函数计算、隐式类型转换等导致索引失效的典型情况，对比了进程与线程的资源分配与调度差异，深入剖析了synchronized实现原理、分布式锁的Redis与ZooKeeper方案，并阐述了强一致性、线性一致性等分布式一致性模型，以及Raft算法如何通过领导者选举和日志复制保证多节点状态机的一致性。适合准备大厂技术面试的开发者系统复习。"
+  },
+  {
+   "id": "b5d97e0997c4193a",
+   "title": "盒马面经 · 面试题",
+   "url": "https://notes.kamacoder.com/interview/java/freshhema-interview.html",
+   "channel": "kamacoder_notes",
+   "category": "coding",
+   "publishedAt": "2026-03-30T18:31:25+08:00",
+   "lastSeen": "2026-10-03T02:29:26+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "通过",
+   "topics": [
+    "工程/系统"
+   ],
+   "hasCoding": false,
+   "summary": "本文整理了盒马面试中高频的 Java 与并发编程面试题，涵盖面向对象三大特性、多态实现、抽象类与接口区别、线程安全 List（Vector、Collections.synchronizedList、CopyOnWriteArrayList）、ArrayList 线程安全方案、并发三要素（原子性、可见性、有序性）、synchronized 与 Lock 区别、Lock 实现（ReentrantLock、ReentrantReadWriteLock）、自旋锁性质、公平锁与非公平锁、Java 异常机制、反射应用场景以及 MySQL 索引分类等核心考点，帮助求职者系统准备大厂技术面试。"
+  },
+  {
+   "id": "2dc995f84b8cef04",
+   "title": "亚信安全C++一面面经 · 面试题",
+   "url": "https://notes.kamacoder.com/interview/cpp/yaxin-security-interview.html",
+   "channel": "kamacoder_notes",
+   "category": "coding",
+   "publishedAt": "2026-03-30T18:31:25+08:00",
+   "lastSeen": "2026-10-03T02:29:26+08:00",
+   "company": "",
+   "round": "一面",
+   "outcome": "",
+   "topics": [
+    "工程/系统"
+   ],
+   "hasCoding": false,
+   "summary": "本文整理了亚信安全C++开发岗位一面中涉及的高频面试题，涵盖C++核心机制（函数重载、虚函数、构造函数/析构函数）、计算机网络（TCP/UDP区别、粘包解决）、操作系统（进程/线程/协程、内核机制、内存管理、fork函数）以及多线程同步（自旋锁等）。内容聚焦于面试考点，解析了名称修饰、虚函数表、动态绑定、内存隔离、虚拟内存、页面置换算法等关键概念，并提供了对比表格与代码示例，帮助求职者系统准备大厂技术面试。"
+  },
+  {
+   "id": "204deb7fdbc149b1",
+   "title": "12.10京东面经 · 面试题",
+   "url": "https://notes.kamacoder.com/interview/java/jd-interview-12-10.html",
+   "channel": "kamacoder_notes",
+   "category": "coding",
+   "publishedAt": "2026-03-30T18:31:25+08:00",
+   "lastSeen": "2026-10-03T02:51:14+08:00",
+   "company": "京东",
+   "round": "",
+   "outcome": "通过",
+   "topics": [
+    "工程/系统"
+   ],
+   "hasCoding": false,
+   "summary": "本文整理了京东面试中常见的Java基础、多线程、设计模式与分布式系统高频考点，涵盖成员变量与局部变量区别、重载与重写、包装类缓存机制、ThreadLocal内存泄漏、synchronized与volatile对比、双重检查锁单例模式、事务ACID特性及Zookeeper的Zab协议等核心面试题，帮助求职者系统复习大厂面试核心知识。"
+  },
+  {
+   "id": "92d6320025f01d64",
+   "title": "广联达C++软开岗面经 · 面试题",
+   "url": "https://notes.kamacoder.com/interview/cpp/glodon-cpp-interview.html",
+   "channel": "kamacoder_notes",
+   "category": "coding",
+   "publishedAt": "2026-03-30T18:31:25+08:00",
+   "lastSeen": "2026-10-03T02:29:26+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题",
+    "项目/论文深挖"
+   ],
+   "hasCoding": false,
+   "summary": "本文记录了广联达C++软件开发岗位的面试真题与详细解答，涵盖STL容器（vector/list）、排序算法、C++11新特性、面向对象核心概念及项目设计等高频考点。内容针对大厂面试准备，提供了从内存管理、数据结构到现代C++特性的实战解析，帮助求职者夯实基础，从容应对技术面试。"
+  },
+  {
+   "id": "faf571fced5567f7",
+   "title": "回文链表（LeetCode 234）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/palindrome-linked-list",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-03-27T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题",
+    "工程/系统"
+   ],
+   "hasCoding": true,
+   "summary": "234. 回文链表 - 给你一个单链表的头节点 head ，请你判断该链表是否为回文链表。如果是，返回 true ；否则，返回 false 。 示例 1： [https://assets.leetcode.com/uploads/2021/03/03/pal1linked-list.jpg] 输入：head = [1,2,2,1] 输出：true 示例 2： [https://assets.leetcode.com/uploads/2021/03/03/pal2linked-list.jpg] 输入：head = [1,2] 输出：false 提示： * 链表中节点数目在范围[1, 105] 内 * 0 <= Node.val <= 9 进阶：你能否用 O(n) 时间复杂度和 O(1) 空间复杂度解决此题？"
+  },
+  {
+   "id": "a4076787db83350f",
+   "title": "验证二叉搜索树（LeetCode 98）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/validate-binary-search-tree",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-02-12T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题",
+    "工程/系统"
+   ],
+   "hasCoding": true,
+   "summary": "98. 验证二叉搜索树 - 给你一个二叉树的根节点 root ，判断其是否是一个有效的二叉搜索树。 有效 二叉搜索树定义如下： * 节点的左子树只包含 严格小于 当前节点的数。 * 节点的右子树只包含 严格大于 当前节点的数。 * 所有左子树和右子树自身必须也是二叉搜索树。 示例 1： [https://assets.leetcode.com/uploads/2020/12/01/tree1.jpg] 输入：root = [2,1,3] 输出：true 示例 2： [https://assets.leetcode.com/uploads/2020/12/01/tree2.jpg] 输入：root = [5,1,4,null,null,3,6] 输出：false 解释：根节点的值是 5 ，但是右子节点的值是 4 。 提示： * 树中节点数目范围在[1, 104] 内 * -231 <= No"
+  },
+  {
+   "id": "b5dbf49168a29897",
+   "title": "乘积最大子数组（LeetCode 152）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/maximum-product-subarray",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2026-02-02T00:00:00+08:00",
+   "lastSeen": "2026-10-06T20:08:32+08:00",
+   "company": "商汤",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：小米 4 次、商汤 3 次（共 7 次）；难度 中等；最近一次出现 2026-02-02"
+  },
+  {
+   "id": "9fd84931828d616b",
+   "title": "验证栈序列（LeetCode 946）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/validate-stack-sequences",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2025-09-25T00:00:00+08:00",
+   "lastSeen": "2026-10-07T23:13:27+08:00",
+   "company": "旷视",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：旷视 1 次（共 1 次）；难度 中等；最近一次出现 2025-09-25"
+  },
+  {
+   "id": "b28da8fc23e5ddfd",
+   "title": "环形链表 II（LeetCode 142）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/linked-list-cycle-ii",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2025-09-03T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "美团",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：美团 36 次、京东 10 次、商汤 3 次、旷视 3 次、网易 3 次（共 55 次）；难度 中等；最近一次出现 2025-09-03"
+  },
+  {
+   "id": "a0317a255fd0fa7c",
+   "title": "用栈实现队列（LeetCode 232）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/implement-queue-using-stacks",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2025-08-27T00:00:00+08:00",
+   "lastSeen": "2026-10-06T20:08:32+08:00",
+   "company": "小米",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：小米 5 次（共 5 次）；难度 简单；最近一次出现 2025-08-27"
+  },
+  {
+   "id": "cbb432d676b7e39b",
+   "title": "快照数组（LeetCode 1146）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/snapshot-array",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2025-08-05T00:00:00+08:00",
+   "lastSeen": "2026-10-07T23:13:27+08:00",
+   "company": "旷视",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：旷视 1 次（共 1 次）；难度 中等；最近一次出现 2025-08-05"
+  },
+  {
+   "id": "cc8fcc47869cfef7",
+   "title": "除自身以外数组的乘积（LeetCode 238）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/product-of-array-except-self",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2025-07-25T00:00:00+08:00",
+   "lastSeen": "2026-10-07T23:13:27+08:00",
+   "company": "旷视",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：旷视 1 次（共 1 次）；难度 中等；最近一次出现 2025-07-25"
+  },
+  {
+   "id": "294eb60eaad2209e",
+   "title": "比较版本号（LeetCode 165）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/compare-version-numbers",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2025-07-14T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "165. 比较版本号 - 给你两个 版本号字符串 version1 和 version2 ，请你比较它们。版本号由被点 '.' 分开的修订号组成。修订号的值 是它 转换为整数 并忽略前导零。 比较版本号时，请按 从左到右的顺序 依次比较它们的修订号。如果其中一个版本字符串的修订号较少，则将缺失的修订号视为 0。 返回规则如下： * 如果 version1 version2 返回 1， * 除此之外返回 0。 示例 1： 输入：version1 = \"1.2\", version2 = \"1.10\" 输出：-1 解释： version1 的第二个修订号为 \"2\"，version2 的第二个修订号为 \"10\"：2 < 10，所以 version1 < version2。 示例 2： 输入：version1 = \"1.01\", version2 = \"1.001\" 输出：0 解释： 忽略前导零，\""
+  },
+  {
+   "id": "360a3d2041702d32",
+   "title": "两数相加（LeetCode 2）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/add-two-numbers",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2025-05-26T00:00:00+08:00",
+   "lastSeen": "2026-10-06T20:08:32+08:00",
+   "company": "小米",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：小米 5 次（共 5 次）；难度 中等；最近一次出现 2025-05-26"
+  },
+  {
+   "id": "f9313cfd46c35e3f",
+   "title": "基本计算器 II（LeetCode 227）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/basic-calculator-ii",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2025-05-14T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "227. 基本计算器 II - 给你一个字符串表达式 s ，请你实现一个基本计算器来计算并返回它的值。 整数除法仅保留整数部分。 你可以假设给定的表达式总是有效的。所有中间结果将在 [-231, 231 - 1] 的范围内。 注意：不允许使用任何将字符串作为数学表达式计算的内置函数，比如 eval() 。 示例 1： 输入：s = \"3+2*2\" 输出：7 示例 2： 输入：s = \" 3/2 \" 输出：1 示例 3： 输入：s = \" 3+5 / 2 \" 输出：5 提示： * 1 <= s.length <= 3 * 105 * s 由整数和算符 ('+', '-', '*', '/') 组成，中间由一些空格隔开 * s 表示一个有效表达式 * 表达式中的所有整数都是非负整数，且在范围 [0, 231 - 1] 内 * 题目数据 保证 答案是一个 32-bit 整数"
+  },
+  {
+   "id": "e4adb503231f1d3b",
+   "title": "从中序与后序遍历序列构造二叉树（LeetCode 106）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/construct-binary-tree-from-inorder-and-postorder-traversal",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2025-03-13T00:00:00+08:00",
+   "lastSeen": "2026-10-06T20:08:32+08:00",
+   "company": "网易",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：网易 3 次（共 3 次）；难度 中等；最近一次出现 2025-03-13"
+  },
+  {
+   "id": "98f0a21085f9bea8",
+   "title": "有效三角形的个数（LeetCode 611）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/valid-triangle-number",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2024-11-23T00:00:00+08:00",
+   "lastSeen": "2026-10-06T20:08:32+08:00",
+   "company": "旷视",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：亚马逊 3 次、旷视 1 次（共 4 次）；难度 中等；最近一次出现 2024-11-23"
+  },
+  {
+   "id": "d4d833d3509ebeb2",
+   "title": "K 次串联后最大子数组之和（LeetCode 1191）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/k-concatenation-maximum-sum",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2024-11-23T00:00:00+08:00",
+   "lastSeen": "2026-10-08T18:53:53+08:00",
+   "company": "旷视",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：旷视 1 次（共 1 次）；难度 中等；最近一次出现 2024-11-23"
+  },
+  {
+   "id": "c69e65172fd9b386",
+   "title": "部门工资前三高的所有员工（LeetCode 185）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/department-top-three-salaries",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2024-11-23T00:00:00+08:00",
+   "lastSeen": "2026-10-08T18:53:53+08:00",
+   "company": "旷视",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：旷视 1 次（共 1 次）；难度 困难；最近一次出现 2024-11-23"
+  },
+  {
+   "id": "8d051930882dc75c",
+   "title": "去除重复字母（LeetCode 316）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/remove-duplicate-letters",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2024-10-14T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题",
+    "工程/系统"
+   ],
+   "hasCoding": true,
+   "summary": "316. 去除重复字母 - 给你一个字符串 s ，请你去除字符串中重复的字母，使得每个字母只出现一次。需保证 返回结果的字典序最小（要求不能打乱其他字符的相对位置）。 示例 1： 输入：s = \"bcabc\" 输出：\"abc\" 示例 2： 输入：s = \"cbacdcbc\" 输出：\"acdb\" 提示： * 1 <= s.length <= 104 * s 由小写英文字母组成 注意：该题与 1081 https://leetcode.cn/problems/smallest-subsequence-of-distinct-characters [https://leetcode.cn/problems/smallest-subsequence-of-distinct-characters] 相同"
+  },
+  {
+   "id": "6fcf623ea34b4f59",
+   "title": "最大连续1的个数 III（LeetCode 1004）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/max-consecutive-ones-iii",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2024-10-14T00:00:00+08:00",
+   "lastSeen": "2026-10-05T00:27:23+08:00",
+   "company": "华为",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：华为 7 次（共 7 次）；难度 中等；最近一次出现 2024-10-14"
+  },
+  {
+   "id": "eabb42e6f3a9fcfa",
+   "title": "子集（LeetCode 78）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/subsets",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2024-07-25T00:00:00+08:00",
+   "lastSeen": "2026-10-08T18:53:53+08:00",
+   "company": "旷视",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：旷视 1 次（共 1 次）；难度 中等；最近一次出现 2024-07-25"
+  },
+  {
+   "id": "bd45ebea5262953c",
+   "title": "最长公共前缀（LeetCode 14）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/longest-common-prefix",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2024-07-24T00:00:00+08:00",
+   "lastSeen": "2026-10-06T20:08:32+08:00",
+   "company": "旷视",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：亚马逊 2 次、旷视 1 次（共 3 次）；难度 简单；最近一次出现 2024-07-24"
+  },
+  {
+   "id": "137c398189e2c315",
+   "title": "字符串解码（LeetCode 394）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/decode-string",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2024-07-01T00:00:00+08:00",
+   "lastSeen": "2026-10-05T00:27:23+08:00",
+   "company": "华为",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：华为 7 次（共 7 次）；难度 中等；最近一次出现 2024-07-01"
+  },
+  {
+   "id": "57957e1f463e9dde",
+   "title": "下一个排列（LeetCode 31）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/next-permutation",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2024-05-09T00:00:00+08:00",
+   "lastSeen": "2026-10-06T20:08:32+08:00",
+   "company": "携程",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：网易 3 次、携程 2 次（共 5 次）；难度 中等；最近一次出现 2024-05-09"
+  },
+  {
+   "id": "bf70fedb5d4138b4",
+   "title": "二叉树的中序遍历（LeetCode 94）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/binary-tree-inorder-traversal",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2024-04-16T00:00:00+08:00",
+   "lastSeen": "2026-10-05T00:27:23+08:00",
+   "company": "京东",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：京东 5 次（共 5 次）；难度 简单；最近一次出现 2024-04-16"
+  },
+  {
+   "id": "7bd3594540462ff6",
+   "title": "迷路的机器人（LeetCode 面试题 08.02）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/robot-in-a-grid-lcci",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2024-01-24T00:00:00+08:00",
+   "lastSeen": "2026-10-08T18:53:53+08:00",
+   "company": "旷视",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：旷视 1 次（共 1 次）；难度 中等；最近一次出现 2024-01-24"
+  },
+  {
+   "id": "223921a9e4f5addb",
+   "title": "删除二叉搜索树中的节点（LeetCode 450）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/delete-node-in-a-bst",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2024-01-08T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题",
+    "工程/系统"
+   ],
+   "hasCoding": true,
+   "summary": "450. 删除二叉搜索树中的节点 - 给定一个二叉搜索树的根节点 root 和一个值 key，删除二叉搜索树中的 key 对应的节点，并保证二叉搜索树的性质不变。返回二叉搜索树（有可能被更新）的根节点的引用。 一般来说，删除节点可分为两个步骤： 1. 首先找到需要删除的节点； 2. 如果找到了，删除它。 示例 1: [https://assets.leetcode.com/uploads/2020/09/04/del_node_1.jpg] 输入：root = [5,3,6,2,4,null,7], key = 3 输出：[5,4,6,2,null,null,7] 解释：给定需要删除的节点值是 3，所以我们首先找到 3 这个节点，然后删除它。 一个正确的答案是 [5,4,6,2,null,null,7], 如下图所示。 另一个正确答案是 [5,2,6,null,4,null,7]。 [ht"
+  },
+  {
+   "id": "2990f8fd63c4e820",
+   "title": "砖墙（LeetCode 554）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/brick-wall",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2023-08-28T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题",
+    "工程/系统"
+   ],
+   "hasCoding": true,
+   "summary": "554. 砖墙 - 你的面前有一堵矩形的、由 n 行砖块组成的砖墙。这些砖块高度相同（也就是一个单位高）但是宽度不同。每一行砖块的宽度之和相等。 你现在要画一条 自顶向下 的、穿过 最少 砖块的垂线。如果你画的线只是从砖块的边缘经过，就不算穿过这块砖。你不能沿着墙的两个垂直边缘之一画线，这样显然是没有穿过一块砖的。 给你一个二维数组 wall ，该数组包含这堵墙的相关信息。其中，wall[i] 是一个代表从左至右每块砖的宽度的数组。你需要找出怎样画才能使这条线 穿过的砖块数量最少 ，并且返回 穿过的砖块数量 。 示例 1： [https://assets.leetcode.com/uploads/2025/01/17/a.png] 输入：wall = [[1,2,2,1],[3,1,2],[1,3,2],[2,4],[3,1,2],[1,3,1,1]] 输出：2 示例 2： 输入：wall"
+  },
+  {
+   "id": "c31d48382f243592",
+   "title": "切披萨的方案数（LeetCode 1444）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/number-of-ways-of-cutting-a-pizza",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2023-08-24T00:00:00+08:00",
+   "lastSeen": "2026-10-08T18:53:53+08:00",
+   "company": "旷视",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：旷视 1 次（共 1 次）；难度 困难；最近一次出现 2023-08-24"
+  },
+  {
+   "id": "3fb5574cd598b4e3",
+   "title": "按位与为零的三元组（LeetCode 982）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/triples-with-bitwise-and-equal-to-zero",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2023-07-26T00:00:00+08:00",
+   "lastSeen": "2026-10-08T18:53:53+08:00",
+   "company": "旷视",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：旷视 1 次（共 1 次）；难度 困难；最近一次出现 2023-07-26"
+  },
+  {
+   "id": "707bcfb4345e4505",
+   "title": "删除排序链表中的重复元素（LeetCode 83）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/remove-duplicates-from-sorted-list",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2023-05-16T00:00:00+08:00",
+   "lastSeen": "2026-10-08T18:53:53+08:00",
+   "company": "旷视",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：旷视 1 次（共 1 次）；难度 简单；最近一次出现 2023-05-16"
+  },
+  {
+   "id": "eabaee1bf52c2cc7",
+   "title": "前 K 个高频元素（LeetCode 347）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/top-k-frequent-elements",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2023-05-03T00:00:00+08:00",
+   "lastSeen": "2026-10-08T18:53:53+08:00",
+   "company": "旷视",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：旷视 1 次（共 1 次）；难度 中等；最近一次出现 2023-05-03"
+  },
+  {
+   "id": "5599ed26283deebe",
+   "title": "不同路径（LeetCode 62）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/unique-paths",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2023-04-19T00:00:00+08:00",
+   "lastSeen": "2026-10-07T23:13:27+08:00",
+   "company": "商汤",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：商汤 2 次（共 2 次）；难度 中等；最近一次出现 2023-04-19"
+  },
+  {
+   "id": "7045ada5591823c8",
+   "title": "至少有K个重复字符的最长子串（LeetCode 395）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/longest-substring-with-at-least-k-repeating-characters",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2023-04-05T00:00:00+08:00",
+   "lastSeen": "2026-10-07T23:13:27+08:00",
+   "company": "携程",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：携程 2 次（共 2 次）；难度 中等；最近一次出现 2023-04-05"
+  },
+  {
+   "id": "a16a8d55c69fc4ab",
+   "title": "翻转字符串里的单词（LeetCode 151）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/reverse-words-in-a-string",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2023-02-09T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题",
+    "强化学习"
+   ],
+   "hasCoding": true,
+   "summary": "151. 反转字符串中的单词 - 给你一个字符串 s ，请你反转字符串中 单词 的顺序。 单词 是由非空格字符组成的字符串。s 中使用至少一个空格将字符串中的 单词 分隔开。 返回 单词 顺序颠倒且 单词 之间用单个空格连接的结果字符串。 注意：输入字符串 s中可能会存在前导空格、尾随空格或者单词间的多个空格。返回的结果字符串中，单词间应当仅用单个空格分隔，且不包含任何额外的空格。 示例 1： 输入：s = \"the sky is blue\" 输出：\"blue is sky the\" 示例 2： 输入：s = \" hello world \" 输出：\"world hello\" 解释：反转后的字符串中不能存在前导空格和尾随空格。 示例 3： 输入：s = \"a good example\" 输出：\"example good a\" 解释：如果两个单词间有多余的空格，反转后的字符串需要将单词间的空格"
+  },
+  {
+   "id": "c6c2cfed07bd641d",
+   "title": "二叉树的序列化与反序列化（LeetCode 297）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/serialize-and-deserialize-binary-tree",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2022-10-12T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "通过",
+   "topics": [
+    "手撕/算法题",
+    "工程/系统"
+   ],
+   "hasCoding": true,
+   "summary": "297. 二叉树的序列化与反序列化 - 序列化是将一个数据结构或者对象转换为连续的比特位的操作，进而可以将转换后的数据存储在一个文件或者内存中，同时也可以通过网络传输到另一个计算机环境，采取相反方式重构得到原数据。 请设计一个算法来实现二叉树的序列化与反序列化。这里不限定你的序列 / 反序列化算法执行逻辑，你只需要保证一个二叉树可以被序列化为一个字符串并且将这个字符串反序列化为原始的树结构。 提示: 输入输出格式与 LeetCode 目前使用的方式一致，详情请参阅 LeetCode 序列化二叉树的格式 [https://leetcode.cn/help-center/3812581/]。你并非必须采取这种方式，你也可以采用其他的方法解决这个问题。 示例 1： [https://assets.leetcode.com/uploads/2020/09/15/serdeser.jpg] 输入：r"
+  },
+  {
+   "id": "d5d810d0e17db7b0",
+   "title": "和为K的子数组（LeetCode 560）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/subarray-sum-equals-k",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2022-09-22T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "560. 和为 K 的子数组 - 给你一个整数数组 nums 和一个整数 k ，请你统计并返回 该数组中和为 k 的子数组的个数 。 子数组是数组中元素的连续非空序列。 示例 1： 输入：nums = [1,1,1], k = 2 输出：2 示例 2： 输入：nums = [1,2,3], k = 3 输出：2 提示： * 1 <= nums.length <= 2 * 104 * -1000 <= nums[i] <= 1000 * -107 <= k <= 107"
+  },
+  {
+   "id": "287fa3ca606eb6e1",
+   "title": "解码方法（LeetCode 91）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/decode-ways",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2022-09-22T00:00:00+08:00",
+   "lastSeen": "2026-10-06T20:08:32+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：亚马逊 2 次（共 2 次）；难度 中等；最近一次出现 2022-09-22"
+  },
+  {
+   "id": "20e688f614151a9d",
+   "title": "两数相加 II（LeetCode 445）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/add-two-numbers-ii",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2022-09-20T00:00:00+08:00",
+   "lastSeen": "2026-10-06T20:08:32+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：亚马逊 2 次（共 2 次）；难度 中等；最近一次出现 2022-09-20"
+  },
+  {
+   "id": "f36a0550718b2cc3",
+   "title": "对角线遍历（LeetCode 498）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/diagonal-traverse",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2022-09-09T00:00:00+08:00",
+   "lastSeen": "2026-10-07T23:13:27+08:00",
+   "company": "旷视",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：旷视 2 次（共 2 次）；难度 中等；最近一次出现 2022-09-09"
+  },
+  {
+   "id": "2bcaf7933901e9ea",
+   "title": "删除排序数组中的重复项（LeetCode 26）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/remove-duplicates-from-sorted-array",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2022-09-01T00:00:00+08:00",
+   "lastSeen": "2026-10-07T23:13:27+08:00",
+   "company": "商汤",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：商汤 2 次（共 2 次）；难度 简单；最近一次出现 2022-09-01"
+  },
+  {
+   "id": "627d32dbadbd3671",
+   "title": "4.1 TCP 三次握手与四次挥手面试题 · 八股",
+   "url": "https://xiaolincoding.com/network/3_tcp/tcp_interview.html",
+   "channel": "xiaolincoding",
+   "category": "exam",
+   "publishedAt": "2022-09-01T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:14+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "工程/系统"
+   ],
+   "hasCoding": false,
+   "summary": "图解计算机基础，覆盖 Java 后端面试，让天下没有难懂的八股文！"
+  },
+  {
+   "id": "6b124fc14cebd6dc",
+   "title": "不同路径 III（LeetCode 980）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/unique-paths-iii",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2022-08-30T00:00:00+08:00",
+   "lastSeen": "2026-10-07T23:13:27+08:00",
+   "company": "携程",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：携程 2 次（共 2 次）；难度 困难；最近一次出现 2022-08-30"
+  },
+  {
+   "id": "d8d9b7fa659a9fe4",
+   "title": "二叉树的直径（LeetCode 543）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/diameter-of-binary-tree",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2022-06-27T00:00:00+08:00",
+   "lastSeen": "2026-10-06T20:08:32+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：亚马逊 2 次（共 2 次）；难度 简单；最近一次出现 2022-06-27"
+  },
+  {
+   "id": "e2677cc186d40a26",
+   "title": "在排序数组中查找元素的第一个和最后一个位置（LeetCode 34）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/find-first-and-last-position-of-element-in-sorted-array",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2022-06-01T00:00:00+08:00",
+   "lastSeen": "2026-10-07T23:13:27+08:00",
+   "company": "携程",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：携程 2 次（共 2 次）；难度 中等；最近一次出现 2022-06-01"
+  },
+  {
+   "id": "3a6bb69f5885f527",
+   "title": "单词接龙（LeetCode 127）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/word-ladder",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2022-05-13T00:00:00+08:00",
+   "lastSeen": "2026-10-06T20:08:32+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：亚马逊 2 次（共 2 次）；难度 困难；最近一次出现 2022-05-13"
+  },
+  {
+   "id": "54cf8bf64db0e6d7",
+   "title": "正则表达式匹配（LeetCode 10）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/regular-expression-matching",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2022-05-06T00:00:00+08:00",
+   "lastSeen": "2026-10-06T20:08:32+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题",
+    "机器学习基础"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：亚马逊 2 次（共 2 次）；难度 困难；最近一次出现 2022-05-06"
+  },
+  {
+   "id": "1ce9f0a6715ffa8f",
+   "title": "手撕快速排序（LeetCode 补充题4）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/sort-an-array",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2022-05-04T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "腾讯",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：腾讯 67 次、美团 60 次、百度 34 次、快手 28 次、阿里巴巴 18 次、滴滴 17 次（共 264 次）；难度 中等；最近一次出现 2026-09-02"
+  },
+  {
+   "id": "b59eef3cab7147f6",
+   "title": "三角形最小路径和（LeetCode 120）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/triangle",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2022-04-19T00:00:00+08:00",
+   "lastSeen": "2026-10-06T20:08:32+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：亚马逊 3 次（共 3 次）；难度 中等；最近一次出现 2022-04-19"
+  },
+  {
+   "id": "5020522898806099",
+   "title": "实现 strStr()（LeetCode 28）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/implement-strstr",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2022-04-08T00:00:00+08:00",
+   "lastSeen": "2026-10-07T23:13:27+08:00",
+   "company": "携程",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：携程 2 次（共 2 次）；难度 简单；最近一次出现 2022-04-08"
+  },
+  {
+   "id": "ab7ff8fbeef496e1",
+   "title": "课程表（LeetCode 207）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/course-schedule",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2022-03-16T00:00:00+08:00",
+   "lastSeen": "2026-10-03T02:51:13+08:00",
+   "company": "",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "207. 课程表 - 你这个学期必须选修 numCourses 门课程，记为 0 到 numCourses - 1 。 在选修某些课程之前需要一些先修课程。 先修课程按数组 prerequisites 给出，其中 prerequisites[i] = [ai, bi] ，表示如果要学习课程 ai 则 必须 先学习课程 bi 。 * 例如，先修课程对 [0, 1] 表示：想要学习课程 0 ，你需要先完成课程 1 。 请你判断是否可能完成所有课程的学习？如果可以，返回 true ；否则，返回 false 。 示例 1： 输入：numCourses = 2, prerequisites = [[1,0]] 输出：true 解释：总共有 2 门课程。学习课程 1 之前，你需要完成课程 0 。这是可能的。 示例 2： 输入：numCourses = 2, prerequisites = [[1,0]"
+  },
+  {
+   "id": "1e466c3da18cf5f4",
+   "title": "旋转图像（LeetCode 48）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/rotate-image",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2021-11-30T00:00:00+08:00",
+   "lastSeen": "2026-10-07T23:13:27+08:00",
+   "company": "商汤",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题",
+    "多模态/CV"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：商汤 2 次（共 2 次）；难度 中等；最近一次出现 2021-11-30"
+  },
+  {
+   "id": "eed8ad967955aec8",
+   "title": "最大矩形（LeetCode 85）· 大厂高频手撕题",
+   "url": "https://leetcode.cn/problems/maximal-rectangle",
+   "channel": "codetop",
+   "category": "coding",
+   "publishedAt": "2021-07-16T00:00:00+08:00",
+   "lastSeen": "2026-10-07T23:13:27+08:00",
+   "company": "商汤",
+   "round": "",
+   "outcome": "",
+   "topics": [
+    "手撕/算法题"
+   ],
+   "hasCoding": true,
+   "summary": "被大厂真实考过的高频手撕题：商汤 2 次（共 2 次）；难度 困难；最近一次出现 2021-07-16"
+  }
+ ]
+}

@@ -1,0 +1,92 @@
+{
+ "batchId": "queue-17",
+ "mode": "full",
+ "items": [
+  {
+   "id": "8d63fbcdd499a7d4",
+   "title": "软连接和硬链接的区别 · 八股",
+   "category": "exam",
+   "channel": "kamacoder_notes",
+   "url": "https://notes.kamacoder.com/base/hard-link-vs-soft-link.html",
+   "sources": [
+    {
+     "url": "https://notes.kamacoder.com/base/hard-link-vs-soft-link.html",
+     "name": "kamacoder_notes"
+    }
+   ],
+   "tags": [
+    "八股",
+    "知识点",
+    "基础",
+    "base"
+   ],
+   "kind": "notes",
+   "summary": "软连接和硬链接的区别是操作系统与Linux文件系统的高频面试考点，核心在于inode引用、跨文件系统能力、删除行为及链接目标。硬链接共享inode，删除原文件不影响链接访问；软链接是独立文件存储路径，可跨文件系统链接目录，原文件删除则失效。本文通过原理对比、代码示例详解了inode计数、文件系统限制、悬空链接等关键概念，并解答了硬链接为何不能跨文件系统、如何查看链接数等面试追问。",
+   "needsFetch": false
+  },
+  {
+   "id": "ef096469dd679455",
+   "title": "产生死锁的原因有什么？ · 八股",
+   "category": "exam",
+   "channel": "kamacoder_notes",
+   "url": "https://notes.kamacoder.com/base/deadlock-causes.html",
+   "sources": [
+    {
+     "url": "https://notes.kamacoder.com/base/deadlock-causes.html",
+     "name": "kamacoder_notes"
+    }
+   ],
+   "tags": [
+    "八股",
+    "知识点",
+    "基础",
+    "base"
+   ],
+   "kind": "notes",
+   "summary": "这道操作系统高频面试题深入剖析了死锁产生的四大必要条件：互斥、持有并等待、不可抢占和循环等待，并分析了资源竞争、推进顺序不当等具体原因。通过C++多线程代码示例演示了典型的锁顺序不一致导致的死锁场景及通过统一锁顺序的解决方案，同时拓展了死锁的预防、避免、检测与恢复策略，以及数据库、操作系统和多线程中的常见死锁场景与应对方法，是应对大厂面试中并发与资源管理考点的关键内容。",
+   "needsFetch": false
+  },
+  {
+   "id": "bfa2262c9d9e3dec",
+   "title": "索引失效的场景有哪些 · 八股",
+   "category": "exam",
+   "channel": "kamacoder_notes",
+   "url": "https://notes.kamacoder.com/base/index-failure-scenarios.html",
+   "sources": [
+    {
+     "url": "https://notes.kamacoder.com/base/index-failure-scenarios.html",
+     "name": "kamacoder_notes"
+    }
+   ],
+   "tags": [
+    "八股",
+    "知识点",
+    "基础",
+    "base"
+   ],
+   "kind": "notes",
+   "summary": "索引失效是数据库面试高频考点，指查询优化器未使用本应生效的索引，导致性能急剧下降。本文详解索引失效的典型场景：在索引列上使用函数或计算、以通配符开头的模糊匹配、使用不等于操作符、OR连接不同索引列、隐式类型转换、违反联合索引最左前缀原则，以及优化器因结果集比例高或列区分度低而选择全表扫描。掌握这些场景有助于在面试中回答如何避免和优化索引使用。",
+   "needsFetch": false
+  },
+  {
+   "id": "f538a919e3ac60c2",
+   "title": "金融大模型-算法工程师",
+   "category": "job",
+   "channel": "jobs_tencent",
+   "url": "http://careers.tencent.com/jobdesc.html?postId=2101507113946886144",
+   "sources": [
+    {
+     "url": "http://careers.tencent.com/jobdesc.html?postId=2101507113946886144",
+     "name": "jobs_tencent"
+    }
+   ],
+   "tags": [
+    "招聘",
+    "深圳"
+   ],
+   "kind": "job",
+   "summary": "1.负责金融领域大模型预训练与后训练工作，包括但不限于持续预训练、强化学习、模型结构优化等关键环节，提升模型在金融领域的专业性与泛化能力； 2.主导后训练对齐算法的技术实践，包括但不限于设计奖励机制、训练策略等，大幅度提升金融场景下的用户偏好和深度需求满足； 3.聚焦金融核心业务场景，构建大模型驱动的解决方案，推动技术成果产品化，构建端到端金融智能应用系统。 | 深圳 | 技术 | FiT 公共 | CDG",
+   "needsFetch": false
+  }
+ ]
+}

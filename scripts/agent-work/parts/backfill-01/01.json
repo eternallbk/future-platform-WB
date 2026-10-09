@@ -1,0 +1,69 @@
+{
+  "id": "08bb5fe94761a493",
+  "formulas": [
+    {
+      "id": "f-gkd-generalized-jsd",
+      "name": "广义 JS 散度蒸馏目标（Generalized JSD for Distillation）",
+      "category": "posttraining",
+      "latex": "D_{\\mathrm{JSD}(\\beta)}(p_T \\,\\|\\, p_S) = \\beta\\, D_{\\mathrm{KL}}(p_T \\,\\|\\, M) + (1-\\beta)\\, D_{\\mathrm{KL}}(p_S \\,\\|\\, M), \\quad M = \\beta\\, p_T + (1-\\beta)\\, p_S",
+      "symbols": [
+        ["p_T", "教师模型在给定上下文下的下一 token 分布"],
+        ["p_S", "学生模型分布，需在学生自己采样的序列上计算"],
+        ["\\beta", "散度方向插值系数，beta=0.5 为等权 JSD"],
+        ["M", "混合分布 M = beta·p_T + (1-beta)·p_S"],
+        ["D_{\\mathrm{KL}}", "KL 散度"]
+      ],
+      "derivation": [
+        "第 1 步（动机）：普通 KD 只用前向 KL，学生会平均覆盖教师所有模态（mode-covering），在自回归长序列上容易被曝光偏差放大。",
+        "第 2 步（引入可调散度）：把前向 KL 与反向 KL 按 beta 线性组合，得到一个连续族，beta=1 退化为前向 KL、beta=0 退化为反向 KL。",
+        "第 3 步（写成对混合分布的两项 KL）：令 M = beta·p_T + (1-beta)·p_S，则 D = beta·KL(p_T||M) + (1-beta)·KL(p_S||M)，这正是广义 JS 散度的定义式。",
+        "第 4 步（训练）：在学生采样得到的数据上最小化该散度，beta 控制 mode-covering 与 mode-seeking 的偏好，是 OPD/GKD 路线的核心旋钮。"
+      ],
+      "analogy": "像校对错题：前向 KL 要求你把老师所有可能的写法都覆盖（宁可多写几种），反向 KL 只要求你专注模仿老师最典型的那一种写法。beta 就是「多写」与「专一」之间的旋钮。",
+      "pitfalls": [
+        "把 beta 当成温度参数——它调的是散度方向，不是 logits 的平滑程度",
+        "忽略 p_S 必须在学生自生成序列上计算，用教师数据算就退回 off-policy KD",
+        "beta=0 的反向 KL 训练不稳定、易模式坍缩，不能盲目取极值"
+      ],
+      "code": "import torch, torch.nn.functional as F\n\ndef gjsd(student_logits, teacher_logits, beta=0.5, T=1.0):\n    pS = F.softmax(student_logits / T, dim=-1)\n    pT = F.softmax(teacher_logits / T, dim=-1)\n    M = (beta * pT + (1 - beta) * pS)            # 混合分布\n    kl_TM = F.kl_div(M.log(), pT, reduction='batchmean')   # KL(pT || M)\n    kl_SM = F.kl_div(M.log(), pS, reduction='batchmean')   # KL(pS || M)\n    return beta * kl_TM + (1 - beta) * kl_SM\n",
+      "sources": [
+        {
+          "title": "chrisliu298/awesome-on-policy-distillation",
+          "url": "https://github.com/chrisliu298/awesome-on-policy-distillation"
+        }
+      ]
+    },
+    {
+      "id": "f-gkd-onpolicy-data-mix",
+      "name": "同策略数据混合蒸馏目标（On-Policy Data Mixing）",
+      "category": "posttraining",
+      "latex": "\\mathcal{L} = \\mathbb{E}_{x \\sim (1-\\lambda)\\,\\mathcal{D} + \\lambda\\,\\mathcal{S}} \\left[ D_{\\mathrm{JSD}(\\beta)}\\left( p_T(\\cdot \\mid x) \\,\\|\\, p_S(\\cdot \\mid x) \\right) \\right]",
+      "symbols": [
+        ["\\mathcal{D}", "离线/教师数据集（off-policy 数据）"],
+        ["\\mathcal{S}", "学生自生成数据集（on-policy 数据）"],
+        ["\\lambda", "on-policy 数据占比，lambda 属于 0 到 1"],
+        ["x", "一个输入提示或已生成前缀"],
+        ["D_{\\mathrm{JSD}(\\beta)}", "上一条定义的广义 JS 散度"]
+      ],
+      "derivation": [
+        "第 1 步（动机）：只在教师数据上蒸馏，学生会过拟合教师分布；推理时走到自己生成的状态上却没有监督信号。",
+        "第 2 步（造 on-policy 数据）：让学生按当前策略自己采样一批序列，构成集合 S。",
+        "第 3 步（混合采样）：把 S 与原始数据 D 按比例 lambda 混合，lambda 越大越偏 on-policy。",
+        "第 4 步（目标）：在混合分布上计算 token 级软监督期望，得到上式；lambda 与 beta 正交，可分别调，分别对应「数据从哪来」与「散度朝哪个方向」。"
+      ],
+      "analogy": "像备考：D 是教材例题（老师给的），S 是你自己做错的题（自己生成的）。lambda 就是你复习时间分给「重做自己错题」的比例——比例太低，考场上没人给提示时就容易崩。",
+      "pitfalls": [
+        "lambda 不是越大越好：学生太弱时自生成数据质量低，需要教师验证或过滤",
+        "混合的是数据来源，不是 loss 里样本的权重，两者别混为一谈",
+        "on-policy 数据的 logits 需重新前向计算，训练成本约翻倍，工程上要做取舍"
+      ],
+      "code": "import random\n\ndef sample_batch(teacher_data, student_data, lam, bs):\n    n_stu = int(round(lam * bs))                 # on-policy 部分\n    n_tea = bs - n_stu                           # off-policy 部分\n    return random.sample(student_data, n_stu) + random.sample(teacher_data, n_tea)\n\nbatch = sample_batch(teacher_data, student_data, lam=0.5, bs=32)\n# 之后交给统一的广义 JSD 蒸馏损失逐 token 计算\n",
+      "sources": [
+        {
+          "title": "chrisliu298/awesome-on-policy-distillation",
+          "url": "https://github.com/chrisliu298/awesome-on-policy-distillation"
+        }
+      ]
+    }
+  ]
+}

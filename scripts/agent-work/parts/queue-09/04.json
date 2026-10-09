@@ -1,0 +1,176 @@
+{
+  "id": "227fbd7a496ed8f5",
+  "tldr": "在文字摘要后追加一串可学的「软记忆 token」，帮冻结的 LLM 逼近用完整历史时的续写，仅用 5.2% 位置。",
+  "keyPoints": [
+    "长程 agent 要把历史压缩进有限上下文，纯文字摘要可能支撑不了后续决策",
+    "REMORY 是神经记忆网络，为摘要补充一段有界的软记忆 token",
+    "给定历史与摘要，网络学出能让冻结 LLM 逼近完整历史续写的 token",
+    "token 以摘要为条件、追加其后，构成序列维度的「残差连接」",
+    "SummHay 上提升来源归因且几乎不损洞见覆盖，仅用 5.2% 输入位置"
+  ],
+  "why": "上下文压缩与记忆是 agent 方向的核心工程问题；「冻结 LLM + 学软 token」也是多模态/后训练里参数高效适配的通用范式，面试常问。",
+  "difficulty": "medium",
+  "tags": [
+    "agent",
+    "context-compaction",
+    "memory",
+    "soft-tokens",
+    "long-context"
+  ],
+  "entities": [
+    "REMORY",
+    "SummHay",
+    "Qwen3.8-27B",
+    "GLM-5.3-Flash",
+    "BrowseComp",
+    "Terminal-Bench 2.1"
+  ],
+  "diagram": {
+    "kind": "architecture",
+    "title": "摘要 + 残差软记忆",
+    "caption": "文字摘要之外再挂一串以摘要为条件的软 token，像序列维度的残差，补回摘要丢掉的决策信息。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='REMORY 把完整历史压成摘要并追加软记忆 token 的流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>完整历史 h（很长）</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>输入</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>压成文字摘要 sum</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>人可读</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>记忆网络生成软 token m</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>有界长度</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>冻结 LLM 读 [sum, m] 续写</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>仅用 5.2% 位置</text>\n</svg>",
+    "alt": "REMORY 流程：长历史压成文字摘要，记忆网络生成一段软 token，冻结的 LLM 读取摘要加软 token 来续写。"
+  },
+  "concepts": [
+    {
+      "name": "Residual Memory Tokens（残差软记忆 token）",
+      "readable": "在文字摘要后面再接一小串可学习的连续向量，它们不给人看，只帮冻结的 LLM 把「摘要里没写但决策需要」的信息找回来。",
+      "analogy": "会议纪要太挤就压成一页摘要，但摘要会丢细节；再附一小叠便签写上摘要没提的关键提示，主摘要加便签一起读才不误事。",
+      "analogyBreaksDown": "便签是人写的离散文字、谁都能读能改；这里的软 token 是连续向量，只对特定冻结 LLM 的内部表示有意义，换模型就失效，可解释性完全丧失。",
+      "mechanism": "以摘要为条件生成一段有界长度的 token，追加在摘要之后，等于在序列维度上做一次残差补齐：摘要给主干语义，软 token 补回被压掉、但影响下一步决策的细节。",
+      "visual": "画一条 token 序列：一段是摘要里的词（方块），紧接一小段用不同颜色表示软 token（小圆点），后面接 LLM 输出；标注「软 token 长度有界」。",
+      "prerequisites": [
+        "LLM 的上下文与 token 表示",
+        "软提示 / prefix tuning 类方法"
+      ],
+      "selfTest": [
+        "软 token 与文字摘要分别补什么？",
+        "为什么称它为序列维度的残差连接？",
+        "软 token 长度为什么要有界？"
+      ],
+      "formula": "m = g_\\phi(\\mathrm{sum}), \\quad \\hat{y} = \\mathrm{LLM}\\big([\\mathrm{sum}; m]\\big)"
+    },
+    {
+      "name": "Context Compaction（上下文压实）",
+      "readable": "长程 agent 的历史塞不进有限上下文，于是把它压成文字摘要继续往下跑；REMORY 指出只有摘要不够，会漏掉后续决策需要的细节。",
+      "analogy": "把一部长视频压成「剧情简介」再配一段「关键片段索引」，让观众既能快速了解又不漏关键情节。",
+      "analogyBreaksDown": "视频索引对任何观众都通用；而软 token 专为某个冻结 LLM 的内部表示而学，换个模型或换种解码方式就失去意义，不像索引那样可迁移。",
+      "mechanism": "压实的目标是「用更少位置逼近完整历史的效果」。作者用完整历史下冻结 LLM 的输出作为监督目标，训练记忆网络生成能缩小这个差距的 token，把压实从「人工写摘要」变成「可学习的最优压缩」。",
+      "visual": "横轴是输入位置占比，纵轴是接近完整上下文联合得分的程度；画一条随位置占比上升的曲线，标出 REMORY 在 5.2% 位置处已接近顶端。",
+      "prerequisites": [
+        "agent 的长程记忆与工具调用",
+        "上下文窗口限制与摘要式压缩"
+      ],
+      "selfTest": [
+        "纯文字摘要可能在哪些后续决策上失效？",
+        "如何度量压缩是否「够用」？",
+        "为什么把完整历史的输出当监督目标？"
+      ],
+      "formula": "\\mathcal{L} = \\mathbb{E}\\Big[ D_{\\mathrm{KL}}\\big( p_{\\mathrm{LLM}}(\\cdot \\mid h) \\,\\|\\, p_{\\mathrm{LLM}}(\\cdot \\mid [\\mathrm{sum}; m]) \\big) \\Big]"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-residual-memory-objective",
+      "name": "残差记忆逼近目标（Residual Memory Objective）",
+      "category": "agent",
+      "latex": "\\mathcal{L} = \\mathbb{E}\\Big[ D_{\\mathrm{KL}}\\big( p_{\\mathrm{LLM}}(\\cdot \\mid h) \\,\\|\\, p_{\\mathrm{LLM}}(\\cdot \\mid [\\mathrm{sum}; m]) \\big) \\Big], \\quad m = g_\\phi(\\mathrm{sum})",
+      "symbols": [
+        ["h", "agent 的完整历史（很长）"],
+        ["\\mathrm{sum}", "由 h 压缩得到的文字摘要"],
+        ["m", "记忆网络生成的软记忆 token 序列"],
+        ["g_\\phi", "可学的记忆网络，参数 φ"],
+        ["p_{\\mathrm{LLM}}", "冻结的 LLM，权重不更新"]
+      ],
+      "derivation": [
+        "第 1 步：长历史 h 超出上下文窗口，需要压缩才能继续。",
+        "第 2 步：仅用文字摘要 sum 会丢失后续决策所需的信息。",
+        "第 3 步：训练记忆网络 g_φ 依据 sum 生成软 token m，追加在 sum 之后。",
+        "第 4 步：以完整历史下冻结 LLM 的续写分布为目标，最小化两者 KL，逼近「像没压缩过一样」的效果。"
+      ],
+      "analogy": "像给压缩过的视频再加一段关键片段索引，让观众的反应和看完整版差不多。",
+      "pitfalls": [
+        "以为在训练 LLM——LLM 是冻结的，只训记忆网络",
+        "把软 token 当成可直接解读的文本，忽略它是连续向量、不可读",
+        "忽略「有界长度」约束，误以为 token 越多越好"
+      ],
+      "code": "import torch\nimport torch.nn.functional as F\ndef remory_loss(mem_net, llm, h_ids, sum_ids, prefix_len):\n    with torch.no_grad():\n        target = llm(h_ids).logits            # 完整历史下的续写\n    m = mem_net(sum_ids)                      # 软记忆 token\n    inp = torch.cat([sum_ids, m], dim=1)      # [sum ; m]\n    pred = llm(inputs_embeds=llm.embed(inp)).logits\n    return F.kl_div(F.log_softmax(pred, -1),\n                    F.softmax(target, -1), reduction='batchmean')",
+      "sources": [
+        {"title": "REMORY: Learning Residual Memory for Context Compaction", "url": "https://huggingface.co/papers/2610.11287"}
+      ]
+    },
+    {
+      "id": "f-context-compression-ratio",
+      "name": "上下文压缩比与效果逼近（Compression Ratio vs. Effect）",
+      "category": "agent",
+      "latex": "\\rho = \\frac{|[\\mathrm{sum}; m]|}{|h|}, \\qquad \\mathrm{joint}([\\mathrm{sum}; m]) \\to \\mathrm{joint}(h)",
+      "symbols": [
+        ["\\rho", "压缩后输入占完整历史的位置比例"],
+        ["|[\\mathrm{sum}; m]|", "摘要加软 token 的位置数"],
+        ["|h|", "完整历史的位置数"],
+        ["\\mathrm{joint}", "联合得分，衡量在此输入下能答对多少"]
+      ],
+      "derivation": [
+        "第 1 步：定义压缩比 ρ 为压缩后输入位置数除以完整历史位置数。",
+        "第 2 步：目标是让压缩输入的联合得分尽量接近完整历史的联合得分。",
+        "第 3 步：REMORY 报告在 ρ 约 5.2% 时已接近完整上下文的联合得分。",
+        "第 4 步：据此说明残差记忆在极小预算下补回了摘要丢掉的信息。"
+      ],
+      "analogy": "像把一本书压成一页提纲加几个关键词，读完后回答问题的准确率要接近读完原书。",
+      "pitfalls": [
+        "只看压缩比不看效果，压缩比再小但答不对也没用",
+        "把联合得分当成单一指标，忽略来源归因与洞见覆盖是两个维度"
+      ],
+      "code": "def compression_ratio(sum_len, mem_len, hist_len):\n    return (sum_len + mem_len) / hist_len   # 目标：小 rho，高 joint\n# REMORY: rho ~ 0.052 时 joint 接近 full-context",
+      "sources": [
+        {"title": "REMORY: Learning Residual Memory for Context Compaction", "url": "https://arxiv.org/abs/2610.11287"}
+      ]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "长程 agent 会把历史压缩以在有限上下文内继续，但纯文字摘要可能支撑不了后续每个决策",
+      "REMORY 是一个神经记忆网络，为摘要补充一段有界的软记忆 token",
+      "给定历史与摘要，网络学出能帮冻结 LLM 逼近「用完整历史时续写」的 token",
+      "这些 token 以摘要为条件、追加在摘要之后，构成序列维度上的残差连接类比",
+      "在 SummHay 上提升来源归因、洞见覆盖几乎不变，且只用 5.2% 的输入位置",
+      "跨长程 agent 基准，Qwen3.8-27B 与 GLM-5.3-Flash 上都有一致增益",
+      "两个模型在 BrowseComp 与 Terminal-Bench 2.1 上重复工具输出与工具错误明显更少"
+    ],
+    "uncertain": [
+      "记忆网络结构与训练目标（KL 方向、是否用教师强制）摘要未给，公式为按摘要重建的通用形式，需核对原文",
+      "「有界序列」的具体长度与模型规模对效果的影响摘要未说明，待核实",
+      "SummHay 的 joint score 定义与基线数值摘要未列出，待核实"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "在文字摘要后面接一串学出来的隐藏记忆向量，让模型续写时像看过完整历史一样。"},
+      {"level": "入门", "text": "长对话的 agent 塞不下全部历史，只能把历史压成摘要再继续。但摘要会丢细节，之后某些决策就做不准。REMORY 的办法是在摘要后追加一小段可学习的「软 token」，它们不给人看，专门帮冻结的模型找回被压缩掉的信息。"},
+      {"level": "进阶", "text": "关键设计是把压缩当成可学习的对象：训练一个记忆网络，输入摘要输出一段有界长度的软 token；软 token 追加在摘要之后，像序列维度上的残差，摘要负责主干语义、软 token 补回被丢掉的决策细节。监督信号是完整历史下冻结 LLM 的续写分布，所以 LLM 完全不动，只学这段记忆。"},
+      {"level": "专家", "text": "与纯摘要压缩相比，它多了一条可学的补丁通道；与直接扩上下文或做长上下文训练相比，它不碰 LLM 权重、预算可控。摘要在 SummHay 上用 5.2% 的位置就接近完整上下文的联合得分，并在 Qwen3.8-27B 与 GLM-5.3-Flash 上一致提升、明显减少重复工具输出与工具错误。它的隐含前提是「完整历史的输出是可逼近的」——若摘要本身丢的是无法从残差恢复的信息，或软 token 长度太小，逼近就受限。"}
+    ],
+    "socratic": [
+      {"q": "为什么不直接做更长的上下文？", "a": "长上下文成本随长度增长、且超出训练长度会退化；压缩加软 token 用固定预算控制成本，还能跨 episode 复用。"},
+      {"q": "为什么以完整历史的输出来监督？", "a": "这是唯一可得的「理想行为」参照：让压缩后的续写分布去逼近压缩前的分布，等价于要求「像没压缩过一样」。"}
+    ],
+    "mechanism": "纯文字摘要是有损压缩，且损失什么由摘要模型决定，未必对齐下游决策需要。REMORY 把「补回损失」变成一个可学习任务：用摘要生成软 token，并以完整历史下的 LLM 分布为目标做逼近。因为 LLM 冻结，学习压力全落在记忆网络上，训练便宜且不破坏基座，软 token 也因此成为随摘要走的最小补丁。",
+    "boundary": "当摘要已丢弃关键信息、而该信息无法由软 token 从摘要中推断时，逼近失败；当软 token 长度过短或目标 LLM 更换时，学到的记忆不再适用；摘要模型的偏差会成为瓶颈。摘要未证明在需要长链精确记忆（如多步数值推导）的任务上同样有效。",
+    "analogyBoundary": "「纪要+便签」的类比在补丁可被人阅读时成立；但软 token 是连续向量、依赖特定 LLM 的表示空间，既不可读也不可跨模型迁移，把「便签可分享」直觉套上来会错。",
+    "misconceptions": [
+      "以为 REMORY 在训练 LLM——LLM 冻结，只训记忆网络。",
+      "把软 token 当作可读文本摘要，忽略其连续、不可解释的本质。",
+      "认为摘要和软 token 冗余——摘要给主干语义，软 token 补特定决策所需细节。"
+    ],
+    "ownAnalysis": "（推断）这条可以看作把 prefix/soft-prompt tuning 的「软提示」用在记忆压缩上，并把监督目标设成「行为等价于完整历史」，很工程也很实用。可疑处：一是软 token 与特定冻结 LLM 绑定，换模型要重训，迁移性差（推断）；二是摘要本身通常也由某个 LLM 产生，摘要质量与软 token 之间有耦合，摘要崩了软 token 难救；三是摘要只报「接近」完整上下文，未给接近到什么程度，需核对原文数值。",
+    "officialNotes": [
+      {"position": "论文提出 REMORY，用有界软记忆 token 补足摘要压缩，并称仅用 5.2% 输入位置即在 SummHay 上提升来源归因、接近完整上下文联合得分", "source": "hf_papers: https://huggingface.co/papers/2610.11287"}
+    ],
+    "interviewAnswer": "REMORY 解决的是长程 agent 的上下文压实问题。常规做法是把历史压成文字摘要，但摘要会丢后续决策需要的细节。它的方案是训练一个神经记忆网络，以摘要为条件生成一段有界长度的软记忆 token，追加在摘要之后，本质上是序列维度上的残差补齐。监督目标是完整历史下冻结 LLM 的续写分布，所以 LLM 完全不动，只学这段记忆。效果上，SummHay 里只用 5.2% 的输入位置就接近完整上下文的联合得分，来源归因提升、洞见覆盖几乎不变；在 Qwen3.8-27B 和 GLM-5.3-Flash 上也有稳定增益，BrowseComp 和 Terminal-Bench 2.1 上重复工具输出和工具错误明显减少。",
+    "studyPath": {
+      "prerequisites": ["agent 的记忆与工具调用", "上下文窗口与摘要压缩", "soft prompt / prefix tuning"],
+      "nextSteps": ["读原文核对记忆网络结构与监督目标", "对比摘要压缩与 KV 缓存压缩", "思考软 token 能否跨模型迁移"]
+    }
+  }
+}

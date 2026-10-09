@@ -1,0 +1,126 @@
+{
+ "batchId": "queue-15",
+ "mode": "full",
+ "items": [
+  {
+   "id": "89824e07d162c472",
+   "title": "回溯算法去重问题的另一种写法 · 题解",
+   "category": "coding",
+   "channel": "programmercarl",
+   "url": "https://programmercarl.com/algo/backtracking/alternative-backtracking-deduplication.html",
+   "sources": [
+    {
+     "url": "https://programmercarl.com/algo/backtracking/alternative-backtracking-deduplication.html",
+     "name": "programmercarl"
+    }
+   ],
+   "tags": [
+    "算法题",
+    "题解",
+    "leetcode",
+    "手撕",
+    "algo"
+   ],
+   "kind": "problem",
+   "summary": "回溯算法在子集、组合、排列问题中，使用 set 进行同一节点下本层去重的实现方法，对比 used 数组去重版本。",
+   "needsFetch": false
+  },
+  {
+   "id": "d5d810d0e17db7b0",
+   "title": "和为K的子数组（LeetCode 560）· 大厂高频手撕题",
+   "category": "coding",
+   "channel": "codetop",
+   "url": "https://leetcode.cn/problems/subarray-sum-equals-k",
+   "sources": [
+    {
+     "url": "https://leetcode.cn/problems/subarray-sum-equals-k",
+     "name": "codetop"
+    }
+   ],
+   "tags": [
+    "leetcode",
+    "手撕",
+    "算法题",
+    "高频面试题",
+    "微软"
+   ],
+   "kind": "problem",
+   "summary": "560. 和为 K 的子数组 - 给你一个整数数组 nums 和一个整数 k ，请你统计并返回 该数组中和为 k 的子数组的个数 。 子数组是数组中元素的连续非空序列。 示例 1： 输入：nums = [1,1,1], k = 2 输出：2 示例 2： 输入：nums = [1,2,3], k = 3 输出：2 提示： * 1 <= nums.length <= 2 * 104 * -1000 <= nums[i] <= 1000 * -107 <= k <= 107",
+   "needsFetch": false
+  },
+  {
+   "id": "b6599b92013b6f4a",
+   "title": "207. 课程表：拓扑排序（BFS） · 题解",
+   "category": "coding",
+   "channel": "programmercarl",
+   "url": "https://programmercarl.com/algo/other/0207-course-schedule.html",
+   "sources": [
+    {
+     "url": "https://programmercarl.com/algo/other/0207-course-schedule.html",
+     "name": "programmercarl"
+    }
+   ],
+   "tags": [
+    "算法题",
+    "题解",
+    "leetcode",
+    "手撕",
+    "algo"
+   ],
+   "kind": "problem",
+   "summary": "本文介绍使用拓扑排序的广度优先搜索（BFS）方法解决力扣207题课程表问题，实现有向无环图的线性排序。",
+   "needsFetch": false
+  },
+  {
+   "id": "a4c8cc97dd754931",
+   "title": "ashhart/TensorFold - LLM Inference Engine for Metal, CUDA and Vulkan.",
+   "category": "engineering",
+   "channel": "github",
+   "url": "https://github.com/ashhart/TensorFold",
+   "sources": [
+    {
+     "url": "https://github.com/ashhart/TensorFold",
+     "name": "github"
+    }
+   ],
+   "tags": [
+    "ai",
+    "ai-tools",
+    "llm",
+    "llm-inference",
+    "llm-tools",
+    "Zig"
+   ],
+   "kind": "repo",
+   "summary": "LLM Inference Engine for Metal, CUDA and Vulkan.",
+   "needsFetch": false
+  },
+  {
+   "id": "bbb40282c7cfc434",
+   "title": "dphnAI/sonar - Large-scale LLM inference engine",
+   "category": "engineering",
+   "channel": "github",
+   "url": "https://github.com/dphnAI/sonar",
+   "sources": [
+    {
+     "url": "https://github.com/dphnAI/sonar",
+     "name": "github"
+    }
+   ],
+   "tags": [
+    "api-rest",
+    "cuda",
+    "inference-engine",
+    "inferentia",
+    "intel",
+    "lora",
+    "machine-learning",
+    "rocm",
+    "Python"
+   ],
+   "kind": "repo",
+   "summary": "Large-scale LLM inference engine. Contribute to dphnAI/sonar development by creating an account on GitHub.",
+   "needsFetch": false
+  }
+ ]
+}

@@ -1,0 +1,107 @@
+{
+ "batchId": "queue-12b",
+ "mode": "full",
+ "items": [
+  {
+   "id": "a81c60485ba7615c",
+   "title": "Conditional Trajectory Peaks: Single-Pass Multimodal Policies over Action Chunks",
+   "category": "multimodal",
+   "channel": "hf_papers",
+   "url": "https://huggingface.co/papers/2610.06104",
+   "sources": [
+    {
+     "url": "https://huggingface.co/papers/2610.06104",
+     "name": "hf_papers"
+    },
+    {
+     "url": "https://arxiv.org/abs/2610.06104",
+     "name": "canonical"
+    }
+   ],
+   "tags": [],
+   "kind": "paper",
+   "summary": "Multimodal imitation learning requires diverse executable futures under the same observation and consistent behavior across replanning cycles. We present Conditional Trajectory Peaks (CTP), a single-pass policy framework that jointly predicts complete action-chunk candidates, probability masses, and trajectory scales. Distribution-Aware Peak Specialization (DAPS) specializes trajectory peaks using trajectory-level posterior responsibilities and mass- and scale-modulated overlap constraints. Evidence-Gated Trajectory Belief Transport (ETBT) maintains cross-chunk consistency through geometric correspondence between exchangeable candidate sets, while allowing current policy evidence to override historical constraints. CTP achieves a coverage score of 91.40% on Push-T; success rates of 100.0%, 79.72%, and 84.44% on D3IL Avoiding, Aligning, and Sorting-2, respectively. On LIBERO, CTP achieves an average success rate of 97.25%. In real-world dual-arm experiments, CTP preserves both placement modes in a two-plate task, succeeding in all 50 trials. On bottle uprighting and pen placement into a holder, it maintains success rates comparable to π_{0.5} while reducing policy inference latency from 218.24 ms to 75.80 ms. These results demonstrate that single-pass trajectory modeling can combine multimodal behavior, closed-loop consistency, and efficient inference.",
+   "needsFetch": false
+  },
+  {
+   "id": "cd1021a7ce7dafcf",
+   "title": "MemFold: Learning Compact Soft Memory for Long-Context Personalization via On-Policy Optimization",
+   "category": "rl",
+   "channel": "hf_papers",
+   "url": "https://huggingface.co/papers/2609.36435",
+   "sources": [
+    {
+     "url": "https://huggingface.co/papers/2609.36435",
+     "name": "hf_papers"
+    },
+    {
+     "url": "https://arxiv.org/abs/2609.36435",
+     "name": "canonical"
+    }
+   ],
+   "tags": [],
+   "kind": "paper",
+   "summary": "An assistant that serves the same user over a long horizon has to answer from what that user has revealed: which preferences still hold, which were revised, and which constraints apply now. Retaining that information is not the same as acting on it, and the two are usually optimized as if they were. Keeping the information as text makes the reader's input grow with the retained history, while compressing it into a fixed number of latent vectors bounds the interface but is typically trained to reconstruct text or imitate reference answers, both of which are scored on sequences the reader never produced. We present MemFold, which optimizes a fixed-budget soft memory by the behavior it supports. A query-conditioned textual memory is compressed into K continuous vectors that form the reader's memory interface, and the reader is then trained on its own rollouts under two complementary signals: group-relative rewards for task outcomes, and confidence-gated on-policy distillation in which a frozen textual-memory teacher re-scores the student's sampled tokens under the textual memory. The teacher is never sampled from, so supervision stays on the student's current distribution and adds no autoregressive decoding; at inference it is removed entirely. Across three Qwen backbones, MemFold attains the highest accuracy we measure on PersonaMem-32K and PersonaMem-128K, with margins that widen at the longer history length, and transfers to PrefEval and LongMemEval without target-domain training. Ablations attribute most of the task gain to the reward term and a smaller additional gain to the teacher signal, and memory interventions show that the reader depends on the instance-specific content of its soft memory.",
+   "needsFetch": false
+  },
+  {
+   "id": "30834584ad427694",
+   "title": "SatNav: A Scalable Benchmark for Long-Horizon UAV Vision-Language Navigation from Satellite Imagery",
+   "category": "multimodal",
+   "channel": "hf_papers",
+   "url": "https://huggingface.co/papers/2609.31507",
+   "sources": [
+    {
+     "url": "https://huggingface.co/papers/2609.31507",
+     "name": "hf_papers"
+    },
+    {
+     "url": "https://arxiv.org/abs/2609.31507",
+     "name": "canonical"
+    }
+   ],
+   "tags": [],
+   "kind": "paper",
+   "summary": "Urban uncrewed aerial vehicle (UAV) vision-language navigation (VLN) requires agents to follow instructions across extended urban spaces, inherently demanding long-term memory and geospatial grounding. However, scaling existing benchmarks remains difficult because of their reliance on costly reconstructed 3D assets, limiting geographic diversity and episode scale. To address this, we introduce SatNav, a scalable, long-horizon UAV VLN benchmark built from high-resolution satellite imagery. SatNav targets city-level navigation missions and uses satellite crops as approximations of UAV nadir views for visual observations. Through an automated cue-to-episode pipeline, SatNav constructs 118K episodes from 59 scenes across 18 cities, with an average trajectory length of 379 m. To stress-test long-horizon memory and geospatial reasoning, SatNav defines three task families: Boundary, Landmark, and Route, targeting loop progress tracking, landmark-based spatial grounding, and route following with counting cues. Benchmarking classical VLN agents and recent agents based on large vision-language models (LVLMs) on SatNav shows that city-scale navigation remains challenging. We further introduce SwiftVLN, a modular framework with switchable memory components, and conduct systematic memory-design ablations. Finally, satellite-to-UAV transfer experiments show that satellite-trained navigation models can operate on real-flight UAV observations, showing the practical relevance of SatNav. Our project page: https://eku127.github.io/SatNav/",
+   "needsFetch": false
+  },
+  {
+   "id": "2459123f398960a0",
+   "title": "Where WiFi Sensing Fails:A Reproducibility Study of CSI-IMU Substitution for Human Activity Recognition",
+   "category": "multimodal",
+   "channel": "s2",
+   "url": "https://openalex.org/W7208797711",
+   "sources": [
+    {
+     "url": "https://openalex.org/W7208797711",
+     "name": "s2"
+    }
+   ],
+   "tags": [],
+   "kind": "paper",
+   "summary": "We investigate whether ambient WiFi Channel State Information (CSI) can substitute for a body-worn inertial measurement unit (IMU) in human activity recognition (HAR), using the Multimodal Activity Sensing Dataset (MASD; 27 activities, 20 participants). We find that the dataset's released machine-learning-ready files expose a degraded signed CSI representation rather than the documented amplitude, invalidating conclusions drawn from the files as shipped. We rebuild proper amplitude and antenna-ratio Doppler from the raw complex CSI, recover omitted participant identifiers, and re-evaluate subject-independently. Under a controlled, multi-seed evaluation, WiFi is systematically weak: every backbone we try reaches 6-11% weighted accuracy on the 27-class set, against 73-80% for IMU, with usable accuracy on 0 of 27 activities. The corrected representation mattered (+14 percentage points on the easy subset), yet WiFi still cannot substitute, nor does fusing it with IMU beat IMU alone. A well-regularised gated fusion model degrades gracefully instead, closing its gate and becoming invariant to WiFi. A 27K-parameter feature model matches the deep network at 11x fewer parameters but fails on the same activities WiFi cannot recover. We provide the first at-scale account of where and why substitution fails, and release a corrected, subject-labelled CSI pipeline for MASD at https://github.com/Joost080/masd-wifi-imu-substitutability.",
+   "needsFetch": false
+  },
+  {
+   "id": "2fa52382eb7a2831",
+   "title": "Foundations of Large Language Models",
+   "category": "engineering",
+   "channel": "hf_papers",
+   "url": "https://huggingface.co/papers/2501.09223",
+   "sources": [
+    {
+     "url": "https://huggingface.co/papers/2501.09223",
+     "name": "hf_papers"
+    },
+    {
+     "url": "https://arxiv.org/abs/2501.09223",
+     "name": "canonical"
+    }
+   ],
+   "tags": [],
+   "kind": "paper",
+   "summary": "This is a book about large language models. As indicated by the title, it primarily focuses on foundational concepts rather than comprehensive coverage of all cutting-edge technologies. The book is structured into six main chapters, each exploring a key area: pre-training, generative models, prompting, alignment, inference, and reasoning. It is intended for college students, professionals, and practitioners in natural language processing and related fields, and can serve as a reference for anyone interested in large language models.",
+   "needsFetch": false
+  }
+ ]
+}

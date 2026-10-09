@@ -1,0 +1,100 @@
+{
+  "id": "b5d97e0997c4193a",
+  "tldr": "盒马 Java 面经五大块：面向对象与多态、并发三要素与锁、线程安全 List 三方案、异常与反射、MySQL 索引。",
+  "keyPoints": [
+    "面向对象三大特性、多态实现、抽象类与接口区别",
+    "线程安全 List：Vector、Collections.synchronizedList、CopyOnWriteArrayList",
+    "并发三要素：原子性、可见性、有序性",
+    "synchronized 与 Lock 区别，ReentrantLock、读写锁、自旋锁、公平/非公平",
+    "Java 异常机制、反射应用场景、MySQL 索引分类"
+  ],
+  "why": "算法岗工程面也常问并发与集合基础；写时复制、公平与非公平锁的吞吐-延迟取舍可迁移到数据加载与特征缓存。",
+  "difficulty": "medium",
+  "tags": ["interview", "java", "concurrency", "thread-safe", "backend"],
+  "entities": ["CopyOnWriteArrayList", "Collections.synchronizedList", "Vector", "synchronized", "ReentrantLock", "ReentrantReadWriteLock", "MySQL"],
+  "diagram": {
+    "kind": "flow",
+    "title": "盒马面经考点分层",
+    "caption": "四层考点自上而下就是一条追问链：语言基础 → 并发 → 锁 → 框架与存储。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='盒马面经四层考点流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--accent)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>① 面向对象基础</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>多态 / 抽象类 vs 接口</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>② 并发与线程安全</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>三要素 · List 三方案</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>③ 锁机制</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>synchronized vs Lock</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>④ 异常 / 反射 / MySQL 索引</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>应用场景与分类</text>\n</svg>",
+    "alt": "竖排四层：面向对象基础、并发与线程安全、锁机制、异常反射与索引，自上而下是面经追问顺序。"
+  },
+  "concepts": [
+    {
+      "name": "并发三要素（Atomicity / Visibility / Ordering）",
+      "readable": "并发 bug 的三个根源：一次操作能否不被打断（原子性）、一个线程的修改别的线程能否马上看到（可见性）、指令会不会被重排（有序性）。",
+      "analogy": "三个人共用一块白板记账：原子性是一次只让一个人写完，可见性是写完立刻把私有草稿抄上白板，有序性是按编号顺序写、不许自己插队。",
+      "analogyBreaksDown": "白板是天生全局可见的，而 CPU 有本地缓存和写缓冲，可见性问题恰恰来自缓存不同步；类比里没有『私有副本』这一层，容易让人以为看到就等于一致。",
+      "mechanism": "加锁同时解决原子性与可见性：临界区互斥，且退出时刷新主存；volatile 只保证可见性并禁止重排，不保证读改写复合操作的原子性。",
+      "visual": "画三条并列时间轴，标出同一变量的『读—改—写』三步被其它线程插入的位置，插入点即三种问题的来源。",
+      "prerequisites": ["多线程基本概念", "JMM 内存模型"],
+      "selfTest": ["i++ 为什么不是原子操作？", "volatile 能保证 i++ 线程安全吗？为什么？", "加锁如何同时解决可见性与原子性？"],
+      "formula": ""
+    },
+    {
+      "name": "写时复制（Copy-On-Write）",
+      "readable": "读操作直接读原数组、不加锁；写操作先复制一份新数组、改完再整体替换引用，从而让读永远无锁、读写不互相阻塞。",
+      "analogy": "图书馆只有一本公共目录，谁要修改就自己复印一份改好，再把公共目录整本换掉；正在看的读者手里那本旧复印件完全不受影响。",
+      "analogyBreaksDown": "类比隐藏了『复印整本』的成本：数组越大每次写越贵、内存瞬时空翻倍，所以 COW 只适合读多写少，写频繁时反而更慢。",
+      "mechanism": "CopyOnWriteArrayList 用 volatile 数组引用加写时加锁复制整数组；读拿到的是快照，避免读写互斥，代价是写开销大、读到的数据可能不是最新。",
+      "visual": "画一个数组引用和一个数组块；读线程指针指向旧数组快照，写线程在旁复制出新数组后把引用切换过去。",
+      "prerequisites": ["volatile", "数组与引用语义"],
+      "selfTest": ["COW 的读操作为什么能不加锁？", "写频繁场景为什么不该用 CopyOnWriteArrayList？", "COW 迭代时为什么不会抛 ConcurrentModificationException？"],
+      "formula": ""
+    },
+    {
+      "name": "公平锁、非公平锁与自旋锁",
+      "readable": "公平锁按等待队列先来先得；非公平锁允许新来线程插队抢锁，吞吐更高但可能饿死老线程。自旋锁不挂起线程、原地忙等，适合极短的临界区。",
+      "analogy": "公平锁像排队买票，非公平锁像旁边有人一开门就冲进去，自旋锁像在门口不停张望而不是回座位等叫号。",
+      "analogyBreaksDown": "张望不消耗体力，自旋却持续烧 CPU；在单核上自旋纯属浪费，因为持锁线程根本没机会被调度去跑。",
+      "mechanism": "非公平锁省去唤醒线程的上下文切换，减少锁释放到重获取之间的空窗；自旋把唤醒开销换成 CPU 空转，只在临界区远短于一次上下文切换时才划算。",
+      "visual": "两条泳道对比：公平锁线程按 FIFO 依次进入临界区；非公平锁新到线程直接抢占，队列里的线程仍在等待。",
+      "prerequisites": ["AQS", "CAS 与原子操作"],
+      "selfTest": ["非公平锁为什么吞吐通常更高？", "自旋锁在什么条件下才划算？", "公平锁能完全避免饥饿吗？"],
+      "formula": ""
+    }
+  ],
+  "formulas": [],
+  "selfCheck": {
+    "claims": [
+      "摘要列出考点：面向对象三大特性、多态实现、抽象类与接口区别",
+      "线程安全 List 三方案为 Vector、Collections.synchronizedList、CopyOnWriteArrayList，并涉及 ArrayList 线程安全方案",
+      "并发三要素为原子性、可见性、有序性",
+      "对比了 synchronized 与 Lock，并涉及 ReentrantLock、ReentrantReadWriteLock、自旋锁、公平锁与非公平锁",
+      "还覆盖 Java 异常机制、反射应用场景以及 MySQL 索引分类"
+    ],
+    "uncertain": [
+      "本条为 Java 与并发编程后端八股，按批次要求深读，但与多模态 / post-training / 生成式 / 世界模型算法方向的直接技术相关性有限",
+      "摘要未给出各考点的具体追问与标准答案，concepts 与 teaching 中的机制解释为通用常识补充（待核实原面经措辞）"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "这是一份 Java 后端面经，从面向对象一路问到并发、锁和索引。"},
+      {"level": "入门", "text": "盒马一面按『语言基础 → 并发 → 锁 → 存储』铺开：先问多态、抽象类与接口，再问线程安全的 List 怎么写、并发三要素，接着对比 synchronized 和各种 Lock，最后落到异常、反射和 MySQL 索引。"},
+      {"level": "进阶", "text": "这份面经的价值在于它是一条追问链：问 List 线程安全，实际是逼你说出 Vector（方法全锁）、synchronizedList（包装锁）与 CopyOnWriteArrayList（写时复制、读无锁）三种取舍；问锁，实际是逼你区分互斥、可见性、可中断与公平性。"},
+      {"level": "专家", "text": "对算法岗求职者，这类八股是工程面下限而非上限。真正可迁移的是设计思想：COW 用『读快照、写换代』换读多写少场景的无锁读，与缓存、特征表的热更新同构；公平与非公平锁的取舍是吞吐与延迟的权衡，也是并行数据加载里常见的取舍。建议按『考点 → 追问 → 一句话结论』整理成卡片，而不是背答案。"}
+    ],
+    "socratic": [
+      {"q": "为什么 Vector 已经线程安全，还要 CopyOnWriteArrayList？", "a": "Vector 给每个方法加锁，读也互斥；COW 让读完全无锁，读多写少时吞吐更高，代价是写时复制整个数组，且读到的可能不是最新数据。"},
+      {"q": "synchronized 和 Lock 最本质的区别是什么？", "a": "synchronized 是 JVM 关键字，自动释放、不可中断、非公平；Lock 是接口，需手动 unlock，支持可中断、可超时、可公平，用灵活性换复杂度。"}
+    ],
+    "mechanism": "面经的问题编排本身就是机制：它以『能不能线程安全』为线索，把 Vector、synchronizedList、CopyOnWriteArrayList 串成一条『加锁粒度逐渐让位给并发设计』的演进，再用并发三要素解释为什么单加锁不够——可见性与有序性需要内存屏障，而不只是互斥。",
+    "boundary": "这套 Java 八股的答案强绑定 JVM 语义，换到 C++ 或 Go，锁与内存模型细节都不同，不能照搬；对算法岗面试，除非岗位明确要求 Java 后端能力，否则投入产出比低于算法与手撕题。",
+    "analogyBoundary": "白板与排队类类比都默认『观察者能立刻看到』，而并发 bug 恰恰来自各线程有私有缓存副本、指令会被重排；类比看不到缓存一致性与内存屏障这一层，容易让人以为加了互斥就万事大吉。",
+    "misconceptions": [
+      "以为 volatile 能保证 i++ 的线程安全——它只保可见性，读改写不是原子操作。",
+      "把 CopyOnWriteArrayList 当通用并发 List——它是读多写少专用，写频繁时复制开销与内存都不划算。",
+      "混淆『线程安全』与『组合操作安全』——单个方法安全不代表两次调用之间安全。"
+    ],
+    "ownAnalysis": "这份面经是后端通用题，与多模态 / 后训练方向没有技术交集。（推断）但有两条思想可迁移：COW 的『读快照、写换代』在特征表热更新、数据集流式加载里反复出现；公平与非公平的吞吐-延迟权衡，等价于数据加载时『立即取』与『批量取』的取舍。建议只记这两条连接点，其余临考突击。",
+    "officialNotes": [
+      {"position": "面经来源为卡码网面试题整理页（盒马面经）", "source": "https://notes.kamacoder.com/interview/java/freshhema-interview.html"}
+    ],
+    "interviewAnswer": "如果被问 List 线程安全，我会先分场景：读多写少用 CopyOnWriteArrayList，读操作无锁、写时复制整个数组；写多或要强一致就用 Collections.synchronizedList 或自己加锁。再补并发三要素：加锁解决原子性，volatile 与内存屏障解决可见性与有序性，两者不是一回事。锁的选型上，我会对比 synchronized 的自动释放与 Lock 的可中断、可公平。",
+    "studyPath": {
+      "prerequisites": ["Java 集合与多线程基础", "JMM 内存模型基本概念"],
+      "nextSteps": ["手写一个简化版 CopyOnWrite 容器", "AQS 与 ReentrantLock 源码", "把并发八股整理成『考点-追问-一句话』卡片"]
+    }
+  }
+}

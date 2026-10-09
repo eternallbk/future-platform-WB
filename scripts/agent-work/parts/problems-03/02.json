@@ -1,0 +1,240 @@
+{
+ "id": "18112dcf61f4af70",
+ "tldr": "后序递归，左右子树各找到一个目标时当前节点即为最近公共祖先，一次遍历 O(n)。",
+ "keyPoints": [
+  "空节点或等于 p/q 时直接返回当前节点",
+  "必须后序遍历：先递归左右再判定",
+  "左右返回值都非空说明当前节点是 LCA",
+  "只有一侧非空就把该侧结果原样上传"
+ ],
+ "why": "二叉树递归模板题，考察后序遍历与返回值语义设计，是字节 / 快手 / 微软高频，也是树形 DFS 的基石。",
+ "difficulty": "medium",
+ "tags": [
+  "leetcode",
+  "binary-tree",
+  "dfs",
+  "recursion",
+  "medium"
+ ],
+ "entities": [
+  "LeetCode 236",
+  "后序遍历",
+  "最近公共祖先"
+ ],
+ "diagram": {
+  "kind": "flow",
+  "title": "后序递归求 LCA",
+  "caption": "函数语义是『返回子树中找到的 p、q 或它们的 LCA』；左右都非空时当前节点就是最低汇合点。",
+  "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='后序递归求最近公共祖先流程'><rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>递归到当前节点</text><text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>空或等于 p/q 就返回</text><line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,70 236,62 244,62' fill='var(--line-1)'/><rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>回溯左右子树</text><text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>left=dfs(L), right=dfs(R)</text><line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,124 236,116 244,116' fill='var(--line-1)'/><rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>判定是否汇合</text><text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>left 与 right 都非空 → root</text><line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,178 236,170 244,170' fill='var(--line-1)'/><rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>否则向上传递</text><text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>返回非空的那一侧</text></svg>",
+  "alt": "流程：递归到当前节点，空或等于 p/q 即返回；回溯左右子树；左右都非空则返回当前节点，否则返回非空的一侧。"
+ },
+ "concepts": [
+  {
+   "name": "后序遍历的返回值契约（Bottom-up Return Contract）",
+   "readable": "递归函数返回的不是『有没有』，而是『这棵子树里能找到的 p、q 或它们已汇合的 LCA 节点本身』。",
+   "analogy": "像逐层上报：每个小组长把小组成员往上报，谁下面同时凑齐两个人，谁就是他们的共同上级。",
+   "analogyBreaksDown": "上报模型默认成员唯一且一定在同组织内；若 p 或 q 有一个不在树里，函数会把唯一找到的那个一路当作结果上传，需要额外判存在性。",
+   "mechanism": "把查两个节点合并进一次后序 DFS：先取左右子树结果再在父节点判定。左右都非空即两目标分处两侧，父节点是唯一且最低的汇合点；否则原样上传非空一侧。",
+   "visual": "一棵树自底向上，每个节点旁标注它的返回箭头指向谁，最高处两条路径汇合的节点被高亮。",
+   "prerequisites": [
+    "二叉树遍历",
+    "递归"
+   ],
+   "selfTest": [
+    "为什么必须后序而不是前序？",
+    "把 root is p 改成比较 val 会有什么问题？",
+    "当 p 是 q 的祖先时返回值是谁？"
+   ],
+   "formula": ""
+  },
+  {
+   "name": "最近公共祖先（Lowest Common Ancestor）",
+   "readable": "两个节点所有公共祖先中最深的那个，也就是它们向上回溯路径的第一个交点。",
+   "analogy": "两个人的族谱往上追，第一个共同出现的长辈就是他们的 LCA。",
+   "analogyBreaksDown": "族谱每代唯一且有向上指针；二叉树是单向向下的，没有 parent 指针，必须先递归或额外建父指针，不能直接用『两边同时往上走』的直观做法。",
+   "mechanism": "树没有父指针，所以用后序 DFS 自底向上替代回溯；父指针版本则显式建 parent 表，从 p 往上标记再把 q 往上找第一个已标记节点。",
+   "visual": "把 p 到根的路径涂一种颜色、q 到根的路径涂另一种，两种颜色的第一个交叠点即 LCA。",
+   "prerequisites": [
+    "树的定义",
+    "哈希表"
+   ],
+   "selfTest": [
+    "父指针解法的时间与空间复杂度各是多少？",
+    "为什么 LCA 一定是 p、q 中某个节点或其祖先？",
+    "若换成二叉搜索树能否更快？怎么做？"
+   ],
+   "formula": "\\mathrm{hit}(u)=[\\,u\\in\\{p,q\\}\\,]+\\mathrm{hit}(u.l)+\\mathrm{hit}(u.r)"
+  }
+ ],
+ "formulas": [
+  {
+   "id": "f-postorder-lca-hit",
+   "name": "后序 LCA 命中计数（Post-order LCA Hit Count）",
+   "category": "engineering",
+   "latex": "\\mathrm{hit}(u)=[\\,u\\in\\{p,q\\}\\,]+\\mathrm{hit}(u.l)+\\mathrm{hit}(u.r)",
+   "symbols": [
+    [
+     "hit(u)",
+     "以 u 为根的子树中命中 p、q 的个数"
+    ],
+    [
+     "u.l, u.r",
+     "u 的左右孩子"
+    ],
+    [
+     "u 属于 p,q",
+     "示性函数，命中取 1 否则取 0"
+    ]
+   ],
+   "derivation": [
+    "从叶子起算：子树命中数 = 自身命中 + 左子树命中 + 右子树命中。",
+    "按后序自底向上计算，第一次出现 hit(u)=2 的节点即最低汇合点。",
+    "父节点命中数不超过其孩子之和，故 2 最早出现在最深的汇合处。",
+    "该节点就是最近公共祖先；若 p 是 q 的祖先，则 p 自身先达到 2。"
+   ],
+   "analogy": "两级点名：底下各排先报人数，第一个凑够 2 人的上级就是共同负责人。",
+   "pitfalls": [
+    "把节点相等写成 val 相等，遇到重复值就判断错误",
+    "用前序提前判定，可能在更高层就错误返回",
+    "p、q 不保证在树中时缺少存在性保护"
+   ],
+   "code": "def hit(u, p, q):\n    if u is None:\n        return 0\n    c = (u is p) + (u is q)\n    c += hit(u.left, p, q) + hit(u.right, p, q)\n    return c\n# 后序第一个 hit == 2 的节点即 LCA",
+   "sources": [
+    {
+     "title": "二叉树的最近公共祖先（LeetCode 236）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree"
+    },
+    {
+     "title": "LeetCode 236 · 二叉树的最近公共祖先（题面与示例）",
+     "url": "https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree"
+    }
+   ]
+  }
+ ],
+ "selfCheck": {
+  "claims": [
+   "该题被字节 133 次、快手 22 次、微软 21 次等考过，共 179 次",
+   "难度为中等",
+   "最近一次出现 2026-09-29",
+   "本题属于二叉树 / 回溯类"
+  ],
+  "uncertain": [
+   "源信息未给题目示例，problem.examples 为自行构造并已用参考实现核对",
+   "考频为采集层统计口径，未逐条核实"
+  ]
+ },
+ "teaching": {
+  "progressive": [
+   {
+    "level": "一句话",
+    "text": "左右两边各找到一个人，交汇点就是共同祖先。"
+   },
+   {
+    "level": "入门",
+    "text": "递归每个节点：若它就是 p 或 q 就返回自己；然后看左右子树各自返回了什么，两边都有人说明汇合了。"
+   },
+   {
+    "level": "进阶",
+    "text": "关键是返回值语义：dfs 返回的是『子树中命中的那个节点或它们的 LCA』。左右都非空 → 当前节点是 LCA；只有一侧非空 → 把那一侧原样上传，因为另一目标不在这棵子树里。"
+   },
+   {
+    "level": "专家",
+    "text": "这等价于后序统计命中数第一次达到 2 的节点。对照父指针解法：先 O(n) 建 parent 表，再从 p 往上标记，q 往上找到第一个已标记节点，同样是 O(n) 时间但多 O(n) 空间。二叉搜索树版本可借有序性从根一次下行做到 O(h)。"
+   }
+  ],
+  "socratic": [
+   {
+    "q": "为什么必须后序，先判定父节点行不行？",
+    "a": "前序时还不知道子树里有没有目标，过早判定会在更高的节点错误返回；只有拿到左右子树结果才能确认是否汇合。"
+   },
+   {
+    "q": "为什么只找到一侧不用继续找？",
+    "a": "另一侧返回空说明另一目标不在这棵子树，那么 LCA 必然已经在非空的那一侧被找到并上传，无需再判父节点。"
+   }
+  ],
+  "mechanism": "树只有向下的指针，无法从 p、q 直接上溯，于是把『找共同祖先』转成一次自底向上的后序汇总：让每个节点在拿到两棵子树的结果后再做唯一一次的汇合判定，从而用一次 DFS 同时完成搜索与求 LCA。",
+  "boundary": "前提是 p、q 都确实存在于树中。若题目允许目标不存在，则本解法会把唯一找到的节点误当作 LCA，需要额外返回是否命中的信息来兜底。",
+  "analogyBoundary": "『逐层上报』默认每个成员只属于一个小组；当 p、q 分属不同子树时类比成立，但当某目标是另一个的祖先时，『汇合』其实发生在目标自身而非它的父节点，类比会让人误以为一定要在更高的节点汇合。",
+  "misconceptions": [
+   "用节点值比较而不是节点对象比较，重复值场景出错",
+   "把 LCA 定义成数值最小的公共祖先，忽略『最低』是深度最深",
+   "忘记空节点的终止条件导致访问 None 报错"
+  ],
+  "ownAnalysis": "（推断）本题的返回值语义与『路径总和』『对称二叉树』里常见的『传布尔 / 传节点』一脉相承，面试中能主动讲清契约，比背模板更能体现对递归的理解。",
+  "officialNotes": [],
+  "interviewAnswer": "我用后序递归。dfs 的语义是：若子树里找到 p 或 q 就返回那个节点，若同时找到两者就返回它们的 LCA。终止条件是节点为空或等于 p/q。拿到 left、right 后，左右都非空说明当前节点是汇合点，返回当前节点；否则返回非空的一侧。时间 O(n)，空间最坏 O(h)。",
+  "studyPath": {
+   "prerequisites": [
+    "二叉树遍历",
+    "递归调用栈",
+    "节点对象与引用"
+   ],
+   "nextSteps": [
+    "LeetCode 235 二叉搜索树的 LCA",
+    "LeetCode 112/113 路径总和",
+    "父指针迭代写法练习"
+   ]
+  }
+ },
+ "problem": {
+  "title": "二叉树的最近公共祖先",
+  "number": 236,
+  "difficulty": "medium",
+  "statement": "给定一棵二叉树的根节点 root 与两个节点 p、q（保证都在树中），返回它们的最近公共祖先：即满足『同时是 p、q 的祖先且深度最大』的那个节点。允许一个节点是它自己的祖先。",
+  "examples": [
+   {
+    "input": "root=[3,5,1,6,2,0,8,null,null,7,4], p=5, q=1",
+    "output": "3",
+    "why": "5 在左子树、1 在右子树，汇合于根 3"
+   },
+   {
+    "input": "同上树, p=5, q=4",
+    "output": "5",
+    "why": "4 在 5 的右子树中，5 本身即为祖先"
+   }
+  ],
+  "approach": {
+   "idea": "用后序 DFS。定义 dfs(root) 返回『子树中找到的 p 或 q，或它们已汇合的 LCA』。先递归左右子树，再在 root 处判定：两边都非空则 root 是 LCA；否则上传非空一侧。",
+   "steps": [
+    "1. 终止：root 为空，或 root 就是 p / q，直接返回 root。",
+    "2. 递归 left = dfs(root.left)、right = dfs(root.right)。",
+    "3. 若 left 与 right 都非空 → 两目标分处两侧，root 就是 LCA，返回 root。",
+    "4. 否则返回 left if left is not None else right（把命中的那侧上传）。"
+   ],
+   "whyItWorks": "后序保证在判定 root 之前，左右子树的结果已就绪。root 是 p、q 的祖先当且仅当两目标一个在左一个在右，或其中一个就是 root。第一种情况下自底向上第一个左右都非空的节点必是深度最大的汇合点，即最近公共祖先；第二种情况被终止条件在 root 处直接返回。",
+   "alternatives": [
+    {
+     "name": "父指针 + 路径标记",
+     "complexity": "O(n)/O(n)",
+     "when": "p、q 可能被多次查询，或想避免递归栈溢出时，先建 parent 表再逐次上溯"
+    },
+    {
+     "name": "两次 DFS 记录路径",
+     "complexity": "O(n)/O(n)",
+     "when": "需要显式得到 p、q 到根的路径，便于讲解或进一步比较前缀"
+    }
+   ]
+  },
+  "solution": {
+   "python": "class TreeNode:\n    def __init__(self, val=0, left=None, right=None):\n        self.val = val\n        self.left = left\n        self.right = right\n\n\ndef lowestCommonAncestor(root, p, q):\n    if root is None or root is p or root is q:\n        return root\n    left = lowestCommonAncestor(root.left, p, q)\n    right = lowestCommonAncestor(root.right, p, q)\n    if left is not None and right is not None:\n        return root\n    return left if left is not None else right",
+   "python_alt": "def lowestCommonAncestor(root, p, q):\n    parent = {root: None}\n    stack = [root]\n    while p not in parent or q not in parent:\n        node = stack.pop()\n        if node.left:\n            parent[node.left] = node\n            stack.append(node.left)\n        if node.right:\n            parent[node.right] = node\n            stack.append(node.right)\n    ancestors = set()\n    while p:\n        ancestors.add(p)\n        p = parent[p]\n    while q not in ancestors:\n        q = parent[q]\n    return q",
+   "notes": "用 is 比较节点对象而非 val；递归深度等于树高，链状树最坏 O(n) 需注意栈溢出。父指针版用 parent 表替代递归。"
+  },
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(h)",
+   "why": "每个节点最多访问一次；递归栈深度等于树高 h，最坏链状树为 O(n)。父指针版空间为 O(n)。"
+  },
+  "pitfalls": [
+   "用 root.val == p.val 判定，节点值重复时会误判",
+   "只判断 left 非空就返回 left，漏掉左右都非空的汇合判定",
+   "忘记 root 为空时返回 None，访问 None.left 报错"
+  ],
+  "edgeCases": [
+   "p 或 q 就是根节点：终止条件立即返回根",
+   "p 是 q 的祖先：在 p 处命中即返回 p",
+   "链状树：递归深度 O(n)，Python 默认递归上限可能不够"
+  ],
+  "interviewTips": "先说清函数返回值语义再写代码，这是本题得分点。若卡住，可退一步讲父指针解法（建 parent 表后求路径交点）作为兜底；写完后主动说明时间 O(n)、空间 O(h)，并提醒链状树递归深度的问题。"
+ }
+}

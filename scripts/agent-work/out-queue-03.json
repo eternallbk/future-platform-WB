@@ -1,0 +1,1159 @@
+{
+ "batchId": "queue-03",
+ "entries": [
+  {
+   "id": "725a16be31a8a015",
+   "tldr": "隔离 RL 后训练阶段的参数更新，只把其主导方向保幅值迁移到 VLM 语言模块，15 项对比中 12 项优于全量更新插值。",
+   "keyPoints": [
+    "全量更新迁移次优：各分量跨模型可迁移性差异很大",
+    "主导方向比完整更新更容易跨模型迁移",
+    "Selective-RL 隔离 RL 更新并保留矩阵级主导方向、保幅值",
+    "12/15 对比优于全量插值，Qwen 接收方 MathVision 提升 8.55 点",
+    "匹配控制：单靠幅度或任意低秩不能复现增益"
+   ],
+   "why": "后训练能力如何跨模型复用是 post-training 高频考点；「哪些更新真能迁移」可迁移到 VLM 推理增强与参数级能力注入。",
+   "difficulty": "hard",
+   "tags": [
+    "posttraining",
+    "model-merging",
+    "rl",
+    "vlm",
+    "transfer"
+   ],
+   "entities": [
+    "Selective-RL",
+    "MathVision",
+    "Qwen"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "Selective-RL 迁移流程",
+    "caption": "把 RL 后训练的更新拆开，只把能跨模型迁移的主导方向搬进 VLM 语言模块。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='选择性迁移 RL 更新的四步流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>隔离 RL 阶段更新（Δ = θ_RL − θ_SFT）</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>逐矩阵 SVD 分解（按奇异值排方向）</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>保幅值保留主导方向</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>注入 VLM 语言模块，接收方直接得推理能力</text>\n</svg>",
+    "alt": "选择性迁移 RL 更新的四步流程：隔离 RL 更新、逐矩阵 SVD 分解、保幅值保留主导方向、注入 VLM 语言模块。"
+   },
+   "concepts": [
+    {
+     "name": "Training-Stage Update Isolation（训练阶段更新隔离）",
+     "readable": "不再比较「后训练模型终点」和「基座」，而是先扣掉基座自身差异，只拿出 RL 那一步真正改动的参数。",
+     "analogy": "想学某位老师的方法，不是照抄他现在全部讲义，而是和他入职前的旧版对照，只把这段新增的批注抄过来。",
+     "analogyBreaksDown": "讲义能逐页干净比对，但神经网络里预训练已有差异与后训练改动叠在同一组权重上，只能按训练阶段取差近似。",
+     "mechanism": "用同一基座两阶段检查点相减得到 Δ=θ_RL−θ_SFT，把能力转移的坐标系从模型端点换成训练阶段增量，只谈后训练学到的东西。",
+     "visual": "一条从 θ_SFT 指向 θ_RL 的箭头表示 Δ，旁边另一条 θ_pre 到 θ_post 的端点差箭头方向不同，强调只有前者是纯 RL 增量。",
+     "prerequisites": [
+      "SFT 与 RL 两阶段后训练流程",
+      "模型合并与任务向量"
+     ],
+     "selfTest": [
+      "端点差混进了什么？",
+      "为何要在阶段增量而非端点差上迁移？",
+      "Δ 与权重本身是否同量纲可加？"
+     ],
+     "formula": "\\Delta_{\\mathrm{RL}} = \\theta_{\\mathrm{RL}} - \\theta_{\\mathrm{SFT}}"
+    },
+    {
+     "name": "Dominant-Direction Selective Transfer（主导方向选择性迁移）",
+     "readable": "把更新的每个权重矩阵做 SVD，只搬走奇异值最大（能量最大）的那几个方向，并且幅值原样保留。",
+     "analogy": "搬家时行李塞不下，就按使用频率只带最常用的几件，而且原封不动地搬，不改它们的尺寸。",
+     "analogyBreaksDown": "被丢掉的方向并非「不存在的家当」，它们可能承载接收方通用能力，丢弃或改写会扰乱对方，家当类比不成立。",
+     "mechanism": "实验发现同一 RL 更新各分量跨模型迁移性差别很大、主导方向最可迁移，于是逐矩阵截断到前 k 个奇异方向并保留奇异值，使迁移的是方向而非被重缩放的量。",
+     "visual": "对每个权重矩阵画一条奇异值下降曲线，前 k 个点用主色标出（要迁移），尾部浅色（丢弃），旁边注「保幅值=点高不变」。",
+     "prerequisites": [
+      "奇异值分解与低秩近似",
+      "LoRA 秩概念"
+     ],
+     "selfTest": [
+      "「保幅值」保留的是什么量？",
+      "为何任意低秩不一定复现增益？",
+      "k 为何要按矩阵分别选？"
+     ],
+     "formula": "\\Delta_{\\mathrm{sel}} = U_{:k}\\Sigma_{:k}V_{:k}^{\\top}"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-rl-update-isolation",
+     "name": "RL 阶段更新隔离与注入",
+     "category": "posttraining",
+     "latex": "\\Delta_{\\mathrm{RL}} = \\theta_{\\mathrm{RL}} - \\theta_{\\mathrm{SFT}}, \\quad \\theta_{\\mathrm{recv}} \\leftarrow \\theta_{\\mathrm{recv}} + \\alpha\\,\\Delta_{\\mathrm{sel}}",
+     "symbols": [
+      [
+       "\\theta_{\\mathrm{SFT}}",
+       "RL 之前的检查点"
+      ],
+      [
+       "\\theta_{\\mathrm{RL}}",
+       "RL 后训练后的检查点"
+      ],
+      [
+       "\\Delta_{\\mathrm{RL}}",
+       "隔离出的 RL 净增量"
+      ],
+      [
+       "\\Delta_{\\mathrm{sel}}",
+       "选择性保留后的更新"
+      ],
+      [
+       "\\alpha",
+       "迁移强度"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：端点差 θ_post−θ_pre 会把预训练期已有差异也算进去。",
+      "第 2 步：取同基座相邻两阶段之差得纯 RL 增量 Δ_RL。",
+      "第 3 步：把选择后的增量按强度 α 加到接收方语言模块。",
+      "第 4 步：全量迁移次优，故用 Δ_sel 取代 Δ_RL。"
+     ],
+     "analogy": "像转岗交接：只交接前任在这个项目上新增的流程，再叠到你原有习惯上。",
+     "pitfalls": [
+      "用端点差当增量，把无关差异算成可迁移能力",
+      "以为 α 越大越好，忽略全量注入反而次优"
+     ],
+     "code": "import torch\n@torch.no_grad()\ndef transfer(recv, src_rl, src_sft, sel, alpha=1.0):\n    for n, p in recv.named_parameters():\n        p.add_(alpha * sel(src_rl[n] - src_sft[n]))  # 隔离后注入",
+     "sources": [
+      {
+       "title": "Selective Transfer of RL Updates for Visual Reasoning",
+       "url": "https://arxiv.org/abs/2610.08659v1"
+      }
+     ]
+    },
+    {
+     "id": "f-dominant-direction-svd",
+     "name": "主导方向截断与保幅值",
+     "category": "posttraining",
+     "latex": "\\Delta = U\\Sigma V^{\\top}, \\quad \\Delta_{\\mathrm{sel}} = U_{:k}\\Sigma_{:k}V_{:k}^{\\top}",
+     "symbols": [
+      [
+       "\\Delta",
+       "权重矩阵上的 RL 更新"
+      ],
+      [
+       "U, V",
+       "左右奇异向量（方向）"
+      ],
+      [
+       "\\Sigma",
+       "奇异值对角阵（幅值）"
+      ],
+      [
+       "k",
+       "保留的主导方向数"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：对每个权重矩阵的更新做 SVD，拆成方向与幅值。",
+      "第 2 步：实验发现按奇异值排序的主导方向迁移性更高。",
+      "第 3 步：只取前 k 个方向并保留奇异值（保幅值）。",
+      "第 4 步：用 Δ_sel 替代全量 Δ 注入接收方。"
+     ],
+     "analogy": "像压缩照片：只保留最主要的几种色块并按原亮度照搬，而非把颜色统一调暗。",
+     "pitfalls": [
+      "把保幅值做成把奇异值归一化，改掉了更新尺度",
+      "跨矩阵统一 k，忽略各层可迁移方向数不同"
+     ],
+     "code": "import torch\ndef sel_svd(delta, k):\n    U, S, Vh = torch.linalg.svd(delta, full_matrices=False)\n    return (U[:, :k] * S[:k]) @ Vh[:k]   # 保幅值：保留 S[:k]",
+     "sources": [
+      {
+       "title": "Selective Transfer of RL Updates for Visual Reasoning",
+       "url": "https://arxiv.org/abs/2610.08659v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "端点式迁移会把模型既有差异与后训练获得的变化混在一起",
+     "作者围绕训练阶段更新做能力迁移，隔离 RL 引起的参数变化",
+     "全量迁移该更新次优，各分量跨模型可迁移性差异显著",
+     "主导方向比完整更新迁移得更有效",
+     "Selective-RL 保留矩阵级主导方向并保幅值，再迁移到 VLM 语言模块",
+     "在 3 个模型族、5 个视觉推理基准上，15 项中 12 项优于全量更新插值",
+     "Qwen 接收方在 MathVision 上提升 8.55 个百分点",
+     "匹配控制显示单靠更新幅度或任意低秩不能复现这些增益"
+    ],
+    "uncertain": [
+     "保幅值定义与 k 的选取策略摘要未给，公式为按摘要重建的通用形式，需核对原文",
+     "三个模型族与另外两个基准名摘要未列出，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "把 RL 后训练改动的参数挑出最能迁移的方向，搬到另一个视觉语言模型里。"
+     },
+     {
+      "level": "入门",
+      "text": "模型合并能把语言模型的推理能力免训练搬给 VLM，但直接比两个模型端点会把基座差异也算进去。这篇改成只看 RL 那一步的增量，再搬给 VLM 的语言模块。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键发现是全量搬运 RL 增量并不好：同一更新里各分量跨模型迁移性差别很大，主导方向最能迁移。于是先隔离 Δ=θ_RL−θ_SFT，再对每个权重矩阵做 SVD，只留前 k 个主导方向并保幅值，最后按强度 α 注入接收方语言模块。"
+     },
+     {
+      "level": "专家",
+      "text": "与经典任务向量相比，它把坐标系从端点差换成训练阶段增量，避免把预训练差异误当能力；与 LoRA 式低秩微调相比，它不训练而是截断已有更新并保持奇异值尺度。摘要强调「后训练学到什么」与「什么能跨模型迁移」是两回事：匹配控制显示仅靠幅值或任意低秩都无法复现增益。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不能直接搬 θ_post−θ_pre？",
+      "a": "端点差把两模型本就存在的架构与预训练差异也算进去了，真正来自 RL 的部分被淹没，会带入无关漂移。"
+     },
+     {
+      "q": "全量搬 RL 增量为什么不够？",
+      "a": "更新里次要分量跨模型迁移性差，搬过去会引入噪声甚至负迁移，只留主导方向更稳。"
+     }
+    ],
+    "mechanism": "能力转移的难点是混入无关差异。作者先把搬运对象从模型端点换成训练阶段增量，使被搬的量只含 RL 学到的变化；再用矩阵级 SVD 拆出方向与幅值，利用「主导方向更可迁移」的规律选择性截断并保幅值以免改变尺度。这样迁移的是可复用方向而非整块增量，故优于全量插值。",
+    "boundary": "当接收方与源模型语言模块结构差异过大，或 RL 增量的主导方向恰是模型特有能力时，迁移会失效甚至负迁移。若 RL 本身增益很小，可迁移信号也弱。k 与 α 需按模型族调。",
+    "analogyBoundary": "搬家类比在「家当可独立挑选」时成立；但权重方向不是独立物件，被截断的分量仍参与行为，且不同模型同名前缀未必语义对应，类比失效。",
+    "misconceptions": [
+     "把端点差当训练增量，忽略预训练差异的污染。",
+     "以为任意低秩截断都行——作者控制实验专门否定了这点。"
+    ],
+    "ownAnalysis": "（推断）这套「阶段增量 + 主导方向迁移」像把 RL 更新当作可插拔适配器，与 LoRA 可合并性同源但方向相反：LoRA 主动学低秩，这里从已有更新里筛低秩。可疑处是主导方向由训练动态而非任务语义决定，若两模型语言塔对齐不佳，保幅值可能放大失配；摘要只给 12/15 与单个 8.55 点，未给跨族完整表，需核对原文。",
+    "officialNotes": [
+     {
+      "position": "后训练「学到什么」与「什么能跨模型迁移」是两个不同问题，训练阶段视角为跨模型能力转移提供新解释",
+      "source": "arxiv: 2610.08659v1"
+     }
+    ],
+    "interviewAnswer": "先区分两个坐标系：端点差 θ_post−θ_pre 会混进模型本来就有的差异，所以这篇改成只看 RL 阶段的增量 Δ=θ_RL−θ_SFT。它还有个经验发现——同一增量里各分量跨模型迁移性差别很大，主导方向最可迁移，于是对每个权重矩阵做 SVD，只留前 k 个主导方向并保幅值，再注入 VLM 语言模块。结果是 15 项里 12 项优于全量插值，Qwen 上 MathVision 涨了 8.55 点，控制实验还显示光靠幅值或任意低秩复现不了。核心洞见是：学到的能力不等于可迁移的能力。",
+    "studyPath": {
+     "prerequisites": [
+      "模型合并与任务向量",
+      "SVD 与低秩近似",
+      "SFT→RL 两阶段后训练"
+     ],
+     "nextSteps": [
+      "读原文核对保幅值与 k 的选取",
+      "对比 LoRA 合并与更新截断",
+      "把该接口试接到视觉塔"
+     ]
+    }
+   }
+  },
+  {
+   "id": "ef3c061bcdcc3d1a",
+   "tldr": "在 on-policy 蒸馏的采样阶段引入较弱负策略，把负策略偏好而教师不偏好的 token 持续暴露给教师监督，构成显式负信号。",
+   "keyPoints": [
+    "on-policy 蒸馏让学生在自己 rollout 上取教师 token 级监督",
+    "教师与学生分布重叠少时，纯正监督的学习信号不足",
+    "NP-OPD 在 rollout 阶段引入更低能力的负策略作负参考",
+    "不改蒸馏奖励形式，把负偏好 token 置于教师监督之下",
+    "跨模型规模、生成模式、推理域与多种 OPD 变体均提升"
+   ],
+   "why": "on-policy 蒸馏是后训练核心技能；「rollout 策略本身也是设计变量」这一视角对 RLHF/蒸馏方向实习面试很实用。",
+   "difficulty": "hard",
+   "tags": [
+    "posttraining",
+    "distillation",
+    "on-policy",
+    "rl",
+    "negative-policy"
+   ],
+   "entities": [
+    "NP-OPD",
+    "On-Policy Distillation",
+    "naver-ai"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "NP-OPD 训练流程",
+    "caption": "在采样阶段同时用负策略 rollout，把教师不偏好的 token 也拉进教师监督之下。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='NP-OPD 四步流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>双策略采样（学生 + 负策略）</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>标记负策略偏好 token</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>教师 token 级监督</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>更新学生，使其远离负策略</text>\n</svg>",
+    "alt": "NP-OPD 四步流程：双策略采样、标记负策略偏好 token、教师 token 级监督、更新学生使其远离负策略。"
+   },
+   "concepts": [
+    {
+     "name": "On-Policy Distillation（在线策略蒸馏）",
+     "readable": "学生先自己生成答案，再由更强教师逐步打分，学生按 token 级分数对齐教师分布。",
+     "analogy": "像学生先自己做题，老师对着他每一步批注该往哪改，而不是让他背标准答案。",
+     "analogyBreaksDown": "师生批注是离散自然语言反馈，这里是逐 token 分布对齐；教师分布可能处处很平，批注就退化成自言自语。",
+     "mechanism": "用学生 rollout 缓解训练与推理的分布错配，再用教师在每 token 位置的前向 KL 拉近学生分布，即 on-policy 数据加教师监督。",
+     "visual": "一条 token 时间轴，学生 token 为实心方块，每块上方画从学生分布指向教师分布的箭头，长度代表对齐差距。",
+     "prerequisites": [
+      "知识蒸馏与 KL 散度",
+      "自回归模型 rollout 采样"
+     ],
+     "selfTest": [
+      "on-policy 的「on」是谁的分布？",
+      "为何用学生 rollout 而非固定数据集？",
+      "逐 token 对齐与序列级蒸馏差在哪？"
+     ],
+     "formula": "\\mathcal{L}_{\\mathrm{OPD}} = \\mathbb{E}_{y \\sim \\pi_{\\theta}}\\left[ \\sum_{t} D_{\\mathrm{KL}}\\left( p_{T}(\\cdot \\mid x, y_{<t}) \\,\\|\\, p_{\\theta}(\\cdot \\mid x, y_{<t}) \\right) \\right]"
+    },
+    {
+     "name": "Negative-Policy Rollout（负策略 rollout）",
+     "readable": "额外用一个更差的模型生成答案，把「差模型更偏好、教师更不偏好」的 token 挑出来，仍交给教师纠正。",
+     "analogy": "排练时找一个水平明显更差的搭档，凡他偏选而老师不认可的走法，都摆到台面让老师点评。",
+     "analogyBreaksDown": "差搭档的坏习惯未必等于这个学生要避开的；负策略分布奇异时挑出的 token 可能与学生易错点无关，反而加噪。",
+     "mechanism": "负策略在 rollout 阶段引入而非改奖励：对负策略概率超过教师的 token 置指示量并加权，使其始终处于教师监督下，形成显式负信号又不破坏正监督。",
+     "visual": "两条 rollout 序列并排（上学生、下负策略），圈出「负策略概率>教师概率」的位置，再画箭头送回教师监督通道。",
+     "prerequisites": [
+      "on-policy 蒸馏流程",
+      "KL 与 token 概率比较"
+     ],
+     "selfTest": [
+      "NP-OPD 改的是奖励还是 rollout？",
+      "为何仍用教师监督而非负奖励？",
+      "负策略该选多弱？"
+     ],
+     "formula": "w_{t} = \\mathbf{1}\\!\\left[ p_{\\mathrm{neg}}(y_{t} \\mid \\cdot) > p_{T}(y_{t} \\mid \\cdot) \\right]"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-on-policy-distill-kl",
+     "name": "在线策略蒸馏目标",
+     "category": "posttraining",
+     "latex": "\\mathcal{L}_{\\mathrm{OPD}} = \\mathbb{E}_{x,\\, y \\sim \\pi_{\\theta}}\\left[ \\sum_{t} D_{\\mathrm{KL}}\\left( p_{T}(\\cdot \\mid x, y_{<t}) \\,\\|\\, p_{\\theta}(\\cdot \\mid x, y_{<t}) \\right) \\right]",
+     "symbols": [
+      [
+       "\\pi_{\\theta}",
+       "学生策略，也是 rollout 来源"
+      ],
+      [
+       "p_{T}",
+       "教师给出的下一 token 分布"
+      ],
+      [
+       "p_{\\theta}",
+       "学生给出的下一 token 分布"
+      ],
+      [
+       "y \\sim \\pi_{\\theta}",
+       "学生自己采样得到的轨迹"
+      ],
+      [
+       "y_{<t}",
+       "第 t 步之前的 token 前缀"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：蒸馏目标是让学生逼近更强的教师。",
+      "第 2 步：on-policy 指监督数据来自学生自己的 rollout，缓解分布错配。",
+      "第 3 步：每个 token 位置用前向 KL 对齐学生与教师分布。",
+      "第 4 步：对轨迹求期望、对位置求和得总目标。"
+     ],
+     "analogy": "像学生照自己草稿做笔记，老师每步告诉你「我本来会怎么写」，你逐条改成老师的风格。",
+     "pitfalls": [
+      "把 on-policy 说成用固定离线数据，丢掉分布对齐动机",
+      "混淆前向与反向 KL，二者对模式覆盖行为不同"
+     ],
+     "code": "import torch.nn.functional as F\ndef opd_loss(s_logits, t_logits):\n    lp_s = F.log_softmax(s_logits, -1)\n    p_t = F.softmax(t_logits, -1)\n    return F.kl_div(lp_s, p_t, reduction=\"batchmean\")  # 教师→学生前向 KL",
+     "sources": [
+      {
+       "title": "On-Policy Distillation with Negative-Policy Rollouts",
+       "url": "https://arxiv.org/abs/2610.07874v1"
+      }
+     ]
+    },
+    {
+     "id": "f-negative-policy-opd",
+     "name": "负策略 OPD 目标",
+     "category": "posttraining",
+     "latex": "\\mathcal{L}_{\\mathrm{NP}} = \\mathcal{L}_{\\mathrm{OPD}} + \\lambda\\, \\mathbb{E}_{y \\sim \\pi_{\\mathrm{neg}}}\\left[ \\sum_{t} w_{t}\\, D_{\\mathrm{KL}}\\left( p_{T} \\,\\|\\, p_{\\theta} \\right)_{t} \\right], \\quad w_{t} = \\mathbf{1}\\!\\left[ p_{\\mathrm{neg}}(y_{t}) > p_{T}(y_{t}) \\right]",
+     "symbols": [
+      [
+       "\\pi_{\\mathrm{neg}}",
+       "更低性能的负策略"
+      ],
+      [
+       "w_{t}",
+       "负策略概率超过教师时置一的指示量"
+      ],
+      [
+       "\\lambda",
+       "负信号权重"
+      ],
+      [
+       "p_{\\mathrm{neg}}",
+       "负策略在该位置的 token 概率"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：教师与学生分布重叠少时，纯正监督信号不足。",
+      "第 2 步：引入更弱的负策略，采样它偏好而教师不偏好的 token。",
+      "第 3 步：对这些 token 仍施加教师监督，而非改成负奖励。",
+      "第 4 步：负策略只在 rollout 阶段进入，正监督项保持不变。"
+     ],
+     "analogy": "像复习错题：把「你差点选错的方向」挑出来重新对着标准答案订正，而非给错项扣分。",
+     "pitfalls": [
+      "以为它改了蒸馏奖励公式，其实改的是 rollout 策略",
+      "把 w_t 当硬负奖励去最小化，实际仍是教师正监督"
+     ],
+     "code": "import torch.nn.functional as F\ndef np_opd(s_logits, t_logits, n_logits, tok_ids, lam=0.5):\n    ls = F.log_softmax(s_logits, -1); pt = F.softmax(t_logits, -1); pn = F.softmax(n_logits, -1)\n    kl = F.kl_div(ls, pt, reduction=\"none\").sum(-1)      # per-token [B,T]\n    g = tok_ids.unsqueeze(-1)\n    w = (pn.gather(-1, g) > pt.gather(-1, g)).squeeze(-1).float()\n    return kl.mean() + lam * (w * kl).mean()",
+     "sources": [
+      {
+       "title": "On-Policy Distillation with Negative-Policy Rollouts",
+       "url": "https://arxiv.org/abs/2610.07874v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "on-policy 蒸馏让学生在自己 rollout 上获得教师 token 级监督",
+     "现有 OPD 改进了蒸馏奖励形式与教师配置，但目标始终是模仿教师",
+     "教师与学生分布重叠有限时，正监督提供的学习信号不足",
+     "NP-OPD 用一个更低性能、更低能力的负策略作负参考补充教师监督",
+     "NP-OPD 在 rollout 阶段引入负策略，而非修改蒸馏奖励公式",
+     "负策略偏好、教师不偏好的 token 被持续置于教师监督下",
+     "NP-OPD 在模型规模、生成模式、推理域与多种 OPD 变体上都提升",
+     "分析显示 NP-OPD 压制负策略偏好的 token 并把学生推离负策略"
+    ],
+    "uncertain": [
+     "负策略构造方式与 λ 取值摘要未给，公式为按摘要重建的通用形式，需核对原文",
+     "「更低能力」的判定标准摘要未说明，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "蒸馏时再找个更差的模型做陪练，把它偏好的坏 token 挑出来让老师继续纠正。"
+     },
+     {
+      "level": "入门",
+      "text": "on-policy 蒸馏让学生自己写、老师逐步批注。但老师太强、与学生分布重叠少时，全是正面示范会学不动。这篇额外用一个更弱模型生成答案，把坏模型喜欢、老师不喜欢的 token 也纳入教师监督。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键选择是把负策略放在 rollout 阶段而不是改奖励：对学生和负策略两条 rollout 都算教师监督，对「负策略概率>教师概率」的 token 加权，构成显式负信号，同时原正监督项原样保留，不破坏 OPD 稳定性。"
+     },
+     {
+      "level": "专家",
+      "text": "相较只改奖励形式或换教师配置的 OPD 变体，NP-OPD 指出 rollout 策略本身是设计变量：正监督只覆盖学生当前分布，负策略把尚未暴露的坏区域摊开。代价是多一套 rollout 采样开销，λ 与负策略强度需调；摘要称多规模多域一致提升，但未给数值。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么只有教师的正向监督可能不够？",
+      "a": "当教师分布与学生重叠有限时，好示范落在学生到不了的区域，学生当前轨迹上的梯度信号很弱，学不动。"
+     },
+     {
+      "q": "为什么不干脆把负偏好 token 当负奖励？",
+      "a": "硬负奖励易失稳；作者改为仍用教师监督去纠正这些 token，既显式压坏了负偏好，又保留 OPD 的稳定正监督。"
+     }
+    ],
+    "mechanism": "蒸馏有效性取决于学生当前分布上是否有足够梯度。教师与学生分布重叠少时，正监督只在学生已能到的地方给信号，坏区域从未被触及。作者在 rollout 阶段补一个更弱的负策略，专门采样它偏好而教师不偏好的 token，让这些此前被忽略的位置也进入教师监督，从而在不改损失形式的前提下显式注入负信号。",
+    "boundary": "当负策略与被蒸馏任务几乎无关时，挑出的 token 会变成噪声。若教师与学生本就分布接近，正监督已足够，收益有限却多出采样成本。",
+    "analogyBoundary": "陪练类比在「坏棋就是坏棋、标准答案唯一」时成立；但教师分布对某些 token 可能本身就很平，此时「负策略偏好>教师」只反映相对排序，未必对应真正对错，指示量会误判。",
+    "misconceptions": [
+     "以为方法改了蒸馏奖励公式——它改的是 rollout 策略。",
+     "把负偏好 token 当错误标签做负向优化，破坏训练稳定。"
+    ],
+    "ownAnalysis": "（推断）NP-OPD 与对比学习的「负样本」同源：靠对照放大判别信号，但这里负样本是整条 rollout 且只当采样来源，比嵌入负样本更轻。可疑处在于负策略强度是新超参，太弱挑不出 token、太强会偏离学生易错区；摘要只给定性分析，未给构造细节与数值，需核对原文与 github.com/naver-ai/np-opd。",
+    "officialNotes": [
+     {
+      "position": "通过负策略 rollout 引入负信号可改善 OPD，分析显示它压制负策略偏好的 token 并使学生远离负策略，提示 rollout 策略在 OPD 中扮演重要角色",
+      "source": "arxiv: 2610.07874v1"
+     }
+    ],
+    "interviewAnswer": "on-policy 蒸馏是学生自己 rollout、教师逐 token 给监督。问题是教师太强、分布重叠少时，正监督只在学生已能到的地方有效，坏区域从没被触碰。NP-OPD 不动奖励形式，而是在 rollout 阶段多跑一个更弱的负策略，把「负策略概率高于教师」的 token 标出来仍让教师纠正，于是既有显式负信号又保留原正监督。它跨规模与 OPD 变体都涨，说明 rollout 策略是被忽视的设计变量。",
+    "studyPath": {
+     "prerequisites": [
+      "知识蒸馏与 KL 散度",
+      "自回归 rollout 与策略梯度直觉"
+     ],
+     "nextSteps": [
+      "读原文核对负策略构造与 λ",
+      "对比 DPO 里的负样本用法",
+      "把该信号接到 VLM 后训练"
+     ]
+    }
+   }
+  },
+  {
+   "id": "255f1616af944384",
+   "tldr": "把后训练成功轨迹里的「决定性一步」当前瞻信号，用三个无需冷启动 harness 的探针预测 base 的 agentic 后训练潜力。",
+   "keyPoints": [
+    "端到端 pass@K 对 agentic coding 不合适：base 常无法产出合规工具调用",
+    "单步/短程任务绕开了多步工具使用中维持状态这一核心能力",
+    "重放成功轨迹并每步重跑测试，定位由失败翻转为通过的决定性一步",
+    "三个探针：Decisive-Action BPB、Patch MCQ、prefix-conditioned pass@K",
+    "十个模型对上，三探针排序与 SWE-bench Verified pass@1 高度一致"
+   ],
+   "why": "做后训练前先判断 base 值不值得投入是工程决策核心；「用 verifier + 成功轨迹当探针」的思路对 agentic post-training 面试很实用。",
+   "difficulty": "hard",
+   "tags": [
+    "posttraining",
+    "agent",
+    "coding",
+    "evaluation",
+    "scaling"
+   ],
+   "entities": [
+    "SWE-bench Verified",
+    "Decisive-Action BPB",
+    "Patch MCQ",
+    "prefix-conditioned pass@K"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "从 base 预测后训练潜力",
+    "caption": "拿已认证的成功轨迹做前瞻，定位决定性一步，再用三个探针给 base 模型打分排序。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='预测 agentic 后训练潜力的四步流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>成功后训练轨迹（已被测试认证）</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>重放并逐步重跑测试</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>决定性一步（认证动作）</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>三个探针：BPB / MCQ / prefix pass@K</text>\n</svg>",
+    "alt": "四步流程：取成功后训练轨迹、重放并逐步重跑测试、定位决定性一步、用三个探针给 base 模型打分。"
+   },
+   "concepts": [
+    {
+     "name": "Decisive Step / Certified Action（决定性一步 / 认证动作）",
+     "readable": "一条成功轨迹里第一次让仓库测试从不过变过的那一步；其动作在给定前文下被证明能解题。",
+     "analogy": "像排查故障：连续拧了好几颗螺丝都没反应，直到某一颗灯突然亮了——那颗就是决定性动作。",
+     "analogyBreaksDown": "拧螺丝是线性因果，而多步补丁可能相互替代或耦合，同一任务可能有多个都能通过的第 t 步，定位到的只是重放顺序下第一个。",
+     "mechanism": "用已被 verifier 认证的成功轨迹当参照，逐步重放并每次重跑测试，取累积补丁首次由失败翻成通过的位置，把能被测试认可的解抽成给 base 打分的锚点。",
+     "visual": "横轴为步骤的时间线，每个代码变更步下方标测试结果（红失败/绿通过），在第 t 步画竖线高亮该步动作并标 t*。",
+     "prerequisites": [
+      "agentic 代码任务的轨迹结构",
+      "测试驱动验证（verifier）概念"
+     ],
+     "selfTest": [
+      "为何不把整条成功轨迹当锚点？",
+      "决定性一步依赖 verifier 的什么性质？",
+      "非代码变更步如何处理？"
+     ],
+     "formula": "t^{\\star} = \\min\\left\\{ t : \\mathrm{fail}(\\pi_{1:t-1}) \\;\\wedge\\; \\mathrm{pass}(\\pi_{1:t}) \\right\\}"
+    },
+    {
+     "name": "Base-Model Screening from Verifier Traces（用验证轨迹筛查 base 模型）",
+     "readable": "不让 base 真跑完整 agent，只问它「给定前文会不会倾向那个认证动作」以及「会不会支持功能正确的续写」。",
+     "analogy": "招聘时不真让人上一周班，而是给他一个真实项目的关键一步，看他会不会做出和优秀员工一样的选择。",
+     "analogyBreaksDown": "面试看当场反应却漏掉长期协作能力；这些探针只看单点概率或短前缀续写，可能低估会绕路但最终能解的 base。",
+     "mechanism": "把决定性一步当覆盖原则下的锚点，构造三个无需 base 冷启动驱动 harness 的探针：对认证动作算 BPB、在认证与被否决备选间做 MCQ、前缀条件下评 pass@K 并接受任何被测试认可的续写。",
+     "visual": "三个并排小面板：一画认证动作的概率质量条，二画「认证 vs 否定」两选项柱状对比，三画前缀下多条续写中通过测试的比例。",
+     "prerequisites": [
+      "bits-per-byte 与对数似然",
+      "pass@K 采样估计",
+      "似然比较式多选"
+     ],
+     "selfTest": [
+      "探针为何不需要 base 冷启动开 harness？",
+      "三个探针信号侧重分别是什么？",
+      "prefix-conditioned pass@K 的 credit 指什么？"
+     ],
+     "formula": "\\mathrm{BPB}(a \\mid \\mathrm{ctx}) = -\\frac{1}{N_{b}}\\sum_{i=1}^{N} \\log_{2} p_{\\theta}(a_{i} \\mid \\mathrm{ctx}, a_{<i})"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-decisive-step",
+     "name": "决定性一步定位",
+     "category": "agent",
+     "latex": "t^{\\star} = \\min\\left\\{ t : \\mathrm{fail}(\\pi_{1:t-1}) \\;\\wedge\\; \\mathrm{pass}(\\pi_{1:t}) \\right\\}",
+     "symbols": [
+      [
+       "\\pi_{1:t}",
+       "前 t 步累积补丁后的仓库状态"
+      ],
+      [
+       "\\mathrm{fail}, \\mathrm{pass}",
+       "测试失败 / 通过"
+      ],
+      [
+       "t^{\\star}",
+       "决定性一步的步序号"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：用已被认证为成功的后训练轨迹做前瞻信号。",
+      "第 2 步：从头逐步重放轨迹，每步后重跑测试。",
+      "第 3 步：找到累积补丁首次把仓库从失败翻成通过的那步。",
+      "第 4 步：该步即决定性一步，其动作在给定前文下解决任务。"
+     ],
+     "analogy": "像排查一段卡死流程：一步步放行任务，找到「一放行整条流程就通」的那个节点。",
+     "pitfalls": [
+      "把某个中间步测试通过误当成整条轨迹成功",
+      "把非代码变更步也计入累积补丁，定位偏移"
+     ],
+     "code": "def decisive_step(traj, run_tests, apply):\n    for t in range(1, len(traj.steps) + 1):\n        if run_tests(apply(traj.steps[:t])) == \"pass\":\n            return t, traj.steps[t - 1]   # 首步由败转胜\n    return None, None",
+     "sources": [
+      {
+       "title": "Before They Can Solve: Predicting Post-Training Coding-Agent Performance from Base Models",
+       "url": "https://arxiv.org/abs/2610.10478v1"
+      }
+     ]
+    },
+    {
+     "id": "f-decisive-action-bpb",
+     "name": "认证动作的 bits-per-byte",
+     "category": "agent",
+     "latex": "\\mathrm{BPB}(a \\mid \\mathrm{ctx}) = -\\frac{1}{N_{b}}\\sum_{i=1}^{N} \\log_{2} p_{\\theta}(a_{i} \\mid \\mathrm{ctx}, a_{<i})",
+     "symbols": [
+      [
+       "a",
+       "决定性一步对应的认证动作"
+      ],
+      [
+       "\\mathrm{ctx}",
+       "该动作之前的前文"
+      ],
+      [
+       "N",
+       "该动作的 token 数"
+      ],
+      [
+       "N_{b}",
+       "归一化用的字节数"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：决定性一步给出一个被 verifier 认证的正确动作。",
+      "第 2 步：用 base 模型在该前文下给这个动作首选概率打分。",
+      "第 3 步：取负对数并按字节归一化成 bits-per-byte。",
+      "第 4 步：BPB 越低说明 base 越倾向该动作，潜力越大。"
+     ],
+     "analogy": "像预测学生能否被教出来：先让他面对标准答案的关键一步，看他本能上有多接近。",
+     "pitfalls": [
+      "用 token 归一化却仍叫 bits per byte",
+      "把前文也算进负对数，稀释了认证动作的概率质量"
+     ],
+     "code": "import torch, math\ndef bpb(model, action, ctx):\n    with torch.no_grad():\n        logits = model(ctx + action)\n        lp = torch.log_softmax(logits[len(ctx):], -1)\n        nll = -lp.gather(-1, action.unsqueeze(-1)).sum()\n    return (nll / math.log(2)) / max(len(\"\".join(action)), 1)",
+     "sources": [
+      {
+       "title": "Before They Can Solve: Predicting Post-Training Coding-Agent Performance from Base Models",
+       "url": "https://arxiv.org/abs/2610.10478v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "很多 base 检查点无法可靠产出完成任务所需的合规工具调用",
+     "单步/短程任务把多步交互压成固定提示与单个补丁，绕开了多步维持状态这一核心能力",
+     "作者把成功的后训练 agent 轨迹当作 base 模型潜力的前瞻信号",
+     "决定性一步是累积补丁首次把仓库从失败翻成通过的位置，认证该动作在给定前文下解决任务",
+     "三个探针为 Decisive-Action BPB、Patch MCQ、prefix-conditioned pass@K",
+     "十个公开 base/后训练模型对上，三探针排序与后训练 SWE-bench Verified pass@1 高度一致",
+     "方法只需基准的成功轨迹与其 verifier"
+    ],
+    "uncertain": [
+     "BPB 字节归一化与认证动作切分口径摘要未给，公式为按摘要重建的通用形式，需核对原文",
+     "Patch MCQ 备选构造与 prefix pass@K 采样预算摘要未说明，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "不用真跑 agent，靠成功轨迹里的关键一步就能预判 base 模型值不值得做后训练。"
+     },
+     {
+      "level": "入门",
+      "text": "想知道一个 base 经昂贵 agentic 后训练后会不会好，直接跑 pass@K 不行——很多 base 连合规工具调用都做不出。这篇改用已成功轨迹里的关键一步，看 base 对这种正确动作的偏好。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键在于把「整条轨迹成功」拆成一个锚点：重放成功轨迹、每步重跑测试，找到累积补丁首次由失败翻通过的决定性一步，其动作被 verifier 认证。再让 base 面对这一步，用三个不需要它冷启动开 harness 的探针——动作 BPB、与否定备选的 MCQ、前缀 pass@K——来打分。"
+     },
+     {
+      "level": "专家",
+      "text": "相比端到端 pass@K，它绕开 base 工具调用失败的瓶颈，直接测是否支持正确行为；相比单步任务，它保留多步状态维持语义。三探针各有侧重：BPB 测概率质量、MCQ 测相对判别、prefix pass@K 测功能正确续写的支持度。十个模型对上与 SWE-bench Verified 排序一致，且只需成功轨迹与 verifier，可迁移到别的 agentic 基准；代价是依赖 verifier 可靠性与已有成功轨迹。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不能直接给 base 跑一遍完整 agent 任务？",
+      "a": "很多 base 连合规工具调用都产不出，harness 会被格式错误卡死，测到的其实是格式失败而非能力差异。"
+     },
+     {
+      "q": "为什么挑决定性一步而不是整条轨迹？",
+      "a": "整条轨迹里大量步骤是铺垫，直接看会稀释信号；只取把测试从失败翻成通过的那一步，才得到最小正确行为。"
+     }
+    ],
+    "mechanism": "agentic 后训练昂贵，选错 base 代价大；端到端评测却因 base 不会合规调用工具而失效，单步任务又丢掉多步状态维持。作者把「成功」压缩成一个被 verifier 认证的最小锚点——决定性一步，再设计三个只需读概率、不需 base 驱动 harness 的探针来读它对锚点的支持度，从而在零额外 agent 运行下预测潜力。",
+    "boundary": "当基准缺可靠 verifier、或没有成功后训练轨迹可供前瞻时方法不可用。若关键能力无法由单步动作体现（如需长期规划），决定性一步会低估其重要性；测试误判时锚点也会偏。",
+    "analogyBoundary": "面试类比在「关键一步能代表整体能力」时成立；但真实 agent 能力常体现在「绕路后仍能解」，而探针只读单点概率或短前缀续写，可能把这种更慢但更强的策略判低，类比失效。",
+    "misconceptions": [
+     "以为这是又一个 agentic benchmark，其实它是 base 模型筛查方法。",
+     "以为不需要 verifier——它恰恰依赖 verifier 与已有成功轨迹。"
+    ],
+    "ownAnalysis": "（推断）这套「拿成功轨迹当 lookahead、只读概率」的思路把 agentic 评测成本从跑 rollout 挪到读 likelihood，与 reward model 作 scorer 互补：前者不需训练、后者不需 verifier。可疑处在于决定性一步把多步能力约化成单步偏好，可能奖励局部正确而非会维持状态；三探针与 pass@1 高一致也可能因二者都偏向强 base。摘要未给相关系数与十模型细节，需核对原文。",
+    "officialNotes": [
+     {
+      "position": "成功后训练轨迹可作为 base 潜力的前瞻信号，围绕决定性一步的三个探针与 SWE-bench Verified pass@1 排序高度一致，只需成功轨迹与 verifier",
+      "source": "arxiv: 2610.10478v1"
+     }
+    ],
+    "interviewAnswer": "问题是：怎么在花大钱做 agentic 后训练前判断一个 base 值不值得。端到端 pass@K 不行，因为很多 base 连合规工具调用都做不出，测到的是格式失败；单步任务又把多步状态维持丢了。这篇拿已成功的后训练轨迹当前瞻，重放并每步重跑测试，找到累积补丁首次从失败翻成通过的决定性一步，那个动作被 verifier 认证。再用三个探针评估 base：认证动作的 BPB、与否定备选的 MCQ、前缀条件下的 pass@K。十个模型对上排序和 SWE-bench Verified 一致。",
+    "studyPath": {
+     "prerequisites": [
+      "agentic 代码任务与工具调用",
+      "bits-per-byte 与对数似然",
+      "pass@K 估计"
+     ],
+     "nextSteps": [
+      "读原文核对 BPB 归一化与 MCQ 构造",
+      "对比其与 reward model 打分的成本收益",
+      "把探针思想迁到多模态 agent 基准"
+     ]
+    }
+   }
+  },
+  {
+   "id": "4e1b5267f146c65b",
+   "tldr": "把遥感场景分类从自回归文本生成改写成候选条件化的单次多模态判别决策，0.8B 模型即取得更优的精度—效率权衡。",
+   "keyPoints": [
+    "现有三类范式：任务专用视觉分类、视觉语言相似度匹配、自回归多模态生成",
+    "MLLM 对已有显式候选类别的分类做多余的逐 token 生成",
+    "RSJEV 把场景分类重构为候选条件化的多模态判别决策过程",
+    "OnePass Decider 直接估计候选类别空间内概率，去掉自回归解码",
+    "在 UC Merced、AID、NWPU-RESISC45 上优于多类基线，仅 0.8B 参数"
+   ],
+   "why": "「MLLM 做闭集判别任务该不该自回归生成」是面试好问题；候选条件化判别头是可复用到多模态分类/检索的工程范式。",
+   "difficulty": "medium",
+   "tags": [
+    "multimodal",
+    "mllm",
+    "discriminative",
+    "classification",
+    "efficiency"
+   ],
+   "entities": [
+    "RSJEV",
+    "OnePass Decider",
+    "UC Merced",
+    "AID",
+    "NWPU-RESISC45"
+   ],
+   "diagram": {
+    "kind": "architecture",
+    "title": "OnePass 判别式决策",
+    "caption": "把视觉、指令、候选语义拼成一个决策状态，直接输出候选类别概率，跳过逐 token 生成。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='RSJEV 单次判别决策架构'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>视觉表示（遥感图像编码）</text>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>任务指令（分类提示语义）</text>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>候选类别语义（类名嵌入）</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>OnePass Decider 输出候选概率</text>\n</svg>",
+    "alt": "RSJEV 架构：视觉表示、任务指令、候选类别语义三路联合进入 OnePass Decider，直接输出候选类别概率。"
+   },
+   "concepts": [
+    {
+     "name": "Candidate-Conditioned Discriminative Decision（候选条件化判别决策）",
+     "readable": "分类题目已给候选类别表，就不必让模型把类名逐字生成，而是把视觉、指令和候选类名一起送进去，直接在这张候选表上打分选一个。",
+     "analogy": "考试是选择题时，不必把答案完整写出来给老师判，只要在 A/B/C/D 里选一个并说明理由即可。",
+     "analogyBreaksDown": "选择题选项固定且互斥，而遥感场景类别语义常有重叠（如农田与灌溉地），把候选当互斥选项会丢掉层级与相似性信息。",
+     "mechanism": "把分类重构成候选条件下的判别问题：视觉表示、任务指令、候选类别语义被联合建模成决策状态，再在该候选空间上直接估概率，去掉自回归解码却不牺牲视觉—语言交互。",
+     "visual": "左边三路输入（图像、指令、候选嵌入）汇入中间一个状态向量，右边是长度等于候选数的概率条，最高的一条用主色突出。",
+     "prerequisites": [
+      "多模态大模型的视觉—语言交互",
+      "softmax 分类与双塔匹配"
+     ],
+     "selfTest": [
+      "候选条件化比纯双塔匹配多了什么信息？",
+      "为什么闭集分类不需要自回归解码？",
+      "候选集合扩大时代价如何变？"
+     ],
+     "formula": "p(c \\mid x, \\mathcal{C}) = \\frac{\\exp(s_{c})}{\\sum_{c' \\in \\mathcal{C}} \\exp(s_{c'})}, \\quad s_{c} = f_{\\theta}(h_{x}, \\mathrm{instr}, e_{c})"
+    },
+    {
+     "name": "OnePass Decider（单次决策器）",
+     "readable": "一个一次前向就够的决策模块：先提取多模态决策状态，再在候选空间上直接出类别概率。",
+     "analogy": "像一位经验丰富的裁判：看完画面、读完规则、对上名单，当场给出各选手得分，而不是先写一段解说再判。",
+     "analogyBreaksDown": "裁判评分是主观解释性的，而这里输出可求梯度、可校准的概率；把「一次前向」当成「不需要任何推理链」会低估复杂场景所需的交互深度。",
+     "mechanism": "用一次前向同时消费视觉、指令与候选语义，产出决策状态并直接映射到类别概率，替代逐 token 解码，因此推理成本大幅下降，0.8B 紧凑模型即可拿到更优精度—效率权衡。",
+     "visual": "画一条从输入到概率条的直线流程并标「1 pass」，与下方一条多条弯折箭头的自回归解码流程并排对比，强调步数差异。",
+     "prerequisites": [
+      "Transformer 前向与注意力",
+      "分类头与温度缩放"
+     ],
+     "selfTest": [
+      "OnePass 决策状态从哪里来？",
+      "「保留视觉语言交互」体现在哪一步？",
+      "为什么它能显著降低推理成本？"
+     ],
+     "formula": "p(c \\mid x, \\mathcal{C}) = \\operatorname{softmax}_{c}\\left( f_{\\theta}(h_{x}, \\mathrm{instr}, e_{c}) \\right)"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-candidate-conditioned-decision",
+     "name": "候选条件化判别决策",
+     "category": "multimodal",
+     "latex": "p(c \\mid x, \\mathcal{C}) = \\frac{\\exp(s_{c})}{\\sum_{c' \\in \\mathcal{C}} \\exp(s_{c'})}, \\quad s_{c} = f_{\\theta}(h_{x}, \\mathrm{instr}, e_{c})",
+     "symbols": [
+      [
+       "x",
+       "输入遥感图像"
+      ],
+      [
+       "\\mathcal{C}",
+       "候选类别集合"
+      ],
+      [
+       "e_{c}",
+       "候选类别 c 的语义嵌入"
+      ],
+      [
+       "h_{x}",
+       "图像的视觉表示"
+      ],
+      [
+       "s_{c}",
+       "候选 c 的条件决策分数"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：分类有显式候选集，逐 token 生成类别名是多余的。",
+      "第 2 步：把视觉表示、任务指令与候选语义联合成决策状态。",
+      "第 3 步：对每个候选算条件分数 s_c。",
+      "第 4 步：在候选空间上 softmax，一次前向得到类概率。"
+     ],
+     "analogy": "像点菜：菜单就是候选集，不必把菜名背出来，只要对着菜单指哪道菜最合适。",
+     "pitfalls": [
+      "误以为去掉自回归就丢了视觉—语言交互",
+      "忽略 softmax 分母含全部候选，候选变化会改变概率"
+     ],
+     "code": "import torch.nn.functional as F\ndef onepass_decide(encoder, vision, instr, cand_emb):\n    state = encoder(vision, instr)          # 决策状态 [B, d]\n    s = state @ cand_emb.t()                # 候选分数 [B, C]\n    return F.softmax(s, dim=-1)             # 直接出类概率",
+     "sources": [
+      {
+       "title": "RSJEV: Discriminative Remote Sensing Scene Classification with Multimodal Large Language Models",
+       "url": "https://arxiv.org/abs/2610.08539v1"
+      }
+     ]
+    },
+    {
+     "id": "f-autoregressive-generative-classification",
+     "name": "自回归生成式分类",
+     "category": "multimodal",
+     "latex": "p(y = c \\mid x) = \\prod_{t=1}^{L_{c}} p_{\\theta}\\!\\left( \\mathrm{tok}_{t} \\mid x, \\mathrm{tok}_{<t} \\right)",
+     "symbols": [
+      [
+       "c",
+       "类别名对应的文本"
+      ],
+      [
+       "L_{c}",
+       "类别名 token 序列长度"
+      ],
+      [
+       "\\mathrm{tok}_{t}",
+       "类别名的第 t 个 token"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：自回归 MLLM 把类别名当普通文本生成。",
+      "第 2 步：类别概率写成各 token 条件概率的连乘。",
+      "第 3 步：需 L_c 步解码才能得到一个类别标签。",
+      "第 4 步：对已有显式候选的分类，这些解码步是多余开销。"
+     ],
+     "analogy": "像用整段作文回答一道单选题：意思能到，但为了一个字母要写满一页。",
+     "pitfalls": [
+      "认为自回归一定优于判别——开放集是，闭集不是",
+      "忽略解码步数随类别名长度线性增长"
+     ],
+     "code": "import torch.nn.functional as F\ndef ar_class_prob(logits_list, tok_ids):\n    lp = 0.0\n    for t, lg in enumerate(logits_list):\n        lp = lp + F.log_softmax(lg, -1)[tok_ids[t]]\n    return lp.exp()                         # 类别名序列概率",
+     "sources": [
+      {
+       "title": "RSJEV: Discriminative Remote Sensing Scene Classification with Multimodal Large Language Models",
+       "url": "https://arxiv.org/abs/2610.08539v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "遥感场景分类是地球观测与地理空间分析的基础任务",
+     "已有方法主要有三类：任务专用视觉分类、视觉语言相似度匹配、自回归多模态生成",
+     "视觉分类器依赖预定义标签空间，CLIP 式方法靠静态图文对齐识别",
+     "MLLM 对已有显式候选类别的分类引入不必要的 token 级生成",
+     "RSJEV 是一次通过的多模态决策框架，把分类重构为候选条件化判别决策过程",
+     "OnePass Decider 提取多模态决策状态并直接在候选类别空间估概率，去掉自回归解码",
+     "在 UC Merced、AID、NWPU-RESISC45 上优于代表性的 CNN/Transformer/Mamba/CLIP/MLLM 方法",
+     "仅用 0.8B 参数的紧凑模型即取得更好的精度—效率权衡"
+    ],
+    "uncertain": [
+     "决策状态 s_c 的具体形式摘要未给，公式为按摘要重建的通用形式，需核对原文",
+     "0.8B 底座来自哪个基模型、各基准具体精度数值摘要未列出，待核实",
+     "候选类别语义如何编码（文本嵌入还是可学习参数）摘要未说明，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "给定了候选类别时，别让大模型逐字生成类名，直接对候选表打分选一个更省更快。"
+     },
+     {
+      "level": "入门",
+      "text": "遥感场景分类有三种老做法：专用视觉分类器、CLIP 式图文匹配、让多模态大模型把类名生成出来。前者受限于固定标签，后者对已有候选集是浪费。RSJEV 把任务改成在候选类别上做一次判别决策。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键设计是把视觉表示、任务指令、候选类别语义联合建模成一个多模态决策状态，再由 OnePass Decider 直接在候选空间估概率，从而去掉自回归解码但保留视觉—语言交互。这样模型只需 0.8B 参数，在三个遥感基准上仍优于 CNN、Transformer、Mamba、CLIP 与 MLLM 方法。"
+     },
+     {
+      "level": "专家",
+      "text": "与静态图文对齐相比，候选条件化让每个候选语义都参与决策而非只做相似度匹配；与自回归 MLLM 相比，它把「生成类名」换成「候选打分」，把推理成本从随类名长度的多步解码压到一次前向。代价是它只在闭集设定成立，候选表变化需重新推理，且类间语义重叠时互斥 softmax 会损失层级信息。摘要称其精度—效率权衡更好，但未给逐基准数值。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "既然候选类别已经给定，为什么还要自回归生成类名？",
+      "a": "没必要。生成只是把候选选择间接表达出来，对闭集分类会白白付出逐 token 解码成本，这正是 RSJEV 省掉的部分。"
+     },
+     {
+      "q": "候选条件化比纯 CLIP 相似度好在哪？",
+      "a": "CLIP 只用静态图文对齐，候选语义不参与上下文决策；这里候选语义与视觉、指令一起进入决策状态，能按指令与场景关系联合判断。"
+     }
+    ],
+    "mechanism": "分类是闭集判别问题，最优解空间只有候选那么多维，而自回归解码把答案摊到整个词表的多步生成上，既慢又引入无关 token 决策。作者把视觉、指令、候选语义一起编码成决策状态直接出概率，使推理成本降到一次前向，同时保留视觉—语言交互，从而让小模型也能拿到高精度。",
+    "boundary": "方法假定候选类别集已知且有限，开放集或候选动态变化的场景不适用。类间高度重叠、需层级或细粒度区分时，单一互斥 softmax 可能不如生成式方法灵活。跨域遥感数据分布差异大时结论未必迁移。",
+    "analogyBoundary": "选择题类比在「选项互斥且完备」时成立；但遥感类别常有包含与语义邻近关系，把候选当互斥会掩盖层级结构，且真实应用常需不止一个标签，此时类比失效。",
+    "misconceptions": [
+     "以为去掉自回归就等于退回静态 CLIP 双塔，忽略候选语义也参与决策。",
+     "认为该方法适用于开放集——它明确面向已知候选。"
+    ],
+    "ownAnalysis": "（推断）RSJEV 本质是把分类头重新定义成「以候选语义为条件、以视觉—指令为输入的判别器」，与多模态检索里用指令条件化嵌入的思路同构，可迁移到 VQA 的候选答案选择与工具选择。可疑处：摘要只给「优于若干基线、0.8B 更省」的定性结论，未给逐基准表与消融；候选条件化在高重叠类别上的表现未提，若 softmax 互斥假设不成立可能被生成式方法反超，需核对原文。",
+    "officialNotes": [
+     {
+      "position": "对已有显式候选类别的分类，引入 token 级生成是不必要的；状态条件化的多模态判别决策在遥感场景分类上更有效且更省，0.8B 紧凑模型即取得更好精度—效率权衡",
+      "source": "arxiv: 2610.08539v1"
+     }
+    ],
+    "interviewAnswer": "我会先说清取舍：遥感场景分类是闭集判别，候选类别已给定。老做法有三类——专用视觉分类器受固定标签限制、CLIP 式只用静态对齐、MLLM 却把类名逐 token 生成，对闭集是浪费。RSJEV 把视觉表示、任务指令和候选类别语义联合成一个决策状态，由 OnePass Decider 直接在候选空间估概率，一次前向完成、去掉自回归解码但保留视觉—语言交互。结果是 0.8B 的小模型在 UC Merced、AID、NWPU-RESISC45 上就优于 CNN、Transformer、Mamba、CLIP 和 MLLM 基线。边界是它只适用于候选已知的闭集设定。",
+    "studyPath": {
+     "prerequisites": [
+      "多模态大模型基本结构",
+      "CLIP 对比学习与双塔匹配",
+      "softmax 分类与温度"
+     ],
+     "nextSteps": [
+      "读原文核对决策状态与 0.8B 底座",
+      "对比候选条件化与生成式分类的边界",
+      "把判别头思想迁到 VQA 候选答案打分"
+     ]
+    }
+   }
+  },
+  {
+   "id": "569d72485484eff1",
+   "tldr": "工业 UI 设计转代码基准：2,861 张真实设计、97,652 条区分必需约束与可选实现的专家标注，三任务评测 MLLM。",
+   "keyPoints": [
+    "MLLM 的关键挑战是从视觉识别走向约束感知的跨模态推理",
+    "工业 D2C 要在杂乱图层元数据与目标库约束下实现 UI 代码",
+    "TaoD2C 含 2,861 张生产设计、17 个平台、97,652 条四类专家标注",
+    "三任务：端到端 UI 代码生成、需求推断、需求实现",
+    "八个 MLLM 均有缺口；视觉重建能力不必然带来满足需求的代码能力"
+   ],
+   "why": "把「视觉保真」与「约束满足」拆开评测是 MLLM 评测面试高频视角；三任务分解可直接借鉴到多模态 agent 的评测设计。",
+   "difficulty": "medium",
+   "tags": [
+    "multimodal",
+    "benchmark",
+    "mllm",
+    "code-generation",
+    "evaluation"
+   ],
+   "entities": [
+    "TaoD2C-Bench",
+    "TaoD2C",
+    "design-to-code"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "TaoD2C 三任务评测",
+    "caption": "从设计图与图层元数据出发，把「推断需求」和「实现需求」拆成两条能力分别评测。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='TaoD2C 评测流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>设计图 + 杂乱图层元数据（2,861 张）</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>专家标注：必需 / 可选约束（四类）</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>需求推断：从图与元数据推实现要求</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>需求实现 / 端到端生成：按约束评分</text>\n</svg>",
+    "alt": "TaoD2C 评测流程：设计图与图层元数据、区分必需与可选约束的专家标注、需求推断、以及需求实现或端到端代码生成。"
+   },
+   "concepts": [
+    {
+     "name": "Constraint-Aware Cross-Modal Reasoning（约束感知的跨模态推理）",
+     "readable": "模型不只要认出画面里有什么，还要结合图层元数据与目标代码库规则，判断该怎么用代码把界面正确搭出来。",
+     "analogy": "像照着装修效果图施工：不光要看懂好看，还得看清墙里管线、遵守承重与消防规范，最后落到能验收的施工图。",
+     "analogyBreaksDown": "装修规范相对稳定统一，而不同前端库的约束千差万别且常无成文规范；同一视觉布局在一套库下合法、在另一套下可能无法等价实现。",
+     "mechanism": "把设计图像素与杂乱图层元数据一起作为输入，让模型在目标库约束下推断组件与布局的实现要求并产出满足要求的代码；评测不再看像素相似，而看约束是否被满足。",
+     "visual": "左边一列像素布局、右边一列图层树，中间用箭头按组件对齐，底部列出该组件在目标库里必须满足的约束条目。",
+     "prerequisites": [
+      "多模态大模型的图文对齐",
+      "前端 UI 代码与布局系统"
+     ],
+     "selfTest": [
+      "为什么图层元数据是「杂乱」的？",
+      "「目标库约束」为什么让 D2C 变难？",
+      "视觉重建对与代码正确性为何不等价？"
+     ],
+     "formula": ""
+    },
+    {
+     "name": "Required vs Permitted Constraints（必需约束与可选实现）",
+     "readable": "标注时把一件事分成「必须这样做」和「这样做也行」两类，只有必需项全满足才算正确，可选实现方式不扣分。",
+     "analogy": "像验收一道菜：火候和食材是硬指标，摆盘朝左朝右都可以，不能因为摆盘不同就判失败。",
+     "analogyBreaksDown": "菜品的硬指标由菜谱界定，而 UI 里「必需」与「可选」的边界常随库版本与设计意图变化，专家标注也难完全一致，存在主观性。",
+     "mechanism": "专家把约束分成必需与可选两类并分别标注，评测时只对必需约束做满足判定、对可选实现保持宽容，避免把功能正确的代码因实现风格不同误判为错误。",
+     "visual": "一张两列对照表：左列「必需」用实心方格、右列「可选」用空心方格，同一份代码在两列打勾，只统计左列完成率。",
+     "prerequisites": [
+      "代码评测的通过/失败判定",
+      "UI 布局的等价实现概念"
+     ],
+     "selfTest": [
+      "把可选实现也计入必需会带来什么误判？",
+      "为何必需约束判定要交给专家而非自动脚本？",
+      "两个都满足必需约束的实现应否同分？"
+     ],
+     "formula": "\\mathrm{Pass} = \\frac{1}{N}\\sum_{i=1}^{N} \\mathbf{1}\\!\\left[ \\forall\\, c \\in \\mathcal{R}_{i},\\; \\mathrm{sat}(c, \\mathrm{code}_{i}) = 1 \\right]"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-required-constraint-pass-rate",
+     "name": "必需约束通过率",
+     "category": "multimodal",
+     "latex": "\\mathrm{Pass} = \\frac{1}{N}\\sum_{i=1}^{N} \\mathbf{1}\\!\\left[ \\forall\\, c \\in \\mathcal{R}_{i},\\; \\mathrm{sat}(c, \\mathrm{code}_{i}) = 1 \\right]",
+     "symbols": [
+      [
+       "N",
+       "评测样本数（设计任务数）"
+      ],
+      [
+       "\\mathcal{R}_{i}",
+       "第 i 个任务的全部必需约束集合"
+      ],
+      [
+       "\\mathrm{sat}(c, \\mathrm{code})",
+       "约束 c 是否被生成代码满足"
+      ],
+      [
+       "\\mathbf{1}[\\cdot]",
+       "指示函数"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：工业 D2C 关心实现需求是否满足，而非像素相似。",
+      "第 2 步：标注把约束分成必需与可选两类。",
+      "第 3 步：只有全部必需约束都满足，该样本才记通过。",
+      "第 4 步：对所有样本取平均得到总体通过率。"
+     ],
+     "analogy": "像验收工程：所有安全规范都达标才算合格，装修风格怎么选不影响是否通过验收。",
+     "pitfalls": [
+      "把可选实现也当必需，功能正确的解被误判为错",
+      "用像素或编辑相似度替代约束满足判定"
+     ],
+     "code": "def pass_rate(samples, sat):\n    ok = 0\n    for s in samples:\n        if all(sat(c, s[\"code\"]) for c in s[\"required\"]):\n            ok += 1\n    return ok / len(samples)",
+     "sources": [
+      {
+       "title": "TaoD2C-Bench: Benchmarking MLLMs for Industrial UI Code Generation Beyond Visual Fidelity",
+       "url": "https://arxiv.org/abs/2610.10374v1"
+      }
+     ]
+    },
+    {
+     "id": "f-constraint-conditioned-realization",
+     "name": "条件于推断需求的需求实现得分",
+     "category": "multimodal",
+     "latex": "\\mathrm{Real} = \\mathbb{E}_{i}\\left[ \\frac{1}{|\\mathcal{R}_{i}|}\\sum_{c \\in \\mathcal{R}_{i}} \\mathrm{sat}\\!\\left(c,\\; \\mathrm{code}_{i}(\\hat{\\mathcal{R}}_{i})\\right) \\right]",
+     "symbols": [
+      [
+       "\\hat{\\mathcal{R}}_{i}",
+       "模型从图与元数据推断出的需求集合"
+      ],
+      [
+       "\\mathrm{code}_{i}(\\hat{\\mathcal{R}}_{i})",
+       "依据推断需求生成的代码"
+      ],
+      [
+       "\\mathcal{R}_{i}",
+       "真值必需约束集合"
+      ],
+      [
+       "\\mathrm{sat}",
+       "约束是否被生成代码满足"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：需求推断与需求实现是两种不同能力。",
+      "第 2 步：先让模型从设计图与元数据推断出需求 R̂。",
+      "第 3 步：再让模型依据自己推断的需求生成代码。",
+      "第 4 步：用真值必需约束给生成代码打分，度量实现能力。"
+     ],
+     "analogy": "像先听题再解题：把「听漏了题」和「听懂了却做错」分开评估，才知道短板在哪一环。",
+     "pitfalls": [
+      "把推断与实现混成一个端到端分，掩盖短板分布",
+      "用金标准需求喂给实现阶段，会高估真实能力"
+     ],
+     "code": "def realization(samples, sat, infer, gen):\n    scores = []\n    for s in samples:\n        r_hat = infer(s[\"image\"], s[\"layer_meta\"])   # 推断需求\n        code = gen(s[\"image\"], s[\"layer_meta\"], r_hat)\n        hit = [sat(c, code) for c in s[\"required\"]]\n        scores.append(sum(hit) / len(hit))\n    return sum(scores) / len(scores)",
+     "sources": [
+      {
+       "title": "TaoD2C-Bench: Benchmarking MLLMs for Industrial UI Code Generation Beyond Visual Fidelity",
+       "url": "https://arxiv.org/abs/2610.10374v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "MLLM 的关键挑战是从视觉识别走向约束感知的跨模态推理",
+     "工业 D2C 把 UI 设计转成代码，要求连接设计图与杂乱图层元数据",
+     "TaoD2C 数据集含 2,861 张来自 17 个商业平台的生产设计",
+     "数据集含 97,652 条专家标注，分 Component、Group、Alignment、Position 四类",
+     "标注区分必需约束与允许的实现选择",
+     "TaoD2C-Bench 定义三个任务：端到端 UI 代码生成、需求推断、需求实现",
+     "评测八个 MLLM 显示生成满足实现需求的 UI 代码存在明显缺口",
+     "模型在推断与实现上有不同的性能画像",
+     "MLLM 的视觉重建能力不必然意味着能生成满足需求的代码"
+    ],
+    "uncertain": [
+     "通过率与实现得分的精确评测公式摘要未给，公式为按摘要重建的通用形式，需核对原文",
+     "四个标注类别的判定标准与八个被评模型名摘要未列出，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "一个用真实工业设计做的基准，考大模型能不能写出满足实现要求、而不只是「长得像」的 UI 代码。"
+     },
+     {
+      "level": "入门",
+      "text": "设计转代码不只是把图看对，还要结合图层元数据与目标前端库规则去实现。TaoD2C-Bench 用 2,861 张真实设计、近十万条专家标注，把评测从「像素像不像」换成「实现需求满不满足」。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键设计是标注把约束分成必需与可选两类，并给出三个任务：端到端生成、需求推断、需求实现。这样能把「没看懂需求」和「看懂了却没实现好」分开量。评八个 MLLM 发现普遍存在缺口，且推断与实现的表现画像不同。"
+     },
+     {
+      "level": "专家",
+      "text": "与只看视觉保真的 D2C 基准相比，它强调约束满足与目标库约束；与单任务评测相比，三任务分解揭示能力短板的结构性差异，并证明视觉重建能力与满足需求的编码能力是两种能力。价值在于给多模态 agent 的约束感知跨模态推理提供可复核的评测协议；代价是依赖大规模专家标注、必需/可选边界有一定主观性，且结论绑定特定平台与库。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么视觉重建能力不能代表 UI 代码能力？",
+      "a": "像素重建只要求画面像，代码却要在目标库约束下真正实现组件、对齐与定位；摘要已明确指出二者不必然一致，说明存在「像但不对」的解。"
+     },
+     {
+      "q": "为什么要把评测拆成推断与实现两个任务？",
+      "a": "端到端分把两种失败混在一起；拆开后能区分模型是没推断出需求，还是推对了却实现不出来，从而定位短板。"
+     }
+    ],
+    "mechanism": "工业 D2C 的正确性由实现约束决定而非像素相似，而约束又分必须与允许两类，用统一相似度评分会误判功能正确的解。作者因此用大规模专家标注把约束分层，并把能力拆成推断与实现两条链，使评测既贴近工程验收标准，又能暴露模型在哪一环掉链子。",
+    "boundary": "基准结论绑定了数据集中的 17 个商业平台与相应前端库；换到别的库或设计规范，必需/可选边界会变，结论不一定迁移。封闭集约束下评得好，也不代表开放世界能泛化。专家标注在极复杂布局上可能不一致。",
+    "analogyBoundary": "装修验收类比在「规范统一成文」时成立；但前端库约束常随版本变化、同一布局可有多种等价实现，「必需」的边界比施工规范模糊得多，严格套用会低估合理实现。",
+    "misconceptions": [
+     "以为这是个渲染保真度基准——它刻意超越视觉保真。",
+     "把所有标注约束都当必需要求，会误判合法实现。"
+    ],
+    "ownAnalysis": "（推断）TaoD2C 的「必需 vs 可选」分离与代码评测里把测试用例区分为必须通过与允许多写法同源，思路可迁移到多模态 agent 的工具调用评测：区分硬约束与自由度。可疑处在于专家标注的主观性与平台绑定会限制可比性，摘要也未给评分脚本细节与模型名；「视觉重建不蕴含代码能力」的结论很有价值，但需核对原文的三任务具体指标，才能判断是否因评分方式而非能力差异所致。",
+    "officialNotes": [
+     {
+      "position": "工业设计转代码需要约束感知的跨模态推理；MLLM 在生成满足实现需求的 UI 代码上存在明显缺口，且视觉重建能力不必然意味着能生成满足需求的代码",
+      "source": "arxiv: 2610.10374v1"
+     }
+    ],
+    "interviewAnswer": "我理解这个工作的价值在于重新定义了 D2C 评测的正确性标准。工业场景里 UI 代码对错取决于是否满足实现约束，而不是像素像不像；而约束还分必需和允许的多种实现，用一个相似度分打会把功能正确的解误判。TaoD2C-Bench 用 2,861 张、17 个平台的生产设计和近十万条专家标注，把约束分层，并拆出端到端生成、需求推断、需求实现三个任务。评八个 MLLM 显示普遍有缺口，推断和实现的画像也不同，最关键的结论是视觉重建能力不必然带来满足需求的代码能力。局限是结论绑定特定平台与库。",
+    "studyPath": {
+     "prerequisites": [
+      "多模态大模型评测方法",
+      "前端 UI 布局与组件体系",
+      "约束满足/规则判定概念"
+     ],
+     "nextSteps": [
+      "读原文核对三任务的评分脚本",
+      "对比该基准与渲染相似度类基准",
+      "把「必需 vs 可选」思想迁到 agent 工具调用评测"
+     ]
+    }
+   }
+  }
+ ],
+ "skipped": []
+}

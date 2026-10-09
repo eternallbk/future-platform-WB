@@ -1,0 +1,136 @@
+{
+  "id": "a77b0b38fd1be916",
+  "tldr": "设计 O(1) 的 get/put 缓存：哈希表定位节点 + 双向链表维护访问顺序，超容量淘汰尾部最久未用项。",
+  "keyPoints": [
+    "get/put 都要 O(1)，不能用数组搬移元素",
+    "哈希表存 key → 节点，负责 O(1) 定位",
+    "双向链表按访问顺序排列，头部最新、尾部最旧",
+    "命中后把节点移到头部；满容量删尾部并同步删 key",
+    "Python 可用 OrderedDict.move_to_end 表达同一机制"
+  ],
+  "why": "LRU 是设计题模板，考「哈希 + 链表」的 O(1) 组合，字节/腾讯高频；也是推理服务 KV cache 淘汰的基础模型。",
+  "difficulty": "medium",
+  "tags": ["leetcode", "linked-list", "hash-map", "design", "lru"],
+  "entities": ["LRUCache", "OrderedDict", "双向链表", "哈希表"],
+  "diagram": {
+    "kind": "architecture",
+    "title": "LRU 的双结构协作",
+    "caption": "哈希表只负责定位，双向链表只负责顺序，两者各自 O(1)，合起来才满足要求。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='LRU：哈希表定位节点，双向链表按访问顺序排列，尾部即淘汰目标'>\n<rect x='30' y='20' width='420' height='52' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='46' y='42' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>哈希表 key → 节点（O(1) 定位）</text>\n<text x='46' y='62' font-size='13' text-anchor='start' fill='currentColor'>命中后把该节点摘出并插到链表头部</text>\n<line x1='240' y1='72' x2='240' y2='90' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,98 236,90 244,90' fill='var(--line-1)'/>\n<text x='30' y='126' font-size='13' text-anchor='start' fill='currentColor'>head / MRU</text>\n<text x='450' y='126' font-size='13' text-anchor='end' fill='currentColor'>tail / LRU → 淘汰</text>\n<rect x='95' y='134' width='70' height='40' rx='6' fill='none' stroke='var(--accent)' stroke-width='1.6'/>\n<text x='130' y='159' font-size='14' text-anchor='middle' fill='currentColor'>A</text>\n<rect x='195' y='134' width='70' height='40' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='230' y='159' font-size='14' text-anchor='middle' fill='currentColor'>B</text>\n<rect x='295' y='134' width='70' height='40' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='330' y='159' font-size='14' text-anchor='middle' fill='currentColor'>C</text>\n<line x1='165' y1='154' x2='193' y2='154' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='195,154 188,150 188,158' fill='var(--line-1)'/>\n<line x1='265' y1='154' x2='293' y2='154' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='295,154 288,150 288,158' fill='var(--line-1)'/>\n<text x='240' y='200' font-size='13' text-anchor='middle' fill='currentColor'>满容量时删尾部 C，新节点插入头部</text>\n<text x='240' y='222' font-size='13' text-anchor='middle' fill='currentColor'>get/put 都是 O(1)：定位 → 摘链 → 插头</text>\n</svg>",
+    "alt": "上方是 key 到节点的哈希表，下方是 head(MRU) 到 tail(LRU) 的双向链表，尾部为淘汰目标。"
+  },
+  "concepts": [
+    {
+      "name": "哈希表 + 双向链表（Hash Map + Doubly Linked List）",
+      "readable": "用哈希表把 key 直接映射到链表节点，用双向链表保存访问顺序；定位和调整顺序各只花 O(1)。",
+      "analogy": "图书馆索引卡加一排能随手抽插的书：卡片直接告诉你书在哪，你还能把刚看的书抽出来插到最前面。",
+      "analogyBreaksDown": "现实抽插书要挪动整排，代价 O(n)；链表只改常数条 prev/next 指针。别把物理挪动当成模型成本。",
+      "mechanism": "单用哈希表不知道谁最旧，单用链表定位要 O(n)。把 key→节点 存在哈希表、节点同时挂在双向链表上，删除与插入只改指针，才同时拿到 O(1) 定位与 O(1) 淘汰。",
+      "visual": "上半画哈希表格子指向下半的双向链表节点，链表头标 MRU、尾标 LRU，一条箭头指向尾部表示淘汰。",
+      "prerequisites": ["哈希表原理", "链表节点与指针操作"],
+      "selfTest": ["为什么单用双向链表做不到 O(1) 的 get？", "get 命中后为什么必须把节点移到头部？", "容量为 1 时连续 put 两个键会发生什么？"],
+      "formula": ""
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-lru-eviction-argmin",
+      "name": "LRU 淘汰规则（Argmin Eviction）",
+      "category": "engineering",
+      "latex": "k^{*} = \\arg\\min_{k \\in \\mathcal{K}} t_{k}",
+      "symbols": [["k^{*}", "被淘汰的键"], ["\\mathcal{K}", "当前缓存中键的集合"], ["t_{k}", "键 k 最近一次被访问的时间戳"]],
+      "derivation": [
+        "第 1 步：缓存容量固定为 C，键数超过 C 时必须删除一个键",
+        "第 2 步：LRU 假设最近最少使用的键，最不可能马上被再次访问",
+        "第 3 步：因此淘汰目标取最近访问时间最早、即 t_k 最小的键",
+        "第 4 步：在双向链表中它恰好是尾部节点，删除只改常数条指针"
+      ],
+      "analogy": "书桌只能摆 C 本书，要放新书就先收起最久没翻的那一本。",
+      "pitfalls": ["把淘汰目标说成「访问次数最少」，那是 LFU，不是 LRU", "get 命中后忘记把节点移到头部，导致顺序失真、误淘汰"],
+      "code": "from collections import OrderedDict\n\ndef evict(cache: OrderedDict, cap: int) -> None:\n    while len(cache) > cap:\n        cache.popitem(last=False)  # 弹出最早被使用（最久未用）的键",
+      "sources": [{"title": "LRU缓存机制（LeetCode 146）· 大厂高频手撕题", "url": "https://leetcode.cn/problems/lru-cache"}]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "该题被记录为字节跳动 367 次、腾讯 193 次、阿里巴巴 99 次等合计 896 次",
+      "难度标注为中等；bankTopics 为哈希表",
+      "最近一次出现于 2026-09-28"
+    ],
+    "uncertain": [
+      "源 summary 未给完整题面，statement 依 LeetCode 146 惯例重述（待核实原题约束措辞）",
+      "examples 为自行构造，已用参考代码逐步验证"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "做一个容量有限的缓存，满了就扔掉最久没用过的那个。"},
+      {"level": "入门", "text": "缓存只有 C 个位置。get 取出值并把它标记为刚用过；put 写入值，若超出 C 就删掉最久没被用的键。要求两种操作都 O(1)。"},
+      {"level": "进阶", "text": "数组删除要搬元素、单链表删除要找前驱，都做不到 O(1)。解法是哈希表存 key 到节点提供 O(1) 定位，双向链表提供 O(1) 摘除与插头，再用哨兵节点消掉大量空指针判断。"},
+      {"level": "专家", "text": "本质是「定位结构 + 顺序结构」的组合：哈希表只管 key→节点，双向链表只管时序。命中先定位再移到头部，超容量先定位尾部再删除。Python 的 OrderedDict 正是 dict 加双向链表，move_to_end 与 popitem(last=False) 直接对应这两步。"}
+    ],
+    "socratic": [
+      {"q": "如果只用哈希表，淘汰谁？", "a": "哈希表只存映射不记访问先后，无法判断谁最久未用，只能随机删或整体扫描，失去 LRU 语义。"},
+      {"q": "为什么不用普通单链表？", "a": "删除当前节点要知道它的前驱，单链表找前驱要 O(n)，加上 prev 变成双向才能在 O(1) 内摘除任意节点。"}
+    ],
+    "mechanism": "关键是让定位与顺序维护各自 O(1) 且互不拖累：哈希表给出节点地址，节点的 prev/next 让顺序调整只改常数条指针。若把两者合成有序数组，任一操作都会退化到 O(n)。",
+    "boundary": "LRU 假设最久未用最不可能再用，对顺序扫描、周期性访问的负载命中率会明显下降，此时应换 LFU 或 ARC。并发与线程安全需额外加锁。",
+    "analogyBoundary": "卡片—书架类比忽略了挪动成本：真实书架抽插要移动整排书，链表只改指针；同时现实里没有访问时间字段，顺序靠节点位置隐式表达。",
+    "misconceptions": ["把淘汰对象说成访问次数最少，那是 LFU", "get 命中后忘记更新顺序，导致它按插入时间被误淘汰", "用 list.pop(0) 当 LRU，误以为 O(1)，其实是 O(n)"],
+    "ownAnalysis": "这道题真正考的是 O(1) 组合思维：凡是要既快查又快速改顺序的需求，都可拆成哈希加链表。（推断）大模型推理服务里的 KV cache 淘汰常复用同一结构，理解本题有助于读 vLLM 之类实现。",
+    "officialNotes": [
+      {"position": "LeetCode 146 要求 get 与 put 的平均时间复杂度为 O(1)", "source": "https://leetcode.cn/problems/lru-cache"}
+    ],
+    "interviewAnswer": "我拆成两个结构：哈希表负责 O(1) 找到节点，双向链表维护访问顺序，头部最新、尾部最旧。get 命中后把节点移到头部返回其值，未命中返回 -1。put 时若 key 存在就更新值并移到头部，否则在头部插入新节点；若长度超过容量，就删掉尾部节点并同步删掉哈希表里的 key。加哨兵头尾能省掉大量空指针判断。",
+    "studyPath": {
+      "prerequisites": ["链表指针操作", "哈希表"],
+      "nextSteps": ["LFU 缓存（LeetCode 460）", "手写带哨兵的双向链表", "并发安全缓存的加锁方案"]
+    }
+  },
+  "problem": {
+    "title": "LRU缓存机制",
+    "number": 146,
+    "difficulty": "medium",
+    "statement": "设计一个满足最近最少使用（LRU）策略的缓存类 LRUCache：初始化给定正整数容量 capacity。get(key)：若 key 存在返回其 value 并把该项标记为最近使用，否则返回 -1。put(key, value)：写入或更新键值；若写入后键数超过 capacity，则淘汰最久未使用的键。要求 get 与 put 的平均时间复杂度均为 O(1)。key、value 均为整数。",
+    "examples": [
+      {"input": "capacity=1; put(1,1); put(2,2); get(1)", "output": "get(1) 返回 -1", "why": "容量 1，put(2,2) 淘汰最久未用的 key=1"},
+      {"input": "capacity=2; put(1,1); put(2,2); get(1); put(3,3); get(2); get(3)", "output": "依次得到 1, -1, 3", "why": "get(1) 后 2 变最旧，put(3,3) 淘汰 key=2"}
+    ],
+    "approach": {
+      "idea": "用哈希表存 key→节点实现 O(1) 定位，用双向链表维护访问顺序：头部最新、尾部最旧。任何一次读写都把对应节点移到头部，容量溢出就删尾节点。",
+      "steps": [
+        "1. 建哈希表 self.cache 与容量 self.cap（Python 可用 OrderedDict）",
+        "2. get：key 不存在返回 -1；存在则把该键移到末尾（最近使用），返回其值",
+        "3. put：key 已存在则更新值并移到末尾；否则写入",
+        "4. 每次写入后检查长度是否超过 capacity",
+        "5. 超容量时弹掉链表头（OrderedDict 中 last=False 的那端，即最久未用）"
+      ],
+      "whyItWorks": "任一时刻链表从头到尾严格按最近访问时间递减排列，容量只在 put 后可能超限，此时被弹出的头部节点必是全局最久未使用项，淘汰选择正确；且定位与改序都是常数次指针/字典操作。",
+      "alternatives": [
+        {"name": "手写双向链表 + 哨兵头尾", "complexity": "O(1) / O(capacity)", "when": "面试要求不依赖标准库、要展示指针功底时"},
+        {"name": "哈希表 + 数组时间戳全扫描淘汰", "complexity": "O(n) / O(capacity)", "when": "数据规模极小、只求最快写出可跑版本时"}
+      ]
+    },
+    "solution": {
+      "python": "from collections import OrderedDict\n\nclass LRUCache:\n    def __init__(self, capacity: int):\n        self.cap = capacity\n        self.cache = OrderedDict()  # 头部=最久未用, 末尾=最近使用\n\n    def get(self, key: int) -> int:\n        if key not in self.cache:\n            return -1\n        self.cache.move_to_end(key)  # 标记为最近使用\n        return self.cache[key]\n\n    def put(self, key: int, value: int) -> None:\n        if key in self.cache:\n            self.cache.move_to_end(key)\n        self.cache[key] = value\n        if len(self.cache) > self.cap:\n            self.cache.popitem(last=False)  # 淘汰最久未用",
+      "python_alt": "class Node:\n    __slots__ = ('key', 'val', 'prev', 'nxt')\n    def __init__(self, key=0, val=0):\n        self.key, self.val = key, val\n        self.prev = self.nxt = None\n\nclass LRUCache:\n    def __init__(self, capacity: int):\n        self.cap = capacity\n        self.map = {}\n        self.head, self.tail = Node(), Node()  # 哨兵\n        self.head.nxt, self.tail.prev = self.tail, self.head\n\n    def _remove(self, node):\n        node.prev.nxt, node.nxt.prev = node.nxt, node.prev\n\n    def _add_front(self, node):\n        node.nxt = self.head.nxt\n        node.prev = self.head\n        self.head.nxt.prev = node\n        self.head.nxt = node\n\n    def get(self, key: int) -> int:\n        if key not in self.map:\n            return -1\n        node = self.map[key]\n        self._remove(node)\n        self._add_front(node)\n        return node.val\n\n    def put(self, key: int, value: int) -> None:\n        if key in self.map:\n            node = self.map[key]\n            node.val = value\n            self._remove(node)\n            self._add_front(node)\n        else:\n            node = Node(key, value)\n            self.map[key] = node\n            self._add_front(node)\n            if len(self.map) > self.cap:\n                lru = self.tail.prev\n                self._remove(lru)\n                del self.map[lru.key]",
+      "notes": "主实现用 OrderedDict 最简洁：move_to_end 表示「标记最近使用」，popitem(last=False) 表示「淘汰最久未用」。手写版用两个哨兵节点 head/tail，避免对空链表的特判；删除节点时务必同时从 map 中 del。"
+    },
+    "complexity": {
+      "time": "O(1)",
+      "space": "O(capacity)",
+      "why": "get/put 只做字典定位与常数次引用改序；空间存放至多 capacity 个键值节点。"
+    },
+    "pitfalls": [
+      "put 更新已存在的 key 时忘记 move_to_end，导致顺序错误",
+      "淘汰后忘记从哈希表删除对应 key，形成脏数据",
+      "capacity 为 0 或极小值时越界，未做保护"
+    ],
+    "edgeCases": [
+      "capacity = 1 时连续 put 两个不同 key",
+      "get 不存在的 key 必须返回 -1",
+      "反复 put 同一个 key 不应算作新增"
+    ],
+    "interviewTips": "先讲清「两个结构各管一件事」，再写代码。被问「能不能不用 OrderedDict」就切到手写双向链表版本，边说边画头部插入、尾部删除两个动作。卡住时先写出 get 与 put 的骨架，再补私有方法 _remove/_add_front，通常能拿到大部分分。"
+  }
+}

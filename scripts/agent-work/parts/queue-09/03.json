@@ -1,0 +1,178 @@
+{
+  "id": "c035cc3a364c5b18",
+  "tldr": "用 VLM 里的物理先验诊断失败去调接触力范围，再调冻结流匹配策略的潜噪声，触觉操作样本效率大幅提升。",
+  "keyPoints": [
+    "预训练策略在 OOD 部署下性能下降，需要真实交互做后训练",
+    "实机每次试验慢、贵甚至破坏性，RL 后训练交互代价高",
+    "PFR 模块用 VLM 物理先验看视觉结果与触觉历史，诊断失败并更新力上下界",
+    "高频混合力位控制器在接触时执行这些界限",
+    "触觉条件扩散引导 RL 只调冻结流匹配策略的潜噪声，不改基座"
+  ],
+  "why": "「冻结基座 + 只学一个小控制器」是生成式策略后训练的主流范式；物理先验驱动的样本效率与扩散/流匹配引导对做生成式模型与 embodied 的求职者都直接相关。",
+  "difficulty": "hard",
+  "tags": [
+    "generative",
+    "diffusion-policy",
+    "tactile",
+    "sample-efficiency",
+    "robot-adaptation"
+  ],
+  "entities": [
+    "PEARS",
+    "PFR",
+    "Whiteboard Erasing",
+    "Pipette Liquid Aspiration"
+  ],
+  "diagram": {
+    "kind": "flow",
+    "title": "PEARS 双通道自适应",
+    "caption": "一条通道用物理先验调接触力界限，另一条通道只调冻结策略的潜噪声，合起来加速在线适应。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='PEARS 物理推理与扩散引导两条通道协同的自适应流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>一次 episode 结束</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>视觉+触觉</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>PFR：VLM 物理先验诊断失败</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>更新力界限</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>混合力位控制器执行界限</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>高频接触</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>触觉扩散引导：只调潜噪声</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>冻结基座</text>\n</svg>",
+    "alt": "PEARS 流程：episode 结束后 PFR 用 VLM 物理先验诊断失败并更新力界限，混合力位控制器执行，触觉扩散引导只调冻结策略的潜噪声。"
+  },
+  "concepts": [
+    {
+      "name": "Physics-guided Force Reasoning (PFR)",
+      "readable": "模块用 VLM 里已有的物理常识，结合视觉结果和触觉交互历史，判断这次失败的原因，并据此更新「接触力该在什么范围」的上下界。",
+      "analogy": "老师傅复盘失败录像加手感，判断「这次按得太重」，然后把下次的力道范围调小一点。",
+      "analogyBreaksDown": "老师傅的判断是连续、可微调的经验，而 VLM 输出的是离散的力上下界，遇到训练分布外的材质或物体时可能给出错误的界，类比低估了「界的质量依赖先验覆盖」。",
+      "mechanism": "把「失败诊断」转成 VLM 的推理任务，用物理先验产出可执行的力界限，再由高频混合力位控制器在接触时强制执行——把推理结果落到控制层，避免策略在 OOD 下乱出力。",
+      "visual": "画一条随时间变化的目标接触力曲线，上下两条虚线是 PFR 给出的界限，真实力曲线被夹在中间；失败后界限收窄，用颜色标出「收紧」。",
+      "prerequisites": [
+        "力/位混合控制基础",
+        "视觉语言模型做推理任务",
+        "触觉传感信号"
+      ],
+      "selfTest": [
+        "PFR 用哪些输入诊断失败？",
+        "它输出的是奖励还是可执行的约束？",
+        "为什么要把力界限交给控制器而不是直接改策略？"
+      ],
+      "formula": "[F_{\\min}, F_{\\max}]_{t+1} = \\mathrm{PFR}\\big(F_t, o_t, h_t\\big)"
+    },
+    {
+      "name": "Tactile-conditioned Diffusion Steering（触觉条件扩散引导）",
+      "readable": "基座是一个冻结的流匹配策略，PEARS 不改它的权重，只用触觉条件去调生成动作时的初始潜噪声，从而纠正空程运动和接触时机。",
+      "analogy": "不重新培训司机，只在发车前微调导航的初始随机起点，让同一条路线走得更稳。",
+      "analogyBreaksDown": "只调初始噪声的自由度有限：如果策略本身完全不会这项技能（比如根本不会抓），无论怎么调噪声也救不回来，类比里的「路线」本身得先存在。",
+      "mechanism": "冻结基座避免了重训练带来的灾难性遗忘与算力开销，把适应压缩到低维的潜噪声空间；触觉条件让调整专门针对接触类错误（力不对、时机不对），与 PFR 的力界限互补。",
+      "visual": "画潜噪声空间：一个固定的生成分布中心，用箭头指向被 RL 微调后的新中心，箭头旁边标注触觉条件，代表只平移不重塑分布。",
+      "prerequisites": [
+        "扩散模型与流匹配策略",
+        "潜空间引导与条件生成",
+        "策略梯度 RL"
+      ],
+      "selfTest": [
+        "为什么冻结基座、只调潜噪声？",
+        "触觉条件在纠正哪类错误？",
+        "这种引导与直接微调全参数相比省了什么？"
+      ],
+      "formula": "a_t = G_\\theta\\big(z_t + \\Delta z_t\\big), \\quad \\Delta z_t \\sim \\pi_\\phi(\\cdot \\mid \\mathrm{tactile})"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-diffusion-steering",
+      "name": "扩散/流匹配策略的潜噪声引导（Latent-Noise Steering）",
+      "category": "generative",
+      "latex": "a_t = G_\\theta\\big(z_t + \\Delta z_t\\big), \\quad \\Delta z_t \\sim \\pi_\\phi(\\cdot \\mid \\mathrm{tactile}), \\quad \\theta\\ \\mathrm{frozen}",
+      "symbols": [
+        ["G_\\theta", "冻结的流匹配/扩散策略网络，参数 θ 不更新"],
+        ["z_t", "采样得到的初始潜噪声"],
+        ["\\Delta z_t", "RL 学习到的潜噪声修正量"],
+        ["\\pi_\\phi", "触觉条件化的修正策略，参数 φ 可学"],
+        ["a_t", "由修正后潜噪声生成的最终动作"]
+      ],
+      "derivation": [
+        "第 1 步：预训练策略在 OOD 下退化，但重训代价高且可能破坏已有能力。",
+        "第 2 步：冻结基座参数 θ，只在生成动作的潜噪声上注入修正量 Δz。",
+        "第 3 步：让修正量以触觉历史为条件，使学习集中在接触相关错误。",
+        "第 4 步：用 RL 优化 φ 以最大化任务成功率，保持基座不变。"
+      ],
+      "analogy": "像给固定路线的大巴只调发车时的随机起点，路线本身不变，但停车更准。",
+      "pitfalls": [
+        "以为在微调整个基座——论文强调基座冻结，只学潜噪声修正",
+        "忽略触觉条件，把它当成无条件噪声调优，会失去针对接触错误的针对性"
+      ],
+      "code": "import torch\ndef steered_action(policy, z, dz, cond_tactile):\n    # policy 冻结；只更新 dz 的生成网络\n    z_steer = z + dz(z, cond_tactile)\n    return policy(z_steer)   # a_t = G_theta(z_t + dz_t)",
+      "sources": [
+        {"title": "PEARS: Physical-Prior-Guided Efficient Adaptation via Failure Reasoning and Diffusion Steering for Tactile Manipulation", "url": "https://arxiv.org/abs/2610.08784v1"}
+      ]
+    },
+    {
+      "id": "f-pfr-force-bounds",
+      "name": "物理推理力界限更新（Physics-Guided Force-Bound Update）",
+      "category": "generative",
+      "latex": "[F_{\\min}, F_{\\max}]_{t+1} = \\mathrm{PFR}\\big([F_{\\min}, F_{\\max}]_t,\\ o_t,\\ h_t\\big), \\quad F_{\\min} \\le F^{\\mathrm{cmd}} \\le F_{\\max}",
+      "symbols": [
+        ["[F_{\\min}, F_{\\max}]_t", "第 t 轮任务允许的接触力上下界"],
+        ["o_t", "本轮 episode 的视觉结果"],
+        ["h_t", "触觉交互历史"],
+        ["F^{\\mathrm{cmd}}", "控制器实际下发的接触力命令"],
+        ["\\mathrm{PFR}", "基于 VLM 物理先验的失败诊断与界限更新模块"]
+      ],
+      "derivation": [
+        "第 1 步：episode 结束后，PFR 收下视觉结果与触觉历史作为失败诊断证据。",
+        "第 2 步：VLM 借助物理先验判断失败模式（如用力过大、接触过晚）。",
+        "第 3 步：据此更新任务适配的力上下界。",
+        "第 4 步：高频混合力位控制器在后续接触中把命令力夹在该区间内执行。"
+      ],
+      "analogy": "像给学徒划定「拧螺丝只能用这个力道区间」，他照着做就不会拧坏。",
+      "pitfalls": [
+        "把力界限当成奖励塑形——它是硬约束，由控制器强制执行",
+        "假设 VLM 一定给对区间，忽略先验分布外的物体上会出错"
+      ],
+      "code": "def pfr_update(F_range, obs_img, tactile_hist, vlm):\n    diag = vlm.reason(obs_img, tactile_hist)      # 物理先验诊断失败\n    lo, hi = F_range\n    if diag == 'too_much_force': hi *= 0.8\n    elif diag == 'too_little_force': lo *= 1.2\n    return (lo, hi)\ndef enforce(F_cmd, F_range):\n    return min(max(F_cmd, F_range[0]), F_range[1])",
+      "sources": [
+        {"title": "PEARS: Physical-Prior-Guided Efficient Adaptation via Failure Reasoning and Diffusion Steering for Tactile Manipulation", "url": "https://arxiv.org/abs/2610.08784v1"}
+      ]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "预训练机器人策略在部署时的 OOD 条件下会出现明显性能下降",
+      "基于 RL 的后训练通常需要大量环境交互，操作任务中每次试验慢、贵甚至具破坏性",
+      "PEARS 是物理先验引导的混合 RL 框架，用于触觉反馈下预训练策略的样本高效在线适应",
+      "PFR 模块用 VLM 中的物理先验，从视觉结果与触觉交互历史诊断失败并更新接触力界限",
+      "高频混合力位控制器在接触时执行这些界限",
+      "触觉条件扩散引导 RL 调整冻结流匹配策略的潜噪声，修正空程运动与接触时机，不更新基座",
+      "仿真中相比最强的逐任务基线成功率提升 12.4 到 37.4 个百分点",
+      "达到某成功率阈值所需交互 episode 数相比最快基线最多减少 53.2%",
+      "实机在 Whiteboard Erasing 达 95%、Pipette Liquid Aspiration 达 90%"
+    ],
+    "uncertain": [
+      "引导公式为按摘要重建的通用形式（潜噪声加性修正），原文确切形式与 RL 算法需核对",
+      "基线具体名称与仿真环境名摘要未列出，待核实",
+      "VLM 型号与物理先验如何编码摘要未说明，待核实"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "用视觉语言模型的物理常识判断机器人哪次用力不对，再只微调策略的随机噪声来纠正。"},
+      {"level": "入门", "text": "预训练的策略一到新场景就容易掉性能，得靠真机试错补回来，但每次试验又慢又贵。PEARS 用两条路减少试错：一条让 VLM 复盘失败、直接规定接触力的范围；另一条不改基座模型，只调整生成动作时的随机噪声。"},
+      {"level": "进阶", "text": "关键设计是分工：接触力这种有物理含义、可写成约束的量，交给 PFR 用 VLM 诊断后变成硬界限，由高频力位控制器强制执行；空程运动和接触时机这种难用规则表达的量，交给触觉条件的扩散引导，只学潜噪声修正。基座冻结避免了重训练开销，也让两条通道互不干扰。"},
+      {"level": "专家", "text": "与端到端 RL 微调相比，它把适应拆成「可解释的约束通道」和「低维的噪声通道」，前者利用 VLM 的物理先验提供样本高效的方向性，后者在潜空间做小步调整保留基座能力。摘要在仿真上比最强逐任务基线提升 12.4 到 37.4 个百分点、交互 episode 最多减少 53.2%；实机白板擦除 95%、移液管吸液 90%。它的边界是 VLM 物理推理的可靠性：若先验覆盖不到该物体，力界限会给错。"}
+    ],
+    "socratic": [
+      {"q": "为什么不直接微调整个策略？", "a": "全参数微调需要大量真机交互、且易遗忘已有技能；冻结基座只学潜噪声修正，样本与算力成本都低得多。"},
+      {"q": "为什么接触力要单独用规则而不是也让 RL 学？", "a": "接触力有明确物理量纲和危险边界，写成硬界限能保证安全且样本高效，比让 RL 从稀疏奖励里摸索更可靠。"}
+    ],
+    "mechanism": "操作任务的适应难点是试验昂贵且有破坏性。作者把适应需求拆成两类：力学量有物理含义、可表示为约束，于是用 VLM 的物理先验做诊断并转成力界限，由控制器强制保证安全与方向性；时序/轨迹类错误难以规则化，于是用触觉条件的 RL 只调冻结策略的潜噪声。两者一个给硬约束、一个给软修正，共同提升样本效率。",
+    "boundary": "当 VLM 在目标物体/材质上缺乏物理先验、诊断错误时，力界限会误导控制器；当基座策略在目标任务上能力严重不足时，仅靠潜噪声修正无法补救；摘要的增益来自特定触觉操作任务与仿真基准，泛化到无触觉或高动态任务未证明。",
+    "analogyBoundary": "「老师傅调力道」的类比在失败模式是「用力不当」时成立；但真实失败常来自感知误差、状态估计错误或多因素耦合，不总能归因到单一力界限，此时「复盘调整」的类比不适用。",
+    "misconceptions": [
+      "以为 PEARS 会更新基座策略——它明确冻结流匹配基座，只学潜噪声。",
+      "把 PFR 输出的力界限当成奖励塑形——它是控制器强制执行的硬约束。",
+      "认为两条通道冗余——它们分别处理力/接触与空程/时机的不同错误。"
+    ],
+    "ownAnalysis": "（推断）这条与「冻结大模型 + 学轻量 adapter」的思路同构，只是 adapter 长在噪声空间而非权重上。可疑处：一是把失败归因交给 VLM，若 VLM 幻觉出错误的失败原因，力界限会朝错误方向调（推断）；二是摘要只报峰值成功率与相对降幅，未给基线的绝对成功率，12.4 到 37.4 个百分点的跨度也说明任务间差异大。触觉是它的关键前提，无触觉场景收益需重估。",
+    "officialNotes": [
+      {"position": "论文提出 PEARS，称结合 PFR 模块与策略引导可在减少昂贵交互的同时加速适应，并给出仿真与实机成功率", "source": "arxiv: https://arxiv.org/abs/2610.08784v1"}
+    ],
+    "interviewAnswer": "PEARS 解决的是触觉操作里「预训练策略 OOD 掉点、但真机试错太贵」的问题，核心是两条互补的自适应通道。第一条是 PFR：episode 结束后，用 VLM 里的物理先验，结合视觉结果和触觉历史诊断失败，直接更新接触力的上下界，再由高频力位混合控制器强制执行——把推理变成硬约束。第二条是触觉条件的扩散引导 RL：基座流匹配策略完全冻结，只调整生成动作时的潜噪声，用来纠正空程运动和接触时机。结果是仿真里比最强逐任务基线提升 12.4 到 37.4 个百分点，交互 episode 最多减少 53.2%，实机白板擦除 95%、移液吸液 90%。",
+    "studyPath": {
+      "prerequisites": ["扩散/流匹配策略", "力位混合控制", "RL 后训练与样本效率"],
+      "nextSteps": ["读原文核对潜噪声修正与 RL 算法", "对比 LoRA 式微调与噪声空间引导", "思考无触觉场景下 PFR 的替代信号"]
+    }
+  }
+}

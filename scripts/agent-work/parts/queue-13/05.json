@@ -1,0 +1,124 @@
+{
+ "id": "8f0349de263db386",
+ "tldr": "模拟竖式乘法：用长度 m+n 的结果数组逐位累加 num1[i]*num2[j]，落在 i+j+1 位并把进位加到 i+j，全程不转整数。",
+ "keyPoints": [
+  "禁止使用自带大整数库，也不能把输入直接转成整数",
+  "结果长度最多 m+n，预先开一个全 0 数组",
+  "num1[i]*num2[j] 落在结果数组的 i+j+1 位",
+  "把当前位的进位加到 i+j 位，本位取模 10",
+  "最后去掉前导零，输入含 0 时直接返回 \"0\""
+ ],
+ "why": "字符串模拟大数乘法是手撕高频，考下标映射与进位处理；这种「逐位定位 + 就地进位」的思维在推理分块、注意力下标对齐等场景也通用。",
+ "difficulty": "medium",
+ "tags": ["leetcode", "string", "math", "simulation", "hot100"],
+ "entities": ["字符串相乘", "竖式乘法", "num1", "num2"],
+ "diagram": {
+  "kind": "flow",
+  "title": "竖式乘法的下标映射",
+  "caption": "每一位乘积累加到 i+j+1，再把进位推给 i+j，从左往右去前导零即得结果。",
+  "svg": "<svg viewBox='0 0 600 300' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='字符串相乘流程：按位乘积定位到 i+j+1，进位推给 i+j，最后去前导零'><rect x='56' y='16' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>① 逐位相乘</text><text x='528' y='40' font-size='13' text-anchor='end' fill='currentColor'>num1[i] 乘 num2[j] 得 mul</text><line x1='300' y1='54' x2='300' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,70 296,62 304,62' fill='var(--line-1)'/><rect x='56' y='70' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>② 定位累加</text><text x='528' y='94' font-size='13' text-anchor='end' fill='currentColor'>res[i+j+1] += mul</text><line x1='300' y1='108' x2='300' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,124 296,116 304,116' fill='var(--line-1)'/><rect x='56' y='124' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>③ 处理进位</text><text x='528' y='148' font-size='13' text-anchor='end' fill='currentColor'>res[i+j] += res[i+j+1]//10</text><line x1='300' y1='162' x2='300' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,178 296,170 304,170' fill='var(--line-1)'/><rect x='56' y='178' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>④ 本位取模</text><text x='528' y='202' font-size='13' text-anchor='end' fill='currentColor'>res[i+j+1] %= 10 留在本位</text><line x1='300' y1='216' x2='300' y2='224' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,232 296,224 304,224' fill='var(--line-1)'/><rect x='56' y='232' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='256' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>⑤ 去前导零</text><text x='528' y='256' font-size='13' text-anchor='end' fill='currentColor'>拼成字符串，全零则返回 \"0\"</text></svg>",
+  "alt": "五步：逐位相乘→累加到 i+j+1→进位给 i+j→本位取模→去前导零拼成字符串。"
+ },
+ "concepts": [
+  {
+   "name": "按位乘法与下标映射（Digit-wise Multiplication with Index Mapping）",
+   "readable": "不把字符串转整数，而是像竖式那样逐位相乘：num1 第 i 位乘 num2 第 j 位的结果，落在结果数组第 i+j+1 位，进位加到 i+j 位。",
+   "analogy": "像算盘逐档相加：每位相乘得的数先放到对应档位，满十就往高位档位进一，最后从高位往下读。",
+   "analogyBreaksDown": "算盘是直观的十进制进位，程序里是先在整数数组中无进位地累加所有乘积，再统一或即时处理进位；且下标从左（高位）编号，与算盘右起相反，容易算错位。",
+   "mechanism": "关键设计：预先开 m+n 长度的数组（结果最长即 m+n），把每位乘积累加到 i+j+1，再在遍历中把当前位除以 10 归入进位、模 10 留在本位；每次只处理一位，避免出现中间大整数。",
+   "visual": "画一个 m+n 列的横向数组，用两条竖线把 num1[i]、num2[j] 指向第 i+j+1 格，再用箭头标出进位流向第 i+j 格。",
+   "prerequisites": ["字符串遍历", "数组与下标", "竖式乘法"],
+   "selfTest": ["为什么结果长度是 m+n 而不是 m+n-1？", "乘积为什么落在 i+j+1 而不是 i+j？", "怎么去掉前导零并处理输入为 0？"],
+   "formula": ""
+  }
+ ],
+ "formulas": [],
+ "selfCheck": {
+  "claims": [
+   "题目为 LeetCode 43 字符串相乘",
+   "禁止使用任何内置 BigInteger 库，或直接把输入转换成整数",
+   "示例 num1=\"2\"、num2=\"3\" 输出 \"6\"；num1=\"123\"、num2=\"456\" 输出 \"56088\"",
+   "约束 1<=num1.length,num2.length<=200，仅含数字，除 0 本身外无前导零"
+  ],
+  "uncertain": [
+   "摘要未给具体解法，题解为按竖式模拟标准做法自行推导（待核实）"
+  ]
+ },
+ "teaching": {
+  "progressive": [
+   {"level": "一句话", "text": "像小学竖式那样，一位一位乘、一位一位进位，最后拼成字符串。"},
+   {"level": "入门", "text": "给两个用字符串表示的非负整数，不能转成整数，要算出它们的乘积字符串。位数最多 200 位，远超普通整数范围，所以要模拟手算乘法。"},
+   {"level": "进阶", "text": "开一个长度 m+n 的结果数组。对每一对位 num1[i] 与 num2[j]，把乘积加到 res[i+j+1]，再把当前位除以 10 的商加到 res[i+j]、余数留在本位。因为高位位置编号小、低位编号大，累加与进位方向与竖式一致。"},
+   {"level": "专家", "text": "位置映射的依据是位权：第 i 位（从高位数）位权为 10^(m-1-i)，第 j 位为 10^(n-1-j)，乘积位权为 10^(m+n-2-i-j)，恰对应结果数组下标 i+j+1 的位权，故累加位置正确。每步即时进位保证数组每位恒为 0-9，最终拼接即精确乘积。时间 O(m*n)，空间 O(m+n)。边界是输入含 \"0\" 要提前返回，以及末尾可能留前导零需跳过。"}
+  ],
+  "socratic": [
+   {"q": "为什么结果数组长度是 m+n？", "a": "两个 m 位与 n 位数相乘，结果最多 m+n 位（如 99*99=9801，四位）；开 m+n 足够，且首位可能为 0 需靠去前导零处理。"},
+   {"q": "为什么乘积落在 i+j+1 而不是 i+j？", "a": "因为最低位相乘（i=m-1,j=n-1）应落在结果最低位，即下标 m+n-1，而 (m-1)+(n-1)+1=m+n-1，故偏移是 i+j+1。"},
+   {"q": "为什么可以先累加再统一进位？", "a": "加法交换律保证先把所有乘积累加、再逐位进位，与逐对即时进位等价；两种写法结果相同。"}
+  ],
+  "mechanism": "核心是「用位置编码位权」：把每一位的数值放到位权对应的数组下标里，加法与进位都退化成对数组的常数操作，从而在不使用大整数的前提下精确模拟竖式乘法，复杂度由位数决定而非数值大小决定。",
+  "boundary": "该法依赖输入为纯数字且无前导零的规范形式；若字符串含符号、空格或非法字符则要先清洗。结果首位为 0 时必须跳过，否则会输出多一位的前导零。输入任一为 \"0\" 时可短路返回 \"0\"，避免多余的零处理。",
+  "analogyBoundary": "算盘类比忽略了数组下标方向：程序里从左往右编号（左为高位），而算盘从右往左计算；且程序允许先无进位累加、最后统一进位，与算盘的即时进位不同。",
+  "misconceptions": [
+   "结果下标写成 i+j 而不是 i+j+1，导致整体错位。",
+   "累加后忘记对本位取模，数组元素超过 9，最终拼接出错。",
+   "忘记特判输入含 \"0\"，或去前导零时下标越界。"
+  ],
+  "ownAnalysis": "这道题考的是「把大数运算还原成位置运算」，与计算机里把数按位存放在数组的直觉一致（推断）。它和「两数相加」「大数加减」同属字符串模拟家族，掌握位置映射后可类推。实际工程中更常用大整数库，但面试考的是位权与进位的手工推演能力。",
+  "officialNotes": [
+   {"position": "LeetCode 43 要求返回两数乘积的字符串形式，禁止使用内置大整数库或直接把输入转换为整数。", "source": "https://leetcode.cn/problems/multiply-strings"}
+  ],
+  "interviewAnswer": "我用竖式模拟。先特判任一输入为「0」直接返回「0」。开一个 m+n 长的数组。两层循环遍历 num1[i] 和 num2[j]，把 num1[i]*num2[j] 加到 res[i+j+1]，然后 res[i+j] 加上 res[i+j+1] 除以 10 的商，res[i+j+1] 对 10 取模。遍历完跳过前导零拼成字符串。时间 O(m*n)，空间 O(m+n)。关键是说清为什么落在 i+j+1 位。",
+  "studyPath": {
+   "prerequisites": ["字符串遍历", "数组与下标操作", "竖式乘法"],
+   "nextSteps": ["两数相加（2）与字符串相加（415）", "大数加减法模拟", "尝试「统一进位」的另一种写法并对拍"]
+  }
+ },
+ "problem": {
+  "title": "字符串相乘",
+  "number": 43,
+  "difficulty": "medium",
+  "statement": "给定两个以字符串形式表示的非负整数 num1 和 num2，返回它们的乘积，也用字符串表示。不能用任何内置的大整数库（如 BigInteger），也不能把输入直接转换成整数。数值范围远超普通整数类型，须模拟手算乘法。",
+  "examples": [
+   {"input": "num1 = \"2\", num2 = \"3\"", "output": "\"6\"", "why": "个位相乘得 6"},
+   {"input": "num1 = \"123\", num2 = \"456\"", "output": "\"56088\"", "why": "逐位相乘、按位累加再进位"}
+  ],
+  "approach": {
+   "idea": "模拟竖式乘法：开长度 m+n 的结果数组并全置 0；对每一对位 num1[i]、num2[j]，把乘积累加到 res[i+j+1]，随后把当前位除以 10 的商加到 res[i+j]、本位取模 10；最后去掉前导零拼成字符串。",
+   "steps": [
+    "1. 若 num1 或 num2 为 \"0\"，直接返回 \"0\"",
+    "2. m, n = len(num1), len(num2)，res = [0] * (m + n)",
+    "3. 从低位到高位双层循环遍历 num1[i] 与 num2[j]",
+    "4. mul = int(num1[i]) * int(num2[j])，p2 = i+j+1，p1 = i+j",
+    "5. res[p2] += mul；res[p1] += res[p2] // 10；res[p2] %= 10",
+    "6. 跳过前导零，''.join(map(str, res[start:])) 即结果"
+   ],
+   "whyItWorks": "第 i 位（从高位数）与第 j 位相乘，其真实位权为 10^(m-1-i) 乘 10^(n-1-j) 等于 10^(m+n-2-i-j)，恰对应结果数组下标 i+j+1 的位权，故累加位置正确；每步即时进位保证数组每位始终在 0-9，最终拼接即精确乘积。",
+   "alternatives": [
+    {"name": "逐位累加后统一进位", "complexity": "O(m*n) / O(m+n)", "when": "先把所有乘积放进数组，再统一从低位进位，逻辑更直白"},
+    {"name": "模拟加法器累加 n 次", "complexity": "O(m*n) / O(m+n)", "when": "思路最朴素，但常数大、易写错，一般只作对照"}
+   ]
+  },
+  "solution": {
+   "python": "def multiply(num1: str, num2: str) -> str:\n    if num1 == \"0\" or num2 == \"0\":\n        return \"0\"\n    m, n = len(num1), len(num2)\n    res = [0] * (m + n)\n    for i in range(m - 1, -1, -1):\n        for j in range(n - 1, -1, -1):\n            mul = int(num1[i]) * int(num2[j])\n            p2, p1 = i + j + 1, i + j\n            res[p2] += mul\n            res[p1] += res[p2] // 10\n            res[p2] %= 10\n    start = 0\n    while start < len(res) and res[start] == 0:\n        start += 1\n    return ''.join(map(str, res[start:])) or \"0\"\n\nprint(multiply(\"123\", \"456\"))",
+   "python_alt": "def multiply(num1: str, num2: str) -> str:\n    if num1 == \"0\" or num2 == \"0\":\n        return \"0\"\n    m, n = len(num1), len(num2)\n    res = [0] * (m + n)\n    for i in range(m - 1, -1, -1):\n        a = int(num1[i])\n        for j in range(n - 1, -1, -1):\n            res[i + j + 1] += a * int(num2[j])\n    for k in range(len(res) - 1, 0, -1):\n        res[k - 1] += res[k] // 10\n        res[k] %= 10\n    start = 0\n    while start < len(res) - 1 and res[start] == 0:\n        start += 1\n    return ''.join(map(str, res[start:]))",
+   "notes": "主实现边累加边进位，数组每位始终是 0-9；alt 版先全部累加再统一进位，逻辑更直观。两版都要特判输入含 \"0\"，并在拼接前去前导零；主实现用 `or \"0\"` 兜底空串。"
+  },
+  "complexity": {
+   "time": "O(m*n)",
+   "space": "O(m+n)",
+   "why": "两层循环各遍历两个字符串每一位，共 m*n 次乘加；结果数组长度为 m+n。"
+  },
+  "pitfalls": [
+   "结果下标写成 i+j 而不是 i+j+1，导致整体错位。",
+   "累加后忘记对当前位取模，数组元素超过 9 使拼接出错。",
+   "忘记特判输入为 \"0\"，或去前导零时下标越界。"
+  ],
+  "edgeCases": [
+   "任一输入为 \"0\" → 返回 \"0\"。",
+   "单个数字相乘，如 \"9\"*\"9\" 得 \"81\"。",
+   "结果首位为 0 需跳过（无进位时最高位为空 0）。"
+  ],
+  "interviewTips": "先说清「为什么乘积落在 i+j+1 位」这个位置映射，再动笔；这是本题最容易讲错也最能体现理解的点。实现上边遍历边进位最省事。卡住时先写「统一进位」版本（先累加再逐位进位），逻辑更直白，写完再优化成即时进位。面试官常追问复杂度，答 m*n 次乘加与 m+n 的空间。"
+ }
+}

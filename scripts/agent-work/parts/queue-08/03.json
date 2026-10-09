@@ -1,0 +1,110 @@
+{
+  "id": "3d393b3e98f36756",
+  "tldr": "提出用「认知谦逊」评估 LLM 智能体处理证据冲突，发现高任务准确率并不等于会坦诚承认不确定性。",
+  "keyPoints": [
+    "现有智能体评测只看任务成功率，看不出它如何处理证据冲突",
+    "定义认知谦逊 EH：识别、行动、沟通执行过程中的不确定性",
+    "用轨迹级的 Identify / Solve / Escalate 三个行为维度操作化 EH",
+    "设受控冲突与自然冲突两类场景，各配无冲突对照",
+    "高准确率配置能识别冲突，却不把未解不确定写进错误答案"
+  ],
+  "why": "智能体可靠性是 agent 与后训练岗位的核心议题；「准确率之外的评测维度」是面试常被追问的点。",
+  "difficulty": "medium",
+  "tags": ["agent", "llm-agent", "evaluation", "epistemic-humility", "knowledge-conflict"],
+  "entities": ["Epistemic Humility (EH)", "Identify", "Solve", "Escalate", "ISE"],
+  "diagram": {
+    "kind": "flow",
+    "title": "认知谦逊的评测闭环",
+    "caption": "从知识冲突触发，到轨迹级三维度判定，再到「准确率≠谦逊」这一核心发现。",
+    "svg": "<svg viewBox='0 0 480 226' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='认知谦逊评测：冲突触发、三维度识别、设置对照、得出准确率不等于谦逊'>\n<rect x='40' y='14' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='38' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>知识冲突触发</text>\n<text x='424' y='38' font-size='13' text-anchor='end' fill='currentColor'>参数知识 vs 检索证据；两源矛盾</text>\n<line x1='240' y1='52' x2='240' y2='60' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,68 236,60 244,60' fill='var(--line-1)'/>\n<rect x='40' y='68' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='92' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>识别 Identify</text>\n<text x='424' y='92' font-size='13' text-anchor='end' fill='currentColor'>轨迹中意识到存在冲突</text>\n<line x1='240' y1='106' x2='240' y2='114' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,122 236,114 244,114' fill='var(--line-1)'/>\n<rect x='40' y='122' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='146' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>解决 Solve / 升级 Escalate</text>\n<text x='424' y='146' font-size='13' text-anchor='end' fill='currentColor'>行动处理或上报不确定</text>\n<line x1='240' y1='160' x2='240' y2='168' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,176 236,168 244,168' fill='var(--line-1)'/>\n<rect x='40' y='176' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='200' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>发现：准确率 ≠ 谦逊</text>\n<text x='424' y='200' font-size='13' text-anchor='end' fill='currentColor'>早期识别、后期丢失</text>\n</svg>",
+    "alt": "四层竖排流程：知识冲突触发→轨迹中识别冲突→解决或升级→得出准确率不等于谦逊的结论。"
+  },
+  "concepts": [
+    {
+      "name": "Epistemic Humility (认知谦逊)",
+      "readable": "智能体在任务执行中，愿不愿意承认「我不确定」、据此改变行为、并把这份不确定如实告诉用户，而不是硬给一个错误答案。",
+      "analogy": "像医生面对互相矛盾的检查报告：好的医生会说「这里对不上，我建议再做一项确认」，而不是挑一个数字硬下诊断。",
+      "analogyBreaksDown": "医生有执业责任和追责机制；智能体只在一次对话里回答，没有持续后果，所以「谦逊」更像一种行为倾向，而非职业规范约束。",
+      "mechanism": "把抽象的「谦逊」拆成三个可观测的轨迹级行为：是否识别出冲突、是否采取行动处理、是否把未解的不确定上报出来。只有三步都做到才算真正谦逊，避免只看最终对错的自欺。",
+      "visual": "横轴执行步数、纵轴「不确定性信号强度」；画一条曲线，早期骤升（识别到冲突）但后期回落到零（丢失/未上报），对照曲线应在结尾保持高位。",
+      "prerequisites": ["LLM 智能体基础流程", "检索增强与知识冲突概念", "轨迹级评测思路"],
+      "selfTest": ["为什么只测任务成功率看不出谦逊？", "「识别到冲突」与「上报不确定」为何要分开测？", "什么样的行为算 Escalate？"],
+      "formula": ""
+    },
+    {
+      "name": "ISE Trajectory Dimensions (识别-解决-升级)",
+      "readable": "把「认知谦逊」落成三个能数出来的行为维度：Identify（识别冲突）、Solve（在冲突下仍正确求解）、Escalate（无法解决时如实上报不确定）。",
+      "analogy": "像分诊三问：看出症状矛盾吗？能当场处理吗？处理不了会不会转诊？",
+      "analogyBreaksDown": "分诊由人按规程执行；这里的判定要从智能体的自然语言轨迹里读出来，边界模糊、可能有假阳性（嘴上说注意但行为没变）。",
+      "mechanism": "三个维度都定义在整条执行轨迹上而非单步，配合受控/自然两类冲突与配对的无冲突对照，从而把「冲突导致的困难」与「谦逊与否」区分开。",
+      "visual": "一个 3×2 的矩阵：行是 Identify/Solve/Escalate，列是「有冲突」与「无冲突对照」；单元格填达标率，冲突列低而对照列高即暴露谦逊缺口。",
+      "prerequisites": ["轨迹级行为标注", "对照实验设计", "多步智能体执行"],
+      "selfTest": ["为何要用配对的无冲突对照？", "三维度能否合并成一个分数？", "哪些行为容易被误判为 Escalate？"],
+      "formula": "\\mathrm{EH}=\\alpha\\,I+\\beta\\,S+\\gamma\\,E"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-eh-ise-score",
+      "name": "认知谦逊 ISE 评分（Epistemic Humility ISE Score）",
+      "category": "agent",
+      "latex": "\\mathrm{EH}=\\alpha\\,I+\\beta\\,S+\\gamma\\,E",
+      "symbols": [["I", "Identify：轨迹中是否识别出知识冲突（0/1 或达标率）"], ["S", "Solve：冲突下是否仍正确求解"], ["E", "Escalate：未解决时是否如实上报不确定"], ["\\alpha,\\beta,\\gamma", "三个维度的权重"]],
+      "derivation": [
+        "抽象的「谦逊」无法直接测量，先拆成三个可观测的轨迹级行为。",
+        "对每条执行轨迹分别判定 I、S、E 是否满足。",
+        "按权重线性组合得到单条轨迹的 EH 分。",
+        "再与配对的无冲突对照相减，剥离冲突本身带来的难度差异，得到纯粹的谦逊缺口。"
+      ],
+      "analogy": "像给学生打分：看出错题、改对、改不动时举手问，三样各占一定权重。",
+      "pitfalls": ["只统计 I（识别）就下结论，忽略「识别了但没上报」这一摘要强调的缺口", "不做无冲突对照，把任务本身变难误当成不谦逊"],
+      "code": "def eh_score(I, S, E, w=(1.0, 1.0, 1.0)):\n    # I,S,E in {0,1} or rates; w: weights for Identify/Solve/Escalate\n    a, b, c = w\n    return (a * I + b * S + c * E) / (a + b + c)",
+      "sources": [{"title": "Accurate but Not Humble: Evaluating Epistemic Humility in LLM Agents under Knowledge Conflict", "url": "https://arxiv.org/abs/2610.12360"}]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "论文指出既有智能体评测主要看任务成功，对冲突处理洞察有限",
+      "EH 被定义为智能体在任务执行中识别、行动于、并沟通不确定性的意愿",
+      "EH 通过轨迹级的 Identify、Solve、Escalate 三个维度操作化",
+      "知识冲突包含「参数知识 vs 遇见证据」与「两个上下文来源不一致」两类",
+      "评测设受控冲突与多步执行中的自然冲突两类场景，各配匹配的无冲突对照",
+      "评测四个智能体发现高准确率不一定对应高谦逊，一些高准确率配置识别到冲突却不沟通未解不确定",
+      "轨迹分析显示智能体常在早期步骤识别冲突，却在后续步骤中未能保持或解决",
+      "模型级干预能提升 EH，但往往以任务准确率为代价，说明 EH 来自骨干模型、智能体框架与评测环境的交互"
+    ],
+    "uncertain": [
+      "ISE 评分的精确公式与权重摘要未给，f-eh-ise-score 为按摘要重建的通用形式，需核对原文",
+      "被评测的四个智能体具体是哪些、骨干模型是什么，摘要未列明，待核实",
+      "「自然冲突」场景的具体构造方式与数据来源摘要未说明，待核实"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "它不只问智能体答得对不对，还问它遇到矛盾时敢不敢说自己不确定。"},
+      {"level": "入门", "text": "当检索到的证据和模型脑子里的知识打架，或者两个资料互相矛盾时，智能体应该改答案、承认不确定，还是硬着头皮给个错结论？论文提出用「认知谦逊」来评测这件事，把它拆成识别冲突、在冲突下求解、无法解决时上报不确定这三步。"},
+      {"level": "进阶", "text": "做法是设两种冲突场景：受控冲突和真实多步执行中自然出现的冲突，各自配一个没有冲突的对照，这样才能把「任务变难了」和「不谦逊」区分开。评了四个智能体后发现：准确率高不等于谦逊，有些高准确率配置明明识别到了冲突，最后的错误答案里却完全不提这份不确定；很多人早期能发现冲突，后面又跟丢了。"},
+      {"level": "专家", "text": "它的价值在于把评测从「结果对错」推进到「过程行为」，且用配对对照控制难度混淆，方法论上比单纯统计准确率更可信。核心结论是 EH 不是某个模型的固有属性，而是骨干模型、智能体框架、评测环境三者交互的产物——这解释了为什么模型级干预能提高 EH 却常常掉准确率：谦逊与作答之间可能存在权衡。局限是轨迹级行为判定的边界较模糊，依赖如何从自然语言里读出 I/S/E。"}
+    ],
+    "socratic": [
+      {"q": "为什么单看任务准确率不够？", "a": "摘要指出，有些高准确率配置识别到冲突却不在错误答案里沟通不确定；准确率掩盖了这个可靠性缺口。"},
+      {"q": "为什么要配无冲突对照？", "a": "冲突本身会让任务更难。有对照才能分离「难度导致的失败」与「不谦逊导致的失败」。"},
+      {"q": "为什么说 EH 是三者交互的产物？", "a": "摘要发现模型级干预能提升 EH 但常掉准确率，说明单改模型不够，框架与评测环境也在塑造谦逊行为。"}
+    ],
+    "mechanism": "核心难点是把「谦逊」这种抽象属性变成可测量、可复核的量。作者的做法是行为化：把 EH 落成轨迹上的 Identify/Solve/Escalate，再用配对的无冲突对照剥离难度因素。之所以必须这样设计，是因为如果只看最终答案对错，就无法区分「答错且不承认」与「答错但如实说了不确定」——而后者恰恰是可靠性最关键的部分。",
+    "boundary": "评测依赖对轨迹行为的人工/规则判定，边界模糊时结论不稳；冲突场景由作者构造，迁移到其他领域需重新验证；论文主要刻画现象与权衡，未给出稳定提升 EH 且不掉准确率的方法。",
+    "analogyBoundary": "「分诊」类比在流程清晰时成立，但这里没有统一规程，I/S/E 要从自然语言轨迹里推断，加上模型可能「嘴上谦逊、行为照旧」，存在假阳性，类比会低估判定难度。",
+    "misconceptions": [
+      "以为准确率高的智能体自然更可靠——摘要明确反驳，二者不对应。",
+      "把「识别到冲突」等同于「认知谦逊」——摘要强调还需行动与沟通，识别≠上报。",
+      "以为提升 EH 一定以掉准确率为代价——摘要只说「往往」，不是必然，但确实是常见权衡。"
+    ],
+    "ownAnalysis": "最值得记的是「评测要从结果转向过程」（推断），这与后训练里越来越重视过程奖励/轨迹评估的趋势一致。可疑处：摘要说早期识别、后期丢失，这很像长上下文中的状态保持问题（推断），也许可用记忆或显式的「不确定台账」缓解。另外模型级干预提 EH 就掉准确率，暗示可能同时存在「过度自信」与「过度收敛到不确定」两种失败模式（待核实）。",
+    "officialNotes": [{"position": "EH 通过轨迹级 Identify/Solve/Escalate 操作化，用受控与自然冲突两类场景配对无冲突对照评测；发现高准确率不等于高谦逊、早期识别后期丢失、干预提 EH 常掉准确率", "source": "arxiv: 2610.12360"}],
+    "interviewAnswer": "这篇评测的是智能体遇到知识冲突时的行为——检索证据和模型参数知识打架，或两个资料互相矛盾。作者提出「认知谦逊」，把它拆成轨迹级的三个维度：识别冲突、在冲突下求解、解决不了就上报不确定，并用受控冲突和自然冲突两种场景、各配一个无冲突对照。结论很有意思：任务准确率高不等于谦逊，有些高准确率配置识别到了冲突，却在错误答案里只字不提不确定；而且很多智能体早期发现问题、后面就丢了。模型级干预能提升谦逊，但常常掉准确率，说明谦逊是模型、框架、环境三者交互出来的。",
+    "studyPath": {
+      "prerequisites": ["多步 LLM 智能体框架", "检索增强生成与知识冲突", "对照实验与轨迹级评测"],
+      "nextSteps": ["读原文核对 ISE 的判定细则与权重", "在自己熟悉的智能体上复现一个小规模冲突对照实验"]
+    }
+  }
+}

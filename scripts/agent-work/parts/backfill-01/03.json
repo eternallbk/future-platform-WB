@@ -1,0 +1,69 @@
+{
+  "id": "17807f6b228bf63a",
+  "formulas": [
+    {
+      "id": "f-dynamic-batching-throughput",
+      "name": "动态批处理的吞吐—延迟权衡（Dynamic Batching Trade-off）",
+      "category": "engineering",
+      "latex": "T(\\tau) = \\min\\left( \\lambda,\\; \\frac{B}{\\tau} \\right), \\quad L(\\tau) \\approx \\tau + t_{\\mathrm{svc}}\\left( \\min(B, \\lambda\\tau) \\right)",
+      "symbols": [
+        ["\\lambda", "请求到达率，单位 requests/s"],
+        ["B", "最大批大小，受显存限制"],
+        ["\\tau", "攒批时间窗，即单请求最大等待时间"],
+        ["T(\\tau)", "系统吞吐，单位 requests/s"],
+        ["L(\\tau)", "单请求平均延迟"],
+        ["t_{\\mathrm{svc}}", "一次前向的服务时间，随批大小增大而增大"]
+      ],
+      "derivation": [
+        "第 1 步（动机）：模型服务的核心矛盾是吞吐与延迟，而攒批时间窗 tau 是唯一可调的旋钮。",
+        "第 2 步（窗口内到量）：时间窗内到达的请求数约为 lambda·tau，实际能凑成的批大小 = min(B, lambda·tau)。",
+        "第 3 步（吞吐）：吞吐 = 批大小 / 窗口 = min(B, lambda·tau) / tau = min(lambda, B/tau)。",
+        "第 4 步（延迟）：单请求要等满窗口 tau 再被执行，加上前向服务时间，故 L 约等于 tau 加 t_svc；tau 越大吞吐越高但延迟也越高，需按 SLA 折中。"
+      ],
+      "analogy": "像食堂打饭：阿姨可以来一个人打一份（延迟低但效率差），也可以等一小会儿攒够一托盘再打（效率高但排队的人要等）。攒批窗口就是「等多久」。",
+      "pitfalls": [
+        "tau 不能无限增大，否则最坏情况延迟飙升，必须设 SLA 上界",
+        "批大小受显存约束，B 不是想设多大就多大，KV cache 会先爆",
+        "当 lambda·tau 小于 B 时吞吐被到达率限制，再增大 tau 也不会提高吞吐"
+      ],
+      "code": "def dynamic_batching(lam, B, tau, t_svc_per_req=0.002):\n    batch = min(B, lam * tau)          # 窗口内实际凑成的批\n    throughput = batch / tau           # requests/s\n    latency = tau + batch * t_svc_per_req\n    return throughput, latency\n\nprint(dynamic_batching(lam=200, B=32, tau=0.01))\n",
+      "sources": [
+        {
+          "title": "bentoml/BentoML",
+          "url": "https://github.com/bentoml/BentoML"
+        }
+      ]
+    },
+    {
+      "id": "f-pipeline-bottleneck-throughput",
+      "name": "多模型流水线的瓶颈吞吐（Bottleneck-Limited Pipeline Throughput）",
+      "category": "engineering",
+      "latex": "T_{\\mathrm{pipe}} = \\frac{1}{\\max_i t_i}, \\quad L_{\\mathrm{pipe}} \\approx \\sum_{i=1}^{M} t_i",
+      "symbols": [
+        ["t_i", "第 i 个阶段的单请求处理时间"],
+        ["M", "流水线阶段数"],
+        ["T_{\\mathrm{pipe}}", "流水线稳态吞吐，单位 requests/s"],
+        ["L_{\\mathrm{pipe}}", "端到端延迟，约为各阶段耗时之和"]
+      ],
+      "derivation": [
+        "第 1 步（动机）：多模型流水线把预处理、主体模型、后处理串起来，需要知道瓶颈在哪一环。",
+        "第 2 步（稳态节拍）：稳态下最慢阶段每 t_max 秒才能交付一个结果，故系统吞吐 = 1 / max_i t_i。",
+        "第 3 步（端到端延迟）：单条请求要依次穿过所有阶段，延迟约等于各阶段耗时之和 sum_i t_i。",
+        "第 4 步（推论）：吞吐只由瓶颈阶段决定，优化非瓶颈阶段几乎不提升吞吐；某阶段批处理能抬吞吐但会拉长其 t_i，需在两指标间权衡。"
+      ],
+      "analogy": "像工厂流水线：产能由最慢的工位决定，别的工位再快也只能干等；整条线的周期就是最慢工位的节拍，缓冲只是让等待不那么明显。",
+      "pitfalls": [
+        "吞吐看瓶颈阶段的 max t_i、延迟看阶段之和 sum t_i，两个概念别混用",
+        "给非瓶颈阶段提速几乎不涨吞吐，这是最常见的优化误区",
+        "阶段间若无缓冲，下游抖动会向上游传导成停顿，实测吞吐低于 1/max t_i"
+      ],
+      "code": "def pipeline_metrics(stage_times):\n    thr = 1.0 / max(stage_times)                 # 瓶颈决定吞吐\n    lat = sum(stage_times)                       # 延迟是各阶段之和\n    bottleneck = stage_times.index(max(stage_times))\n    return thr, lat, bottleneck\n\nprint(pipeline_metrics([0.005, 0.4, 0.02]))      # 瓶颈在阶段 1\n",
+      "sources": [
+        {
+          "title": "bentoml/BentoML",
+          "url": "https://github.com/bentoml/BentoML"
+        }
+      ]
+    }
+  ]
+}

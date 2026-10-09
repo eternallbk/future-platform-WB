@@ -1,0 +1,113 @@
+{
+ "batchId": "queue-10",
+ "mode": "full",
+ "items": [
+  {
+   "id": "75fa69bbbb4beb78",
+   "title": "Do Language Models Need a Trainable Input Embedding Table? Fixed Minimal Token Codes at 1.7B-Class Scale",
+   "category": "foundation",
+   "channel": "hf_papers",
+   "url": "https://huggingface.co/papers/2610.04002",
+   "sources": [
+    {
+     "url": "https://huggingface.co/papers/2610.04002",
+     "name": "hf_papers"
+    },
+    {
+     "url": "https://arxiv.org/abs/2610.04002",
+     "name": "canonical"
+    }
+   ],
+   "tags": [],
+   "kind": "paper",
+   "summary": "A trainable input embedding table assigns each vocabulary item an independently adjustable vector. We investigate whether this token-specific parameterization is required for substantial language-modeling capability, or whether a shared Transformer can learn from fixed token identities. We compare three decoder-only language models trained from scratch with the same tokenizer, contextual backbone, untied output-head architecture, and training recipe, with a target budget of 100 billion prediction tokens per model. Their input interfaces are a learned table, canonical 16-bit token-ID codes, and one fixed invertible recoding over GF(2). The fixed codes are repeated to model width without an additional trainable input projection. Both fixed-code models acquire substantial capabilities: canonical codes achieve 52.40\\% HellaSwag normalized accuracy, 70.51\\% PIQA accuracy, and 42.75\\% LAMBADA accuracy. The learned-input control performs better on several evaluations, including HellaSwag and LAMBADA, so these results establish viability rather than performance parity. The fixed interfaces remove 100.7 million trainable parameters, yielding 1.711B-parameter models, but parameter reduction is not the central result. These single-run experiments distinguish architectural necessity from empirical utility: independently trainable token-specific input vectors are not required for the observed capabilities. A fixed identity interface also provides a controlled setting for studying representation learning downstream of an immutable input, without establishing where particular capabilities are localized.",
+   "needsFetch": false
+  },
+  {
+   "id": "0e4e04fc7b06e699",
+   "title": "CtrlCache: Accelerating Interactive Video World Models with Control-Aware Caching",
+   "category": "generative",
+   "channel": "hf_papers",
+   "url": "https://huggingface.co/papers/2610.08777",
+   "sources": [
+    {
+     "url": "https://huggingface.co/papers/2610.08777",
+     "name": "hf_papers"
+    },
+    {
+     "url": "https://arxiv.org/abs/2610.08777",
+     "name": "canonical"
+    },
+    {
+     "url": "https://arxiv.org/abs/2610.08777v1",
+     "name": "arxiv"
+    }
+   ],
+   "tags": [
+    "cs.CV"
+   ],
+   "kind": "paper",
+   "summary": "Interactive video world models need to generate each video chunk efficiently while responding faithfully to user controls. Many systems use chunk-wise autoregressive generation with few-step denoising, but each chunk still requires several costly denoising iterations. Training-free caching can reduce this cost, yet existing policies make reuse decisions primarily from model-internal denoising dynamics and do not explicitly account for control transitions. Actually, interactive generation explicitly exposes a signal they do not use: the controls for a chunk arrive before it is denoised, so a schedule derived from them costs no forward pass. To this end, we analyze adjacent chunks under different control regimes and find that structural similarity drops around action changes, while low-frequency structure remains more persistent than high-frequency detail. Motivated by these observations, we propose CtrlCache, a training-free control-aware caching framework that adapts computation to the current control sequence. Specifically, the action-aware scheduling and refresh policy detects action changes across and within chunks, and labels each chunk as initial, transition, turning, or steady state. At one selected interior denoising step, initial and transition chunks retain full computation, while turning and steady chunks reuse the transformer residual from the most recent fully computed step in the same chunk. To exploit the persistence of low-frequency structure during steady interaction, we further introduce a frequency-mixed history prior guidance that incorporates complementary information from the preceding clean latent without an additional DiT forward pass. Evaluated on Matrix-Game 2.0 and LingBot-World v1/v2, CtrlCache achieves 1.21x to 1.41x DiT-backbone speedups wit",
+   "needsFetch": false
+  },
+  {
+   "id": "4eb0635c11167ab9",
+   "title": "Human, AI, and Hybrid Ensembles for Detection of Adaptive, RL-based Social Bots",
+   "category": "rl",
+   "channel": "s2",
+   "url": "https://doi.org/10.1145/3820783",
+   "sources": [
+    {
+     "url": "https://doi.org/10.1145/3820783",
+     "name": "s2"
+    }
+   ],
+   "tags": [],
+   "kind": "paper",
+   "summary": "The use of reinforcement learning to dynamically adapt and evade detection is now well-documented in several cybersecurity settings including Covert Social Influence Operations (CSIOs), in which bots try to spread disinformation. While AI bot detectors have improved greatly, they are largely limited to detecting static bots that do not adapt dynamically. We present the first systematic study comparing the ability of humans, AI models, and hybrid Human-AI ensembles in detecting adaptive bots powered by reinforcement learning (RL) . Using data from a controlled, IRB-approved, five-day experiment with participants interacting on a social media platform infiltrated by RL-trained bots spreading disinformation to influence participants on 4 topics, we examine factors potentially shaping human detection capabilities: demographic characteristics, temporal learning effects, social network position, engagement patterns, and collective intelligence mechanisms. We first test 13 hypotheses comparing human bot detection performance against 6 state-of-the-art AI bot detectors — 2 that use traditional machine learning and 4 that use large language models. We investigate several aggregation strategies that combine human reports of bots with AI predictions, as well as retraining protocols that leverage human supervision. Our findings challenge intuitive assumptions about bot detection, reveal unexpected patterns in how humans identify bots, and show that combining human bot reports with AI predictions outperforms humans alone and AI alone. We conclude with a discussion of the practical impli",
+   "needsFetch": false
+  },
+  {
+   "id": "5813a9b2b79e9343",
+   "title": "ReSPO: Reshaped Sequence Policy Optimization for Gradient Starvation in Off-Policy Learning",
+   "category": "rl",
+   "channel": "hf_papers",
+   "url": "https://huggingface.co/papers/2609.35433",
+   "sources": [
+    {
+     "url": "https://huggingface.co/papers/2609.35433",
+     "name": "hf_papers"
+    },
+    {
+     "url": "https://arxiv.org/abs/2609.35433",
+     "name": "canonical"
+    }
+   ],
+   "tags": [],
+   "kind": "paper",
+   "summary": "Reinforcement learning from verifiable rewards (RLVR) frequently reuses rollouts across multiple policy updates, increasing the mismatch between the current policy and the data-generating policy. We identify a sign-dependent gradient starvation problem in clipped policy optimization: clipping suppresses under-generated positive responses at the low-importance-weight tail while permitting severely over-generated negative responses to dominate the high-weight tail. To address this, we propose ReSPO (Reshaped Sequence Policy Optimization), which replaces clipping with a smooth, two-branch sequence-level kernel derived from an α-divergence variational objective and an exponential variance-control tilt. The positive branch preserves a nonzero gradient weight for under-generated positive responses, while the negative branch suppresses heavily over-generated negative responses. We demonstrate that ReSPO effectively learns from long positive reasoning trajectories during early training, even when accumulated policy drift relegates them to the low-importance-weight tail. On dense and MoE Qwen3 models, ReSPO accelerates early optimization, improves final training scores, and achieves higher held-out benchmark performance under a rollout reuse, validating our approach on importance-weight tail control in off-policy learning.",
+   "needsFetch": false
+  },
+  {
+   "id": "659c4ed727802f67",
+   "title": "Learning to Steer, Steering to See: Unveiling the Geometry of RLVR in Large Language Models via Trainable Vectors",
+   "category": "posttraining",
+   "channel": "hf_papers",
+   "url": "https://huggingface.co/papers/2609.34344",
+   "sources": [
+    {
+     "url": "https://huggingface.co/papers/2609.34344",
+     "name": "hf_papers"
+    },
+    {
+     "url": "https://arxiv.org/abs/2609.34344",
+     "name": "canonical"
+    }
+   ],
+   "tags": [],
+   "kind": "paper",
+   "summary": "Reinforcement learning (RL) has become a key paradigm for enhancing the reasoning of large language models, yet the high dimensionality of parameter updates makes its training dynamics hard to analyze. We study reinforcement learning with verifiable rewards (RLVR) and use vector steering to identify a low-dimensional effective manifold in activation space associated with RL-induced gains. We uncover two geometric properties. (1) Effective Manifold Capacity: the capacity needed to reproduce RL gains can be very small but is not infinitely compressible; at extremely low capacity, intervention dimensionality and input-dependent expressiveness become key constraints, and this requirement varies with injection depth. (2) Control Manifold Separation: effective control directions lie mainly in the low-variance complement of the activation principal subspace. Within a task and base model, the learned geometry stays largely consistent across training configurations, and across tasks geometric alignment correlates with capability transfer. Experiments on 5 LLMs and 6 verifiable-reward tasks support these findings. We then propose Alpha-Stabler, a plug-and-play framework with a Predictor that monitors principal-subspace intrusion for early collapse warnings, and a Controller that removes the principal-subspace component of activation gradients during backpropagation while preserving the orthogonal complement. Alpha-Stabler stabilizes training for 2,000 steps and consistently improves RL gains, offering practical insights for robust post-training. Code: https://github.com/caiyuchen-ustc/On_Policy_Vector_Training",
+   "needsFetch": false
+  }
+ ]
+}

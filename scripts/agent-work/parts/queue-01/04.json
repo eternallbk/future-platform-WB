@@ -1,0 +1,186 @@
+{
+  "id": "f5bf4f05b6144dc8",
+  "tldr": "把证据构造从「检索」升级为「跨源过滤/聚合/计算」的序列决策，用 SFT+GRPO 训 RouterLM，六族基准成功率 75.6%。",
+  "keyPoints": [
+    "LLM 越来越多被用在长、异构信息源上的任务",
+    "传统 RAG 靠固定相似度检索，agentic 变体仍以检索为中心",
+    "许多任务所需证据不在任一单一来源，需跨源过滤、聚合、计算导出",
+    "RECAST 把证据构造建模为异构检索与计算操作上的序列决策",
+    "轻量 RouterLM 选操作、冻结 CompilerLM 译代码、冻结 AnswerLM 作答，先 SFT 再 GRPO"
+  ],
+  "why": "后训练核心范式：SFT+GRPO 训小模型做路由、冻结大模型做编译与作答；「把检索升级为计算」与 GRPO 组内归一化都是面试高频。",
+  "difficulty": "hard",
+  "tags": [
+    "rag",
+    "posttraining",
+    "grpo",
+    "agent",
+    "tool-use",
+    "llm"
+  ],
+  "entities": [
+    "RECAST",
+    "RouterLM",
+    "CompilerLM",
+    "AnswerLM",
+    "Qwen3.5-9B",
+    "Gemini 3.5 Flash",
+    "GRPO"
+  ],
+  "diagram": {
+    "kind": "flow",
+    "title": "RECAST 证据构造回路",
+    "caption": "RouterLM 迭代挑操作，编译器把操作变成代码并执行出新证据，够了才交给 AnswerLM。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='RECAST 四层流程：查询与异构源、RouterLM 选操作、CompilerLM 编译执行、AnswerLM 作答'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>查询与异构源</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>长且表示各异</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>RouterLM 选操作</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>迭代构造证据</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>CompilerLM 编译执行</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>原语或自定义操作转代码</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>证据充分 → AnswerLM</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>输出最终解</text>\n</svg>",
+    "alt": "四层竖排流程：查询与异构源→RouterLM 迭代选操作→CompilerLM 编译执行→证据充分后交 AnswerLM 作答。"
+  },
+  "concepts": [
+    {
+      "name": "Evidence Construction as Sequential Decision（把证据构造当作序列决策）",
+      "readable": "不把「找证据」当成一次性检索，而是当成一步步做决定：先筛、再聚、再算，边做边判断够不够，不够就继续。",
+      "analogy": "像做财务尽调：不是搜一份现成报告，而是先筛流水、再汇总、再算比率，最后判断资料是否够出结论。",
+      "analogyBreaksDown": "尽调由人判断何时收手，这里收手是策略网络学出的停止决策；奖励稀疏或任务边界模糊时，学到的「够了」可能过早或过晚。",
+      "mechanism": "把检索与计算统一成异构操作空间，用马尔可夫式决策逐步构造证据：每步选一个操作并执行，结果并入历史，直到策略判定充分才交给答案模型。关键是让「计算」与「检索」同为动作，从而能导出跨源聚合结果。",
+      "visual": "一条从左到右的证据构建轨：每个节点是一个操作（filter/aggregate/compute），节点大小表示产出信息量，末端一个闸门表示「证据充分」判断，过闸门才进入作答区。",
+      "prerequisites": [
+        "RAG 基本流程",
+        "马尔可夫决策过程与策略网络",
+        "代码生成 / 工具调用"
+      ],
+      "selfTest": [
+        "为什么固定相似度检索无法回答需跨源聚合的问题？",
+        "「停止」为什么也必须是可学决策？",
+        "把计算当动作与当后处理有何本质差别？"
+      ],
+      "formula": "h_{k} = h_{k-1} \\cup \\{ \\mathrm{Exec}(c_{k}) \\}, \\quad c_{k} \\sim \\pi_{\\theta}(\\cdot \\mid q, h_{k-1})"
+    },
+    {
+      "name": "RouterLM / CompilerLM / AnswerLM 三角分工",
+      "readable": "只训一个小模型负责「决定做什么」，把「翻译成可执行代码」与「读完证据给答案」交给两个冻结大模型，训练成本低又能复用强模型能力。",
+      "analogy": "像剧组：导演（RouterLM）决定拍哪几场戏，专业团队（CompilerLM）落成实拍，剪辑师（AnswerLM）出成片。",
+      "analogyBreaksDown": "剧组三方都能被训，这里只有导演可学；若冻结的编译器或作答模型对接不上导演意图，导演再会规划也白搭。",
+      "mechanism": "RouterLM 负责操作选择与是否充分的判断，CompilerLM 把原语或自定义操作翻译为可执行代码，AnswerLM 依据接受的证据产出答案。只训 RouterLM 使梯度集中在决策上，冻结组件提供稳定的代码生成与问答能力。",
+      "visual": "三个方框：左小框 RouterLM（可训、高亮），中右两框 CompilerLM/AnswerLM（冻结、灰色），箭头从 RouterLM 到两者再回到 RouterLM 形成回路。",
+      "prerequisites": [
+        "SFT 与策略梯度基本概念",
+        "代码生成模型的使用方式"
+      ],
+      "selfTest": [
+        "为什么只训 RouterLM 而不端到端全训？",
+        "RouterLM 的两个职责分别是什么？",
+        "自定义操作为什么要交给 CompilerLM？"
+      ],
+      "formula": ""
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-grpo-objective",
+      "name": "组相对策略优化目标（Group Relative Policy Optimization）",
+      "category": "posttraining",
+      "latex": "J_{GRPO}(\\theta) = \\mathbb{E}\\left[\\frac{1}{G}\\sum_{i=1}^{G}\\min\\left(\\rho_{i} A_{i},\\ \\mathrm{clip}(\\rho_{i}, 1-\\epsilon, 1+\\epsilon) A_{i}\\right)\\right], \\quad \\rho_{i} = \\frac{\\pi_{\\theta}(o_{i} \\mid q)}{\\pi_{\\theta_{old}}(o_{i} \\mid q)}",
+      "symbols": [
+        ["q", "输入问题/任务"],
+        ["o_{i}", "同一问题下采样的第 i 条输出"],
+        ["G", "每个问题采样的输出组大小"],
+        ["\\rho_{i}", "新旧策略似然比"],
+        ["A_{i}", "组内相对优势，通常为 (r_{i} - 组内均值) / 组内标准差"],
+        ["\\epsilon", "裁剪超参数"],
+        ["\\pi_{\\theta}", "待优化策略（RouterLM）"]
+      ],
+      "derivation": [
+        "第 1 步：PPO 需额外价值网络估计优势，对 LLM 显存与实现成本高。",
+        "第 2 步：GRPO 改为对同一问题采样一组输出，用组内奖励均值与标准差归一化得到优势。",
+        "第 3 步：沿用 PPO 的裁剪似然比目标，保证更新幅度受控。",
+        "第 4 步：无需价值网络即可估计相对好坏，适合答案可自动判分的任务。"
+      ],
+      "analogy": "像班级相对评分：不看绝对分数，而看你在同班同学里的相对位置，据此决定要不要多推一把。",
+      "pitfalls": [
+        "把组内归一化当批归一化，忽略归一化对象是同一问题的多条采样",
+        "忘记裁剪项只裁似然比，优势项不参与裁剪",
+        "以为 GRPO 完全不要基线，其实组内均值就是基线"
+      ],
+      "code": "import torch\ndef grpo_loss(logp, logp_old, rewards, eps=0.2):\n    adv = (rewards - rewards.mean()) / (rewards.std() + 1e-8)\n    ratio = torch.exp(logp - logp_old)\n    unclipped = ratio * adv\n    clipped = torch.clamp(ratio, 1-eps, 1+eps) * adv\n    return -torch.min(unclipped, clipped).mean()",
+      "sources": [
+        {"title": "RECAST: Learning to Compute the Right Context through Adaptive Evidence Routing", "url": "https://arxiv.org/abs/2610.10507v1"}
+      ]
+    },
+    {
+      "id": "f-evidence-routing-policy",
+      "name": "证据路由的序贯策略（Evidence Routing Policy）",
+      "category": "agent",
+      "latex": "c_{k} \\sim \\pi_{\\theta}(\\cdot \\mid q, h_{k-1}), \\quad h_{k} = h_{k-1} \\cup \\{\\, \\mathrm{Exec}(c_{k}) \\,\\}, \\quad \\mathrm{stop} \\sim \\pi_{\\theta}(\\cdot \\mid q, h_{k})",
+      "symbols": [
+        ["q", "输入问题"],
+        ["h_{k-1}", "前 k-1 步累积的证据历史"],
+        ["c_{k}", "第 k 步选定的操作（检索/计算原语或自定义操作）"],
+        ["\\mathrm{Exec}", "由 CompilerLM 编译得到的可执行程序"],
+        ["\\mathrm{stop}", "策略输出的停止/继续决策"],
+        ["\\pi_{\\theta}", "可训的 RouterLM 策略"]
+      ],
+      "derivation": [
+        "第 1 步：把任务所需证据视为状态的一部分、操作视为动作，构成序贯决策。",
+        "第 2 步：策略在给定问题与历史下选操作，执行结果并入历史。",
+        "第 3 步：累积到策略判定充分时输出停止信号。",
+        "第 4 步：停止后把接受的证据交给冻结 AnswerLM 生成最终解。"
+      ],
+      "analogy": "像侦探破案：每步选一个侦查动作（调档、比对、化验），线索够了才收网写结案报告。",
+      "pitfalls": [
+        "把停止当成固定步数截断，而不是可学决策",
+        "认为操作空间只有检索，忽略计算类操作才是关键",
+        "混淆 CompilerLM 与 AnswerLM 的职责"
+      ],
+      "code": "def recast_loop(router, compiler, answer, q, max_steps=6):\n    h = []\n    for k in range(max_steps):\n        c = router.propose(q, h)           # 选操作\n        if c is None:                      # 判定证据充分\n            break\n        h.append(exec(compiler.compile(c)))\n    return answer.solve(q, h)",
+      "sources": [
+        {"title": "RECAST: Learning to Compute the Right Context through Adaptive Evidence Routing", "url": "https://arxiv.org/abs/2610.10507v1"}
+      ]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "传统 RAG 依赖固定相似度检索，agentic 变体虽调整查询与工具但仍以检索为中心",
+      "许多任务所需证据不在任一单一来源，必须通过跨多个来源的过滤、聚合或计算导出",
+      "RECAST 把证据构造表述为异构检索与计算操作上的序列决策过程",
+      "轻量 RouterLM 迭代选择并构造原语操作，或为冻结 CompilerLM 指定自定义操作以翻译成可执行代码",
+      "RouterLM 判定证据充分后把接受的证据交给冻结 AnswerLM 产出最终解",
+      "RouterLM 用监督微调（SFT）后接组相对策略优化（GRPO）训练",
+      "六个异构基准族平均成功率 75.6%，比最强的大模型基线高 15.9%",
+      "训练使 Qwen3.5-9B RouterLM 超过免训练的 Gemini 3.5 Flash RouterLM 5.0%；三个留出基准平均提升 15.0%"
+    ],
+    "uncertain": [
+      "原语操作清单（哪些检索原语、哪些计算原语）摘要未给出，待核实",
+      "GRPO 所用奖励的具体形式摘要未说明，待核实",
+      "GRPO 目标为通用形式，需核对原文的优势估计与裁剪细节",
+      "六个基准族与三个留出基准的具体名称摘要未给出，待核实"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "不再只是搜资料，而是让模型学会一步步筛选、汇总、计算，凑齐证据再回答。"},
+      {"level": "入门", "text": "很多问题的答案不在任何一份文档里，得跨多份资料做过滤、聚合甚至计算才能得到。传统 RAG 只会按相似度搜，搜不到就是搜不到。RECAST 让一个小模型逐步选择操作——可能是检索，也可能是写段代码去算——执行后把结果并进证据，判断够了再交给大模型作答。"},
+      {"level": "进阶", "text": "它把证据构造建成序列决策：状态是问题加已累积证据，动作是异构检索或计算操作，停止也是动作。轻量 RouterLM 负责选动作与何时停；冻结 CompilerLM 把原语或自定义操作译成可执行代码；冻结 AnswerLM 依据接受证据给答案。RouterLM 先 SFT 再 GRPO，用组内归一化的相对优势更新，不需要价值网络。"},
+      {"level": "专家", "text": "相比固定相似度 RAG 与检索为中心的 agentic 变体，RECAST 把「计算」提升为一等公民，能处理证据必须被导出而非被找到的任务。三角分工让梯度只落在决策上，冻结大模型提供稳定的代码生成与问答，训练成本低。摘要报告六个异构基准族平均成功率 75.6%、超最强基线 15.9%，且训练后 9B 的 RouterLM 反超免训练 Gemini 3.5 Flash RouterLM 5.0%。局限在于依赖冻结编译器的代码生成质量，奖励设计未披露。"}
+    ],
+    "socratic": [
+      {"q": "为什么不直接把所有文档塞进长上下文？", "a": "证据需跨源聚合或计算才能导出，塞再多原文也不等于算出结果；而且上下文长度与成本不可控。"},
+      {"q": "为什么只训 RouterLM 而不端到端训练整条链路？", "a": "冻结的编译与作答模型已具强生成和问答能力，端到端训练代价大且不稳；只训决策层能让梯度集中在选对操作上。"}
+    ],
+    "mechanism": "当答案必须由多源证据导出时，检索与推理不能分离：搜什么取决于已有什么，算不算得下去取决于搜到了什么。因此必须把两者放进同一序贯决策，让策略同时决定做什么与何时停。冻结编译与作答模型则把不稳定的代码生成和生成式问答排除在可训参数外，使 SFT+GRPO 的信用只分配给规划决策。",
+    "boundary": "若所需证据本就存在于单一文档、或检索已足够，序列决策带来的额外开销与失败面反而不划算。方案强依赖 CompilerLM 的代码生成可靠性；自定义操作编译失败会直接截断证据链。奖励难以自动判定时，GRPO 优势估计会失准。",
+    "analogyBoundary": "「财务尽调」类比里人有领域常识，可在信息不足时凭经验拍板；而这里停止策略只看学到的分布，遇分布外任务可能过早停止或陷入循环。",
+    "misconceptions": [
+      "以为它只是更好的检索器——核心是把计算类操作纳入动作空间。",
+      "把 RouterLM 当通用大模型——它是轻量小模型，只负责路由与停止。",
+      "认为全部组件一起训练，忽略 CompilerLM 与 AnswerLM 是冻结的。"
+    ],
+    "ownAnalysis": "这条与后训练里「小模型做规划、大模型做执行」的趋势一致（推断）：把可训参数压到决策层，既省钱又让 RL 信号更集中。可疑处：摘要既称超过「最强的大模型基线」15.9%，又称 9B RouterLM 超过免训练 Gemini 3.5 Flash RouterLM 5.0%，两个对比对象不同、量纲可能不可比，且基准族各异，横比需谨慎；奖励设计未披露也使 GRPO 部分复现存在不确定性，需核对原文。",
+    "officialNotes": [
+      {"position": "把证据构造表述为异构检索与计算操作上的序列决策，RouterLM 先 SFT 后 GRPO，六基准族平均成功率 75.6%，留出基准零样本泛化良好", "source": "arxiv: 2610.10507v1"}
+    ],
+    "interviewAnswer": "先界定问题：很多任务的证据不在任一单一来源，必须跨源过滤、聚合、计算才能导出，固定相似度 RAG 做不到。RECAST 把证据构造建成序列决策，状态是问题加已累积证据，动作是检索或计算操作，停止也是动作。RouterLM 负责选动作和判断充分性，CompilerLM 把操作编译成可执行代码，AnswerLM 依据接受的证据作答，后两者冻结。RouterLM 用 SFT 后接 GRPO 训练，不需要价值网络。六个异构基准族平均成功率 75.6%，超过最强基线 15.9%。",
+    "studyPath": {
+      "prerequisites": ["RAG 与检索基础", "策略梯度与 PPO/GRPO", "工具调用与代码生成"],
+      "nextSteps": ["读原文看原语操作清单与奖励设计", "复现 GRPO 的组内归一化优势", "对比 ReAct 等检索为中心 agent 的失败模式"]
+    }
+  }
+}

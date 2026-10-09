@@ -1,0 +1,123 @@
+{
+ "id": "10a9531f4231c1c1",
+ "tldr": "两指针分别从 headA、headB 出发，走到尽头就跳到另一条链头继续走；两者总步数相同，相遇点即交点，O(m+n) 时间、O(1) 空间。",
+ "keyPoints": [
+  "相交指从某节点起两条单链表共享同一段后继节点（引用相同）",
+  "pA、pB 各走 m+n 步，第二次遍历必然位置对齐",
+  "走完自己的链就切到对方链头，用来抵消长度差",
+  "判断相交必须比较节点引用，而不是节点值",
+  "另有哈希表记录与「先求长度差」两种等价解法"
+ ],
+ "why": "相交链表是链表双指针模板题，核心技巧「走到头换链」在多题通用；Hot 100 高频，是链表类手撕的入门必刷。",
+ "difficulty": "easy",
+ "tags": ["leetcode", "linked-list", "two-pointers", "hot100", "hash-set"],
+ "entities": ["相交链表", "双指针", "headA", "headB"],
+ "diagram": {
+  "kind": "flow",
+  "title": "双指针换链求交点",
+  "caption": "两指针各走 m+n 步，长度差被「换链」抹平，有交点则在交点相遇，无交点则同时为 null。",
+  "svg": "<svg viewBox='0 0 600 300' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='相交链表双指针换链过程：两指针走完各自链表后跳到对方链头，最终在交点相遇'><rect x='56' y='16' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>① 起点</text><text x='528' y='40' font-size='13' text-anchor='end' fill='currentColor'>pA 在 headA，pB 在 headB</text><line x1='300' y1='54' x2='300' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,70 296,62 304,62' fill='var(--line-1)'/><rect x='56' y='70' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>② 换链</text><text x='528' y='94' font-size='13' text-anchor='end' fill='currentColor'>pA 到头跳 headB，pB 到头跳 headA</text><line x1='300' y1='108' x2='300' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,124 296,116 304,116' fill='var(--line-1)'/><rect x='56' y='124' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>③ 总步数相等</text><text x='528' y='148' font-size='13' text-anchor='end' fill='currentColor'>各走 m+n 步，长度差被抵消</text><line x1='300' y1='162' x2='300' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,178 296,170 304,170' fill='var(--line-1)'/><rect x='56' y='178' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>④ 相遇判定</text><text x='528' y='202' font-size='13' text-anchor='end' fill='currentColor'>有交点→在交点；无交点→同时为 null</text><line x1='300' y1='216' x2='300' y2='224' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='300,232 296,224 304,224' fill='var(--line-1)'/><rect x='56' y='232' width='488' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='256' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>⑤ 返回</text><text x='528' y='256' font-size='13' text-anchor='end' fill='currentColor'>返回相遇节点或 null</text></svg>",
+  "alt": "五步：两指针各自出发→走到头换到对方链头→两边都走 m+n 步→在交点或 null 处相遇→返回该节点。"
+ },
+ "concepts": [
+  {
+   "name": "双指针换链（Two-Pointer List Switching）",
+   "readable": "两个指针分别遍历两条链表，走完自己那条就跳到对方头继续走；这样两者总步数相同，必然要么在交点相遇，要么同时到达 null。",
+   "analogy": "两人从两条长短不同的跑道出发，跑到终点就换到对方跑道接着跑；总距离一样，所以会在岔路口汇合。",
+   "analogyBreaksDown": "换跑道只为凑总长，而这里关键在于交点之后两条链是同一段物理节点；若两链根本没有交点，两人只是同时到达终点，不会相遇。",
+   "mechanism": "设 A 独有段长 a、B 独有段长 b、公共段长 c。pA 走 a+c+b，pB 走 b+c+a，路径等长，故第二次遍历时两指针位置对齐：有交点落在第一个公共节点，无交点则同时为 null。",
+   "visual": "画两条不同长度的链并在尾部合并成一条公共链；标出 pA、pB 的路径箭头，用虚线箭头表示「走到头跳到另一条头」。",
+   "prerequisites": ["单链表遍历", "指针引用概念"],
+   "selfTest": ["为什么两指针走的步数相同？", "若两链无交点，循环会怎样结束？", "为什么判断相交要用节点引用而不是节点值？"],
+   "formula": ""
+  }
+ ],
+ "formulas": [],
+ "selfCheck": {
+  "claims": [
+   "条目标题为「160. 相交链表」，URL 指向代码随想录的该题题解页",
+   "题号为 LeetCode 160"
+  ],
+  "uncertain": [
+   "源 summary 为「代码随想录」站点通用介绍，未含本题题面；statement 依 LeetCode 160 惯例重述（待核实原题约束措辞）",
+   "examples 为按 LeetCode 160 经典示例自行构造，已用参考代码验证",
+   "题解为按双指针换链标准做法自行推导（待核实是否有遗漏边界）"
+  ]
+ },
+ "teaching": {
+  "progressive": [
+   {"level": "一句话", "text": "两条链表合并在一起，找出它们第一次共用的那个节点。"},
+   {"level": "入门", "text": "给两个单链表头指针，若它们从某个节点起共享同一段后继，就返回那个起始节点，否则返回 null。注意「相交」指物理上共用节点，看的是引用不是值。"},
+   {"level": "进阶", "text": "最巧妙的是双指针换链：pA、pB 分别从头出发，各自走到 null 就跳到对方链的头继续走。设 A 独有段长 a、B 独有段 b、公共段 c，则 pA 走 a+c+b，pB 走 b+c+a，路径等长，第二次遍历时两指针必然对齐——有交点就落在交点，无交点就同时变成 null。"},
+   {"level": "专家", "text": "这是「用等长路径消除长度差」的思路，O(m+n) 时间、O(1) 空间，比哈希表省内存、比先求长度差再同步更简洁。边界在于：两链无交点时必须保证循环能退出（两指针同时为 null 即可），以及必须用引用比较（is / ==）而非值比较。若链表可能成环，则需另加判环步骤。"}
+  ],
+  "socratic": [
+   {"q": "为什么两个指针走的步数一定相同？", "a": "pA 走完 A 再走 B，共 lenA+lenB 步；pB 走完 B 再走 A，共 lenB+lenA 步，两者相等，所以第二次遍历时位置对齐。"},
+   {"q": "如果两链不相交，循环怎么结束？", "a": "两指针各自走完两条链后同时越过末尾变成 null，此时 pa is pb 成立，循环退出并返回 null。"},
+   {"q": "为什么不能比较节点的值？", "a": "值相等的两个节点可能属于不同位置，相交要求是同一个物理节点（引用相同），比 value 会误判。"}
+  ],
+  "mechanism": "核心是「用路径等长把长度差消掉」：单链表无法回溯，两链长度又不同，直接同步走会错位。让每个指针都遍历完整的两条链，等价于给两条路径补上对方的独有段，使二者总长一致，从而在同一位置对齐；交点之后的公共段更保证它们同时到达同一节点。",
+  "boundary": "链表含环时该法会死循环，需先判环或改用哈希表。若允许 O(m) 额外空间，哈希表法更直观且不受环影响。注意「相交」隐含两链共享尾部，若只在中间某个节点值相同但后继不同，不算相交。",
+  "analogyBoundary": "「换跑道」类比忽略了关键点：交点之后两链是同一段物理节点，而非各自独立的两条路；且若无交点，两人只是同时到达终点，类比会让人误以为总会相遇。",
+  "misconceptions": [
+   "用节点值相等判断交点，结果把值相同的不同节点误判为相交。",
+   "换链时直接写 pa = pa.next，走到 null 就崩溃，必须先判断 pa 是否存在。",
+   "以为两指针一定会在交点相遇；无交点时它们只是同时变成 null。"
+  ],
+  "ownAnalysis": "双指针换链的本质是把「对齐问题」转成「等长路径问题」，这个技巧同样出现在找链表环入口（快慢指针）等题里（推断）。相比哈希表解法，它用更少空间但更依赖对「引用相等」的理解；面试里若面试官只想要思路，先说哈希表再优化到双指针，能体现取舍。",
+  "officialNotes": [
+   {"position": "LeetCode 160 要求返回两条单链表相交的起始节点，不相交返回 null。", "source": "https://programmercarl.com/algo/other/0160-intersection-of-two-linked-lists.html"}
+  ],
+  "interviewAnswer": "我用双指针。pA 从 headA、pB 从 headB 出发同步走，谁走到 null 就换到另一条链的头继续。这样两指针都会走完两条链，总步数都是 lenA+lenB，长度差被抹平。循环条件写成 pa is not pb，退出时要么停在第一个公共节点（交点），要么两者同时为 null（不相交）。时间和空间分别是 O(m+n) 和 O(1)。如果允许额外空间，也可以用哈希表先记录 A 的所有节点。",
+  "studyPath": {
+   "prerequisites": ["单链表结构与遍历", "指针/引用概念"],
+   "nextSteps": ["环形链表 II（142）找环入口", "合并两个有序链表（21）", "用哈希表法重做本题对比两种取舍"]
+  }
+ },
+ "problem": {
+  "title": "相交链表",
+  "number": 160,
+  "difficulty": "easy",
+  "statement": "给定两个单链表 headA 和 headB，找出并返回它们相交的起始节点；若不相交返回 null。相交指从某个节点起两条链共享同一段后继节点（即引用相同的节点）。题目假设整条链表中没有环，且返回结果后必须保持原链表结构不变。",
+  "examples": [
+   {"input": "A=[4,1,8,4,5], B=[5,0,1,8,4,5]，在值为 8 的节点相交", "output": "值为 8 的那个节点", "why": "从 8 起两条链共享同一段后继"},
+   {"input": "A=[1,9,1,2,4], B=[3,2,4]，在值为 2 的节点相交", "output": "值为 2 的那个节点", "why": "公共段 [2,4] 共享同一批节点"},
+   {"input": "A=[2,6,4], B=[1,5]，不相交", "output": "null", "why": "无公共节点，两指针最终同时为 null"}
+  ],
+  "approach": {
+   "idea": "两个指针 pA、pB 分别从 headA、headB 出发同步前进；走到 null 就换到另一条链的头继续走。两指针总步数都是 lenA+lenB，第二次遍历时位置对齐，相遇点即交点，无交点则同时为 null。",
+   "steps": [
+    "1. 若 headA 或 headB 为空，直接返回 null",
+    "2. pA = headA，pB = headB",
+    "3. while pA is not pB：pA 走到 null 就设为 headB，否则 pA.next；pB 同理跳到 headA",
+    "4. 循环结束返回 pA（有交点则是交点节点，否则为 null）"
+   ],
+   "whyItWorks": "pA 走过 lenA+lenB 步，pB 走过 lenB+lenA 步，路径等长，故第二次经过各自独有段后两指针被对齐；有公共段时它们第一次同时到达的公共节点即交点，无公共段时同时越过末尾变为 null，循环安全退出。",
+   "alternatives": [
+    {"name": "哈希表记录 A 的所有节点", "complexity": "O(m+n) / O(m)", "when": "不想推换链技巧、允许额外空间时最直观，也不受环影响"},
+    {"name": "先求长度差再过同步走", "complexity": "O(m+n) / O(1)", "when": "面试官想考「对齐」思路、或要求显式算长度差时"}
+   ]
+  },
+  "solution": {
+   "python": "class ListNode:\n    def __init__(self, x):\n        self.val = x\n        self.next = None\n\ndef getIntersectionNode(headA, headB):\n    if not headA or not headB:\n        return None\n    pa, pb = headA, headB\n    while pa is not pb:\n        pa = pa.next if pa else headB\n        pb = pb.next if pb else headA\n    return pa",
+   "python_alt": "def getIntersectionNode(headA, headB):\n    seen = set()\n    cur = headA\n    while cur:\n        seen.add(cur)\n        cur = cur.next\n    cur = headB\n    while cur:\n        if cur in seen:\n            return cur\n        cur = cur.next\n    return None",
+   "notes": "换链时必须写成 pa.next if pa else headB，直接写 pa = pa.next 会在走到 null 时崩。循环条件用引用比较（is not / !=）而非值比较。哈希表版依赖 ListNode 默认按对象身份可哈希。"
+  },
+  "complexity": {
+   "time": "O(m+n)",
+   "space": "O(1)",
+   "why": "两个指针合计最多走 m+n 步（第二次遍历阶段即相遇或双双到 null）；只用了两个额外指针。"
+  },
+  "pitfalls": [
+   "换链时直接写 pa = pa.next，走到 null 就崩溃，必须先判空。",
+   "用节点值相等判断交点，会把值相同但非同一节点的位置误判为相交。",
+   "循环条件或返回写错，无交点时应返回 null 而不是某个链表尾节点。"
+  ],
+  "edgeCases": [
+   "任一链表为空 → 直接返回 null。",
+   "两链完全不相交 → 两指针同时为 null，返回 null。",
+   "交点恰为某一链的表头（例如 B 是 A 的后缀）。"
+  ],
+  "interviewTips": "先给哈希表思路（好写、好讲），再说「还能优化到 O(1) 空间」引出双指针换链，体现取舍能力。写双指针时明确「走到头换链」和「引用比较」两个关键点。卡住时可以先画两条链标出 a、b、c 三段长度，用等式说明为什么两次遍历后会相遇。"
+ }
+}

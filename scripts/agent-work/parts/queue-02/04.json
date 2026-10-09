@@ -1,0 +1,117 @@
+{
+  "id": "dafc1b4d7cbbd25b",
+  "tldr": "把「AI 会不会挑训练数据」做成分层基准：让 agent 选并排序候选微调子集，再验证其预测是否准。",
+  "keyPoints": [
+    "追问前沿模型是否有「数据感」：能否可靠挑对训练数据",
+    "让 agent 选并排序候选训练子集以微调一个小 LLM",
+    "agent 可检视数据、写跑分析代码、跑前向，但不能训练模型或看评测",
+    "之后按标准化协议在每个子集上微调并评测",
+    "两维度：top 子集表现 + 排序准确率",
+    "结果：相对随机增益有限、排序不可靠且跨任务不稳"
+  ],
+  "why": "数据选择与训练价值预测是 post-training 与「AI scientist/数据引擎」的核心问题，面试常问如何为微调选题。",
+  "difficulty": "medium",
+  "tags": ["posttraining", "data-selection", "benchmark", "llm-agents", "fine-tuning"],
+  "entities": ["DataSense-Bench", "OpenThoughts-Agent", "EnvScaler", "TBLite", "BFCL", "Astra"],
+  "diagram": {
+    "kind": "flow",
+    "title": "DataSense-Bench 流程",
+    "caption": "agent 在不训练、不看评测的前提下排序候选子集，再统一微调评测两轴打分。",
+    "svg": "<svg viewBox='0 0 480 178' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='DataSense-Bench 四层流程'>\n<rect x='40' y='14' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='38' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>候选训练子集（多组）</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='40' y='70' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>agent：看数据 / 写代码 / 跑前向 → 排序</text>\n<line x1='240' y1='110' x2='240' y2='118' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,126 236,118 244,118' fill='var(--line-1)'/>\n<rect x='40' y='126' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='150' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>逐子集微调 + 评测 → 两轴打分</text>\n</svg>",
+    "alt": "三层流程：候选训练子集→agent 检视并排序→逐子集微调评测得到两轴分数。"
+  },
+  "concepts": [
+    {
+      "name": "Data Sense（数据感：数据选择与表现预测）",
+      "readable": "问前沿模型能不能「挑对训练数据」：给它一批候选微调子集，让它排序并预测哪个子集训出来的模型更好。",
+      "analogy": "像教练从一堆训练素材里挑出最该用的那批，而不是随机抓一把。",
+      "analogyBreaksDown": "教练能从经验判断；这里的模型不许真正训练或看评测集，只能看数据、写分析代码、跑前向，信息受限。",
+      "mechanism": "把数据选择做成分层任务：agent 检视数据、写并执行分析代码、跑前向，但不能训练模型或访问真实评测；之后在标准化协议下对每个子集微调评测，据此衡量选择与排序能力。",
+      "visual": "横轴为候选子集按真实表现的排序，纵轴为 agent 预测排名；完全正确是一条对角线，散点偏离即预测错。",
+      "prerequisites": ["LLM 微调流程", "数据选择/主动学习概念", "排序指标"],
+      "selfTest": ["为何不许 agent 训练模型或看评测集？", "「选择增益」与「排序准确率」分别考什么？", "无监督代理信号能否替代真实表现？"],
+      "formula": "\\Delta_{\\mathrm{sel}}=\\mathrm{Perf}(\\mathrm{top})-\\mathrm{Perf}(\\mathrm{random})"
+    },
+    {
+      "name": "Two-Axis Evaluation（双轴评测）",
+      "readable": "一条看最优子集训出来的模型强不强，另一条看 agent 给候选子集排的序是否与真实表现一致。",
+      "analogy": "像考试既看你选出的第一名对不对，也看你把整张榜单排得多准。",
+      "analogyBreaksDown": "榜首对不代表整体排序对；排序相关高也可能榜首选错，两轴不互相蕴含。",
+      "mechanism": "top 子集表现反映「能否挑到高价值数据」，排序准确率反映「能否预测子集相对好坏」；两轴分离可暴露 agent 是「碰巧挑对」还是「真会预测」。",
+      "visual": "两个并列条形图：左为 top 子集微调后性能 vs 随机基线，右为预测排序与真实排序的相关系数。",
+      "prerequisites": ["排序相关系数", "微调评测协议"],
+      "selfTest": ["两轴为何都要看？", "只看排序准确率会漏掉什么？", "跨任务不一致说明什么？"],
+      "formula": "\\mathrm{RA}=\\frac{1}{\\binom{M}{2}}\\sum_{a<b}\\mathbf{1}\\{(\\hat{p}_a-\\hat{p}_b)(p_a-p_b)>0\\}"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-selection-gain",
+      "name": "数据选择增益（Selection Gain over Random）",
+      "category": "posttraining",
+      "latex": "\\Delta_{\\mathrm{sel}}=\\mathrm{Perf}\\!\\left(S_{\\mathrm{top}}\\right)-\\mathbb{E}\\!\\left[\\mathrm{Perf}(S_{\\mathrm{rand}})\\right]",
+      "symbols": [["S_{\\mathrm{top}}", "agent 排名最高的子集"], ["S_{\\mathrm{rand}}", "随机子集"], ["\\mathrm{Perf}", "微调后评测表现"], ["\\Delta_{\\mathrm{sel}}", "相对随机的选择增益"]],
+      "derivation": ["第 1 步：在同一基座模型与协议下微调不同数据子集。", "第 2 步：评测每个子集得到的模型表现 Perf。", "第 3 步：取 agent 排第一的子集表现减去随机子集期望表现。", "第 4 步：差值即选择增益，衡量是否会挑数据。"],
+      "analogy": "像从一堆食材里挑出最好一批，成品好不好才是真判据。",
+      "pitfalls": ["增益小不代表没信号，只说明相对随机优势有限", "把单次随机基线当期望，方差大", "子集大小/预算不同会破坏可比性"],
+      "code": "import statistics\ndef selection_gain(perf_top, perf_rand_list):\n    return perf_top - statistics.mean(perf_rand_list)",
+      "sources": [{"title": "DataSense-Bench: The First Step Toward an AI Scientist", "url": "https://arxiv.org/abs/2610.12190v1"}]
+    },
+    {
+      "id": "f-ranking-accuracy",
+      "name": "排序准确率（Ranking Accuracy）",
+      "category": "posttraining",
+      "latex": "\\mathrm{RA}=\\frac{2}{M(M-1)}\\sum_{1\\le a<b\\le M}\\mathbf{1}\\!\\left[(\\hat{p}_a-\\hat{p}_b)(p_a-p_b)>0\\right]",
+      "symbols": [["M", "候选子集数"], ["p_a", "子集 a 的真实表现"], ["\\hat{p}_a", "agent 对子集 a 的预测表现/排名"], ["\\mathrm{RA}", "成对一致比例"]],
+      "derivation": ["第 1 步：枚举所有候选子集对 (a,b)。", "第 2 步：比较 agent 预测顺序与真实顺序是否一致。", "第 3 步：一致记 1，否则记 0。", "第 4 步：对所有子集对取平均得 RA（Kendall 一致率）。"],
+      "analogy": "像给选手排实力，不看绝对分，只看两两谁更强有没有排反。",
+      "pitfalls": ["把 RA 当线性相关——它是成对序关系", "候选子集太相似时 RA 不稳", "预算/规模不等时真实表现噪声大"],
+      "code": "import itertools\ndef ranking_acc(p_hat, p):\n    ok=tot=0\n    for a,b in itertools.combinations(range(len(p)),2):\n        ok += ((p_hat[a]-p_hat[b])*(p[a]-p[b])>0); tot+=1\n    return ok/tot",
+      "sources": [{"title": "DataSense-Bench: The First Step Toward an AI Scientist", "url": "https://arxiv.org/abs/2610.12190v1"}]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "追问前沿模型是否可靠地选出对的训练数据（「数据感」）",
+      "让 agent 选并排序候选训练子集以微调一个小 LLM",
+      "agent 可检视数据、写并执行分析代码、跑前向，但不能训练模型或访问真实评测任务",
+      "之后按标准化协议在每个子集上微调并评测",
+      "在终端解题与工具使用两域实例化（OpenThoughts-Agent/EnvScaler → TBLite/BFCL）",
+      "两维度：top 子集的微调表现、排序准确率",
+      "相对随机增益有限、排序不可靠且跨任务不稳（Astra 三次工具使用全对最佳组，终端仅 1/3）",
+      "执行轨迹显示 agent 常用相似数据信号但对其训练价值解读不同"
+    ],
+    "uncertain": [
+      "排序准确率/选择增益的精确度量摘要未给，公式为按摘要重建的通用形式，需核对原文",
+      "「selection gains over random are limited」的具体幅度摘要未给，待核实",
+      "所用 agent 除 Astra 外未列名，评测协议细节待核实"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "考 AI 会不会挑训练数据：给它候选子集排序，再看它排得准不准。"},
+      {"level": "入门", "text": "数据决定微调效果，但模型能不能自己挑对数据并不清楚。DataSense-Bench 让 agent 在只能看数据、写分析代码、跑前向（不能训练、不能看评测）的约束下，给候选训练子集排序并预测谁更好，再逐一微调评测。"},
+      {"level": "进阶", "text": "评测分两轴：一是 top 子集训出来的模型表现，看能否挑到高价值数据；二是排序准确率，看能否预测子集相对好坏。两轴分离能区分「碰巧挑对」和「真会预测」。摘要结论偏负面：相对随机增益有限、排序不可靠，且能力跨任务不稳定。"},
+      {"level": "专家", "text": "它的价值是把「数据感」变成一个可复现的受限决策任务：被禁止训练与看评测，逼 agent 只用代理信号预测训练价值，从而贴近真实的数据引擎场景。结果说明前沿模型仍缺乏可靠的数据选择与表现预测能力，且同一 agent 在工具使用与终端解题上表现不一致，存在任务依赖。摘要还指出 agent 常用相似数据信号却给出不同价值判断，暗示其推理并不稳定。"}
+    ],
+    "socratic": [
+      {"q": "为什么禁止 agent 训练模型？", "a": "若允许训练，agent 就能直接试出哪个子集好，测的就不再是「预测训练价值」的能力，而是算力。"},
+      {"q": "只看排序准确率会漏掉什么？", "a": "排序相关高也可能把真正最好的子集排到后面，漏掉 top 子集表现这一「实际选到好数据」的维度。"}
+    ],
+    "mechanism": "数据选择的核心是「在不真正训练的前提下预测哪个数据更好」。基准用禁令（不能训练、不能看评测）强制 agent 只用代理信号推断，再用真实微调结果作金标准，从而把主观的「数据感」变成可度量、可复现的选择与排序任务。",
+    "boundary": "基准只在终端解题与工具使用两域实例化，结论未必推广到其它领域；代理信号与真实训练价值的相关性本身可能因任务而异。相对随机增益有限也可能部分来自候选子集差异太小。",
+    "analogyBoundary": "「教练挑素材」类比忽略了：教练能通过试训反馈调整，而这里 agent 被禁止试训，只能盲预测，反馈回路被切断。",
+    "misconceptions": [
+      "以为 agent 可以试训再选——摘要明确禁止训练模型。",
+      "把「相对随机增益有限」理解为完全没用——是增益弱而非为零。",
+      "以为一次任务表现好就代表数据感强——Astra 的工具使用与终端表现并不一致。"
+    ],
+    "ownAnalysis": "把「数据价值预测」当作受限 agent 任务，与数据引擎/自举微调（self-instruct、数据筛选）方向直接相关（推断）。可疑处：摘要说 agent 常用相似数据信号但解读不同，说明信号本身可能是好的，短板在价值映射；若换成有监督校准可能改善（推断）。另：候选子集由谁构造、规模差多少摘要未说，可能影响「相对随机增益有限」这一结论（待核实）。",
+    "officialNotes": [{"position": "前沿模型的数据选择相对随机增益有限，排序不可靠且跨任务不一致；agent 常用相似数据信号但对其训练价值解读不同", "source": "arxiv: 2610.12190v1"}],
+    "interviewAnswer": "它问的是前沿模型有没有「数据感」——能不能自己挑对训练数据。做法是让 agent 在只能看数据、写分析代码、跑前向，但不能训练模型也不能看评测的约束下，给候选训练子集排序并预测表现；然后按标准化协议逐子集微调评测。评测两轴：top 子集的微调表现和排序准确率。结论偏负面：相对随机增益有限，排序不可靠且跨任务不稳，比如 Astra 在工具使用三次都挑对最佳组，但终端解题只有一次。轨迹分析还发现 agent 常用相似数据信号却给出不同价值判断。",
+    "studyPath": {
+      "prerequisites": ["LLM 微调与数据筛选", "排序/相关系数指标"],
+      "nextSteps": ["读原文", "复现选择增益与排序准确率", "思考用有监督校准提升数据价值预测"]
+    }
+  }
+}

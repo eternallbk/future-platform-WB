@@ -1,0 +1,171 @@
+{
+  "id": "569d72485484eff1",
+  "tldr": "工业 UI 设计转代码基准：2,861 张真实设计、97,652 条区分必需约束与可选实现的专家标注，三任务评测 MLLM。",
+  "keyPoints": [
+    "MLLM 的关键挑战是从视觉识别走向约束感知的跨模态推理",
+    "工业 D2C 要在杂乱图层元数据与目标库约束下实现 UI 代码",
+    "TaoD2C 含 2,861 张生产设计、17 个平台、97,652 条四类专家标注",
+    "三任务：端到端 UI 代码生成、需求推断、需求实现",
+    "八个 MLLM 均有缺口；视觉重建能力不必然带来满足需求的代码能力"
+  ],
+  "why": "把「视觉保真」与「约束满足」拆开评测是 MLLM 评测面试高频视角；三任务分解可直接借鉴到多模态 agent 的评测设计。",
+  "difficulty": "medium",
+  "tags": [
+    "multimodal",
+    "benchmark",
+    "mllm",
+    "code-generation",
+    "evaluation"
+  ],
+  "entities": [
+    "TaoD2C-Bench",
+    "TaoD2C",
+    "design-to-code"
+  ],
+  "diagram": {
+    "kind": "flow",
+    "title": "TaoD2C 三任务评测",
+    "caption": "从设计图与图层元数据出发，把「推断需求」和「实现需求」拆成两条能力分别评测。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='TaoD2C 评测流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>设计图 + 杂乱图层元数据（2,861 张）</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>专家标注：必需 / 可选约束（四类）</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>需求推断：从图与元数据推实现要求</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>需求实现 / 端到端生成：按约束评分</text>\n</svg>",
+    "alt": "TaoD2C 评测流程：设计图与图层元数据、区分必需与可选约束的专家标注、需求推断、以及需求实现或端到端代码生成。"
+  },
+  "concepts": [
+    {
+      "name": "Constraint-Aware Cross-Modal Reasoning（约束感知的跨模态推理）",
+      "readable": "模型不只要认出画面里有什么，还要结合图层元数据与目标代码库规则，判断该怎么用代码把界面正确搭出来。",
+      "analogy": "像照着装修效果图施工：不光要看懂好看，还得看清墙里管线、遵守承重与消防规范，最后落到能验收的施工图。",
+      "analogyBreaksDown": "装修规范相对稳定统一，而不同前端库的约束千差万别且常无成文规范；同一视觉布局在一套库下合法、在另一套下可能无法等价实现。",
+      "mechanism": "把设计图像素与杂乱图层元数据一起作为输入，让模型在目标库约束下推断组件与布局的实现要求并产出满足要求的代码；评测不再看像素相似，而看约束是否被满足。",
+      "visual": "左边一列像素布局、右边一列图层树，中间用箭头按组件对齐，底部列出该组件在目标库里必须满足的约束条目。",
+      "prerequisites": [
+        "多模态大模型的图文对齐",
+        "前端 UI 代码与布局系统"
+      ],
+      "selfTest": [
+        "为什么图层元数据是「杂乱」的？",
+        "「目标库约束」为什么让 D2C 变难？",
+        "视觉重建对与代码正确性为何不等价？"
+      ],
+      "formula": ""
+    },
+    {
+      "name": "Required vs Permitted Constraints（必需约束与可选实现）",
+      "readable": "标注时把一件事分成「必须这样做」和「这样做也行」两类，只有必需项全满足才算正确，可选实现方式不扣分。",
+      "analogy": "像验收一道菜：火候和食材是硬指标，摆盘朝左朝右都可以，不能因为摆盘不同就判失败。",
+      "analogyBreaksDown": "菜品的硬指标由菜谱界定，而 UI 里「必需」与「可选」的边界常随库版本与设计意图变化，专家标注也难完全一致，存在主观性。",
+      "mechanism": "专家把约束分成必需与可选两类并分别标注，评测时只对必需约束做满足判定、对可选实现保持宽容，避免把功能正确的代码因实现风格不同误判为错误。",
+      "visual": "一张两列对照表：左列「必需」用实心方格、右列「可选」用空心方格，同一份代码在两列打勾，只统计左列完成率。",
+      "prerequisites": [
+        "代码评测的通过/失败判定",
+        "UI 布局的等价实现概念"
+      ],
+      "selfTest": [
+        "把可选实现也计入必需会带来什么误判？",
+        "为何必需约束判定要交给专家而非自动脚本？",
+        "两个都满足必需约束的实现应否同分？"
+      ],
+      "formula": "\\mathrm{Pass} = \\frac{1}{N}\\sum_{i=1}^{N} \\mathbf{1}\\!\\left[ \\forall\\, c \\in \\mathcal{R}_{i},\\; \\mathrm{sat}(c, \\mathrm{code}_{i}) = 1 \\right]"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-required-constraint-pass-rate",
+      "name": "必需约束通过率",
+      "category": "multimodal",
+      "latex": "\\mathrm{Pass} = \\frac{1}{N}\\sum_{i=1}^{N} \\mathbf{1}\\!\\left[ \\forall\\, c \\in \\mathcal{R}_{i},\\; \\mathrm{sat}(c, \\mathrm{code}_{i}) = 1 \\right]",
+      "symbols": [
+        ["N", "评测样本数（设计任务数）"],
+        ["\\mathcal{R}_{i}", "第 i 个任务的全部必需约束集合"],
+        ["\\mathrm{sat}(c, \\mathrm{code})", "约束 c 是否被生成代码满足"],
+        ["\\mathbf{1}[\\cdot]", "指示函数"]
+      ],
+      "derivation": [
+        "第 1 步：工业 D2C 关心实现需求是否满足，而非像素相似。",
+        "第 2 步：标注把约束分成必需与可选两类。",
+        "第 3 步：只有全部必需约束都满足，该样本才记通过。",
+        "第 4 步：对所有样本取平均得到总体通过率。"
+      ],
+      "analogy": "像验收工程：所有安全规范都达标才算合格，装修风格怎么选不影响是否通过验收。",
+      "pitfalls": [
+        "把可选实现也当必需，功能正确的解被误判为错",
+        "用像素或编辑相似度替代约束满足判定"
+      ],
+      "code": "def pass_rate(samples, sat):\n    ok = 0\n    for s in samples:\n        if all(sat(c, s[\"code\"]) for c in s[\"required\"]):\n            ok += 1\n    return ok / len(samples)",
+      "sources": [
+        {"title": "TaoD2C-Bench: Benchmarking MLLMs for Industrial UI Code Generation Beyond Visual Fidelity", "url": "https://arxiv.org/abs/2610.10374v1"}
+      ]
+    },
+    {
+      "id": "f-constraint-conditioned-realization",
+      "name": "条件于推断需求的需求实现得分",
+      "category": "multimodal",
+      "latex": "\\mathrm{Real} = \\mathbb{E}_{i}\\left[ \\frac{1}{|\\mathcal{R}_{i}|}\\sum_{c \\in \\mathcal{R}_{i}} \\mathrm{sat}\\!\\left(c,\\; \\mathrm{code}_{i}(\\hat{\\mathcal{R}}_{i})\\right) \\right]",
+      "symbols": [
+        ["\\hat{\\mathcal{R}}_{i}", "模型从图与元数据推断出的需求集合"],
+        ["\\mathrm{code}_{i}(\\hat{\\mathcal{R}}_{i})", "依据推断需求生成的代码"],
+        ["\\mathcal{R}_{i}", "真值必需约束集合"],
+        ["\\mathrm{sat}", "约束是否被生成代码满足"]
+      ],
+      "derivation": [
+        "第 1 步：需求推断与需求实现是两种不同能力。",
+        "第 2 步：先让模型从设计图与元数据推断出需求 R̂。",
+        "第 3 步：再让模型依据自己推断的需求生成代码。",
+        "第 4 步：用真值必需约束给生成代码打分，度量实现能力。"
+      ],
+      "analogy": "像先听题再解题：把「听漏了题」和「听懂了却做错」分开评估，才知道短板在哪一环。",
+      "pitfalls": [
+        "把推断与实现混成一个端到端分，掩盖短板分布",
+        "用金标准需求喂给实现阶段，会高估真实能力"
+      ],
+      "code": "def realization(samples, sat, infer, gen):\n    scores = []\n    for s in samples:\n        r_hat = infer(s[\"image\"], s[\"layer_meta\"])   # 推断需求\n        code = gen(s[\"image\"], s[\"layer_meta\"], r_hat)\n        hit = [sat(c, code) for c in s[\"required\"]]\n        scores.append(sum(hit) / len(hit))\n    return sum(scores) / len(scores)",
+      "sources": [
+        {"title": "TaoD2C-Bench: Benchmarking MLLMs for Industrial UI Code Generation Beyond Visual Fidelity", "url": "https://arxiv.org/abs/2610.10374v1"}
+      ]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "MLLM 的关键挑战是从视觉识别走向约束感知的跨模态推理",
+      "工业 D2C 把 UI 设计转成代码，要求连接设计图与杂乱图层元数据",
+      "TaoD2C 数据集含 2,861 张来自 17 个商业平台的生产设计",
+      "数据集含 97,652 条专家标注，分 Component、Group、Alignment、Position 四类",
+      "标注区分必需约束与允许的实现选择",
+      "TaoD2C-Bench 定义三个任务：端到端 UI 代码生成、需求推断、需求实现",
+      "评测八个 MLLM 显示生成满足实现需求的 UI 代码存在明显缺口",
+      "模型在推断与实现上有不同的性能画像",
+      "MLLM 的视觉重建能力不必然意味着能生成满足需求的代码"
+    ],
+    "uncertain": [
+      "通过率与实现得分的精确评测公式摘要未给，公式为按摘要重建的通用形式，需核对原文",
+      "四个标注类别的判定标准与八个被评模型名摘要未列出，待核实"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "一个用真实工业设计做的基准，考大模型能不能写出满足实现要求、而不只是「长得像」的 UI 代码。"},
+      {"level": "入门", "text": "设计转代码不只是把图看对，还要结合图层元数据与目标前端库规则去实现。TaoD2C-Bench 用 2,861 张真实设计、近十万条专家标注，把评测从「像素像不像」换成「实现需求满不满足」。"},
+      {"level": "进阶", "text": "关键设计是标注把约束分成必需与可选两类，并给出三个任务：端到端生成、需求推断、需求实现。这样能把「没看懂需求」和「看懂了却没实现好」分开量。评八个 MLLM 发现普遍存在缺口，且推断与实现的表现画像不同。"},
+      {"level": "专家", "text": "与只看视觉保真的 D2C 基准相比，它强调约束满足与目标库约束；与单任务评测相比，三任务分解揭示能力短板的结构性差异，并证明视觉重建能力与满足需求的编码能力是两种能力。价值在于给多模态 agent 的约束感知跨模态推理提供可复核的评测协议；代价是依赖大规模专家标注、必需/可选边界有一定主观性，且结论绑定特定平台与库。"}
+    ],
+    "socratic": [
+      {"q": "为什么视觉重建能力不能代表 UI 代码能力？", "a": "像素重建只要求画面像，代码却要在目标库约束下真正实现组件、对齐与定位；摘要已明确指出二者不必然一致，说明存在「像但不对」的解。"},
+      {"q": "为什么要把评测拆成推断与实现两个任务？", "a": "端到端分把两种失败混在一起；拆开后能区分模型是没推断出需求，还是推对了却实现不出来，从而定位短板。"}
+    ],
+    "mechanism": "工业 D2C 的正确性由实现约束决定而非像素相似，而约束又分必须与允许两类，用统一相似度评分会误判功能正确的解。作者因此用大规模专家标注把约束分层，并把能力拆成推断与实现两条链，使评测既贴近工程验收标准，又能暴露模型在哪一环掉链子。",
+    "boundary": "基准结论绑定了数据集中的 17 个商业平台与相应前端库；换到别的库或设计规范，必需/可选边界会变，结论不一定迁移。封闭集约束下评得好，也不代表开放世界能泛化。专家标注在极复杂布局上可能不一致。",
+    "analogyBoundary": "装修验收类比在「规范统一成文」时成立；但前端库约束常随版本变化、同一布局可有多种等价实现，「必需」的边界比施工规范模糊得多，严格套用会低估合理实现。",
+    "misconceptions": [
+      "以为这是个渲染保真度基准——它刻意超越视觉保真。",
+      "把所有标注约束都当必需要求，会误判合法实现。"
+    ],
+    "ownAnalysis": "（推断）TaoD2C 的「必需 vs 可选」分离与代码评测里把测试用例区分为必须通过与允许多写法同源，思路可迁移到多模态 agent 的工具调用评测：区分硬约束与自由度。可疑处在于专家标注的主观性与平台绑定会限制可比性，摘要也未给评分脚本细节与模型名；「视觉重建不蕴含代码能力」的结论很有价值，但需核对原文的三任务具体指标，才能判断是否因评分方式而非能力差异所致。",
+    "officialNotes": [
+      {"position": "工业设计转代码需要约束感知的跨模态推理；MLLM 在生成满足实现需求的 UI 代码上存在明显缺口，且视觉重建能力不必然意味着能生成满足需求的代码", "source": "arxiv: 2610.10374v1"}
+    ],
+    "interviewAnswer": "我理解这个工作的价值在于重新定义了 D2C 评测的正确性标准。工业场景里 UI 代码对错取决于是否满足实现约束，而不是像素像不像；而约束还分必需和允许的多种实现，用一个相似度分打会把功能正确的解误判。TaoD2C-Bench 用 2,861 张、17 个平台的生产设计和近十万条专家标注，把约束分层，并拆出端到端生成、需求推断、需求实现三个任务。评八个 MLLM 显示普遍有缺口，推断和实现的画像也不同，最关键的结论是视觉重建能力不必然带来满足需求的代码能力。局限是结论绑定特定平台与库。",
+    "studyPath": {
+      "prerequisites": ["多模态大模型评测方法", "前端 UI 布局与组件体系", "约束满足/规则判定概念"],
+      "nextSteps": ["读原文核对三任务的评分脚本", "对比该基准与渲染相似度类基准", "把「必需 vs 可选」思想迁到 agent 工具调用评测"]
+    }
+  }
+}

@@ -1,0 +1,922 @@
+{
+ "batchId": "queue-14b",
+ "entries": [
+  {
+   "id": "2dc995f84b8cef04",
+   "tldr": "亚信安全 C++ 一面考点全景：C++ 对象机制、计算机网络、操作系统、多线程同步四大块。",
+   "keyPoints": [
+    "C++ 核心：函数重载、虚函数、构造函数/析构函数",
+    "计算机网络：TCP/UDP 区别与粘包解决方案",
+    "操作系统：进程/线程/协程、内核机制、内存管理与 fork",
+    "多线程同步：自旋锁等锁机制",
+    "关键概念：名称修饰、虚函数表、动态绑定、虚拟内存、页面置换"
+   ],
+   "why": "算法岗工程面也会问 C++ 对象模型与操作系统基础；虚函数表、内存隔离是理解推理框架与并行训练的底层常识。",
+   "difficulty": "medium",
+   "tags": [
+    "interview",
+    "cpp",
+    "operating-system",
+    "network",
+    "concurrency"
+   ],
+   "entities": [
+    "亚信安全",
+    "虚函数表",
+    "名称修饰",
+    "动态绑定",
+    "虚拟内存",
+    "页面置换算法",
+    "fork",
+    "TCP",
+    "UDP",
+    "自旋锁"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "亚信安全 C++ 一面考点分层",
+    "caption": "四层考点自上而下就是一条追问链：语言机制 → 网络 → 操作系统 → 并发同步。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='亚信安全 C++ 一面四层考点：C++ 核心机制、计算机网络、操作系统、多线程同步'><rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--accent)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>① C++ 核心机制</text><text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>重载 / 虚函数 / 构造析构</text><line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,70 236,62 244,62' fill='var(--line-1)'/><rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>② 计算机网络</text><text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>TCP / UDP / 粘包</text><line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,124 236,116 244,116' fill='var(--line-1)'/><rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>③ 操作系统</text><text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>进程线程协程 / 内存 / fork</text><line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,178 236,170 244,170' fill='var(--line-1)'/><rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>④ 多线程同步</text><text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>自旋锁等锁机制</text></svg>",
+    "alt": "竖排四层考点：C++ 核心机制、计算机网络、操作系统、多线程同步，自上而下是面经追问顺序。"
+   },
+   "concepts": [
+    {
+     "name": "虚函数表与动态绑定（vtable & Dynamic Binding）",
+     "readable": "编译器为每个含虚函数的类生成一张函数地址表，对象里存一个指向它的指针；运行期通过该指针查表决定调用哪个版本的函数，这就是动态绑定。",
+     "analogy": "像公司前台放一本分机号对照表，同一句『找技术负责人』，打到不同分公司接到的却是各自的技术负责人。",
+     "analogyBreaksDown": "分机表是全局固定、一份到老的，而 vtable 每个对象都可能指向不同的表，且在构造/析构期间表的指向会切换，此时调虚函数不走子类版本；类比里没有『生命周期』这一层。",
+     "mechanism": "虚函数用 vptr 指向本类 vtable，运行期按槽位解析，使基类指针能调用子类实现；代价是每对象多一个指针、每次调用多一次间接寻址，且难以内联优化。",
+     "visual": "画一个对象框，内含 vptr 指向一张表；表内按槽位列出 show()、area() 的函数地址，子类对象把同一槽位换成自己的地址。",
+     "prerequisites": [
+      "C++ 类与继承",
+      "指针与对象内存布局"
+     ],
+     "selfTest": [
+      "为什么基类析构函数要声明为 virtual？",
+      "在构造函数里调用虚函数会怎样？",
+      "vtable 属于类还是对象？"
+     ],
+     "formula": ""
+    },
+    {
+     "name": "名称修饰与函数重载（Name Mangling & Overloading）",
+     "readable": "C++ 把函数名与参数类型编码成一个唯一符号名，链接器靠它区分同名重载；这也是 C 与 C++ 混编要关闭名称修饰的原因。",
+     "analogy": "像图书馆给同名同姓的书加标注：都叫《算法》，但按作者和版次编成不同索书号，管理员才能准确取到你要的那本。",
+     "analogyBreaksDown": "索书号是人工定的统一规则，各馆一致；而名称修饰规则由编译器决定、GCC 与 MSVC 并不相同，跨编译器链接时可能对不上，且返回类型通常不参与修饰。",
+     "mechanism": "重载在编译期按参数列表解析，编译器用参数类型生成唯一符号；因此仅返回类型不同的两个函数无法构成重载，链接期也不再做重载解析。",
+     "visual": "画三行同名函数 add(int,int) 与 add(double,double)，右侧各生成一个独特的修饰名，箭头指向符号表。",
+     "prerequisites": [
+      "编译与链接流程",
+      "符号表基本概念"
+     ],
+     "selfTest": [
+      "为什么只改返回类型不能构成重载？",
+      "关闭名称修饰的链接约定用来做什么？",
+      "名称修饰发生在编译期还是链接期？"
+     ],
+     "formula": ""
+    },
+    {
+     "name": "TCP 粘包与拆包（Sticky Packet）",
+     "readable": "TCP 是字节流，不保留消息边界；发送方连续发的几段数据，接收方一次 read 可能收到多段粘连或半段，需要应用层自己划界。",
+     "analogy": "像用水管连续注水，对面只知道总共流了多少水，不知道你分了几次倒；要分清水是第几桶，得自己在水里编号，或每桶之间加个分隔物。",
+     "analogyBreaksDown": "水是均质、不会重来的，而 TCP 数据有序且会重传；类比里没有『重传导致重复段』和『滑动窗口导致分段随机』这两层，因此不能推出『只要定长就万无一失』。",
+     "mechanism": "粘包根因是 TCP 面向字节流，加上 Nagle 算法合并小包、接收缓冲区批量读；解决靠定长、分隔符、或长度字段加消息体三种应用层协议。",
+     "visual": "画一条字节流被切成若干段，每段前面是 4 字节长度头、后面是消息体，边界由长度头决定。",
+     "prerequisites": [
+      "TCP 字节流语义",
+      "socket 编程基础"
+     ],
+     "selfTest": [
+      "UDP 会不会粘包？为什么？",
+      "长度字段法如何划分消息边界？",
+      "粘包是 TCP 的缺陷还是使用方式问题？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [],
+   "selfCheck": {
+    "claims": [
+     "摘要列出 C++ 核心机制考点：函数重载、虚函数、构造函数/析构函数",
+     "摘要列出计算机网络考点：TCP/UDP 区别与粘包解决",
+     "摘要列出操作系统考点：进程/线程/协程、内核机制、内存管理、fork 函数",
+     "摘要列出多线程同步考点：自旋锁等",
+     "摘要点名的关键概念含名称修饰、虚函数表、动态绑定、内存隔离、虚拟内存、页面置换算法，并含对比表格与代码示例"
+    ],
+    "uncertain": [
+     "本条为亚信安全 C++/安全方向面试八股，按批次要求正常深读，但与多模态 / post-training / 生成式 / 世界模型算法方向的直接技术相关性有限（属工程面基础）",
+     "摘要只列出考点名称，未给出各题的具体追问与标准答案，concepts 与 teaching 中的机制解释为通用常识补充（待核实原面经措辞与题目顺序）",
+     "摘要未说明该面经的确切面试轮次构成（是否有笔试/二面）与岗位细分方向，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "这是一份 C++ 后端一面的题单，从语言底层一路问到网络和操作系统。"
+     },
+     {
+      "level": "入门",
+      "text": "亚信安全 C++ 一面围绕四块展开：C++ 对象机制（重载、虚函数、构造析构）、计算机网络（TCP/UDP、粘包）、操作系统（进程线程协程、内存、fork）和多线程同步（自旋锁）。它是一张考点清单，用来系统铺开准备面。"
+     },
+     {
+      "level": "进阶",
+      "text": "面经的价值在追问链：问函数重载会追到名称修饰，编译器把参数类型编码进符号名；问虚函数会追到 vtable 与动态绑定，进而追到为什么析构要 virtual；问 TCP 会追到粘包的三种解法（定长、分隔符、长度字段）；问进程线程协程会追到内存隔离、虚拟内存与页面置换算法。"
+     },
+     {
+      "level": "专家",
+      "text": "对算法岗求职者，这份面经是工程面下限：虚函数表、名称修饰、内存隔离、虚拟内存是理解推理框架（算子与后端多态、跨平台 ABI）和并行训练的底层常识，但其 C++ 八股深度低于系统 / 后端岗。建议按『考点 → 追问 → 一句话结论』整理，把自旋锁、协程、fork 这类与并行数据加载相关的点重点记，其余临考突击。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "如果虚函数不用 vtable，编译器还能不能实现多态？",
+      "a": "基类指针在编译期并不知道真实类型，运行期只能靠一张可查的表来分派；没有这个间接层，就无法在只持有基类接口时选到子类实现。"
+     },
+     {
+      "q": "既然 TCP 可靠，为什么还要应用层自己处理粘包？",
+      "a": "可靠指不丢不乱序，不代表保留消息边界；TCP 是面向字节流的，边界信息天然丢失，只能在应用层用长度或分隔符重建。"
+     },
+     {
+      "q": "自旋锁和挂起等待各自适合什么场景？",
+      "a": "自旋忙等不切换上下文，适合临界区极短且多核的情况；临界区长或可能阻塞时应挂起，否则白白烧 CPU。"
+     }
+    ],
+    "mechanism": "这份面经的编排本身就是一条机制链：C++ 对象多态靠 vtable 间接层做运行期分派，函数重载靠编译期名称修饰生成唯一符号，两者分处运行期与编译期；网络侧 TCP 的字节流语义丢掉消息边界，逼出应用层粘包协议；操作系统侧用虚拟内存与页表做进程内存隔离，fork 用写时复制降低开销；同步侧用锁的忙等与挂起换取不同时延特性。理解这些『为什么』比背答案重要。",
+    "boundary": "这套答案是 C++/系统后端口径，换到 Java 或 Go，锁与内存模型细节都不同，不能照搬；对多模态 / 后训练方向的算法岗，除非岗位明确要求 C++ 工程能力，否则直接相关性有限，投入产出低于算法与手撕题。摘要只列考点，未给各题的具体追问与参考答案。",
+    "analogyBoundary": "把 vtable 比作分机对照表、把粘包比作水管注水都直观，但它们都是静态、均质、无生命周期的模型：vtable 在构造/析构期会切换、TCP 数据会重传分段，这些动态过程类比里看不到，容易让人以为边界永远清晰。",
+    "misconceptions": [
+     "以为 vtable 属于对象：它属于类，对象里只存一个 vptr 指向它。",
+     "以为返回类型不同就能重载：重载只看参数列表，返回类型不参与解析。",
+     "以为 TCP 粘包是 bug：它是字节流语义的必然结果，要靠应用层协议划分边界。"
+    ],
+    "ownAnalysis": "这份面经是通用 C++/系统八股，与多模态 / 后训练没有技术交集。（推断）但有两条连接点可迁移：一是 vtable 式多态，与推理框架里算子、后端的多态分派同构；二是 TCP 粘包的长度字段协议，等价于任何二进制数据流（模型权重、序列化样本）的自描述帧格式。建议只记这两条连接点，其余按考点卡准备。摘要未给出具体题目措辞，以上机制解释为通用补充。",
+    "officialNotes": [
+     {
+      "position": "面经来源为卡码网 C++ 面试题整理页（亚信安全一面），涵盖 C++ 核心机制、计算机网络、操作系统与多线程同步四类考点",
+      "source": "https://notes.kamacoder.com/interview/cpp/yaxin-security-interview.html"
+     }
+    ],
+    "interviewAnswer": "问到虚函数，我会先说它靠 vptr 指向类的 vtable，运行期按槽位查到子类实现，所以基类指针能多态；再补基类析构要 virtual，否则用基类指针 delete 不会走子类析构。问到重载，我会说重载在编译期按参数列表解析、由名称修饰生成唯一符号，返回类型不参与。问到 TCP，我会强调它是字节流不保边界，粘包用定长或长度字段解决。",
+    "studyPath": {
+     "prerequisites": [
+      "C++ 类、继承与指针",
+      "计算机网络 TCP 基础",
+      "操作系统进程与内存基础"
+     ],
+     "nextSteps": [
+      "手写一个含虚函数的类并 dump 符号表观察名称修饰",
+      "实现一个长度字段协议来拆粘包",
+      "把考点整理成『考点-追问-一句话』卡片"
+     ]
+    }
+   }
+  },
+  {
+   "id": "b5d97e0997c4193a",
+   "tldr": "盒马 Java 面经五大块：面向对象与多态、并发三要素与锁、线程安全 List 三方案、异常与反射、MySQL 索引。",
+   "keyPoints": [
+    "面向对象三大特性、多态实现、抽象类与接口区别",
+    "线程安全 List：Vector、Collections.synchronizedList、CopyOnWriteArrayList",
+    "并发三要素：原子性、可见性、有序性",
+    "synchronized 与 Lock 区别，ReentrantLock、读写锁、自旋锁、公平/非公平",
+    "Java 异常机制、反射应用场景、MySQL 索引分类"
+   ],
+   "why": "算法岗工程面也常问并发与集合基础；写时复制、公平与非公平锁的吞吐-延迟取舍可迁移到数据加载与特征缓存。",
+   "difficulty": "medium",
+   "tags": [
+    "interview",
+    "java",
+    "concurrency",
+    "thread-safe",
+    "backend"
+   ],
+   "entities": [
+    "CopyOnWriteArrayList",
+    "Collections.synchronizedList",
+    "Vector",
+    "synchronized",
+    "ReentrantLock",
+    "ReentrantReadWriteLock",
+    "MySQL"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "盒马面经考点分层",
+    "caption": "四层考点自上而下就是一条追问链：语言基础 → 并发 → 锁 → 框架与存储。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='盒马面经四层考点流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--accent)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>① 面向对象基础</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>多态 / 抽象类 vs 接口</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>② 并发与线程安全</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>三要素 · List 三方案</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>③ 锁机制</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>synchronized vs Lock</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>④ 异常 / 反射 / MySQL 索引</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>应用场景与分类</text>\n</svg>",
+    "alt": "竖排四层：面向对象基础、并发与线程安全、锁机制、异常反射与索引，自上而下是面经追问顺序。"
+   },
+   "concepts": [
+    {
+     "name": "并发三要素（Atomicity / Visibility / Ordering）",
+     "readable": "并发 bug 的三个根源：一次操作能否不被打断（原子性）、一个线程的修改别的线程能否马上看到（可见性）、指令会不会被重排（有序性）。",
+     "analogy": "三个人共用一块白板记账：原子性是一次只让一个人写完，可见性是写完立刻把私有草稿抄上白板，有序性是按编号顺序写、不许自己插队。",
+     "analogyBreaksDown": "白板是天生全局可见的，而 CPU 有本地缓存和写缓冲，可见性问题恰恰来自缓存不同步；类比里没有『私有副本』这一层，容易让人以为看到就等于一致。",
+     "mechanism": "加锁同时解决原子性与可见性：临界区互斥，且退出时刷新主存；volatile 只保证可见性并禁止重排，不保证读改写复合操作的原子性。",
+     "visual": "画三条并列时间轴，标出同一变量的『读—改—写』三步被其它线程插入的位置，插入点即三种问题的来源。",
+     "prerequisites": [
+      "多线程基本概念",
+      "JMM 内存模型"
+     ],
+     "selfTest": [
+      "i++ 为什么不是原子操作？",
+      "volatile 能保证 i++ 线程安全吗？为什么？",
+      "加锁如何同时解决可见性与原子性？"
+     ],
+     "formula": ""
+    },
+    {
+     "name": "写时复制（Copy-On-Write）",
+     "readable": "读操作直接读原数组、不加锁；写操作先复制一份新数组、改完再整体替换引用，从而让读永远无锁、读写不互相阻塞。",
+     "analogy": "图书馆只有一本公共目录，谁要修改就自己复印一份改好，再把公共目录整本换掉；正在看的读者手里那本旧复印件完全不受影响。",
+     "analogyBreaksDown": "类比隐藏了『复印整本』的成本：数组越大每次写越贵、内存瞬时空翻倍，所以 COW 只适合读多写少，写频繁时反而更慢。",
+     "mechanism": "CopyOnWriteArrayList 用 volatile 数组引用加写时加锁复制整数组；读拿到的是快照，避免读写互斥，代价是写开销大、读到的数据可能不是最新。",
+     "visual": "画一个数组引用和一个数组块；读线程指针指向旧数组快照，写线程在旁复制出新数组后把引用切换过去。",
+     "prerequisites": [
+      "volatile",
+      "数组与引用语义"
+     ],
+     "selfTest": [
+      "COW 的读操作为什么能不加锁？",
+      "写频繁场景为什么不该用 CopyOnWriteArrayList？",
+      "COW 迭代时为什么不会抛 ConcurrentModificationException？"
+     ],
+     "formula": ""
+    },
+    {
+     "name": "公平锁、非公平锁与自旋锁",
+     "readable": "公平锁按等待队列先来先得；非公平锁允许新来线程插队抢锁，吞吐更高但可能饿死老线程。自旋锁不挂起线程、原地忙等，适合极短的临界区。",
+     "analogy": "公平锁像排队买票，非公平锁像旁边有人一开门就冲进去，自旋锁像在门口不停张望而不是回座位等叫号。",
+     "analogyBreaksDown": "张望不消耗体力，自旋却持续烧 CPU；在单核上自旋纯属浪费，因为持锁线程根本没机会被调度去跑。",
+     "mechanism": "非公平锁省去唤醒线程的上下文切换，减少锁释放到重获取之间的空窗；自旋把唤醒开销换成 CPU 空转，只在临界区远短于一次上下文切换时才划算。",
+     "visual": "两条泳道对比：公平锁线程按 FIFO 依次进入临界区；非公平锁新到线程直接抢占，队列里的线程仍在等待。",
+     "prerequisites": [
+      "AQS",
+      "CAS 与原子操作"
+     ],
+     "selfTest": [
+      "非公平锁为什么吞吐通常更高？",
+      "自旋锁在什么条件下才划算？",
+      "公平锁能完全避免饥饿吗？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [],
+   "selfCheck": {
+    "claims": [
+     "摘要列出考点：面向对象三大特性、多态实现、抽象类与接口区别",
+     "线程安全 List 三方案为 Vector、Collections.synchronizedList、CopyOnWriteArrayList，并涉及 ArrayList 线程安全方案",
+     "并发三要素为原子性、可见性、有序性",
+     "对比了 synchronized 与 Lock，并涉及 ReentrantLock、ReentrantReadWriteLock、自旋锁、公平锁与非公平锁",
+     "还覆盖 Java 异常机制、反射应用场景以及 MySQL 索引分类"
+    ],
+    "uncertain": [
+     "本条为 Java 与并发编程后端八股，按批次要求深读，但与多模态 / post-training / 生成式 / 世界模型算法方向的直接技术相关性有限",
+     "摘要未给出各考点的具体追问与标准答案，concepts 与 teaching 中的机制解释为通用常识补充（待核实原面经措辞）"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "这是一份 Java 后端面经，从面向对象一路问到并发、锁和索引。"
+     },
+     {
+      "level": "入门",
+      "text": "盒马一面按『语言基础 → 并发 → 锁 → 存储』铺开：先问多态、抽象类与接口，再问线程安全的 List 怎么写、并发三要素，接着对比 synchronized 和各种 Lock，最后落到异常、反射和 MySQL 索引。"
+     },
+     {
+      "level": "进阶",
+      "text": "这份面经的价值在于它是一条追问链：问 List 线程安全，实际是逼你说出 Vector（方法全锁）、synchronizedList（包装锁）与 CopyOnWriteArrayList（写时复制、读无锁）三种取舍；问锁，实际是逼你区分互斥、可见性、可中断与公平性。"
+     },
+     {
+      "level": "专家",
+      "text": "对算法岗求职者，这类八股是工程面下限而非上限。真正可迁移的是设计思想：COW 用『读快照、写换代』换读多写少场景的无锁读，与缓存、特征表的热更新同构；公平与非公平锁的取舍是吞吐与延迟的权衡，也是并行数据加载里常见的取舍。建议按『考点 → 追问 → 一句话结论』整理成卡片，而不是背答案。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么 Vector 已经线程安全，还要 CopyOnWriteArrayList？",
+      "a": "Vector 给每个方法加锁，读也互斥；COW 让读完全无锁，读多写少时吞吐更高，代价是写时复制整个数组，且读到的可能不是最新数据。"
+     },
+     {
+      "q": "synchronized 和 Lock 最本质的区别是什么？",
+      "a": "synchronized 是 JVM 关键字，自动释放、不可中断、非公平；Lock 是接口，需手动 unlock，支持可中断、可超时、可公平，用灵活性换复杂度。"
+     }
+    ],
+    "mechanism": "面经的问题编排本身就是机制：它以『能不能线程安全』为线索，把 Vector、synchronizedList、CopyOnWriteArrayList 串成一条『加锁粒度逐渐让位给并发设计』的演进，再用并发三要素解释为什么单加锁不够——可见性与有序性需要内存屏障，而不只是互斥。",
+    "boundary": "这套 Java 八股的答案强绑定 JVM 语义，换到 C++ 或 Go，锁与内存模型细节都不同，不能照搬；对算法岗面试，除非岗位明确要求 Java 后端能力，否则投入产出比低于算法与手撕题。",
+    "analogyBoundary": "白板与排队类类比都默认『观察者能立刻看到』，而并发 bug 恰恰来自各线程有私有缓存副本、指令会被重排；类比看不到缓存一致性与内存屏障这一层，容易让人以为加了互斥就万事大吉。",
+    "misconceptions": [
+     "以为 volatile 能保证 i++ 的线程安全——它只保可见性，读改写不是原子操作。",
+     "把 CopyOnWriteArrayList 当通用并发 List——它是读多写少专用，写频繁时复制开销与内存都不划算。",
+     "混淆『线程安全』与『组合操作安全』——单个方法安全不代表两次调用之间安全。"
+    ],
+    "ownAnalysis": "这份面经是后端通用题，与多模态 / 后训练方向没有技术交集。（推断）但有两条思想可迁移：COW 的『读快照、写换代』在特征表热更新、数据集流式加载里反复出现；公平与非公平的吞吐-延迟权衡，等价于数据加载时『立即取』与『批量取』的取舍。建议只记这两条连接点，其余临考突击。",
+    "officialNotes": [
+     {
+      "position": "面经来源为卡码网面试题整理页（盒马面经）",
+      "source": "https://notes.kamacoder.com/interview/java/freshhema-interview.html"
+     }
+    ],
+    "interviewAnswer": "如果被问 List 线程安全，我会先分场景：读多写少用 CopyOnWriteArrayList，读操作无锁、写时复制整个数组；写多或要强一致就用 Collections.synchronizedList 或自己加锁。再补并发三要素：加锁解决原子性，volatile 与内存屏障解决可见性与有序性，两者不是一回事。锁的选型上，我会对比 synchronized 的自动释放与 Lock 的可中断、可公平。",
+    "studyPath": {
+     "prerequisites": [
+      "Java 集合与多线程基础",
+      "JMM 内存模型基本概念"
+     ],
+     "nextSteps": [
+      "手写一个简化版 CopyOnWrite 容器",
+      "AQS 与 ReentrantLock 源码",
+      "把并发八股整理成『考点-追问-一句话』卡片"
+     ]
+    }
+   }
+  },
+  {
+   "id": "b4159e72c6a7bcaf",
+   "tldr": "求最长格式正确且连续的括号子串长度：用索引栈记录未匹配下标，弹栈后空则重置基准，否则用当前下标减栈顶更新答案。",
+   "keyPoints": [
+    "字符串只含 '(' 与 ')'，求最长有效且连续的子串长度",
+    "索引栈：先压 -1 作哨兵基准，再压未匹配左括号的下标",
+    "遇 ')' 先弹栈；若栈空则把当前下标压入作为新基准",
+    "有效长度 = 当前下标 - 栈顶下标，全程取最大",
+    "DP 写法：dp[i] 表示以 s[i] 结尾的最长有效长度",
+    "长度上限 3×10^4，一次 O(n) 扫描即可"
+   ],
+   "why": "括号匹配是最经典的手撕题，考的是把匹配问题转成下标作差；栈/DP/O(1) 空间三解法能被追问三层，高频出现在大厂一面。",
+   "difficulty": "hard",
+   "tags": [
+    "leetcode",
+    "stack",
+    "dynamic-programming",
+    "string",
+    "parentheses"
+   ],
+   "entities": [
+    "LeetCode 32",
+    "索引栈",
+    "动态规划",
+    "最长有效括号"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "索引栈四步扫描",
+    "caption": "记住两个关键动作：遇 '(' 压下标、弹栈后空则重置基准，其余全靠『i 减栈顶』算长度。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='最长有效括号的索引栈扫描流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--accent)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>① 初始化</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>栈 = [-1] 作哨兵基准</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>② 遇 '('</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>把下标 i 压栈</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>③ 遇 ')'</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>弹出栈顶，得其边界</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>④ 判空与更新</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>空→压 i；否则 best = i - 栈顶</text>\n</svg>",
+    "alt": "竖排四步：初始化哨兵 -1、遇左括号压栈、遇右括号弹栈、栈空则重置否则用当前下标减栈顶更新最大长度。"
+   },
+   "concepts": [
+    {
+     "name": "索引栈（Index Stack for Matching）",
+     "readable": "栈里压的是下标而不是括号字符：一旦匹配，就能用『当前下标 - 栈顶下标』直接得到这段有效子串的长度。",
+     "analogy": "给排队的人发号码牌，谁配对成功就报出自己的号码；一旦发现空号牌，就把基准线挪到当前位置，前面那段全部作废。",
+     "analogyBreaksDown": "发号类比假设配对只在相邻之间发生，而括号既能嵌套也能串接；嵌套靠栈的先进后出隐式处理，串接靠基准重置隐式处理，类比看不到这两层。",
+     "mechanism": "把匹配问题转成下标作差：栈内始终保存尚未匹配的位置，栈顶即最近一个未匹配边界；空栈说明前缀已作废，此时补一个哨兵下标把基准重置到当前位置。",
+     "visual": "在字符串下方画一条下标数轴，栈用一列格子实时显示，扫描箭头每移动一格就更新这列格子与最大长度。",
+     "prerequisites": [
+      "栈（LIFO）",
+      "字符串下标遍历"
+     ],
+     "selfTest": [
+      "为什么栈里要保存下标而不是字符？",
+      "弹栈后栈空代表什么？",
+      "为什么初始化要压入 -1？"
+     ],
+     "formula": "\\mathrm{best} = \\max(\\mathrm{best},\\; i - \\mathrm{stack}[-1])"
+    },
+    {
+     "name": "线性 DP 的边界跳跃（DP with Boundary Jump）",
+     "readable": "dp[i] 表示以 s[i] 结尾的最长有效括号子串长度；只有 s[i] 是 ')' 时才可能非零，转移要能跳过前面整段已匹配的块。",
+     "analogy": "砌墙：新砖要么直接贴着上一块，要么先绕过一段已经砌好的整段墙，再贴到它的外侧。",
+     "analogyBreaksDown": "砌墙类比暗示必须紧邻，而 dp 会跳过整段有效块再拼接，跳跃距离由 dp[i-1] 决定，并不总是相邻的两格。",
+     "mechanism": "用 dp[i-1] 定位与当前 ')' 配对的 '('：它在 i-dp[i-1]-1。若该位置确实是 '('，长度等于 dp[i-1] + 2，再补上它外侧已匹配的 dp[i-dp[i-1]-2]。",
+     "visual": "在字符串上叠加 dp 数组折线，用箭头标出每格如何引用前两格：i-1 与 i-dp[i-1]-2。",
+     "prerequisites": [
+      "动态规划",
+      "字符串下标"
+     ],
+     "selfTest": [
+      "dp[i] 在 s[i]=='(' 时为什么一定是 0？",
+      "为什么要再加上 dp[i-dp[i-1]-2]？",
+      "越界时该补什么值？"
+     ],
+     "formula": "\\mathrm{dp}[i] = \\mathrm{dp}[i-1] + 2 + \\mathrm{dp}[i-\\mathrm{dp}[i-1]-2]"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-longest-valid-parens-stack",
+     "name": "索引栈长度公式（Index-Stack Length）",
+     "category": "engineering",
+     "latex": "\\mathrm{best} = \\max(\\mathrm{best},\\; i - \\mathrm{stack}[-1])",
+     "symbols": [
+      [
+       "i",
+       "当前扫描到的字符下标"
+      ],
+      [
+       "\\mathrm{stack}[-1]",
+       "栈顶保存的最近未匹配位置下标"
+      ],
+      [
+       "\\mathrm{best}",
+       "已找到的最长有效子串长度"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：栈保存所有尚未匹配的位置下标，栈顶即最近一个未匹配边界",
+      "第 2 步：遇到 ')' 弹栈后，若栈非空，则 (栈顶, i] 区间内的括号已完全配对",
+      "第 3 步：该区间长度为 i 减去栈顶下标，用它更新答案的最大值"
+     ],
+     "analogy": "像用一把会移动的卡尺：左卡脚始终是最近一处没配对的位置，右卡脚是当前位置，两者之差就是当前这段已配对长度。",
+     "pitfalls": [
+      "弹栈后不判空，栈空时直接访问栈顶会越界（Python 取 [-1] 是不对的旧值）",
+      "把栈顶当成左边界本身，实际它是左边界的前一个位置，差值是 i - 栈顶"
+     ],
+     "code": "def longest(s):\n    stack, best = [-1], 0\n    for i, ch in enumerate(s):\n        if ch == '(':\n            stack.append(i)\n        else:\n            stack.pop()\n            if not stack:\n                stack.append(i)\n            else:\n                best = max(best, i - stack[-1])\n    return best",
+     "sources": [
+      {
+       "title": "最长有效括号（LeetCode 32）· 大厂高频手撕题",
+       "url": "https://leetcode.cn/problems/longest-valid-parentheses"
+      }
+     ]
+    },
+    {
+     "id": "f-longest-valid-parens-dp",
+     "name": "最长有效括号 DP 转移（Longest Valid Parentheses DP）",
+     "category": "engineering",
+     "latex": "\\mathrm{dp}[i] = \\mathrm{dp}[i-1] + 2 + \\mathrm{dp}[i - \\mathrm{dp}[i-1] - 2]",
+     "symbols": [
+      [
+       "\\mathrm{dp}[i]",
+       "以 i 结尾的最长有效括号子串长度"
+      ],
+      [
+       "i - \\mathrm{dp}[i-1] - 1",
+       "与 s[i] 配对的左括号下标"
+      ],
+      [
+       "i - \\mathrm{dp}[i-1] - 2",
+       "配对左括号左侧一格的下标"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：只有在 s[i] 是 ')' 时才可能形成新的有效后缀，其余 dp[i]=0",
+      "第 2 步：若 s[i-1] 是 '('，则这对相邻括号贡献 2，外面再叠加 dp[i-2]",
+      "第 3 步：否则跳过 dp[i-1] 整段，检查 i-dp[i-1]-1 是否为 '('",
+      "第 4 步：若可配对，则 dp[i] 等于内层 dp[i-1] 加 2，再加外层 dp[i-dp[i-1]-2]，越界按 0 处理"
+     ],
+     "analogy": "拼积木：新积木要么直接扣在旁边那块上（相邻配对），要么先跨过一整块已经拼好的结构，再扣到它外侧的凹槽上。",
+     "pitfalls": [
+      "忘记加外侧的 dp[i-dp[i-1]-2]，导致像 ()(()) 这类串接情形少算",
+      "下标越界未用 0 兜底，负下标在 Python 会取到数组末尾造成错误"
+     ],
+     "code": "def longest_dp(s):\n    n, best, dp = len(s), 0, [0] * (len(s) + 1)\n    for i in range(1, n + 1):\n        if s[i-1] == ')':\n            if s[i-2] == '(':\n                dp[i] = (dp[i-2] if i >= 2 else 0) + 2\n            elif i - dp[i-1] - 2 >= 0 and s[i - dp[i-1] - 2] == '(':\n                dp[i] = dp[i-1] + 2 + (dp[i - dp[i-1] - 3] if i - dp[i-1] - 3 >= 0 else 0)\n            best = max(best, dp[i])\n    return best",
+     "sources": [
+      {
+       "title": "最长有效括号（LeetCode 32）· 大厂高频手撕题",
+       "url": "https://leetcode.cn/problems/longest-valid-parentheses"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "题目定义：给定只含 '(' 与 ')' 的字符串，求最长格式正确且连续的括号子串长度",
+     "示例 1：s = \"(()\" 输出 2，最长有效子串为 \"()\"",
+     "示例 3：s = \"\" 输出 0",
+     "约束：0 ≤ s.length ≤ 3×10^4，s[i] 为 '(' 或 ')'"
+    ],
+    "uncertain": [
+     "摘要示例 2 显示为 s = ')())' 输出 4，字面不自洽（该串最长有效只有 2）；应为 ')()())' 的截断，本条目按 LeetCode 32 原题采用 ')()())' 并用参考代码验证通过（待核实输入原文）",
+     "示例 2 为按原题采用的自洽版本，其余示例与摘要一致"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "在一串括号里，找出最长的一段连续且能完全配对的长度。"
+     },
+     {
+      "level": "入门",
+      "text": "从左到右扫，用一个栈只记下标。遇左括号把下标压进去；遇右括号先弹一次，如果栈空了说明这段作废，就把当前下标压进去当新起点；没空就用当前下标减去栈顶，得到这一段长度。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键是栈里存的都是『还没被匹配的位置』。压入 -1 当哨兵，是为了让第一段合法子串也能用 i 减栈顶算长度。遇到右括号弹栈后栈空，说明当前位置之前全部作废，把基准重置到 i。一次扫描即可，时间 O(n)、空间 O(n)。"
+     },
+     {
+      "level": "专家",
+      "text": "同题有三种 O(n) 解法：索引栈、线性 DP（dp[i] 以 i 结尾的最长有效长度，转移要跳过 dp[i-1] 整段再拼接外侧 dp[i-dp[i-1]-2]）、以及左右两次计数扫描（空间 O(1)）。栈法最直观、DP 最能展示转移推导、双扫描最省空间。面试建议先给栈法，被追问空间优化再上双扫描。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么栈里要先压一个 -1？",
+      "a": "它是哨兵边界。若不加，当第一段就是合法子串时栈会为空，算长度时没有可减的基准，需要在代码里特判起始位置。"
+     },
+     {
+      "q": "遇到右括号后栈空了，为什么还要把当前下标压回去？",
+      "a": "空栈表示从上一个基准到 i 为止都无法再与后面匹配，i 及其左边都已作废；把 i 设为新基准，后续长度才从 i+1 起算。"
+     }
+    ],
+    "mechanism": "栈法的本质是把匹配转成下标作差：栈天然维护了未匹配位置的 LIFO 集合，栈顶就是当前有效段的左边界前一位。它一次扫描就统一处理嵌套与串接，因为嵌套由先进后出完成、串接由基准重置完成，不需要额外判断子串结构。",
+    "boundary": "n 达 3×10^4 时栈法空间 O(n) 无压力；若要严格 O(1) 空间需换左右双向计数法，但该法对『多余的左括号』方向必须从右再扫一遍。若题面不要求子串连续（允许删除字符），本题三种解法全部失效。",
+    "analogyBoundary": "发号类比假设配对总是相邻的，而括号可以嵌套也能串接；真实处理靠栈的 LIFO 与基准重置两层结构，类比看不到这两层，容易误以为只要比较相邻字符。",
+    "misconceptions": [
+     "只数左右括号数量而忽略『连续』要求，把 “)()(” 之类算错。",
+     "弹栈后忘记空栈重置基准，导致非法前缀被计入后续长度。",
+     "栈里存字符而非下标，得到长度时还要额外结构换算。"
+    ],
+    "ownAnalysis": "（推断）这类括号匹配题与编译器的语法分析、表达式求值同源，栈都是核心工具；把索引栈推广到『最近未匹配位置』可迁移到柱状图最大矩形、股票跨度等问题。DP 版本的价值在于练习『跳跃引用历史状态』，这在嵌套结构建模里是常见模式。",
+    "officialNotes": [
+     {
+      "position": "原题要求返回最长有效括号子串长度，字符串仅含 '(' 与 ')'，长度上限 3×10^4",
+      "source": "https://leetcode.cn/problems/longest-valid-parentheses"
+     }
+    ],
+    "interviewAnswer": "我用一个栈存下标，先压 -1 作哨兵。扫到左括号就把下标压栈；扫到右括号先 pop，若栈空了说明到这里的括号段全废，把当前下标压回去当新基准；没空就用 i 减去栈顶更新最大值。多出来的 -1 保证第一段合法子串也能算长度。时间 O(n)、空间 O(n)。",
+    "studyPath": {
+     "prerequisites": [
+      "栈的基本操作",
+      "字符串遍历"
+     ],
+     "nextSteps": [
+      "LeetCode 20 有效的括号",
+      "LeetCode 22 括号生成",
+      "左右双向计数 O(1) 空间写法"
+     ]
+    }
+   },
+   "problem": {
+    "title": "最长有效括号",
+    "number": 32,
+    "difficulty": "hard",
+    "statement": "给定一个只包含 '(' 和 ')' 的字符串 s，找出其中最长的一个格式正确且连续的括号子串的长度。格式正确指每个左括号都有对应的右括号将其闭合，例如 (()()) 合法；子串必须连续。若不存在这样的子串返回 0。约束：0 ≤ s.length ≤ 3×10^4，s[i] 仅为 '(' 或 ')'。",
+    "examples": [
+     {
+      "input": "s = \"(()\"",
+      "output": "2",
+      "why": "最长有效子串为 \"()\""
+     },
+     {
+      "input": "s = \")()())\"",
+      "output": "4",
+      "why": "最长有效子串为 \"()()\""
+     },
+     {
+      "input": "s = \"\"",
+      "output": "0",
+      "why": "空串没有有效子串"
+     }
+    ],
+    "approach": {
+     "idea": "用栈保存『尚未匹配的下标』，栈顶就是当前有效段的左边界前一位。遇 '(' 压下标；遇 ')' 弹出一次，若栈空则把当前下标压入作为新基准，否则用『当前下标 - 栈顶』更新答案。",
+     "steps": [
+      "1. 初始化 stack = [-1]，答案 best = 0",
+      "2. 从左到右遍历下标 i 与字符 ch",
+      "3. ch == '(' ：把 i 压栈",
+      "4. ch == ')' ：先 pop；若栈空把 i 压栈（重置基准），否则 best = max(best, i - stack[-1])",
+      "5. 遍历结束返回 best"
+     ],
+     "whyItWorks": "任一时刻栈中保存的是所有尚未匹配的位置。弹栈后若栈非空，栈顶就是上一个未匹配位置，i 与它之间的括号段已被完全配对；若栈空，说明 i 之前没有可用左边界，i 即新的作废边界。",
+     "alternatives": [
+      {
+       "name": "线性 DP",
+       "complexity": "O(n) / O(n)",
+       "when": "面试官要求展示状态转移推导时"
+      },
+      {
+       "name": "左右双向计数扫描",
+       "complexity": "O(n) / O(1)",
+       "when": "需要 O(1) 额外空间，或被追问空间优化时"
+      }
+     ]
+    },
+    "solution": {
+     "python": "def longestValidParentheses(s: str) -> int:\n    stack = [-1]           # 哨兵：最早边界的前一位\n    best = 0\n    for i, ch in enumerate(s):\n        if ch == '(':\n            stack.append(i)\n        else:\n            stack.pop()\n            if not stack:          # 空栈：前面全废，重置基准\n                stack.append(i)\n            else:\n                best = max(best, i - stack[-1])\n    return best",
+     "python_alt": "def longestValidParentheses(s: str) -> int:\n    n = len(s)\n    dp = [0] * n           # dp[i]：以 i 结尾的最长有效长度\n    best = 0\n    for i in range(1, n):\n        if s[i] != ')':\n            continue\n        if s[i - 1] == '(':\n            dp[i] = (dp[i - 2] if i >= 2 else 0) + 2\n        elif i - dp[i - 1] - 1 >= 0 and s[i - dp[i - 1] - 1] == '(':\n            dp[i] = dp[i - 1] + 2 + (dp[i - dp[i - 1] - 2] if i - dp[i - 1] - 2 >= 0 else 0)\n        best = max(best, dp[i])\n    return best",
+     "notes": "栈法最直观：pop 之后必须判空，空则压 i 重置基准。DP 法的坑在第三项——拼接外侧已匹配块 dp[i-dp[i-1]-2]，漏掉它 ()(()) 这类串接就会少算。两种写法各跑示例 )()()) 均得 4。"
+    },
+    "complexity": {
+     "time": "O(n)",
+     "space": "O(n)",
+     "why": "一次线性扫描，每字符摊还 O(1)；栈或 dp 数组最坏保存 n 个下标/长度。"
+    },
+    "pitfalls": [
+     "弹栈后忘记判空：栈空必须重置基准，否则非法前缀会被并入后续长度",
+     "初始未压 -1 哨兵，导致以合法子串开头的字符串长度少算",
+     "把『格式正确』理解成只需左右数量相等，忽略连续约束"
+    ],
+    "edgeCases": [
+     "s = \"\" 返回 0",
+     "s = \")(\" 或全为右括号，返回 0",
+     "s = \"()(()\" 返回 2；n 取到 3×10^4 时 O(n) 仍可通过"
+    ],
+    "interviewTips": "先讲栈里存的是下标、栈顶是左边界前一位，再写代码；重点强调 -1 哨兵与『弹栈后判空重置』两处。被问空间优化就切到左右双向计数法，并说明要从两个方向各扫一遍。卡住时先写出 get 长度那一步的公式 best = i - stack[-1]，通常能顺势补齐其余分支。"
+   }
+  },
+  {
+   "id": "a12b4a1a2abd9e3b",
+   "tldr": "爬 n 阶、每步走 1 或 2 阶的方案数满足 f(n)=f(n-1)+f(n-2)，即斐波那契式递推，可用滚动数组压到 O(1) 空间。",
+   "keyPoints": [
+    "每次只能走 1 阶或 2 阶，求到达第 n 阶的不同方法数",
+    "按最后一步分类：从 n-1 跨 1 阶，或从 n-2 跨 2 阶",
+    "递推 f(n) = f(n-1) + f(n-2)，边界 f(1)=1、f(2)=2",
+    "滚动数组只保留前两项，空间从 O(n) 降到 O(1)",
+    "矩阵快速幂可在 O(log n) 求第 n 项",
+    "约束 1 ≤ n ≤ 45，n 很小但仍值得讲清空间优化"
+   ],
+   "why": "斐波那契型递推是 DP 入门模板，面试常追问空间能否 O(1)、n 变大怎么办；也是理解『状态转移窗口决定能否压缩』的最佳例子。",
+   "difficulty": "easy",
+   "tags": [
+    "leetcode",
+    "dynamic-programming",
+    "math",
+    "fibonacci",
+    "recursion"
+   ],
+   "entities": [
+    "LeetCode 70",
+    "斐波那契数列",
+    "动态规划",
+    "矩阵快速幂",
+    "滚动数组"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "爬楼梯的转移推导",
+    "caption": "先定义子问题，再按最后一步分类，得到递推式，最后才谈滚动数组与快速幂这两层优化。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='爬楼梯问题的四步推导流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--accent)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>① 子问题定义</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>f(k) 到达第 k 阶的方法数</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>② 按最后一步分类</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>跨 1 阶 或 跨 2 阶</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>③ 转移方程</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>f(k) = f(k-1) + f(k-2)</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>④ 边界与优化</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>f(1)=1,f(2)=2；滚动到 O(1)</text>\n</svg>",
+    "alt": "竖排四步：定义子问题 f(k)、按最后一步分两类、写出转移方程、给出边界并说明滚动数组优化到常数空间。"
+   },
+   "concepts": [
+    {
+     "name": "重叠子问题与加法原理（Overlapping Subproblems）",
+     "readable": "到达第 k 阶的方法只取决于到 k-1 与 k-2 阶的方法数，与具体怎么到达无关；同一子问题被反复用到，所以自底向上算而不是朴素递归。",
+     "analogy": "每层楼有多少条上楼路线，只由下面两层路线数相加决定，不用关心每条路线具体怎么走。",
+     "analogyBreaksDown": "类比只对『纯计数』成立；一旦加上『不能连续走两步两阶』之类约束，最后一步就不再独立，简单相加会失效。",
+     "mechanism": "按最后一步分类：所有方案被划分成『最后一步跨 1 阶』与『最后一步跨 2 阶』两类，互不重叠、合起来覆盖全部，所以总数是两类之和——这正是 DP 转移的来源。",
+     "visual": "画一棵二叉树，根是 f(n)，两个子节点是 f(n-1) 与 f(n-2)，标出大量重复节点，再用自底向上把重复消掉。",
+     "prerequisites": [
+      "递推",
+      "递归与记忆化"
+     ],
+     "selfTest": [
+      "为什么朴素递归是指数级？",
+      "两类方案为什么不会重复计数？",
+      "加上『不能连续走两步 2 阶』后递推怎么改？"
+     ],
+     "formula": "f(n) = f(n-1) + f(n-2),\\quad f(1)=1,\\; f(2)=2"
+    },
+    {
+     "name": "滚动数组与状态压缩（Rolling Array）",
+     "readable": "转移只依赖前两格，没必要保存整张 dp 表；只留两个变量轮流更新，空间从 O(n) 降到 O(1)。",
+     "analogy": "接力赛只传两根接力棒——拿到新值后旧值就没用了，不必把每一棒都留在地上。",
+     "analogyBreaksDown": "只有当依赖窗口固定（这里是宽度 2）时才能滚；若 f(k) 依赖前面某个任意位置，就无法用常数个变量替换整张表。",
+     "mechanism": "观察 f(n) 只引用 f(n-1)、f(n-2)，用两个变量保存这两项，每步算出 new = a + b 后把 a、b 整体后移一位，等价于丢弃再也不被引用的历史状态。",
+     "visual": "画一行 dp 格子，一个宽度为 2 的滑动窗口覆盖最近两格，窗口随计算不断右移。",
+     "prerequisites": [
+      "递推公式",
+      "并行赋值语义"
+     ],
+     "selfTest": [
+      "为什么可以只保留两个变量？",
+      "写成 a=b 后 b=a+b 两行错在哪？",
+      "哪种递推不能这样压缩？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-climbing-stairs-recurrence",
+     "name": "爬楼梯递推（Climbing Stairs Recurrence）",
+     "category": "engineering",
+     "latex": "f(n) = f(n-1) + f(n-2),\\quad f(1)=1,\\; f(2)=2",
+     "symbols": [
+      [
+       "f(n)",
+       "到达第 n 阶的不同方法数"
+      ],
+      [
+       "n",
+       "目标台阶数"
+      ],
+      [
+       "f(1), f(2)",
+       "边界：1 阶只有 1 种、2 阶有 2 种"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：所有走法按最后一步分类，要么从 n-1 跨 1 阶，要么从 n-2 跨 2 阶",
+      "第 2 步：这两类不重叠且覆盖全部走法，由加法原理总数等于两类之和",
+      "第 3 步：边界由手工枚举得到 f(1)=1、f(2)=2，从 k=3 起按递推填写"
+     ],
+     "analogy": "像走迷宫出口前只有两条通道：要么从隔壁一格直着过来，要么从左两格斜跨过来，能到出口的路就等于两条路上能到各自起点的路之和。",
+     "pitfalls": [
+      "边界设成 f(0)=1、f(1)=1 时容易与本题 n=1 的答案混淆，务必用 n=1→1、n=2→2 校验",
+      "误以为是组合数或 2 的幂，忽略『顺序不同算不同方案』"
+     ],
+     "code": "def climb_stairs(n: int) -> int:\n    if n <= 2:\n        return n\n    a, b = 1, 2          # f(1), f(2)\n    for _ in range(3, n + 1):\n        a, b = b, a + b  # 滚动数组，O(1) 空间\n    return b",
+     "sources": [
+      {
+       "title": "爬楼梯（LeetCode 70）· 大厂高频手撕题",
+       "url": "https://leetcode.cn/problems/climbing-stairs"
+      }
+     ]
+    },
+    {
+     "id": "f-fibonacci-matrix-power",
+     "name": "斐波那契矩阵快速幂（Matrix Exponentiation）",
+     "category": "engineering",
+     "latex": "\\begin{pmatrix} f_{n+1} \\\\ f_{n} \\end{pmatrix} = \\begin{pmatrix} 1 & 1 \\\\ 1 & 0 \\end{pmatrix}^{\\,n-1} \\begin{pmatrix} f_{2} \\\\ f_{1} \\end{pmatrix}",
+     "symbols": [
+      [
+       "f_n",
+       "到达第 n 阶的方法数"
+      ],
+      [
+       "M",
+       "2×2 转移矩阵 [[1,1],[1,0]]"
+      ],
+      [
+       "M^{n-1}",
+       "用二分快速幂在 O(log n) 求出"
+      ],
+      [
+       "[f_2; f_1]",
+       "初值向量 [2, 1]"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：把 f(k)=f(k-1)+f(k-2) 写成状态向量的线性变换，取状态 [f(k+1); f(k)]",
+      "第 2 步：验证 [f(k+1); f(k)] = M·[f(k); f(k-1)]，其中 M = [[1,1],[1,0]]",
+      "第 3 步：连续展开得 [f(n+1); f(n)] = M^{n-1}·[f(2); f(1)] = M^{n-1}·[2; 1]",
+      "第 4 步：用二分快速幂把矩阵乘次数降到 O(log n)，n 很大时也只需几十次乘法"
+     ],
+     "analogy": "把『每加一步』看成一个固定动作，做 n 次等于重复这个动作 n 次；快速幂让你一次跨很多步，而不是老老实实一步一步走。",
+     "pitfalls": [
+      "矩阵乘法不可交换，M^{n-1} 必须写在初值向量左边",
+      "n=1 时幂为 0，需让快速幂把单位阵当作 M^0 返回，或特判 n≤2"
+     ],
+     "code": "def climb_matrix(n: int) -> int:\n    if n <= 2:\n        return n\n    def mul(A, B):\n        return [[A[0][0]*B[0][0]+A[0][1]*B[1][0], A[0][0]*B[0][1]+A[0][1]*B[1][1]],\n                [A[1][0]*B[0][0]+A[1][1]*B[1][0], A[1][0]*B[0][1]+A[1][1]*B[1][1]]]\n    M, R, e = [[1, 1], [1, 0]], [[1, 0], [0, 1]], n - 1\n    while e:\n        if e & 1:\n            R = mul(R, M)\n        M = mul(M, M)\n        e >>= 1\n    return R[1][0] * 2 + R[1][1] * 1   # [f(n+1); f(n)] 的第二行",
+     "sources": [
+      {
+       "title": "爬楼梯（LeetCode 70）· 大厂高频手撕题",
+       "url": "https://leetcode.cn/problems/climbing-stairs"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "题目：每次可爬 1 或 2 阶，求到达 n 阶的不同方法数",
+     "示例 1：n = 2 输出 2（1+1 与 2）",
+     "示例 2：n = 3 输出 3（1+1+1、1+2、2+1）",
+     "约束：1 ≤ n ≤ 45"
+    ],
+    "uncertain": [
+     "摘要未显式给出 f(1)、f(2) 定义，本条目按 LeetCode 70 惯例取 f(1)=1、f(2)=2，并用参考代码对 n=2、n=3 校验一致（待核实）",
+     "矩阵快速幂为按递推式扩展的通用解法，非摘要原文内容（推断），已本地验证 n=3→3、n=4→5"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "每次走 1 或 2 阶，走到第 n 阶一共有多少种走法。"
+     },
+     {
+      "level": "入门",
+      "text": "到第 n 阶的最后一步，要么从 n-1 跨 1 阶，要么从 n-2 跨 2 阶。这两种情况互不重叠，所以方法数等于到 n-1 的方法数加上到 n-2 的方法数，边界是 f(1)=1、f(2)=2。"
+     },
+     {
+      "level": "进阶",
+      "text": "直接递归会重复计算同一子问题，规模一大就指数爆炸；改成自底向上填表，时间 O(n)。又因为 f(k) 只依赖前两项，可以用两个变量滚动更新，把空间降到 O(1)，这就是常被追问的空间优化。"
+     },
+     {
+      "level": "专家",
+      "text": "本题本质是斐波那契的线性递推。递推式可写成一次矩阵乘法，用快速幂在 O(log n) 求第 n 项，适合 n 很大时。n≤45 时三法都能过，但面试更想听『为什么能滚动』——因为依赖窗口固定为 2。若加约束（不能连续跨 2 阶），转移窗口变宽，滚动与矩阵都要相应改。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不能只用朴素递归？",
+      "a": "同一 f(k) 会被多条路径重复调用，调用树是指数级；n=45 就明显变慢，所以要记忆化或自底向上。"
+     },
+     {
+      "q": "为什么可以只保留两个变量而不是整张 dp 表？",
+      "a": "因为 f(k) 只引用 f(k-1) 和 f(k-2)，更早的状态之后不会再被用到，丢弃它们不影响正确性。"
+     }
+    ],
+    "mechanism": "核心是按最后一步分类：所有合法走法按最后一步是 1 阶还是 2 阶分成两类，两类不重不漏，于是总数相加。这个分类同时给出了依赖窗口只有 2 的事实——正因为窗口固定，才能既做到时间 O(n) 又做到空间 O(1)。",
+    "boundary": "加法原理只在『最后一步可选集合固定』时成立。一旦加约束（如禁止连续两步 2 阶、每步代价不同），最后一步不再独立，需要扩展状态维度（记上一步走了几阶）。n≤2 的边界要单独处理。",
+    "analogyBoundary": "『只关心路线数、不关心路线本身』在纯计数题成立；但若要输出所有方案或求最小代价，就必须保留具体路线或状态，类比失效，需要带状态的 DP 或搜索。",
+    "misconceptions": [
+     "把 f(1) 设成 0 或把 f(0) 设成 1 后又混用，导致 n=1、n=2 结果错。",
+     "用递归但忘记忆化，面试时超时。",
+     "以为滚动数组万能——只有依赖窗口固定时才对。"
+    ],
+    "ownAnalysis": "（推断）爬楼梯是斐波那契的伪装题，面试常追三连：能不能空间 O(1)？n 很大怎么办？加个『不能连续走 2 阶』怎么改？能答出矩阵快速幂与『加状态维度』，就说明理解的是状态转移而不是背公式。这套按步转移的心智模型与序列生成任务相通。",
+    "officialNotes": [
+     {
+      "position": "题目要求统计爬到 n 阶的不同方法数，n 满足 1 ≤ n ≤ 45",
+      "source": "https://leetcode.cn/problems/climbing-stairs"
+     }
+    ],
+    "interviewAnswer": "这是斐波那契型递推。我用最后一步分类：到第 n 阶要么从 n-1 跨 1 阶，要么从 n-2 跨 2 阶，所以 f(n)=f(n-1)+f(n-2)，边界 f(1)=1、f(2)=2。自底向上填表是 O(n) 时间；因为只用到前两项，我用两个变量滚动更新，空间降到 O(1)。如果 n 特别大，我会改用转移矩阵加快速幂做 O(log n)。",
+    "studyPath": {
+     "prerequisites": [
+      "递推与递归",
+      "动态规划基础"
+     ],
+     "nextSteps": [
+      "斐波那契数（LeetCode 509）",
+      "矩阵快速幂模板题",
+      "带约束的爬楼梯变体（如不能连续 2 阶）"
+     ]
+    }
+   },
+   "problem": {
+    "title": "爬楼梯",
+    "number": 70,
+    "difficulty": "easy",
+    "statement": "你正在爬一段 n 阶的楼梯，每次可以爬 1 阶或 2 阶。求爬到楼顶一共有多少种不同的方法。只要某一步迈的阶数不同就算不同方法。返回方法总数。约束：1 ≤ n ≤ 45。",
+    "examples": [
+     {
+      "input": "n = 2",
+      "output": "2",
+      "why": "1+1 与 2 两种"
+     },
+     {
+      "input": "n = 3",
+      "output": "3",
+      "why": "1+1+1、1+2、2+1 三种"
+     }
+    ],
+    "approach": {
+     "idea": "用最后一步分类：到达第 k 阶的方案等于『从 k-1 跨 1 阶』加『从 k-2 跨 2 阶』，即 f(k)=f(k-1)+f(k-2)，边界 f(1)=1、f(2)=2。",
+     "steps": [
+      "1. 处理边界：n==1 返回 1，n==2 返回 2",
+      "2. 令 a = f(1) = 1，b = f(2) = 2",
+      "3. 从 k=3 循环到 n：new = a + b",
+      "4. 滚动更新：a = b，b = new",
+      "5. 循环结束返回 b"
+     ],
+     "whyItWorks": "任意方案按最后一步的步长被唯一分到『跨 1 阶』或『跨 2 阶』两类，两类不重叠且覆盖全部，故总数相加；对每个 k 归纳成立，最终 f(n) 即答案。",
+     "alternatives": [
+      {
+       "name": "基础 DP 数组",
+       "complexity": "O(n) / O(n)",
+       "when": "想先写清状态定义、再谈优化时"
+      },
+      {
+       "name": "带记忆化递归",
+       "complexity": "O(n) / O(n)",
+       "when": "从暴力递归出发推导递推式时"
+      },
+      {
+       "name": "矩阵快速幂",
+       "complexity": "O(log n) / O(1)",
+       "when": "n 极大、需要亚线性时间时"
+      }
+     ]
+    },
+    "solution": {
+     "python": "def climbStairs(n: int) -> int:\n    if n <= 2:\n        return n\n    dp = [0] * (n + 1)\n    dp[1], dp[2] = 1, 2\n    for k in range(3, n + 1):\n        dp[k] = dp[k - 1] + dp[k - 2]\n    return dp[n]",
+     "python_alt": "def climbStairs(n: int) -> int:\n    if n <= 2:\n        return n\n    a, b = 1, 2          # f(1), f(2)\n    for _ in range(3, n + 1):\n        a, b = b, a + b  # 滚动数组，O(1) 空间\n    return b",
+     "notes": "主实现用 dp 数组，状态定义最清楚；备用版用两个变量滚动。注意并行赋值 a, b = b, a + b 必须写成一行，拆成 a=b 后 b=a+b 会用到已被覆盖的 a。"
+    },
+    "complexity": {
+     "time": "O(n)",
+     "space": "O(1)",
+     "why": "时间由 n-2 次相加决定；滚动版只保留两个变量故空间 O(1)（基础 DP 表版为 O(n)）。"
+    },
+    "pitfalls": [
+     "n=1、n=2 边界没特判，或把 f(0) 设为 1 导致结果偏移",
+     "滚动更新拆成两行 a=b 后 b=a+b，第二次用到已被覆盖的 a，结果错",
+     "朴素递归忘记忆化导致指数级超时"
+    ],
+    "edgeCases": [
+     "n = 1 返回 1",
+     "n = 2 返回 2",
+     "n = 45 为约束上界，结果仍在 Python 整数范围内"
+    ],
+    "interviewTips": "先讲清『按最后一步分类』再写代码，边界 f(1)=1、f(2)=2 要口头报出来。写完 O(n) 表版本后主动补一句『其实只用两个变量』，把滚动版写出来。若被问 n 很大，就说转移矩阵加快速幂到 O(log n)。卡住时先写出 f(n)=f(n-1)+f(n-2) 这行，通常就能补齐边界与循环。"
+   }
+  }
+ ],
+ "skipped": [
+  {
+   "id": "b267ff96b62b124d",
+   "reason": "off-direction",
+   "evidence": "25 MB lightweight cross-platform database client for 100+ databases, including MySQL, PostgreSQL, SQLite, Redis, MongoDB, DuckDB, SQL Server, and Dameng. Built-in AI, MCP Server, CLI, desktop and Docker. | 轻量级跨平台数据库管理工具，支持 MySQL、PostgreSQL、SQLite、Redis、MongoDB、达梦等 100+ 数据库，提供桌面端、Docker、CLI、内置 AI 助手"
+  }
+ ]
+}

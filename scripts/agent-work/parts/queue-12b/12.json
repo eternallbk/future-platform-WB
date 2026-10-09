@@ -1,0 +1,110 @@
+{
+ "id": "cd1021a7ce7dafcf",
+ "tldr": "MemFold 把查询条件下的文本记忆压成 K 个向量，用组相对奖励加置信度门控的 on-policy 蒸馏，按行为优化这块软记忆。",
+ "keyPoints": [
+  "固定预算软记忆：文本记忆压成 K 个连续向量作读者接口",
+  "读者在自己的 rollout 上训练，不学参考答案也不重建文本",
+  "两路信号：任务结果的组相对奖励 + 置信度门控的 on-policy 蒸馏",
+  "教师只用文本记忆重评学生采样 token，从不被采样，推理时移除",
+  "PersonaMem-32K/128K 上三种 Qwen 骨干精度最高，历史越长领先越大"
+ ],
+ "why": "长上下文记忆压缩 + 用 RL 与蒸馏直接按行为优化，是后训练与 Agent 记忆方向的面试高频点。",
+ "difficulty": "hard",
+ "tags": ["rl","post-training","long-context","memory","distillation","personalization"],
+ "entities": ["MemFold","PersonaMem-32K","PersonaMem-128K","PrefEval","LongMemEval","Qwen"],
+ "diagram": {
+  "kind": "architecture",
+  "title": "MemFold 软记忆训练回路",
+  "caption": "一张图看懂：文本记忆压成 K 个向量，读者在自身 rollout 上吃两路信号，教师推理时移除。",
+  "svg": "<svg viewBox='0 0 480 244' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='MemFold 六步架构'><rect x='56' y='12' width='368' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='32' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>长程用户历史</text><text x='408' y='32' font-size='13' text-anchor='end' fill='currentColor'>查询条件文本记忆</text><line x1='240' y1='42' x2='240' y2='45' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,50 236,45 244,45' fill='var(--line-1)'/><rect x='56' y='50' width='368' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='70' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>压缩为 K 个向量</text><text x='408' y='70' font-size='13' text-anchor='end' fill='currentColor'>读者的记忆接口</text><line x1='240' y1='80' x2='240' y2='83' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,88 236,83 244,83' fill='var(--line-1)'/><rect x='56' y='88' width='368' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='108' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>读者自身 rollout</text><text x='408' y='108' font-size='13' text-anchor='end' fill='currentColor'>在软记忆下作答</text><line x1='240' y1='118' x2='240' y2='121' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,126 236,121 244,121' fill='var(--line-1)'/><rect x='56' y='126' width='368' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='146' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>组相对奖励</text><text x='408' y='146' font-size='13' text-anchor='end' fill='currentColor'>任务结果，主增益来源</text><line x1='240' y1='156' x2='240' y2='159' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,164 236,159 244,159' fill='var(--line-1)'/><rect x='56' y='164' width='368' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='184' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>门控式 on-policy 蒸馏</text><text x='408' y='184' font-size='13' text-anchor='end' fill='currentColor'>冻结教师重评 token</text><line x1='240' y1='194' x2='240' y2='197' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,202 236,197 244,197' fill='var(--line-1)'/><rect x='56' y='202' width='368' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='222' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>更新记忆与读者</text><text x='408' y='222' font-size='13' text-anchor='end' fill='currentColor'>推理移除教师</text></svg>",
+  "alt": "六步架构：长程历史→压成 K 向量→读者自身 rollout→组相对奖励→门控 on-policy 蒸馏→更新记忆与读者（推理移除教师）。"
+ },
+ "concepts": [
+  {
+   "name": "Soft Memory Interface（软记忆接口）",
+   "readable": "把「这个用户是谁、要什么」的文本记忆压成固定 K 个连续向量，作为读者每次作答唯一能看到的历史接口，让输入长度不随历史增长。",
+   "analogy": "像给新同事一页「客户备忘卡」而不是整套聊天记录：内容少但必须抓住要害。",
+   "analogyBreaksDown": "备忘卡是人类可读、可核对的文字；这里的 K 个向量没有可读语义，出错时无法指出哪一句被记错，只能靠行为指标间接判断。",
+   "mechanism": "固定预算换来恒定输入长度与稳定成本；但不以重建文本为目标，而按下游行为优化，避免监督落在读者从不产生的序列上。",
+   "visual": "画一条随历史线性增长的文本 token 曲线，与一条水平的 K 向量常数线对比；右侧用热力块表示 K 个向量，色深表示被读者利用程度。",
+   "prerequisites": ["上下文压缩/记忆", "Transformer 输入长度与成本", "策略梯度基础"],
+   "selfTest": ["软记忆与检索式文本记忆在成本上差在哪？", "为什么按行为优化比按重建文本优化更直接？", "固定 K 会带来什么信息瓶颈？"],
+   "formula": "m_{\\mathrm{soft}}=f_\\phi(q,\\,m_{\\mathrm{text}})\\in\\mathbb{R}^{K\\times d}"
+  },
+  {
+   "name": "On-Policy Distillation with a Frozen Re-scoring Teacher（冻结教师的重评式 on-policy 蒸馏）",
+   "readable": "教师持有完整文本记忆但从不生成；它只在学生自己采出的 token 上打分，用这个分数作额外监督，把监督留在学生当前分布上。",
+   "analogy": "像教练不出手演示，只在你实际打的每一拍旁边标注好坏，让你在自己的动作上改进。",
+   "analogyBreaksDown": "教练能给出可解释的纠正；教师只给 token 级概率，学生无法直接知道错在「记漏偏好」还是「表达不佳」。",
+   "mechanism": "避免 off-policy 分布漂移与额外自回归解码：教师只做一次前向重评，推理时整个教师被移除，不增加部署成本。",
+   "visual": "画学生采样出的一条 token 序列，每个 token 上方标注教师置信度柱高与门控开关，只有亮着的 token 计入蒸馏损失。",
+   "prerequisites": ["知识蒸馏", "on-policy 与 off-policy 的区别", "置信度门控"],
+   "selfTest": ["为什么教师不能被采样？", "置信度门控筛掉了什么？", "为什么说它不增加推理成本？"],
+   "formula": "\\mathcal{L}_{\\mathrm{dis}}=-\\sum_{t}\\mathbb{1}[c_t\\ge\\tau]\\,p_T(y_t\\mid m_{\\mathrm{text}},x,y_{<t})\\,\\log\\pi_\\theta(y_t\\mid m_{\\mathrm{soft}},x,y_{<t})"
+  }
+ ],
+ "formulas": [
+  {
+   "id": "f-memfold-group-relative-advantage",
+   "name": "组相对优势（Group-Relative Advantage）",
+   "category": "rl",
+   "latex": "\\hat{A}_i=\\frac{r_i-\\bar{r}}{\\mathrm{std}(r)+\\epsilon}",
+   "symbols": [["r_i", "第 i 次 rollout 的任务结果奖励"], ["bar r", "同一组内所有 rollout 的平均奖励"], ["std(r)", "组内奖励标准差"], ["epsilon", "数值稳定项"], ["hat A_i", "第 i 次 rollout 的相对优势"]],
+   "derivation": ["第 1 步：对同一 prompt 采样多条 rollout，得到一组奖励。", "第 2 步：用组内均值与标准差把奖励归一化为相对优势，省掉独立的 value 网络。", "第 3 步：用相对优势加权策略梯度，鼓励组内相对更好的 rollout。", "第 4 步：与蒸馏信号相加后一起更新读者与软记忆。"],
+   "analogy": "像同一场考试按排名给分：不看你绝对几分，而看你在本组里比别人高多少，自然消除题目难度差异。",
+   "pitfalls": ["误以为需要训练 critic/value 网络：组相对做法不需要。", "组太小或奖励全相同会让标准差趋近 0、优势失真，需 epsilon 兜底。", "把绝对奖励与相对优势混用会引入难度偏置。"],
+   "code": "import torch\nr = torch.tensor([0.1, 0.6, 0.9, 0.4])   # 同组 rollout 奖励\nA = (r - r.mean()) / (r.std(unbiased=False) + 1e-8)\nprint(A)",
+   "sources": [{"title": "MemFold: Learning Compact Soft Memory for Long-Context Personalization via On-Policy Optimization", "url": "https://huggingface.co/papers/2609.36435"}]
+  },
+  {
+   "id": "f-memfold-confidence-gated-distillation",
+   "name": "置信度门控的 on-policy 蒸馏（Confidence-Gated On-Policy Distillation）",
+   "category": "posttraining",
+   "latex": "\\mathcal{L}_{\\mathrm{dis}}=-\\sum_{t}\\mathbb{1}[c_t\\ge\\tau]\\,p_T(y_t\\mid m_{\\mathrm{text}},x,y_{<t})\\,\\log\\pi_\\theta(y_t\\mid m_{\\mathrm{soft}},x,y_{<t})",
+   "symbols": [["y_t", "学生采样出的第 t 个 token"], ["c_t", "教师在该位置的置信度，用作门控量"], ["tau", "门控阈值"], ["p_T", "冻结文本记忆教师给出的概率，只作权重不反传"], ["pi_theta", "学生（读者）在软记忆条件下的概率"], ["m_text 与 m_soft", "文本记忆与软记忆接口"]],
+   "derivation": ["第 1 步：学生在软记忆下采样一条 rollout。", "第 2 步：冻结教师用完整文本记忆，对学生的每个采样 token 打分。", "第 3 步：只保留教师置信度不低于 tau 的位置，避免噪声监督。", "第 4 步：用教师概率作停止梯度的权重，最大化学生对同一 token 的对数概率，监督留在学生分布上；推理时移除教师。"],
+   "analogy": "像批改作文只看老师有把握的那些句子：没把握的句子不给评语，避免把噪声当标准。",
+   "pitfalls": ["以为教师也生成序列：教师只前向重评，从不被采样。", "忽略门控：低置信位置会把教师的错误偏好灌给学生。", "以为推理更贵：教师在部署时被整个移除。"],
+   "code": "import torch\ntau = 0.7\np_T = torch.tensor([0.9, 0.4, 0.8])   # 教师对学生 token 的概率\nc   = torch.tensor([0.95, 0.5, 0.85]) # 教师置信度\nlogp_s = torch.tensor([-0.7, -1.1, -0.6])\ngate = (c >= tau).float()\nloss = -(gate * p_T * logp_s).sum()\nprint(loss.item())",
+   "sources": [{"title": "MemFold: Learning Compact Soft Memory for Long-Context Personalization via On-Policy Optimization", "url": "https://huggingface.co/papers/2609.36435"}]
+  }
+ ],
+ "selfCheck": {
+  "claims": [
+   "MemFold 用固定预算软记忆：查询条件下的文本记忆被压成 K 个连续向量作为读者接口",
+   "读者在自己的 rollout 上训练，而不是重建文本或模仿参考答案",
+   "两路信号：任务结果的组相对奖励 + 置信度门控的 on-policy 蒸馏",
+   "教师用文本记忆重评学生采样 token，从不被采样，推理时完全移除",
+   "三种 Qwen 骨干上 PersonaMem-32K 与 128K 精度最高，且历史越长领先越大",
+   "可零目标域训练迁移到 PrefEval 与 LongMemEval",
+   "消融显示任务增益主要来自奖励项，教师信号带来较小额外增益；记忆干预显示读者依赖软记忆的实例特定内容"
+  ],
+  "uncertain": [
+   "K 的具体取值与软记忆维度摘要未给，待核实",
+   "公式为按摘要重建的通用形式，组相对优势与蒸馏损失的精确形式待核对原文",
+   "置信度 c_t 的确切定义（教师熵/最大概率/其它）待核实",
+   "PersonaMem-32K/128K 的绝对精度数值摘要未给，待核实"
+  ]
+ },
+ "teaching": {
+  "progressive": [
+   {"level": "一句话", "text": "把用户历史压成一小段「软记忆」，用奖励和蒸馏按实际表现来训练它。"},
+   {"level": "入门", "text": "服务同一用户要记住哪些偏好还在、哪些被改、哪些约束生效，但记住不等于会用。MemFold 把查询条件下的文本记忆压成 K 个向量当读者的记忆接口，再让读者在自己生成的回答上接受两种打分：任务结果的相对奖励，以及持有完整文本记忆的教师对它 token 的重新评分。"},
+   {"level": "进阶", "text": "关键取舍是监督的位置。用文本记忆则输入随历史增长；用固定向量但按重建文本或模仿参考答案训练，又是在读者从不产生的序列上打分。MemFold 改按行为优化：读者自己 rollout，组相对奖励看任务结果，置信度门控的 on-policy 蒸馏让教师只在学生采样出的 token 上、且只在高置信位置补信号，而教师从不出现在推理路径里。"},
+   {"level": "专家", "text": "相对文本记忆与检索式方案，MemFold 用常数预算换稳定成本；相对普通压缩训练，它把监督从重建/模仿移到行为。三种 Qwen 骨干上 PersonaMem-32K/128K 精度最高、历史越长领先越大，并可零目标域训练迁移到 PrefEval 与 LongMemEval。代价是任务级奖励稀疏，且教师仅在学生分布上重评——若学生从未采样到正确 token，教师信号也拉不回来；K 的信息瓶颈在历史极长或偏好频繁修订时可能丢信息。"}
+  ],
+  "socratic": [
+   {"q": "如果直接让读者在文本记忆上训练，为什么不够？", "a": "文本记忆让读者输入随历史线性增长，成本与上下文上限都受限；而且它把「保留信息」与「按信息行动」分开优化，两者并不等价。"},
+   {"q": "为什么蒸馏不能让教师直接生成答案？", "a": "教师生成会引入 off-policy 分布与额外自回归解码，监督落在学生不会产生的序列上；只重评学生的采样 token 才能把监督留在学生当前分布，且推理时零成本。"},
+   {"q": "如果去掉奖励项只留蒸馏会怎样？", "a": "摘要消融显示任务增益主要来自奖励项，教师信号只带来较小额外增益；去掉奖励，读者缺少任务结果信号，行为优化会失去方向。"}
+  ],
+  "mechanism": "核心是「按行为优化记忆」：记忆的价值不由能否重建文本决定，而由它支撑的作答质量决定。因此必须让读者在自己的分布上采样（否则优化的是别人的序列），必须用任务结果作主信号（否则记忆退化为文本压缩），教师只做分布内的辅助重评（否则把学生没见过的正确序列强灌进去，反而抖动）。固定 K 个向量是刻意的信息瓶颈：强制记忆只保留对行为有用的实例特定信息。",
+  "boundary": "当历史极长或偏好频繁修订、而 K 又偏小时，信息瓶颈会丢掉关键约束；任务级奖励稀疏，若一条 rollout 内正确 token 概率极低，组相对优势与教师重评都难提供梯度。摘要的验证集中在 PersonaMem 与少量迁移基准、三种 Qwen 骨干，跨模型族/跨语言与超长历史的稳健性待核实。",
+  "analogyBoundary": "「教练在你打拍时标注」的类比在 token 级监督上失效：教练能指出「你记错了用户偏好」这类语义错误，而教师只提供 token 概率，学生无法定位错误来源；且教练不必冻结，这里的教师是固定的。",
+  "misconceptions": ["以为软记忆能像文本一样读出来：它是无语义的 K 个向量，出错无法定位到具体句子。", "以为蒸馏的教师也参与推理：教师在推理时被完全移除。", "以为收益主要来自蒸馏：消融显示主要是奖励项，蒸馏只补一小部分。"],
+  "ownAnalysis": "MemFold 把「记忆」从数据类型重定义为「行为接口」，与可学习 soft prompt / 压缩 token 的思路同源，但用 RL 与 on-policy 蒸馏而非重建目标来训练（推断）。置信度门控的意图应是过滤教师低把握位置，避免把噪声当监督（推断）。可疑处：教师与学生共享同一底座时，重评信号可能主要来自「文本记忆可见性」而非新知识；任务级奖励在长对话里如何归因到「哪段记忆有用」摘要未说明，记忆干预只证明了相关性。绝对精度未给，需核实。",
+  "officialNotes": [{"position": "固定预算的软记忆应当按其支撑的行为来优化，而非按文本重建或模仿参考答案", "source": "https://huggingface.co/papers/2609.36435"}],
+  "interviewAnswer": "MemFold 解决长程服务同一用户的问题：要记住偏好、修订与当前约束，但记住不等于会用。它把查询条件下的文本记忆压成 K 个连续向量作为读者接口，再让读者在自己采样的 rollout 上接受两路信号——任务结果的组相对奖励，以及一个持有完整文本记忆、从不被采样的冻结教师对学生 token 的置信度门控重评。这样监督留在学生当前分布，推理时教师移除。三种 Qwen 骨干上 PersonaMem-32K/128K 精度最高，历史越长领先越大，并零目标域训练迁移到 PrefEval 与 LongMemEval。",
+  "studyPath": {"prerequisites": ["策略梯度/GRPO 类组相对方法", "知识蒸馏（on-policy 与 off-policy）", "长上下文与记忆压缩"], "nextSteps": ["读 GRPO 与 GKD 类工作，对比蒸馏信号差异", "复现文本记忆到 K 向量压缩加行为优化的小闭环", "思考软记忆在 Agent/多模态长程任务上的迁移"]}
+ }
+}

@@ -1,0 +1,42 @@
+{
+ "date": "2026-10-03",
+ "startedAt": "2026-10-03T20:10:00+08:00",
+ "finishedAt": "2026-10-03T21:32:49+08:00",
+ "status": "ok",
+ "enrichedCount": 200,
+ "enrichedThisRun": 90,
+ "formulaCount": 254,
+ "newJobs": 3,
+ "generatedBy": "daily-agent",
+ "notes": "按 web/data/deep-read-plan.json 的清单执行，未自行另挑条目。队列 89 条：84 条深读，5 条按证据剔除（英语教育综述、法律 AI 治理、WiFi 感知三条只命中裸词 multimodal；tractography 论文实为 diffusion MRI 影像重建；阿里巴巴 Java 一面为后端八股），剔除依据逐条写在 scripts/agent-work/skips.json，条目仍留在卡片库可搜索。回填 6 条（missing 均为 formulas）全部补齐，由 apply_agent_out.py 深合并进已有 enrichment，已有 tldr/概念/图解/teaching 未被改写。全部 95 条通过校验（errors=0，warnings=0）。本轮共 20 个批次由 4 波并行子代理处理（首次 20 并发派发静默失败，改为 5 并发分波后正常）。",
+ "errors": [],
+ "selection": {
+  "basis": "web/data/deep-read-plan.json 的 queue + backfill（plan_deep_read.py 生成：质量闸门 + 每类 2–10 条配额）",
+  "readFrom": "web/data/deep-read-plan.json",
+  "fullQueueSize": 89,
+  "queueProcessed": 84,
+  "queueSkipped": 5,
+  "backfillTotal": 6,
+  "backfillProcessed": 6,
+  "corpusSize": 691,
+  "quotaRule": "完全按清单执行；唯一人工干预是剔除清单里可被证据证伪的学科误收与领域不匹配条目，依据可复核。"
+ },
+ "details": {
+  "batches": 20,
+  "entriesWritten": 90,
+  "formulasAppended": 254,
+  "jobsAppendedThisRun": [
+   "tencent-qq-senior-algorithm-engineer",
+   "tencent-agent-application-tech-algorithm",
+   "tencent-strategy-algorithm-engineer"
+  ],
+  "skippedIds": [
+   "2cb5ec505adcdc16",
+   "ad48db42eb955173",
+   "e3c2e19e8960c634",
+   "2459123f398960a0",
+   "3573d5a391326adf"
+  ],
+  "validator": "scripts/apply_agent_out.py（schema / 图解合规 / teaching 十项 / formula 五层 / URL 白名单 / LaTeX 门禁预检）"
+ }
+}

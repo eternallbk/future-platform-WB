@@ -1,0 +1,922 @@
+{
+ "batchId": "queue-11",
+ "entries": [
+  {
+   "id": "1c93aad3debbc2b5",
+   "tldr": "让冻结 LLM 用自己的内部表示同时做语料检索与长上下文证据选择，新增不到 50 万参数即大幅提升召回。",
+   "keyPoints": [
+    "从冻结 LLM 的内部表示直接编码 chunk、派生检索 query",
+    "新增可训练参数少于 500K，主干 LLM 完全不变",
+    "21M chunk 维基索引上四种稠密/混合骨干均超检索-重排 SOTA",
+    "HotpotQA 召回 49.1%→73.2%，MuSiQue 8.8%→14.4%",
+    "长上下文生成前先剔干扰：128K 下 NoLiMa 1.0%→24.83%"
+   ],
+   "why": "把「语料检索」与「长上下文推理」统一到同一模型内部机制，是 RAG 与长上下文方向的面试高频考点，也给出省 FLOPs 的工程范式。",
+   "difficulty": "medium",
+   "tags": [
+    "rag",
+    "long-context",
+    "retrieval",
+    "foundation",
+    "evidence-selection"
+   ],
+   "entities": [
+    "UNREAL",
+    "HotpotQA",
+    "2WikiMultiHopQA",
+    "MuSiQue",
+    "NoLiMa",
+    "LV-Eval"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "UNREAL 统一证据选择流程",
+    "caption": "同一个模型内部机制，既在整库上挑 chunk，又在单条长 prompt 内剔干扰。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='UNREAL 四步流程'><rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>冻结 LLM</text><text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>主干不动</text><line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,70 236,62 244,62' fill='var(--line-1)'/><rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>派生 query 与 chunk 编码</text><text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>参数 &lt; 500K</text><line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,124 236,116 244,116' fill='var(--line-1)'/><rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>同一选择机制</text><text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>语料↔长上下文</text><line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,178 236,170 244,170' fill='var(--line-1)'/><rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>生成</text><text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>先剔干扰再解码</text></svg>",
+    "alt": "四步流程：冻结 LLM→派生检索 query 与 chunk 编码→同一证据选择机制跨语料与长上下文→剔除干扰后生成。"
+   },
+   "concepts": [
+    {
+     "name": "Model-Native Evidence Selection（模型原生证据选择）",
+     "readable": "不另训一个检索器，而让 LLM 自己的隐藏状态同时充当检索 query 和文档编码，用一个机制在整库与单条长 prompt 两种尺度上挑证据。",
+     "analogy": "像一个熟练的图书管理员：他脑子里对「我想找什么」和「书架上有什么」用的是同一套理解，不用先请翻译把问题转成另一套检索语言。",
+     "analogyBreaksDown": "管理员能翻书现学，而这里的 chunk 编码是离线固定向量、不随 query 变化；若主干对某领域或语言表示差，共享表示反而可能不如独立训练的检索器。",
+     "mechanism": "复用冻结 LLM 表示省掉跨模型语义鸿沟：query 与 chunk 落在同一语义空间，减少对齐误差；只训极少量投影参数，把对主干的扰动压到最小以保住预训练能力。",
+     "visual": "画同一个坐标系：左侧一个 query 点、右侧若干 chunk 点，同色表示同空间，连线粗细表示 cosine 相似度；对比基线用两个不同颜色坐标系表示跨模型不对齐。",
+     "prerequisites": [
+      "稠密检索与双塔模型",
+      "LLM 隐藏状态",
+      "RAG 基本流程"
+     ],
+     "selfTest": [
+      "为什么 query 与文档共享同一表示空间能降低检索误差？",
+      "只训练极少量参数的代价是什么？",
+      "长上下文里的证据选择与整库检索在机制上如何统一？"
+     ],
+     "formula": "s(q,d)=\\cos(W_q h_q,\\; h_d)"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-unreal-internal-retrieval-score",
+     "name": "模型内部检索打分（Model-Internal Retrieval Score）",
+     "category": "foundation",
+     "latex": "s(q,d)=\\cos\\!\\left(W_q\\, h_q,\\; W_d\\, h_d\\right)",
+     "symbols": [
+      [
+       "h_q",
+       "提问/上下文经冻结 LLM 得到的内部表示"
+      ],
+      [
+       "h_d",
+       "文档 chunk 经同一冻结 LLM 得到的表示"
+      ],
+      [
+       "W_q,W_d",
+       "少量可训练投影（合计 < 500K 参数）"
+      ],
+      [
+       "s(q,d)",
+       "query 与文档的相似度，用于排序取 top-k"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：动机——把 query 与 chunk 放进同一语义空间，避免跨模型对齐误差。",
+      "第 2 步：取冻结 LLM 对 query 与 chunk 的隐藏状态 h_q、h_d。",
+      "第 3 步：用极小投影 W_q、W_d 把两者映射到检索子空间。",
+      "第 4 步：用 cosine 相似度排序，取 top-k 作为证据。"
+     ],
+     "analogy": "用同一把尺子量两个东西才能直接比长短；若两把尺子刻度不同，就得先校准，容易出误差。",
+     "pitfalls": [
+      "误以为要微调主干；实际主干完全冻结，只训极少投影参数",
+      "把 chunk 编码当成在线计算；21M chunk 可离线预编码",
+      "忽略参数量级——这里是 < 500K，不是全量重训"
+     ],
+     "code": "import torch, torch.nn.functional as F\nWq = torch.nn.Linear(4096, 256); Wd = torch.nn.Linear(4096, 256)\nhq = torch.randn(1, 4096); hd = torch.randn(8, 4096)\ns = F.cosine_similarity(Wq(hq), Wd(hd), dim=-1)  # 每行一个 chunk 得分\nprint(s.shape)  # torch.Size([8])",
+     "sources": [
+      {
+       "title": "UNREAL: Unifying Retrieval and Long-Context with a Single Model",
+       "url": "https://huggingface.co/papers/2610.08463"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "UNREAL 从冻结 LLM 的内部表示编码 chunk 并派生检索 query",
+     "新增可训练参数少于 500K 且不改主干",
+     "在 3B token、21M chunk 的维基索引上，四种稠密与混合骨干均超过 SOTA 检索-重排系统",
+     "HotpotQA 召回 49.1%→73.2%，2WikiMultiHopQA 31.7%→60.1%，MuSiQue 8.8%→14.4%",
+     "128K 上下文 NoLiMa 由 1.0% 升到 24.83%，256K LV-Eval F1 由 49.97% 升到 54.66%",
+     "约 32K token 起相比全上下文推理降低 FLOPs 与首 token 时延"
+    ],
+    "uncertain": [
+     "公式为按摘要重建的通用形式（cosine 相似度 + 少量投影），原文具体打分形式待核实",
+     "四种骨干具体指哪些模型（摘要只写 dense 与 hybrid 两类共四支）待核实",
+     "FLOPs 与首 token 时延下降的具体比例摘要未给，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "让大模型自己的内部表征既当检索器又当长上下文筛选器。"
+     },
+     {
+      "level": "入门",
+      "text": "长上下文推理和 RAG 都在「挑证据」，只是一个在长 prompt 里挑、一个在整库挑。UNREAL 让冻结 LLM 用它自己的隐藏状态编码 chunk、生成检索 query，用一个统一机制跨越两个尺度，几乎不训练主干。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键设计是表示复用：query 与文档编码来自同一个冻结 LLM，天然落在同一语义空间，省掉跨模型对齐误差；只加 <500K 投影参数，把检索能力外挂而不破坏预训练。结果在 21M chunk 索引上四种骨干都超过检索-重排 SOTA，召回提升显著，且 32K 起比全上下文更省 FLOPs 与首 token 时延。"
+     },
+     {
+      "level": "专家",
+      "text": "与经典双塔检索器相比，UNREAL 把「检索」降级为长上下文证据选择的一个特例：同一内部机制既能在整库上按 chunk 排序，又能在单条 128K prompt 内剔除干扰后再生成（NoLiMa 1.0%→24.83%）。代价是与主干表示强绑定，若主干对某领域无信息则共享空间也无从谈起；收益是参数极少、可插拔、推理更省。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么要用冻结 LLM 的表示，而不是另外训一个检索器？",
+      "a": "另训检索器会引入跨模型语义鸿沟，query 与文档不在同一空间；复用同一 LLM 表示让两者天然对齐，参数也极少。"
+     },
+     {
+      "q": "只加不到 500K 参数，凭什么超过全量训练的检索-重排系统？",
+      "a": "检索能力主要来自已经很强的预训练表示，小投影只做方向微调，抓的是表示里现成的语义结构，而非从零学。"
+     },
+     {
+      "q": "长上下文任务里为什么要先剔干扰再生成？",
+      "a": "摘要指出证据稀疏场景下干扰会淹没有效信息；先做证据选择既提升准确率，又在 32K 后降低计算量与首 token 时延。"
+     }
+    ],
+    "mechanism": "它把两个看似不同的任务统一为同一件事——在冻结 LLM 的内部表示空间里做相似度选择。之所以必须复用内部表示：跨模型检索要额外对齐，且 query 侧与文档侧的语义漂移会吃掉召回；复用后 query 与 chunk 同空间，投影只需极小参数量即可定向。之所以必须冻结主干：一是保住预训练能力、避免遗忘，二是把可训练量压到千分之一量级，使方案在超大索引上可复现、可替换、成本可控。",
+    "boundary": "当主干 LLM 本身对该领域或语言表示质量差时，共享空间无从对齐，效果会退化；chunk 需离线预编码，索引更新成本随语料规模增长；摘要只在 3B token、21M chunk 维基与部分长上下文基准上验证，跨领域与跨语言泛化待核实。",
+    "analogyBoundary": "图书管理员类比失效处：他能现场推理、翻书学习，而这里 chunk 编码是静态向量、不随 query 变化；且他不受「主干冻结」限制，模型若底层表示不足无法靠翻书补救。",
+    "misconceptions": [
+     "以为要微调 LLM 主干；实际主干冻结，只训极少投影参数。",
+     "以为它只是个更好的检索器；它同时统一了长上下文的证据选择。",
+     "以为参数少就一定便宜；chunk 离线编码与索引维护仍有成本。"
+    ],
+    "ownAnalysis": "把检索与长上下文统一到「模型内部相似度选择」这一抽象，与用 LLM 表示做 embedding 的检索思路一脉相承，但 UNREAL 强调同一机制跨越两个尺度（推断）。NoLiMa 基线 1.0% 异常低，说明该基准对干扰极敏感，24.83% 的提升更像「去掉干扰」的直接收益而非模型能力提升（推断）。值得核实的是 3B token 索引规模下 chunk 预编码的存储与更新开销，摘要未提。",
+    "officialNotes": [
+     {
+      "position": "模型内部证据选择可作为语料检索与证据稀疏长上下文推理的共同基础",
+      "source": "https://huggingface.co/papers/2610.08463"
+     }
+    ],
+    "interviewAnswer": "UNREAL 想在同一个模型内部机制里同时解决语料检索和长上下文证据选择。做法是冻结 LLM，用它的内部表示编码 chunk 并生成检索 query，只加不到 50 万可训练参数。在 21M chunk 维基索引上，四种骨干都超过检索-重排 SOTA，HotpotQA 召回从 49.1% 提到 73.2%；用到长上下文时先剔干扰再生成，128K NoLiMa 从 1.0% 提到 24.83%，且 32K 起比全上下文更省算力。",
+    "studyPath": {
+     "prerequisites": [
+      "稠密检索/双塔",
+      "RAG 流水线",
+      "LLM 隐藏状态与注意力"
+     ],
+     "nextSteps": [
+      "对比 DPR/ColBERT 类检索器的表示复用差异",
+      "复现 chunk 离线编码与 top-k 选择流程",
+      "思考同一机制迁移到多模态检索"
+     ]
+    }
+   }
+  },
+  {
+   "id": "f363167fd97325e5",
+   "tldr": "Drifting Models 的效果瓶颈在表示的判别几何，持续随生成器学该几何可从像素直接训练，FID 降约 82–95%。",
+   "keyPoints": [
+    "Drifting Models 把迭代分布精修从推理搬到训练，实现一步生成",
+    "像素空间 drifting 效果差，预训练特征空间显著更好，原因不明",
+    "差异根源是表示的判别几何，它决定 KDE 的样本加权从而决定 drift",
+    "持续表示学习：随生成器跨 batch 演化不断学更判别性的几何"
+   ],
+   "why": "「一步生成 + 表示几何决定训练信号」是扩散/流匹配之外的替代路线，理解漂移场与密度比关系对生成式方向面试有价值。",
+   "difficulty": "hard",
+   "tags": [
+    "generative",
+    "drifting-models",
+    "one-step-generation",
+    "representation-learning",
+    "kde"
+   ],
+   "entities": [
+    "Drifting Models",
+    "KDE",
+    "FID",
+    "persistent representation learning"
+   ],
+   "diagram": {
+    "kind": "architecture",
+    "title": "判别几何如何决定漂移场",
+    "caption": "KDE 的样本加权由表示的判别几何决定，几何越判别，漂移方向越指向真实数据。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='判别几何到漂移场的架构'><rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>表示空间</text><text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>像素或预训练特征</text><line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,70 236,62 244,62' fill='var(--line-1)'/><rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>判别几何</text><text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>决定 KDE 样本加权</text><line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,124 236,116 244,116' fill='var(--line-1)'/><rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>漂移场</text><text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>样本被推向数据</text><line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,178 236,170 244,170' fill='var(--line-1)'/><rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>一步生成</text><text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>几何随 batch 持续更新</text></svg>",
+    "alt": "自上而下：表示空间→判别几何决定 KDE 加权→漂移场把样本推向数据→单步生成，几何随训练持续更新。"
+   },
+   "concepts": [
+    {
+     "name": "Drift Field & Discriminative Geometry（漂移场与判别几何）",
+     "readable": "一步生成靠训练时学一个「漂移场」把噪声样本推向数据；场的方向由 KDE 加权的样本决定，而权重取决于表示空间的判别几何。",
+     "analogy": "像一群人被喇叭声推着走：往哪个方向挪，不光看声音大小，还看谁在「喊」——表示空间的几何决定了每个样本的嗓门。",
+     "analogyBreaksDown": "现实中嗓门是固定的，而这里几何随生成器每次更新而变，是动态的；且加权只影响方向，并不保证真的到达真实分布。",
+     "mechanism": "把表示几何当作可学习量，让 KDE 的样本加权更判别，漂移方向就更指向真实数据；持续随 batch 更新几何，避免冻结表示在生成器演化后失配。",
+     "visual": "画二维散点：蓝色为真实数据、灰色为生成样本，箭头为漂移方向；左图几何退化箭头杂乱，右图几何判别箭头一致指向数据簇。",
+     "prerequisites": [
+      "核密度估计 KDE",
+      "扩散/流匹配的生成范式",
+      "表示学习"
+     ],
+     "selfTest": [
+      "为什么像素空间的漂移场效果差？",
+      "KDE 的样本加权如何影响漂移方向？",
+      "为什么几何必须随生成器演化而更新？"
+     ],
+     "formula": "v(\\mathbf{x})=\\sum_{i}\\frac{k(\\mathbf{x},\\mathbf{x}_i)}{\\sum_j k(\\mathbf{x}_i,\\mathbf{x}_j)}\\,(\\mathbf{x}_i-\\mathbf{x})"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-kde-weighted-drift",
+     "name": "KDE 加权的漂移速度（KDE-Weighted Drift Velocity）",
+     "category": "generative",
+     "latex": "v(\\mathbf{x})=\\sum_{i}\\frac{k(\\mathbf{x},\\mathbf{x}_i)}{\\sum_j k(\\mathbf{x}_i,\\mathbf{x}_j)}\\,(\\mathbf{x}_i-\\mathbf{x})",
+     "symbols": [
+      [
+       "\\mathbf{x}",
+       "当前生成样本"
+      ],
+      [
+       "\\mathbf{x}_i",
+       "参考/数据样本"
+      ],
+      [
+       "k(\\cdot,\\cdot)",
+       "核函数，度量表示空间中的相似度"
+      ],
+      [
+       "v(\\mathbf{x})",
+       "样本 \\mathbf{x} 的漂移速度（生成器要拟合的目标）"
+      ],
+      [
+       "\\sum_j k(\\mathbf{x}_i,\\mathbf{x}_j)",
+       "归一化项，取决于表示几何"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：动机——一步生成需要一个把样本推向数据的漂移场。",
+      "第 2 步：用 KDE 描述样本邻域密度，邻近数据样本提供推力 (x_i - x)。",
+      "第 3 步：用核权重归一化，使判别性强的表示给正确样本更大权重。",
+      "第 4 步：训练生成器拟合该漂移速度，推理即可单步输出去噪结果。"
+     ],
+     "analogy": "像在人群中被人流推动：离你近、且「说话有分量」的人推力最大，归一化让总推力不被密集区放大。",
+     "pitfalls": [
+      "把漂移场当成扩散模型的反向去噪；迭代精修实际发生在训练阶段",
+      "忽略归一化项；没有它，密集区域内样本会被过度放大",
+      "误以为表示可以固定；几何随生成器演化，冻结会失配"
+     ],
+     "code": "import torch\nX = torch.randn(512, 2)   # 数据样本\nx = torch.randn(64, 2)    # 生成样本\nsq = ((x[:, None] - X[None]) ** 2).sum(-1)\nk = torch.exp(-sq / 0.02)          # RBF 核\nw = k / k.sum(-1, keepdim=True)    # 归一化权重\nv = (w[..., None] * (X[None] - x[:, None])).sum(1)\nprint(v.shape)  # torch.Size([64, 2])",
+     "sources": [
+      {
+       "title": "Learning Discriminative Geometry for Drifting Models",
+       "url": "https://huggingface.co/papers/2610.04703"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "Drifting Models 把迭代分布精修从推理搬到训练，实现一步生成",
+     "像素空间 drifting 效果差，预训练特征空间显著更好，但原因此前不清楚",
+     "差异被归因于表示的判别几何：它决定 KDE 的样本加权进而决定漂移",
+     "提出持续表示学习，随生成器跨 batch 演化不断学更判别性的几何",
+     "在匹配条件下证明了 KDE 比率损失与漂移回归损失的当步梯度等价",
+     "从像素直接学表示，相比原始像素空间 Drifting Models 把 FID 降低约 82–95%，且不用预训练编码器",
+     "适配预训练表示并做速度裁剪还能进一步提升"
+    ],
+    "uncertain": [
+     "公式为按摘要重建的通用 KDE 漂移形式，原文精确表达式与核函数选择待核实",
+     "「当步梯度等价」的具体成立条件与推导细节摘要未给，待核实",
+     "82–95% FID 降幅对应的具体数据集与基线数值摘要未逐项列出"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "一步生成好不好，全看表示空间的分辨力够不够。"
+     },
+     {
+      "level": "入门",
+      "text": "Drifting Models 把扩散式精修挪到训练里，推理一步出图。但它在像素空间效果差、预训练特征空间好，原因一直不明。本文指出关键在「表示的判别几何」——它决定 KDE 里每个样本的权重，权重歪了漂移方向就歪。"
+     },
+     {
+      "level": "进阶",
+      "text": "作者提出持续表示学习：不固定编码器，而是让表示随着生成器一批批演化，越练越有判别性，于是 KDE 的样本加权始终贴合当前生成分布。他们还证明在匹配条件下，基于密度比的 KDE 比率损失与经验漂移回归损失当步梯度等价，从而把「控制生成器」与「控制漂移速度」连起来。"
+     },
+     {
+      "level": "专家",
+      "text": "与扩散/流匹配相比，Drifting 把多步迭代搬进训练、推理一步完成，代价是更依赖一个好的漂移场。本文把「好漂移场来自判别几何」从经验观察提升为机制解释，并给出可学习的几何——从像素直接学也能把 FID 相对原始像素版降约 82–95%。边界是等价关系只在匹配条件下成立，几何与生成器共同漂移的稳定性仍是隐忧（推断）。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么像素空间做漂移学不好，换成预训练特征就好了？",
+      "a": "漂移方向由 KDE 的样本加权决定，加权又取决于表示的判别几何；像素空间几何判别性弱，邻近样本权重分不开，漂移方向就乱。"
+     },
+     {
+      "q": "既然预训练特征好用，为什么不直接固定它省事？",
+      "a": "固定几何在生成器演化后不再贴合当前分布，加权会失配；持续更新表示才能保持判别性。"
+     },
+     {
+      "q": "证明两种损失梯度等价有什么用？",
+      "a": "它把密度比目标与经验漂移回归连起来，说明可以用直接控制漂移速度的方式优化生成器。"
+     }
+    ],
+    "mechanism": "核心机制是「让评判标准随被评判对象一起进化」。漂移方向由核加权的样本差决定，权重来自表示几何；若表示固定且判别性不足，邻近样本权重被平均掉，漂移方向被模糊，生成质量就崩。持续表示学习使几何始终对应当前生成分布。梯度等价定理进一步说明：优化 KDE 密度比等价于当步做漂移回归，因此可直接操控漂移速度。",
+    "boundary": "等价关系只在「匹配条件」下成立，不满足时不能直接替换目标；表示与生成器同时更新可能引入不稳定（推断）；方法主要在图像数据集上验证，视频与高维条件生成待核实。",
+    "analogyBoundary": "「教练与运动员同步进步」的类比失效处：二者目标一致且不互相漂移，而这里表示与生成器是耦合优化、可能互相追逐，类比也无法体现梯度等价这种约束。",
+    "misconceptions": [
+     "把漂移场当成推理时的去噪步骤；迭代精修实际发生在训练阶段。",
+     "以为表示必须来自预训练模型；本文表明从像素也学得出来。",
+     "把 FID 82–95% 的降幅理解成绝对分数；它是相对原始像素空间 Drifting Models 的降幅。"
+    ],
+    "ownAnalysis": "把「预训练特征更好用」解释为判别几何差异，与「更好的表示让密度估计更准」的直觉一致；本文把它具体化为 KDE 加权并给出可学方案，比单纯换编码器更可检验（推断）。可疑处是表示与生成器共同更新的稳定性，摘要未给正则化手段（待核实）。",
+    "officialNotes": [
+     {
+      "position": "像素空间与预训练特征空间的漂移表现差异，根源在于表示的判别几何，它决定 KDE 样本加权并因此决定漂移。",
+      "source": "https://huggingface.co/papers/2610.04703"
+     }
+    ],
+    "interviewAnswer": "Drifting Models 把迭代精修搬进训练实现一步生成，但像素空间效果差、预训练特征好，原因一直不明。本文指出关键在表示的判别几何——它决定 KDE 的样本加权，进而决定漂移方向。做法是持续表示学习：让表示随生成器演化，越练越判别；并证明匹配条件下 KDE 比率损失与漂移回归损失当步梯度等价。从像素直接学也能把 FID 相对原始像素版降约 82–95%。",
+    "studyPath": {
+     "prerequisites": [
+      "核密度估计",
+      "扩散模型/流匹配基础",
+      "一步生成模型"
+     ],
+     "nextSteps": [
+      "读 Drifting Models 原文理解训练目标",
+      "推导 KDE 比率损失与漂移回归的梯度关系",
+      "在小数据集上复现持续表示学习并观察稳定性"
+     ]
+    }
+   }
+  },
+  {
+   "id": "9f3713206a7aa6ef",
+   "tldr": "用石头剪刀布与随机 n-gram 续写的受控实验证明：LLM 能匹配行为分布，却学不到潜在序列规则，长上下文也帮不上。",
+   "keyPoints": [
+    "LLM 作智能体或模拟器时，能否恢复潜在序列结构此前并不清楚",
+    "行为模拟中动作常由先前上下文而非边缘频率单独决定",
+    "用双人石头剪刀布与单玩家随机 n-gram 续写做受控实验",
+    "框架把「分布匹配」与「条件规则遵循」分开评估",
+    "长上下文不提升识别、识别正确不代表模拟忠实、高阶依赖显著损害规则恢复"
+   ],
+   "why": "评估 LLM 是真懂序列机制还是只会匹配表面频率，对行为模拟与 agent 可靠性很关键，也是面试里「记住了 vs 真会推理」的常见追问。",
+   "difficulty": "medium",
+   "tags": [
+    "llm-evaluation",
+    "sequential-structure",
+    "agent",
+    "behavioral-simulation",
+    "markov"
+   ],
+   "entities": [
+    "Rock-Paper-Scissors",
+    "n-gram continuation",
+    "Markov rules",
+    "latent strategies"
+   ],
+   "diagram": {
+    "kind": "matrix",
+    "title": "三类序列能力的评估结果",
+    "caption": "同一个模型可以分布匹配得很好，却在条件规则与高阶依赖上明显失效。",
+    "svg": "<svg viewBox='0 0 480 200' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='序列能力评估对比表'><rect x='56' y='16' width='368' height='30' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='68' y='36' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>评估维度</text><text x='252' y='36' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>观测结果</text><line x1='240' y1='16' x2='240' y2='166' stroke='var(--line-1)' stroke-width='1.2'/><rect x='56' y='52' width='368' height='30' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='68' y='72' font-size='13' text-anchor='start' fill='currentColor'>潜在策略识别</text><text x='252' y='72' font-size='13' text-anchor='start' fill='currentColor'>更长上下文不提升</text><rect x='56' y='88' width='368' height='30' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='68' y='108' font-size='13' text-anchor='start' fill='currentColor'>马尔可夫规则遵循</text><text x='252' y='108' font-size='13' text-anchor='start' fill='currentColor'>识别对≠模拟忠实</text><rect x='56' y='124' width='368' height='30' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='68' y='144' font-size='13' text-anchor='start' fill='currentColor'>高阶条件依赖</text><text x='252' y='144' font-size='13' text-anchor='start' fill='currentColor'>规则恢复显著退化</text></svg>",
+    "alt": "三行对比表：潜在策略识别——更长上下文不提升；马尔可夫规则遵循——识别正确不代表模拟忠实；高阶条件依赖——规则恢复显著退化。"
+   },
+   "concepts": [
+    {
+     "name": "Distribution Matching vs Conditional Rule Following（分布匹配 vs 条件规则遵循）",
+     "readable": "把「输出频率分布对不对」和「给定历史后下一步对不对」分成两件事评估；模型可以前者满分、后者不及格。",
+     "analogy": "像一个 DJ 放的歌单总体曲风分布跟派对很搭，但一到「上一首是慢歌时该接快歌」这种衔接规则就乱接。",
+     "analogyBreaksDown": "歌单偏好是静态的，而序列任务里每条动作都被前面上下文条件化；整体分布相同并不蕴含条件结构相同，类比无法体现这种条件化。",
+     "mechanism": "受控任务里潜在策略是已知的，因此能把「边缘分布匹配」与「条件规则遵循」分离度量，避免只看整体逼真度就误判模型真的学到了生成机制。",
+     "visual": "画两张并排直方图：左图模型与真实边缘频率几乎重合，右图画条件转移矩阵 P(下一动作|上一动作)，模型热力图却与真实错位。",
+     "prerequisites": [
+      "马尔可夫链",
+      "条件概率",
+      "分布匹配指标"
+     ],
+     "selfTest": [
+      "为什么边缘分布匹配不能证明模型学到了序列规则？",
+      "如何设计一个把分布与条件规则分开的实验？",
+      "识别出潜在策略为什么还不保证模拟忠实？"
+     ],
+     "formula": "P(a_t\\mid h_{t-1})=\\sum_{s} P(s\\mid h_{t-1})\\,P_{s}(a_t\\mid h_{t-1})"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-latent-strategy-mixture",
+     "name": "潜在策略混合生成（Latent-Strategy Mixture）",
+     "category": "engineering",
+     "latex": "P(a_t\\mid h_{t-1})=\\sum_{s} P(s\\mid h_{t-1})\\,P_{s}(a_t\\mid h_{t-1})",
+     "symbols": [
+      [
+       "a_t",
+       "第 t 步动作/符号"
+      ],
+      [
+       "h_{t-1}",
+       "此前历史"
+      ],
+      [
+       "s",
+       "潜在策略（隐变量）"
+      ],
+      [
+       "P(s\\mid h_{t-1})",
+       "给定历史下对各潜在策略的后验"
+      ],
+      [
+       "P_{s}(a_t\\mid h_{t-1})",
+       "策略 s 在给定历史下生成动作的概率"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：动机——序列动作往往由潜在策略驱动，而非固定边缘频率。",
+      "第 2 步：引入隐变量 s 表示策略，把生成拆成「先定策略、再由策略出动作」。",
+      "第 3 步：对 s 求和得到可观测动作的条件分布。",
+      "第 4 步：若模型只拟合 P(a_t) 边缘分布，就可能在 P(s|h) 上出错而仍显得逼真。"
+     ],
+     "analogy": "像判断对手出拳：他可能在用「跟进型」或「反制型」策略，你要先猜策略再猜动作；只统计各动作出现次数会漏掉策略切换。",
+     "pitfalls": [
+      "把边缘频率匹配当作学到了策略；两者是不同层次",
+      "忽略「正确识别策略」与「忠实按策略生成」之间的落差",
+      "以为更长上下文一定能帮助识别潜在结构；实验结果相反"
+     ],
+     "code": "import numpy as np\n# 2 个潜在策略，3 种动作；按策略采样序列\ndef sample_seq(T, P_strategy, P_act):\n    s = 0; seq = []\n    for _ in range(T):\n        s = np.random.choice(len(P_strategy), p=P_strategy[s])\n        seq.append(np.random.choice(len(P_act[s]), p=P_act[s]))\n    return np.array(seq)\nseq = sample_seq(20, np.array([[.9,.1],[.2,.8]]), np.array([[.6,.3,.1],[.1,.3,.6]]))\nprint(seq[:10])",
+     "sources": [
+      {
+       "title": "Do LLMs Understand Sequential Structure? A Controlled Study of Inference and Generation",
+       "url": "https://huggingface.co/papers/2610.04977"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "LLM 被越来越多地用作交互式智能体与模拟器",
+     "研究用双人石头剪刀布与单玩家随机 n-gram 续写做受控实验",
+     "框架把分布匹配与条件规则遵循分开",
+     "更长上下文不改善潜在策略识别",
+     "正确识别策略并不保证忠实模拟",
+     "更高阶条件依赖显著降低规则恢复",
+     "表面行为逼真可能掩盖错误的生成机制"
+    ],
+    "uncertain": [
+     "实验用了哪些具体 LLM 及规模，摘要未列，待核实",
+     "「显著退化」的具体量化幅度摘要未给，待核实",
+     "公式为按摘要重建的通用潜变量混合形式，原文度量的精确定义待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "模型能装得像，但未必真懂序列怎么接。"
+     },
+     {
+      "level": "入门",
+      "text": "如果只看输出频率分布，LLM 模拟行为很像；但这篇研究发现，让它识别潜在策略、遵循简单马尔可夫规则、维持高阶条件依赖时，表现明显变差。长上下文也没帮上识别这一步。"
+     },
+     {
+      "level": "进阶",
+      "text": "作者用石头剪刀布和随机 n-gram 续写两种受控任务，把「分布匹配」和「条件规则遵循」分开评估。结论有三点：更长上下文不提升识别；识别对了也不保证模拟忠实；依赖阶数越高，规则恢复越差。也就是说，看起来逼真的行为可能掩盖了错误的生成机制。"
+     },
+     {
+      "level": "专家",
+      "text": "这项工作的价值在于评估方法论：受控任务里潜在策略已知，因此能把整体分布与条件结构解耦度量，比只看生成样本逼真度更严格。它提示 behavior simulation 中「像」与「对」是两回事，长上下文并非万能药。局限在于任务较简单（两人石头剪刀布、单玩家 n-gram），结论能否推广到自然语言长程依赖仍需验证（推断）。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么整体输出频率对了，还不能说模型学到了序列结构？",
+      "a": "因为序列动作由潜在策略与上下文条件化决定；边缘分布相同不蕴含条件分布相同，模型可以在条件结构上完全错位仍显得逼真。"
+     },
+     {
+      "q": "给更长的上下文，为什么识别潜在策略反而没变好？",
+      "a": "实验显示更长上下文不改善识别，说明瓶颈不在信息量，而在模型没有把历史里的条件结构真正用起来（推断）。"
+     },
+     {
+      "q": "如果改成更复杂的序列任务，你会预期什么？",
+      "a": "高阶依赖下规则恢复已显著退化，更复杂任务很可能更难；这说明该缺陷是系统性的，而非单一任务偶然。"
+     }
+    ],
+    "mechanism": "关键设计是「用已知真值的受控任务把两个层次拆开」。行为逼真来自拟合边缘分布，而正确模拟需要拟合条件结构 P(a_t|history)。当模型只对齐前者，表面上统计量很像，但一旦要求按潜在策略或高阶 Markov 规则逐步生成，误差就暴露。把评估拆成识别与生成两步后，能定位失败发生在哪一环，也解释了为何延长上下文无效——问题不在看多少历史，而在如何利用历史。",
+    "boundary": "实验任务简单（两人石头剪刀布、单玩家随机 n-gram），结论未必直接外推到自然语言长程依赖；摘要未说明所用模型规模与提示方式，量化幅度不明；「正确识别不保证忠实模拟」也可能部分源于评测协议差异（推断），需看原文协议细节。",
+    "analogyBoundary": "歌单类比的失效点：DJ 的偏好是静态的、不随上下文条件化，而序列动作每一步都由历史条件化；且模型可能在不同历史下呈现不同策略，类比无法表达这种条件切换与潜变量结构。",
+    "misconceptions": [
+     "以为行为逼真就等于理解了生成机制；两者是不同层次。",
+     "以为上下文越长识别潜在结构越准；实验结论相反。",
+     "把「能说出对手在用什么策略」当成「能忠实模拟该策略」。"
+    ],
+    "ownAnalysis": "这项研究与「LLM 是随机鹦鹉还是真推理」这一争论相连：它给出了一个可操作的判据——把分布匹配与条件规则遵循分离（推断：这与用 next-token 损失无法区分记忆与泛化是同一逻辑）。把长上下文无效作为结论很有冲击力，但也提示可能是指令/提示设计未诱导模型使用历史（推断，待核实）。若模型在石头剪刀布这种极简任务上都无法维持高阶依赖，那么在需要长程策略一致性的 agent 场景中，单纯堆上下文窗口未必解决一致性问题。",
+    "officialNotes": [
+     {
+      "position": "更长上下文不改善识别、正确识别不保证忠实模拟、高阶依赖显著损害规则恢复；表面的行为逼真可能掩盖错误的生成机制。",
+      "source": "https://huggingface.co/papers/2610.04977"
+     }
+    ],
+    "interviewAnswer": "这篇研究用石头剪刀布和随机 n-gram 续写两个受控任务，考察 LLM 能否恢复潜在的序列结构。关键是把「分布匹配」和「条件规则遵循」分开评估。结果有三点：更长的上下文并不提升潜在策略识别；即使识别正确也不代表模拟忠实；依赖阶数越高，规则恢复越差。结论是表面行为逼真可能掩盖错误的生成机制——所以评估 agent 时不能只看输出像不像，要看条件结构对不对。",
+    "studyPath": {
+     "prerequisites": [
+      "马尔可夫链与条件概率",
+      "LLM 评测方法",
+      "next-token 训练目标"
+     ],
+     "nextSteps": [
+      "复现石头剪刀布实验并区分识别与生成两个指标",
+      "了解行为模拟中的一致性评测",
+      "思考如何在更复杂任务上设计受控探针"
+     ]
+    }
+   }
+  },
+  {
+   "id": "2650022bd4635710",
+   "tldr": "混合注意力 LLM 的跨语言对齐在第一个全注意力层附近骤升；多语言蒸馏中从全注意力层开头比标准层序快至多 2.5 倍。",
+   "keyPoints": [
+    "为省 softmax 注意力的二次复杂度，SOTA LLM 混合多种注意力；这是首个研究其对多语言性影响的工作",
+    "可解释性分析显示跨语言表示模式与循环层/全注意力层的排序挂钩，多个模型都在第一个全注意力层附近出现对齐尖峰",
+    "多语言蒸馏中所有替代层序都优于标准层序，学得最多快 2.5 倍"
+   ],
+   "why": "长上下文架构 + 多语言能力是当下 LLM 基础研究热点，层序设计是可借用的工程结论，也涉及循环状态的归纳偏置。",
+   "difficulty": "medium",
+   "tags": [
+    "foundation",
+    "hybrid-attention",
+    "multilinguality",
+    "long-context",
+    "interpretability"
+   ],
+   "entities": [
+    "hybrid attention",
+    "full attention",
+    "recurrent layers",
+    "knowledge distillation"
+   ],
+   "diagram": {
+    "kind": "curve",
+    "title": "跨语言对齐随层序的尖峰",
+    "caption": "跨语言对齐在第一个全注意力层处突然抬升，提示层序安排影响多语言表示。",
+    "svg": "<svg viewBox='0 0 480 200' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='跨语言对齐随层序变化曲线'><line x1='60' y1='30' x2='60' y2='172' stroke='var(--line-1)' stroke-width='1.4'/><line x1='60' y1='172' x2='440' y2='172' stroke='var(--line-1)' stroke-width='1.4'/><polyline points='70,140 115,135 160,60 205,120 250,125 295,115 340,110 385,105' fill='none' stroke='var(--accent)' stroke-width='2'/><circle cx='160' cy='60' r='4' fill='var(--accent)'/><text x='170' y='52' font-size='13' text-anchor='start' fill='currentColor'>首个全注意力层</text><text x='66' y='26' font-size='13' text-anchor='start' fill='currentColor'>跨语言对齐</text><text x='436' y='188' font-size='13' text-anchor='end' fill='currentColor'>层序号</text></svg>",
+    "alt": "折线图：横轴为层序号，纵轴为跨语言对齐，曲线在第一个全注意力层处出现明显尖峰。"
+   },
+   "concepts": [
+    {
+     "name": "Hybrid Attention Layer Ordering（混合注意力层序）",
+     "readable": "长上下文模型常把全注意力层与循环/线性注意力层混排以省算力；这篇研究发现层与层的先后顺序会改变多语言表示的形成。",
+     "analogy": "像做双语文摘：先通读全文（全注意力）再记要点（循环状态），和先记碎片再通读，产出的理解完全不一样。",
+     "analogyBreaksDown": "读文摘的两种顺序只影响个人效率，而这里层序会改变模型内部跨语言对齐的几何；且循环状态有固定容量，不是「记要点」那么无损。",
+     "mechanism": "循环层状态有归纳偏置、容量更紧，放最前面会限制跨语言信息的早期对齐；把全注意力层前置，能让不同语言先建立对齐，再交给循环层压缩。",
+     "visual": "画一条层序列方块带：灰色为循环层、彩色为全注意力层，对比两种排布（循环在前 vs 全注意力在前），标注跨语言对齐尖峰出现的位置。",
+     "prerequisites": [
+      "softmax 注意力的二次复杂度",
+      "线性/循环注意力",
+      "知识蒸馏"
+     ],
+     "selfTest": [
+      "为什么混合注意力会带来层序问题？",
+      "循环层的归纳偏置可能如何影响多语言处理？",
+      "为什么把全注意力层前置可能更快学到跨语言对齐？"
+     ],
+     "formula": "\\mathbf{h}_l=\\begin{cases}\\operatorname{Attn}_{\\mathrm{full}}(\\mathbf{h}_{l-1}), & l\\in\\mathcal{F}\\\\ \\operatorname{Rec}(\\mathbf{h}_{l-1}), & l\\in\\mathcal{R}\\end{cases}"
+    },
+    {
+     "name": "Cross-Lingual Alignment（跨语言对齐）",
+     "readable": "指不同语言的语义相近句子，在模型内部表示上彼此靠近的程度；对齐越高，越说明模型把语言当成同一语义的不同表层。",
+     "analogy": "像两种语言说的同一句谚语在脑中指向同一个画面；两个词长得完全不同，但对应到同一张「意义图」上的点。",
+     "analogyBreaksDown": "谚语的意义对应是人的判断，而这里用表示向量的相似度近似；向量接近不一定等于语义对齐，也可能只是维度上的偶然重合。",
+     "mechanism": "用平行句对在同一层比较表示相似度，得到逐层的对齐曲线；摘要发现曲线在第一个全注意力层附近骤升，说明全注意力是跨语言信息汇合的关键位置。",
+     "visual": "画逐层柱状图：横轴为层序号、纵轴为平均跨语言相似度，第一个全注意力层处柱子明显抬高。",
+     "prerequisites": [
+      "句向量相似度",
+      "表示一致性分析"
+     ],
+     "selfTest": [
+      "跨语言对齐高意味着什么？",
+      "为什么对齐尖峰出现在全注意力层而非循环层？",
+      "对齐高是否等于翻译或推理能力强？"
+     ],
+     "formula": "A_l=\\operatorname{avg}_{(i,j)}\\ \\cos\\!\\left(\\mathbf{h}^{(l)}_i,\\;\\mathbf{h}^{(l)}_j\\right)"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-hybrid-layer-composition",
+     "name": "混合注意力层组合（Hybrid Layer Composition）",
+     "category": "foundation",
+     "latex": "\\mathbf{h}_l=\\begin{cases}\\operatorname{Attn}_{\\mathrm{full}}(\\mathbf{h}_{l-1}), & l\\in\\mathcal{F}\\\\ \\operatorname{Rec}(\\mathbf{h}_{l-1}), & l\\in\\mathcal{R}\\end{cases}",
+     "symbols": [
+      [
+       "\\mathbf{h}_l",
+       "第 l 层的隐藏状态"
+      ],
+      [
+       "\\mathcal{F}",
+       "全注意力层的下标集合"
+      ],
+      [
+       "\\mathcal{R}",
+       "循环/线性注意力层的下标集合"
+      ],
+      [
+       "\\operatorname{Attn}_{\\mathrm{full}}",
+       "标准 softmax 全注意力"
+      ],
+      [
+       "\\operatorname{Rec}",
+       "基于递归状态的替代注意力"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：动机——全注意力是 O(n^2)，长序列不可承受，于是引入更省算力的循环类注意力。",
+      "第 2 步：把两类层混排成一个序列，逐层交替或按比例分配。",
+      "第 3 步：每层按其类型选择执行全注意力或循环算子。",
+      "第 4 步：层序（谁在前）决定信息在哪一层被跨语言汇合，从而影响多语言表示。"
+     ],
+     "analogy": "像一条流水线上交替安排「通看全局」和「只记要点」两个工位；先通看还是先记要点，产出质量不同。",
+     "pitfalls": [
+      "以为只要两类层数量对就行；层序本身会影响多语言对齐",
+      "把循环状态当成无损记忆；它容量有限、有归纳偏置",
+      "忽略全注意力层位置——尖峰出现在第一个全注意力层附近"
+     ],
+     "code": "import torch\nF, R = {3, 7}, {1, 2, 4, 5, 6}   # 全注意力层与循环层下标\ndef layer(h, l, full_fn, rec_fn):\n    return full_fn(h) if l in F else rec_fn(h)\nh = torch.randn(2, 8, 64)\nfor l in range(1, 8):\n    h = layer(h, l, lambda x: x, lambda x: x * 0.99)  # 占位算子\nprint(h.shape)  # torch.Size([2, 8, 64])",
+     "sources": [
+      {
+       "title": "Multilinguality in Hybrid Attention LLMs",
+       "url": "https://huggingface.co/papers/2609.35378"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "许多 SOTA LLM 为缓解 softmax 注意力二次复杂度而混合多种注意力变体",
+     "这是首个研究混合注意力如何影响 LLM 多语言性的工作",
+     "可解释性分析表明混合模型里的跨语言表示模式与循环层/全注意力层的排序相关",
+     "多个模型中都在第一个全注意力层附近观察到跨语言对齐的明显尖峰",
+     "多语言数据蒸馏实验中所有替代层序都优于标准层序，学习最多快 2.5 倍",
+     "作者的理论主张是多语言模型宜以全注意力层开头而非循环层"
+    ],
+    "uncertain": [
+     "公式为按摘要重建的通用形式，原文对齐度量的精确定义待核实",
+     "「2.5X」是相对标准层序的收敛速度倍数，具体训练设定摘要未给",
+     "涉及哪些具体混合注意力模型与语言，摘要未逐项列出"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "长上下文模型里，注意力层的先后顺序会改变它的多语言能力。"
+     },
+     {
+      "level": "入门",
+      "text": "很多长上下文 LLM 把全注意力与更省的循环类注意力混着用。这篇研究发现层的排布会影响多语言：跨语言对齐在第一个全注意力层附近突然变强，而把全注意力层放到最前面训练更快。"
+     },
+     {
+      "level": "进阶",
+      "text": "作者用可解释性方法逐层量跨语言对齐，发现模式与循环层/全注意力层的顺序强相关，且在首个全注意力层处出现尖峰。据此他们质疑传统层序，并在多语言蒸馏里试了多种替代排布：所有替代都优于标准，学习最多快 2.5 倍。由此提出多语言模型宜以全注意力层开头。"
+     },
+     {
+      "level": "专家",
+      "text": "机制上：循环层状态是压缩的、带归纳偏置，压在最前会限制跨语言信息的早期汇合；全注意力层前置让不同语言先在全局注意里对齐，再由循环层压缩。但「快 2.5 倍」是蒸馏设定下的结论，能否迁移到从头训练与更多语言仍待验证（推断）。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么混合注意力会引出「层序」这个新变量？",
+      "a": "全注意力能全局汇合信息，循环层是压缩状态；谁先谁后会改变信息在何时被对齐，组合同样数量却有不同效果。"
+     },
+     {
+      "q": "既然循环层更省算力，为什么不全部放在前面？",
+      "a": "循环状态容量有限且带归纳偏置，前置会限制跨语言信息的早期对齐；实验显示全注意力层前置反而学得更快。"
+     },
+     {
+      "q": "跨语言对齐出现尖峰意味着什么？",
+      "a": "说明第一个全注意力层是多语言信息汇合的关键位置，模型在这一层把不同语言的表示拉到一起。"
+     }
+    ],
+    "mechanism": "关键设计是把「全注意力」与「循环注意力」当成角色不同的两种算子，而非可互换的省算力替身。全注意力能全局汇合、建立跨语言对齐，循环层把历史压进固定状态；层序因此决定跨语言信息汇合的时机。全注意力层前置时各语言先对齐再压缩，蒸馏收敛更快，说明循环状态的归纳偏置会实质改变语言处理。",
+    "boundary": "结论主要来自可解释性观察与多语言蒸馏实验，尚未在从头训练的大规模多语言预训练上验证；「所有替代层序都优于标准」是在特定蒸馏设定下，具体语言与低资源程度影响摘要未展开，待核实。",
+    "analogyBoundary": "「先通读再记要点」的类比失效处：读文摘的顺序只影响人的效率，不改变内容本身；而这里层序会改变模型内部的跨语言表示几何，且循环状态是有损压缩，不是无损记要点。",
+    "misconceptions": [
+     "以为层序无关紧要，只要两类层数量对即可。",
+     "把「快 2.5 倍」当成通用加速倍数；它来自特定多语言蒸馏实验。"
+    ],
+    "ownAnalysis": "把层序当成影响多语言能力的设计变量，与「归纳偏置决定模型学到什么」一致（推断）。尖峰出现在第一个全注意力层，暗示跨语言对齐需要全局信息交换（推断）。可疑处是「快 2.5 倍」是否只反映学生模型适应难度而非能力提升，需看控制变量（待核实）。",
+    "officialNotes": [
+     {
+      "position": "跨语言对齐在第一个全注意力层附近出现尖峰，且与循环层/全注意力层的排序相关；所有替代层序在多语言蒸馏中都优于标准，最多快 2.5 倍，作者据此主张多语言模型宜以全注意力层开头。",
+      "source": "https://huggingface.co/papers/2609.35378"
+     }
+    ],
+    "interviewAnswer": "这篇工作研究混合注意力对 LLM 多语言性的影响。混合注意力本是缓解 softmax 二次复杂度，却引入了层序变量。作者逐层分析跨语言对齐，发现对齐在第一个全注意力层附近出现明显尖峰，且与层序相关；多语言蒸馏中所有替代层序都优于标准，最多快 2.5 倍，据此提出多语言模型宜以全注意力层开头。",
+    "studyPath": {
+     "prerequisites": [
+      "softmax 注意力复杂度",
+      "线性/循环注意力（如 Mamba 类）",
+      "知识蒸馏"
+     ],
+     "nextSteps": [
+      "复现逐层跨语言对齐的度量",
+      "对比不同层序在小规模多语言蒸馏上的收敛",
+      "阅读长上下文混合架构的工程取舍"
+     ]
+    }
+   }
+  },
+  {
+   "id": "a252f980703a2733",
+   "tldr": "用执行对齐的渐进噪声，让异步重规划的生成式机器人策略跨动作块从执行一致的生成状态续接，而非从独立噪声重启。",
+   "keyPoints": [
+    "连续异步重规划对实时生成式机器人策略是必需的",
+    "独立随机初始化会导致动作块间的模式切换与不连续",
+    "EAPN 在块间与块内两个层级都引入结构化随机性",
+    "跨重规划传播共享噪声轨迹并与其实际执行位移对齐",
+    "新块结合已提交动作上下文，从一致生成状态续接"
+   ],
+   "why": "生成式策略 + 异步重规划是具身与世界模型方向的热点；「如何在重规划间保持生成一致」是扩散策略类岗位的常见追问。",
+   "difficulty": "hard",
+   "tags": [
+    "multimodal",
+    "robot-policy",
+    "diffusion-policy",
+    "replanning",
+    "embodied"
+   ],
+   "entities": [
+    "EAPN",
+    "D3IL",
+    "Kinetix",
+    "LIBERO"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "EAPN 的跨块噪声对齐",
+    "caption": "共享噪声轨迹跟着实际执行位移走，让新动作块从一致的生成状态继续，而不是重新掷骰子。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='EAPN 四步流程'><rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>重规划步 t</text><text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>共享噪声轨迹</text><line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,70 236,62 244,62' fill='var(--line-1)'/><rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>与实际执行位移对齐</text><text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>块间相关</text><line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,124 236,116 244,116' fill='var(--line-1)'/><rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>块内时间相关建模</text><text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>动作时间轴</text><line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,178 236,170 244,170' fill='var(--line-1)'/><rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>条件生成新块</text><text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>从一致状态续接</text></svg>",
+    "alt": "四步流程：重规划步 t 携带共享噪声轨迹→与实际执行位移对齐形成块间相关→块内建模动作时间相关→结合已提交上下文条件生成新块。"
+   },
+   "concepts": [
+    {
+     "name": "Execution-Aligned Inter-Chunk Correlation（执行对齐的块间相关）",
+     "readable": "重规划时不让噪声重新随机，而是让噪声轨迹跟着机器人实际走出的位移一起演化，使相邻动作块的生成起点相互关联。",
+     "analogy": "像接力赛交棒：下一棒从上一棒实际跑到的位置接，而不是回到起点重新起跑，否则节奏全乱。",
+     "analogyBreaksDown": "交棒是确定的物理位置，这里「对齐」的是随机噪声轨迹与位移的耦合，是概率性的；位移可能因延迟滞后，对齐本身有误差。",
+     "mechanism": "跨重规划传播同一条噪声轨迹，并用实际执行位移校正它，形成块间相关；再把这段随机历史与已提交动作作为条件，使新块落在与执行一致的生成状态上。",
+     "visual": "画两条随时间演化的折线：一条是真实执行位移，一条是噪声轨迹，用同相位表示对齐；对比独立采样的噪声为随机抖动。",
+     "prerequisites": [
+      "扩散/流匹配策略",
+      "异步重规划",
+      "随机微分方程采样"
+     ],
+     "selfTest": [
+      "为什么独立随机初始化会导致模式切换？",
+      "「执行对齐」对齐的到底是什么量？",
+      "块间相关如何影响生成的一致性？"
+     ],
+     "formula": "\\epsilon_{t+1}=\\rho\\,\\epsilon_{t}+(1-\\rho)\\,\\Psi(\\Delta \\mathbf{a}_{t})"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-eapn-interchunk-noise-alignment",
+     "name": "执行对齐的块间噪声传播（Execution-Aligned Noise Propagation）",
+     "category": "multimodal",
+     "latex": "\\epsilon_{t+1}=\\rho\\,\\epsilon_{t}+(1-\\rho)\\,\\Psi(\\Delta \\mathbf{a}_{t})",
+     "symbols": [
+      [
+       "\\epsilon_{t}",
+       "重规划步 t 的共享噪声轨迹"
+      ],
+      [
+       "\\epsilon_{t+1}",
+       "下一步的噪声轨迹"
+      ],
+      [
+       "\\rho",
+       "块间相关强度（0 到 1）"
+      ],
+      [
+       "\\Delta \\mathbf{a}_{t}",
+       "实际执行位移"
+      ],
+      [
+       "\\Psi",
+       "把位移映射到噪声空间的对齐函数"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：动机——独立重采样噪声会让相邻动作块的生成起点不相关，导致模式切换。",
+      "第 2 步：让下一步噪声继承上一步的噪声轨迹，形成跨块记忆。",
+      "第 3 步：用实际执行位移 \\Delta a_t 校正该轨迹，使噪声与实际运动对齐。",
+      "第 4 步：把对齐后的噪声作为条件，生成与执行一致的新动作块。"
+     ],
+     "analogy": "像给噪声装了个「惯性」：它不会每块重掷，而是顺着机器人真正走过的路延续下去。",
+     "pitfalls": [
+      "把 \\rho 设为 0 就退化为独立采样，失去块间相关",
+      "误以为对齐的是时间戳；对齐的是执行位移",
+      "忽略推理延迟会让位移与噪声错位，需要持续校正"
+     ],
+     "code": "import torch\nrho = 0.8\ndef align_noise(eps, delta_a, Psi):\n    return rho * eps + (1 - rho) * Psi(delta_a)\neps = torch.randn(16, 7)          # 上一步噪声轨迹\nPsi = torch.nn.Linear(7, 7)       # 位移到噪声空间\ndelta_a = torch.randn(16, 7)      # 实际执行位移\nprint(align_noise(eps, delta_a, Psi).shape)  # torch.Size([16, 7])",
+     "sources": [
+      {
+       "title": "Execution-Aligned Progressive Noise for Consistent Asynchronous Replanning in Generative Robot Policies",
+       "url": "https://huggingface.co/papers/2610.06090"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "连续异步重规划对实时生成式机器人策略是必需的",
+     "独立的随机初始化会造成跨动作块的模式切换与不连续续接",
+     "EAPN 在块间与块内两个层级引入结构化随机性",
+     "跨重规划传播共享噪声轨迹并与其实际执行位移对齐，形成执行对齐的块间相关",
+     "新块结合已提交动作上下文条件生成，从执行一致的生成状态续接",
+     "在 D3IL 上改善多模态行为一致性，Kinetix 平均成功率 88.59%",
+     "LIBERO 在长推理延迟下仍稳健",
+     "真机 Object Storage 成功率 90.0%，双臂 Cloth Folding 96.7%"
+    ],
+    "uncertain": [
+     "两条公式为按摘要重建的通用形式（线性对齐与 AR(1)），原文精确参数化待核实",
+     "D3IL 上「多模态行为一致性」的具体指标与数值摘要未给",
+     "推理延迟的具体设置与 LIBERO 的量化结果摘要未逐项列出"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "重规划时别让噪声重新掷骰子，让它跟着机器人走过的路延续。"
+     },
+     {
+      "level": "入门",
+      "text": "生成式机器人策略要边执行边重规划。如果每个新动作块都从独立随机噪声开始，块间就会跳变。EAPN 让噪声在块间共享并跟着实际执行位移走，块内也让相邻时刻的噪声相关，于是新块从一致的生成状态续接。"
+     },
+     {
+      "level": "进阶",
+      "text": "EAPN 分两个层级加结构化随机性：块间传播一条共享噪声轨迹，并用实际执行位移去校正它，形成执行对齐的块间相关；块内沿动作时间轴建模时间相关。再把这段随机历史与已提交的动作上下文一起作为条件，让新块接着执行状态生成，而不是从独立噪声重启。评测覆盖 D3IL、Kinetix、LIBERO 与真机。"
+     },
+     {
+      "level": "专家",
+      "text": "与同步重规划相比，异步重规划会在上一块未执行完时就开始下一块规划，独立性假设最容易失效。EAPN 的思路是把「随机性」也当成需要跨块连续的状态：块间用执行位移对齐的噪声轨迹、块内用时间相关噪声，共同构造与执行一致的生成初值。这带来多模态行为一致性与长延迟稳健性，但它的对齐依赖对位移的准确估计，异步延迟过大时对齐误差会累积（推断）。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "如果不做块间噪声对齐会怎样？",
+      "a": "每个新块从独立随机初值生成，可能导致模式切换与续接不连续，机器人动作在接缝处跳变。"
+     },
+     {
+      "q": "为什么要在块内也加时间相关噪声？",
+      "a": "块内各步噪声若独立，动作在时间上会抖动、缺一致性；AR(1) 让相邻步噪声相关，生成轨迹更平滑。"
+     },
+     {
+      "q": "为什么要用实际执行位移而不是规划中的位移？",
+      "a": "因为异步重规划下执行会滞后于规划，只有用实际执行的位移对齐噪声轨迹，生成状态才真正与机器人当前位置一致。"
+     }
+    ],
+    "mechanism": "核心是把噪声从「每块独立的随机数」升级为「跨块连续、且与实际执行挂钩的随机状态」。生成式策略的动作由噪声驱动，初值不同就落到不同模态；异步下上一块还没执行完，若不携带历史，下一块的初值与执行状态脱节，接缝处就出现模式切换。块间用位移对齐的共享轨迹、块内用时间相关噪声，共同让生成沿执行轨迹平滑延续。",
+    "boundary": "方法依赖对实际执行位移的估计与对齐函数 Psi 的设计，位移噪声大或延迟过长时对齐误差会累积（推断）；摘要主要在抓取/操作类任务（D3IL、Kinetix、LIBERO 与真机）验证，能否推广到高动态或强接触任务待核实；超参数 rho、alpha 的敏感性摘要未给。",
+    "analogyBoundary": "「接力交棒」和「开车重规划」的类比失效处：交棒位置与方向盘角度都是确定可测的量，而这里要对齐的是随机噪声轨迹与位移的耦合，是概率性的；且噪声没有物理惯性，全靠公式人为引入相关性。",
+    "misconceptions": [
+     "以为只是把上一块的动作直接拼过来；关键是传播并对齐噪声轨迹。",
+     "以为块间和块内相关是一回事；两者是不同层级的结构化随机性。",
+     "把异步重规划等同于同步重规划；异步下独立性假设更易失效。"
+    ],
+    "ownAnalysis": "把噪声一致性显式建模，与扩散策略里 action chunking 的接缝问题直接相关：以往多用重叠动作拼接或时序集成缓解，而 EAPN 从生成初值层面入手（推断：比后处理拼接更本质）。用实际执行位移而非计划位移对齐是关键工程洞察（推断）。可疑处是累积误差：若某步估计错，可能沿递归传播，摘要未提纠错机制（待核实）。",
+    "officialNotes": [
+     {
+      "position": "独立随机初始化会引起跨动作块的模式切换与不一致续接；EAPN 在块间与块内引入结构化随机性，使新块从执行一致的生成状态续接。",
+      "source": "https://huggingface.co/papers/2610.06090"
+     }
+    ],
+    "interviewAnswer": "生成式机器人策略要异步重规划，但每个新动作块若从独立随机噪声开始，块间就会模式切换、续接不连续。EAPN 在块间传播一条共享噪声轨迹并用实际执行位移对齐，形成执行对齐的块间相关；块内用时间相关噪声让动作平滑。再把这段随机历史和已提交动作一起作为条件，让新块从与执行一致的生成状态续接。",
+    "studyPath": {
+     "prerequisites": [
+      "扩散/流匹配策略",
+      "action chunking",
+      "异步重规划"
+     ],
+     "nextSteps": [
+      "复现块间与块内噪声相关性的构造",
+      "对比重叠拼接等接缝处理方案",
+      "在带延迟的仿真环境中测试一致性"
+     ]
+    }
+   }
+  }
+ ],
+ "skipped": []
+}

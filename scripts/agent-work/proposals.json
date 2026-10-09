@@ -1,0 +1,228 @@
+{
+ "channelHealth": [
+  {
+   "id": "openreview",
+   "status": "blocked",
+   "evidence": "采集器连续 5 轮 blocked；本轮另行实测 https://api2.openreview.net/notes 与 /notes?limit=1 都返回跨域重定向到 openreview.net，匿名请求拿不到数据",
+   "suggestedAction": "不要再匿名轮询 api2；改为人工导入（inbox）或只依赖 arXiv / S2 / OpenAlex 的会议论文镜像",
+   "escalate": true,
+   "nameZh": "OpenReview",
+   "streak": 5,
+   "lastError": null
+  },
+  {
+   "id": "machineheart",
+   "status": "blocked",
+   "evidence": "连续 5 轮 blocked；此前已查明该站 RSS 是伪造的（FUTURE.md 记录），替代源雷锋网 leiphone 本轮产出 21 条",
+   "suggestedAction": "把 leiphone 正式标为中文新闻主源，machineheart 降级或从 CHANNEL_SPECS 删除",
+   "escalate": true,
+   "nameZh": "机器之心",
+   "streak": 5,
+   "lastError": null
+  },
+  {
+   "id": "jobs_alibaba",
+   "status": "blocked",
+   "evidence": "连续 5 轮 blocked，未返回错误文本（典型 WAF 拦脚本）",
+   "suggestedAction": "招聘站点一律转人工导入：由你登录后导出岗位到 web/data/inbox/，脚本侧请求数保持 0",
+   "escalate": true,
+   "nameZh": "阿里招聘",
+   "streak": 5,
+   "lastError": null
+  },
+  {
+   "id": "jobs_bytedance",
+   "status": "blocked",
+   "evidence": "连续 5 轮 blocked（WAF）；同渠道的 inbox 占位条目 jobs.bytedance.com/xxx 也无法核实",
+   "suggestedAction": "转人工导入，并给 inbox 模板加 URL 校验",
+   "escalate": true,
+   "nameZh": "字节招聘",
+   "streak": 5,
+   "lastError": null
+  },
+  {
+   "id": "jobs_zhipu",
+   "status": "blocked",
+   "evidence": "连续 5 轮 blocked（WAF）",
+   "suggestedAction": "与其余招聘渠道一致：转人工导入或寻找官方公众号/招聘页替代",
+   "escalate": true,
+   "nameZh": "智谱招聘",
+   "streak": 5,
+   "lastError": null
+  },
+  {
+   "id": "nowcoder",
+   "status": "degraded",
+   "evidence": "本轮进入深读队列的 12 条牛客条目中，5 条是纯情绪帖/求职吐槽（9月秋招个人总结、快手 Feed 二面、字节 tiktok 一面、中行面经汇总、金9结束），且摘要普遍在 167 字处被截断",
+   "suggestedAction": "情绪帖应在 plan_deep_read 的质量闸门直接判 skim；同时抬高牛客条目进入深度队列的门槛（要求摘要含具体技术名词）",
+   "escalate": false
+  },
+  {
+   "id": "inbox",
+   "status": "degraded",
+   "evidence": "2 条 manual 条目的 URL 是占位符（nowcoder.com/discuss/xxx、jobs.bytedance.com/xxx），摘要分别是站点模板文字与一句模板介绍，无法核实",
+   "suggestedAction": "inbox 导入器拒绝 /xxx、example.com 这类占位 URL；缺 URL 的条目只进待办不进卡片库",
+   "escalate": true
+  }
+ ],
+ "taxonomyProposals": [
+  {
+   "action": "reweight",
+   "category": "multimodal",
+   "reason": "multimodal 关键词偏宽且按子串命中，本轮深读队列 96 条里有 5 条实际是教育学/法学/天体物理/无线感知论文（见 scripts/agent-work/skips.json）。建议收窄到明确的视觉-语言术语，并给 multimodal 也加 category_mismatch 闸门。",
+   "proposedKeywords": [
+    "vision-language",
+    "image-text",
+    "vlm",
+    "mllm",
+    "cross-modal",
+    "visual instruction"
+   ]
+  },
+  {
+   "action": "reweight",
+   "category": "rl",
+   "reason": "小写子串命中会造成严重误分类：法学白皮书因 Opportunities 里的 'ppo' 进了 rl 配额，且该条在 2026-10-02 的队列里 depthScore 仍排第一。建议关键词改为词边界匹配或要求大写缩写。",
+   "proposedKeywords": [
+    "rlvr",
+    "grpo",
+    "policy optimization",
+    "reward hacking",
+    "goal-conditioned"
+   ]
+  },
+  {
+   "action": "reweight",
+   "category": "foundation",
+   "reason": "config 已对 foundation 设 keywordRemove: theory/architecture/基础，但存量语料没有重算，所以比亚迪闪充站产业新闻、精神病学综述仍留在 foundation。关键词规则改动后需要对全量语料 --rescore。",
+   "proposedKeywords": [
+    "attention",
+    "long-context",
+    "kv-cache",
+    "positional encoding",
+    "scaling law"
+   ]
+  },
+  {
+   "action": "add",
+   "category": "evaluation",
+   "reason": "本轮至少有 4 条高相关条目本质是「评测/基准」：CheatBench（奖励作弊度量）、WorldAuditBench（交互 3D 世界审计）、Pattern Over Pixels（多模态代码生成的模式补全偏差）、Trustworthy AI Reviewers（评审鲁棒性）。它们现在被塞进 paper / foundation，评测是后训练与 Agent 的独立能力维度，建议单独成类。",
+   "proposedKeywords": [
+    "benchmark",
+    "evaluation",
+    "reward hacking",
+    "leaderboard",
+    "robustness",
+    "audit"
+   ]
+  }
+ ],
+ "keywordProposals": [
+  {
+   "category": "multimodal",
+   "add": [
+    "vision-language",
+    "image-text",
+    "omni-modal",
+    "video-llm"
+   ],
+   "remove": [
+    "multimodal"
+   ],
+   "reason": "纯英文词 multimodal 会命中「多模态生理信号」「多模态天体观测」等非视觉-语言论文；用 vision-language / image-text 这类更具体的词替代，可减少方向外条目占用配额。"
+  },
+  {
+   "category": "rl",
+   "add": [
+    "rlvr",
+    "reward hacking",
+    "group relative"
+   ],
+   "remove": [
+    "ppo"
+   ],
+   "reason": "近 7 日 rl 队列共 24 个候选，第一名是法学白皮书（'ppo' 子串命中 Opportunities）。删掉小写 ppo 或改成大写/词边界后，rl 的候选会更纯。"
+  },
+  {
+   "category": "generative",
+   "add": [
+    "flow matching",
+    "rectified flow"
+   ],
+   "remove": [
+    "dit"
+   ],
+   "reason": "'dit' 子串命中 audit，2026-10-02 仍有一条喀麦隆听力障碍学生英语评估论文被归到 generative。config 已 keywordRemove: dit，但需要 --rescore 才能清掉存量。"
+  },
+  {
+   "category": "job",
+   "add": [
+    "算法实习生",
+    "多模态算法",
+    "强化学习算法"
+   ],
+   "remove": [
+    "intern"
+   ],
+   "reason": "'intern' 命中 International / internal：VR 系统测试论文与 Sam Altman 联合国发言都进过 job 类（2026-10-02 队列仍包含这两条）。保留中文招聘词即可覆盖国内岗位。"
+  },
+  {
+   "category": "coding",
+   "add": [
+    "手撕代码",
+    "八股",
+    "算法题"
+   ],
+   "remove": [],
+   "reason": "coding 队列 10 条全部来自牛客面经，摘要普遍被截断在 167 字；关键词没有明显问题，问题在摘要长度与情绪帖过滤，建议在采集层对牛客正文抓取失败时标注 qualitySignals。"
+  }
+ ],
+ "newChannelProposals": [
+  {
+   "id": "deepmind_blog_rss",
+   "why": "官方一手口径，覆盖世界模型（Genie/Project Genie、SIMA 2）、多模态（Gemini Omni、Gemma 4）与机器人（Gemini Robotics ER 2），正好补上当前只有 OpenAI/HF 官方博客的缺口；本轮实测 HTTP 200、RSS 结构标准、无需认证。",
+   "verifiedUrl": "https://deepmind.google/blog/rss.xml",
+   "authRequired": false
+  },
+  {
+   "id": "qwen_blog_rss",
+   "why": "国产开源模型的官方技术博客，含 GSPO（GRPO 的稳定性改进）、Qwen3-Coder、Qwen-Image、Qwen2.5-Omni 等，对后训练/多模态方向的一手细节比二手新闻更准；本轮实测 HTTP 200，RSS 无需认证。注意更新频率低（最新一篇 2025-09），适合按周轮询。",
+   "verifiedUrl": "https://qwenlm.github.io/blog/index.xml",
+   "authRequired": false
+  }
+ ],
+ "noiseReport": {
+  "overBroadKeywords": [
+   "ppo",
+   "dit",
+   "intern",
+   "基础",
+   "theory",
+   "architecture",
+   "multimodal"
+  ],
+  "underCoveredCategories": [
+   "exam",
+   "trend",
+   "course",
+   "foundation"
+  ],
+  "misclassifiedInQueue": 14,
+  "careerVentInQueue": 6,
+  "placeholderUrls": [
+   "https://nowcoder.com/discuss/xxx",
+   "https://jobs.bytedance.com/xxx"
+  ],
+  "keptInCorpusButNotDeepRead": 25,
+  "evidenceFile": "scripts/agent-work/skips.json"
+ },
+ "humanReviewQueue": [
+  "方向类分类器把非 AI 方向论文算进配额：2026-10-02 的 queue 96 条里有 14 条是法学/教育学/精神病学/天体物理/控制理论/无线感知论文，另有 6 条求职吐槽与 2 条占位 URL 条目（逐条证据见 scripts/agent-work/skips.json）。请确认处置：(a) 修关键词后对全量语料 python scripts/collect.py --rescore，(b) 给 multimodal/foundation/rl 也加 category_mismatch 闸门。",
+  "inbox 里有 2 条占位数据：nowcoder.com/discuss/xxx（摘要为牛客站点模板文字）与 jobs.bytedance.com/xxx。请人工导入真实内容，或从卡片库删除；在此之前它们不会被深度解析。",
+  "登录类渠道（小红书 / BOSS直聘 / 拉勾 / 实习僧）本轮网络请求数仍为 0，也没有真实数据。需要你按 README 第五节导出后放进 web/data/inbox/，否则「面经/岗位」这条线索只有牛客的公开发帖。",
+  "10 个渠道连续 5 轮 blocked：jobs_alibaba、jobs_bytedance、jobs_minimax、jobs_moonshot、jobs_shailab、jobs_zhipu、machineheart、openreview、reddit、rsshub。请确认是永久下线、需要换源，还是转人工导入；本轮 agent 已把 openreview 与 machineheart 的可核实证据补齐。",
+  "本轮新增 5 个岗位（腾讯微信电商搜索 Agent、WeGame AI 研究、智能体平台、游戏AI强化学习、微信语音识别）的 pay / duration / conversion 全部为 null：腾讯招聘页不公开这些数字，若你从内推或 HR 处拿到口径，请补进 web/data/jobs.json（这几个字段留 null 会被界面显示为「待核实」，不是缺失）。",
+  "taxonomyProposals 建议新增 evaluation 分类、并把 multimodal/rl/foundation 的关键词收窄；分类增删属于必须人工批准的变更，请确认是否执行。",
+  "本文档中所有 Agent 提案都只是建议，未自动生效；采集侧的自动生效范围仍只有「单个关键词权重 ≤10% 的微调」。"
+ ]
+}

@@ -1,0 +1,720 @@
+{
+  "generatedAt": "2026-10-09T18:10:50+08:00",
+  "corpus": 1161,
+  "enriched": 491,
+  "l0": {
+    "duplicateIds": 0,
+    "duplicateUrls": 0
+  },
+  "l1_repeatedEntities": [
+    {
+      "token": "数组",
+      "items": 23,
+      "categories": {
+        "coding": 23
+      },
+      "sampleTitles": [
+        "搜索旋转排序数组（LeetCode 33）· 大厂高频手撕题",
+        "寻找两个正序数组的中位数（LeetCode 4）· 大厂高频手撕题",
+        "数组理论基础 · 题解"
+      ]
+    },
+    {
+      "token": "工程",
+      "items": 23,
+      "categories": {
+        "job": 20,
+        "posttraining": 1,
+        "agent": 1
+      },
+      "sampleTitles": [
+        "金融大模型-算法工程师",
+        "cookiespiggy/agentic-rl - Agentic RL 中文零基础教程（33 章）：从概念到 GRPO 实战，含 TRL 最小可跑示例；26–",
+        "bojieli/ai-agent-book - 《深入理解 AI Agent：设计原理与工程实践》（李博杰 著）开源主仓库：全书正文、编译版 PDF 与按章配套"
+      ]
+    },
+    {
+      "token": "试题",
+      "items": 22,
+      "categories": {
+        "coding": 11,
+        "exam": 11
+      },
+      "sampleTitles": [
+        "面试题 02.07. 链表相交 · 题解",
+        "小鹏汽车嵌入式开发一面面经 · 面试题",
+        "面试总结 · 面试题"
+      ]
+    },
+    {
+      "token": "如何",
+      "items": 21,
+      "categories": {
+        "exam": 21
+      },
+      "sampleTitles": [
+        "HTTPS工作原理是什么？它是如何实现数据加密的？ · 八股",
+        "什么是银行家算法，它是如何解决死锁问题的？ · 八股",
+        "什么是死锁？如何避免死锁？ · 八股"
+      ]
+    },
+    {
+      "token": "程师",
+      "items": 21,
+      "categories": {
+        "job": 20,
+        "coding": 1
+      },
+      "sampleTitles": [
+        "金融大模型-算法工程师",
+        "【面经】字节/AI 应用工程师 一面挂经……",
+        "WorkBuddy-Agent Harness 算法工程师"
+      ]
+    },
+    {
+      "token": "法工",
+      "items": 20,
+      "categories": {
+        "job": 20
+      },
+      "sampleTitles": [
+        "金融大模型-算法工程师",
+        "WorkBuddy-Agent Harness 算法工程师",
+        "微信小店-高级风控算法工程师"
+      ]
+    },
+    {
+      "token": "知识",
+      "items": 19,
+      "categories": {
+        "coding": 17,
+        "exam": 2
+      },
+      "sampleTitles": [
+        "labuladong/fucking-algorithm · 算法题解/知识库",
+        "doocs/leetcode · 算法题解/知识库",
+        "OI-wiki/OI-wiki · 算法题解/知识库"
+      ]
+    },
+    {
+      "token": "法题",
+      "items": 18,
+      "categories": {
+        "coding": 18
+      },
+      "sampleTitles": [
+        "labuladong/fucking-algorithm · 算法题解/知识库",
+        "doocs/leetcode · 算法题解/知识库",
+        "OI-wiki/OI-wiki · 算法题解/知识库"
+      ]
+    },
+    {
+      "token": "搜索",
+      "items": 18,
+      "categories": {
+        "coding": 14,
+        "agent": 2,
+        "posttraining": 1
+      },
+      "sampleTitles": [
+        "搜索旋转排序数组（LeetCode 33）· 大厂高频手撕题",
+        "删除二叉搜索树中的节点（LeetCode 450）· 大厂高频手撕题",
+        "450.删除二叉搜索树中的节点 · 题解"
+      ]
+    },
+    {
+      "token": "识库",
+      "items": 17,
+      "categories": {
+        "coding": 17
+      },
+      "sampleTitles": [
+        "labuladong/fucking-algorithm · 算法题解/知识库",
+        "doocs/leetcode · 算法题解/知识库",
+        "OI-wiki/OI-wiki · 算法题解/知识库"
+      ]
+    },
+    {
+      "token": "基础",
+      "items": 17,
+      "categories": {
+        "coding": 11,
+        "exam": 3,
+        "agent": 1
+      },
+      "sampleTitles": [
+        "哈希表理论基础 · 题解",
+        "二叉树理论基础篇 · 题解",
+        "数组理论基础 · 题解"
+      ]
+    },
+    {
+      "token": "最大",
+      "items": 17,
+      "categories": {
+        "coding": 17
+      },
+      "sampleTitles": [
+        "84.柱状图中最大的矩形 · 题解",
+        "104.二叉树的最大深度 · 题解",
+        "104.建造最大岛屿 · 题解"
+      ]
+    },
+    {
+      "token": "怎么",
+      "items": 16,
+      "categories": {
+        "exam": 8,
+        "agent": 5,
+        "posttraining": 1
+      },
+      "sampleTitles": [
+        "面试官怎么问微调？应用开发者该怎么答 · 大模型笔记",
+        "AI Agent 学习路线：程序员怎么从零学 Agent 开发，该按什么顺序学 · 大模型笔记",
+        "Multi-Head Attention详解：为什么一个头不够，多头怎么拆分和拼接 · 大模型笔记"
+      ]
+    },
+    {
+      "token": "树的",
+      "items": 16,
+      "categories": {
+        "coding": 16
+      },
+      "sampleTitles": [
+        "二叉树的最近公共祖先（LeetCode 236）· 大厂高频手撕题",
+        "236. 二叉树的最近公共祖先 · 题解",
+        "二叉树的统一迭代法 · 题解"
+      ]
+    },
+    {
+      "token": "为什",
+      "items": 16,
+      "categories": {
+        "exam": 7,
+        "foundation": 4,
+        "agent": 2
+      },
+      "sampleTitles": [
+        "图论为什么统一使用ACM模式 · 题解",
+        "Multi-Head Attention详解：为什么一个头不够，多头怎么拆分和拼接 · 大模型笔记",
+        "Function Calling详解：大模型怎么调用工具，为什么是Agent的基础 · 大模型笔记"
+      ]
+    },
+    {
+      "token": "连接",
+      "items": 16,
+      "categories": {
+        "exam": 10,
+        "coding": 5,
+        "foundation": 1
+      },
+      "sampleTitles": [
+        "685.冗余连接II · 题解",
+        "109. 冗余连接II · 题解",
+        "684.冗余连接 · 题解"
+      ]
+    },
+    {
+      "token": "面经",
+      "items": 16,
+      "categories": {
+        "coding": 11,
+        "exam": 4,
+        "job": 1
+      },
+      "sampleTitles": [
+        "小鹏汽车嵌入式开发一面面经 · 面试题",
+        "26.1.22海康威视面经 · 面试题",
+        "字节跳动一面 Java 面经 · 面试题"
+      ]
+    },
+    {
+      "token": "的最",
+      "items": 15,
+      "categories": {
+        "coding": 15
+      },
+      "sampleTitles": [
+        "无重复字符的最长子串（LeetCode 3）· 大厂高频手撕题",
+        "二叉树的最近公共祖先（LeetCode 236）· 大厂高频手撕题",
+        "236. 二叉树的最近公共祖先 · 题解"
+      ]
+    },
+    {
+      "token": "中的",
+      "items": 14,
+      "categories": {
+        "coding": 12,
+        "exam": 2
+      },
+      "sampleTitles": [
+        "删除二叉搜索树中的节点（LeetCode 450）· 大厂高频手撕题",
+        "450.删除二叉搜索树中的节点 · 题解",
+        "501.二叉搜索树中的众数 · 题解"
+      ]
+    },
+    {
+      "token": "课程",
+      "items": 13,
+      "categories": {
+        "coding": 12,
+        "course": 1
+      },
+      "sampleTitles": [
+        "各个大厂笔试真题（2026） | 腾讯、阿里、字节、美团、华为、京东、小红书 · 课程笔记",
+        "2026大厂笔试真题：200+算法题与在线判题 · 课程笔记",
+        "207. 课程表：拓扑排序（BFS） · 题解"
+      ]
+    },
+    {
+      "token": "有哪",
+      "items": 13,
+      "categories": {
+        "exam": 13
+      },
+      "sampleTitles": [
+        "HTTP请求中的头部字段有哪些常见的类型？它们各自的作用是什么？ · 八股",
+        "HTTP请求方式有哪些？ · 八股",
+        "HTTPS和HTTP有哪些区别？ · 八股"
+      ]
+    },
+    {
+      "token": "索树",
+      "items": 12,
+      "categories": {
+        "coding": 12
+      },
+      "sampleTitles": [
+        "删除二叉搜索树中的节点（LeetCode 450）· 大厂高频手撕题",
+        "450.删除二叉搜索树中的节点 · 题解",
+        "235. 二叉搜索树的最近公共祖先 · 题解"
+      ]
+    },
+    {
+      "token": "叉搜",
+      "items": 12,
+      "categories": {
+        "coding": 12
+      },
+      "sampleTitles": [
+        "删除二叉搜索树中的节点（LeetCode 450）· 大厂高频手撕题",
+        "450.删除二叉搜索树中的节点 · 题解",
+        "235. 二叉搜索树的最近公共祖先 · 题解"
+      ]
+    },
+    {
+      "token": "一个",
+      "items": 12,
+      "categories": {
+        "coding": 8,
+        "exam": 3,
+        "foundation": 1
+      },
+      "sampleTitles": [
+        "503.下一个更大元素II · 题解",
+        "31.下一个排列 · 题解",
+        "34. 在排序数组中查找元素的第一个和最后一个位置 · 题解"
+      ]
+    },
+    {
+      "token": "一面",
+      "items": 12,
+      "categories": {
+        "coding": 6,
+        "exam": 3,
+        "job": 2
+      },
+      "sampleTitles": [
+        "小鹏汽车嵌入式开发一面面经 · 面试题",
+        "字节跳动一面 Java 面经 · 面试题",
+        "阿里巴巴 Java 一面 · 面试题"
+      ]
+    },
+    {
+      "token": "哪些",
+      "items": 12,
+      "categories": {
+        "exam": 12
+      },
+      "sampleTitles": [
+        "HTTP请求中的头部字段有哪些常见的类型？它们各自的作用是什么？ · 八股",
+        "HTTP请求方式有哪些？ · 八股",
+        "HTTPS和HTTP有哪些区别？ · 八股"
+      ]
+    },
+    {
+      "token": "微信",
+      "items": 12,
+      "categories": {
+        "job": 9,
+        "posttraining": 2,
+        "agent": 1
+      },
+      "sampleTitles": [
+        "微信搜索-电商agent算法专家",
+        "微信搜索-Agent算法专家",
+        "微信小店-高级风控算法工程师"
+      ]
+    },
+    {
+      "token": "最长",
+      "items": 11,
+      "categories": {
+        "coding": 11
+      },
+      "sampleTitles": [
+        "无重复字符的最长子串（LeetCode 3）· 大厂高频手撕题",
+        "5.最长回文子串 · 题解",
+        "673.最长递增子序列的个数 · 题解"
+      ]
+    },
+    {
+      "token": "字符",
+      "items": 11,
+      "categories": {
+        "coding": 10,
+        "exam": 1
+      },
+      "sampleTitles": [
+        "无重复字符的最长子串（LeetCode 3）· 大厂高频手撕题",
+        "字符串相加（LeetCode 415）· 大厂高频手撕题",
+        "字符串转换整数 (atoi)（LeetCode 8）· 大厂高频手撕题"
+      ]
+    },
+    {
+      "token": "排序",
+      "items": 11,
+      "categories": {
+        "coding": 11
+      },
+      "sampleTitles": [
+        "搜索旋转排序数组（LeetCode 33）· 大厂高频手撕题",
+        "207. 课程表：拓扑排序（BFS） · 题解",
+        "拓扑排序精讲 · 题解"
+      ]
+    },
+    {
+      "token": "序列",
+      "items": 11,
+      "categories": {
+        "coding": 9,
+        "exam": 2
+      },
+      "sampleTitles": [
+        "673.最长递增子序列的个数 · 题解",
+        "491.递增子序列 · 题解",
+        "106.从中序与后序遍历序列构造二叉树 · 题解"
+      ]
+    },
+    {
+      "token": "数据",
+      "items": 11,
+      "categories": {
+        "exam": 5,
+        "agent": 2,
+        "job": 2
+      },
+      "sampleTitles": [
+        "数组中重复的数据（LeetCode 442）· 大厂高频手撕题",
+        "HTTPS工作原理是什么？它是如何实现数据加密的？ · 八股",
+        "什么是数据库中的锁，有哪些类型？ · 八股"
+      ]
+    },
+    {
+      "token": "总结",
+      "items": 11,
+      "categories": {
+        "coding": 9,
+        "exam": 2
+      },
+      "sampleTitles": [
+        "面试总结 · 面试题",
+        "最短路算法总结篇 · 题解",
+        "贪心算法总结篇 · 题解"
+      ]
+    },
+    {
+      "token": "程笔",
+      "items": 10,
+      "categories": {
+        "coding": 9,
+        "course": 1
+      },
+      "sampleTitles": [
+        "各个大厂笔试真题（2026） | 腾讯、阿里、字节、美团、华为、京东、小红书 · 课程笔记",
+        "2026大厂笔试真题：200+算法题与在线判题 · 课程笔记",
+        "卡码网Java基础课：21道编程题从零掌握Java语法 · 课程笔记"
+      ]
+    },
+    {
+      "token": "字节",
+      "items": 10,
+      "categories": {
+        "coding": 4,
+        "exam": 4,
+        "job": 2
+      },
+      "sampleTitles": [
+        "各个大厂笔试真题（2026） | 腾讯、阿里、字节、美团、华为、京东、小红书 · 课程笔记",
+        "字节跳动一面 Java 面经 · 面试题",
+        "字节跳动 Java 二面 面经 · 面试题"
+      ]
+    },
+    {
+      "token": "节点",
+      "items": 10,
+      "categories": {
+        "coding": 10
+      },
+      "sampleTitles": [
+        "删除二叉搜索树中的节点（LeetCode 450）· 大厂高频手撕题",
+        "450.删除二叉搜索树中的节点 · 题解",
+        "24. 两两交换链表中的节点 · 题解"
+      ]
+    },
+    {
+      "token": "元素",
+      "items": 10,
+      "categories": {
+        "coding": 10
+      },
+      "sampleTitles": [
+        "503.下一个更大元素II · 题解",
+        "27. 移除元素 · 题解",
+        "34. 在排序数组中查找元素的第一个和最后一个位置 · 题解"
+      ]
+    },
+    {
+      "token": "是什",
+      "items": 10,
+      "categories": {
+        "exam": 8,
+        "foundation": 1,
+        "agent": 1
+      },
+      "sampleTitles": [
+        "HTTP请求中的头部字段有哪些常见的类型？它们各自的作用是什么？ · 八股",
+        "HTTPS工作原理是什么？它是如何实现数据加密的？ · 八股",
+        "什么是强缓存和协商缓存，它们的工作原理是什么？ · 八股"
+      ]
+    },
+    {
+      "token": "么是",
+      "items": 10,
+      "categories": {
+        "exam": 9,
+        "agent": 1
+      },
+      "sampleTitles": [
+        "Function Calling详解：大模型怎么调用工具，为什么是Agent的基础 · 大模型笔记",
+        "什么是强缓存和协商缓存，它们的工作原理是什么？ · 八股",
+        "什么是数据库中的锁，有哪些类型？ · 八股"
+      ]
+    },
+    {
+      "token": "之和",
+      "items": 9,
+      "categories": {
+        "coding": 9
+      },
+      "sampleTitles": [
+        "三数之和（LeetCode 15）· 大厂高频手撕题",
+        "1. 两数之和 · 题解",
+        "第18题. 四数之和 · 题解"
+      ]
+    }
+  ],
+  "l2_saturation": [
+    {
+      "category": "job",
+      "items": 27,
+      "topToken": "微信 高级",
+      "count": 2,
+      "share": 0.0741
+    },
+    {
+      "category": "foundation",
+      "items": 28,
+      "topToken": "multi head",
+      "count": 1,
+      "share": 0.0357
+    },
+    {
+      "category": "exam",
+      "items": 130,
+      "topToken": "ht 八股",
+      "count": 3,
+      "share": 0.0231
+    },
+    {
+      "category": "coding",
+      "items": 322,
+      "topToken": "二叉 leetcode",
+      "count": 7,
+      "share": 0.0217
+    },
+    {
+      "category": "engineering",
+      "items": 48,
+      "topToken": "vllm vllm",
+      "count": 1,
+      "share": 0.0208
+    },
+    {
+      "category": "rl",
+      "items": 53,
+      "topToken": "policy support",
+      "count": 1,
+      "share": 0.0189
+    },
+    {
+      "category": "multimodal",
+      "items": 108,
+      "topToken": "nvidia ai",
+      "count": 2,
+      "share": 0.0185
+    },
+    {
+      "category": "posttraining",
+      "items": 126,
+      "topToken": "policy distillation",
+      "count": 2,
+      "share": 0.0159
+    },
+    {
+      "category": "generative",
+      "items": 73,
+      "topToken": "grace aware",
+      "count": 1,
+      "share": 0.0137
+    },
+    {
+      "category": "worldmodel",
+      "items": 109,
+      "topToken": "至简 在间",
+      "count": 1,
+      "share": 0.0092
+    },
+    {
+      "category": "agent",
+      "items": 131,
+      "topToken": "mental multi",
+      "count": 1,
+      "share": 0.0076
+    }
+  ],
+  "l2_metric": "title-prefix repetition (segmentation-free)",
+  "l3_lowInformation": {
+    "shortSummary": 274,
+    "noSummary": 3,
+    "unclassified": 0,
+    "belowGate": 44,
+    "unclassifiedShare": 0.0,
+    "unclassifiedSample": []
+  },
+  "l4_homogeneity": [
+    {
+      "category": "job",
+      "items": 27,
+      "avgSim": 0.2159,
+      "nearPairShare": 0.0741
+    },
+    {
+      "category": "coding",
+      "items": 322,
+      "avgSim": 0.0861,
+      "nearPairShare": 0.0432
+    },
+    {
+      "category": "exam",
+      "items": 130,
+      "avgSim": 0.0555,
+      "nearPairShare": 0.0012
+    },
+    {
+      "category": "posttraining",
+      "items": 126,
+      "avgSim": 0.0079,
+      "nearPairShare": 0.0002
+    },
+    {
+      "category": "agent",
+      "items": 131,
+      "avgSim": 0.0062,
+      "nearPairShare": 0.0
+    },
+    {
+      "category": "engineering",
+      "items": 48,
+      "avgSim": 0.0139,
+      "nearPairShare": 0.0
+    },
+    {
+      "category": "foundation",
+      "items": 28,
+      "avgSim": 0.0165,
+      "nearPairShare": 0.0
+    },
+    {
+      "category": "generative",
+      "items": 73,
+      "avgSim": 0.0153,
+      "nearPairShare": 0.0
+    },
+    {
+      "category": "multimodal",
+      "items": 108,
+      "avgSim": 0.0062,
+      "nearPairShare": 0.0
+    },
+    {
+      "category": "rl",
+      "items": 53,
+      "avgSim": 0.0146,
+      "nearPairShare": 0.0
+    },
+    {
+      "category": "worldmodel",
+      "items": 109,
+      "avgSim": 0.0095,
+      "nearPairShare": 0.0
+    }
+  ],
+  "worklist": [
+    {
+      "kind": "回填",
+      "severity": "medium",
+      "text": "摘要 <60 字 274 条 -> 开摘要回填或人工补"
+    },
+    {
+      "kind": "观察",
+      "severity": "low",
+      "text": "'数组' 出现在 23 条里 -> 确认是否同一事物的多个版本"
+    },
+    {
+      "kind": "观察",
+      "severity": "low",
+      "text": "'工程' 出现在 23 条里 -> 确认是否同一事物的多个版本"
+    },
+    {
+      "kind": "观察",
+      "severity": "low",
+      "text": "'试题' 出现在 22 条里 -> 确认是否同一事物的多个版本"
+    },
+    {
+      "kind": "观察",
+      "severity": "low",
+      "text": "'如何' 出现在 21 条里 -> 确认是否同一事物的多个版本"
+    },
+    {
+      "kind": "观察",
+      "severity": "low",
+      "text": "'程师' 出现在 21 条里 -> 确认是否同一事物的多个版本"
+    },
+    {
+      "kind": "观察",
+      "severity": "low",
+      "text": "'法工' 出现在 20 条里 -> 确认是否同一事物的多个版本"
+    }
+  ]
+}

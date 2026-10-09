@@ -1,0 +1,115 @@
+{
+ "batchId": "queue-08",
+ "mode": "full",
+ "items": [
+  {
+   "id": "83ddb4ab1baca69d",
+   "title": "OuroWorld: Bringing Any 3D World Alive as Diverse, Endlessly Looping 3D Cinemagraphs",
+   "category": "worldmodel",
+   "channel": "hf_papers",
+   "url": "https://huggingface.co/papers/2610.12461",
+   "sources": [
+    {
+     "url": "https://huggingface.co/papers/2610.12461",
+     "name": "hf_papers"
+    },
+    {
+     "url": "https://arxiv.org/abs/2610.12461",
+     "name": "canonical"
+    }
+   ],
+   "tags": [],
+   "kind": "paper",
+   "summary": "Recent 3D world models generate photorealistic, explorable scenes that remain frozen in time. OuroWorld is a mask-free framework that turns any static 3D Gaussian Splatting scene into a 3D cinemagraph: a dynamic scene with vivid, diverse motion looping seamlessly from any viewpoint. A vision-language model infers plausible dynamics and guides a video model to synthesize a reference video, which we lift and complete into multi-view videos. To learn from this imperfect supervision, we propose Inconsistency-Robust Periodic 4DGS: a Fourier-series deformation field guarantees looping by construction, while a Grounded Drift Field anchored at the reference view absorbs cross-view inconsistency. Unlike prior Eulerian methods limited to fluid-like motion, we capture general deformation, object motion, and illumination change. We introduce a ground-truth-free evaluation covering vividness, naturalness, loop seam coherence, and scene quality. On 39 reconstructed and generated scenes, OuroWorld outperforms all baselines and wins 70.8%-99.0% of user-study comparisons. Project page: https://ouroworld.userwei.com",
+   "needsFetch": false
+  },
+  {
+   "id": "f337a0e7a6db2da2",
+   "title": "MORCA: Offline-to-Online Reinforcement Learning for Adaptive Cache Reuse in Video Diffusion Acceleration",
+   "category": "generative",
+   "channel": "arxiv",
+   "url": "https://arxiv.org/abs/2610.10457v1",
+   "sources": [
+    {
+     "url": "https://arxiv.org/abs/2610.10457v1",
+     "name": "arxiv"
+    }
+   ],
+   "tags": [
+    "cs.CV"
+   ],
+   "kind": "paper",
+   "summary": "Diffusion Transformers (DiTs) achieve remarkable performance in video synthesis, but their iterative denoising process suffers from high inference latency. To address this, caching has emerged as an effective acceleration strategy by capitalizing on inter-step redundancy during denoising. Existing dynamic caching methods typically estimate the error that cache reuse would introduce at each denoising step (step error) to guide cache decisions, whereas our concern is how much quality loss cache reuse would cause in the final generated video (terminal error). We show that step error does not directly correspond to terminal error and that latent information helps capture their relationship, thereby informing cache decisions. Moreover, existing threshold-based methods cannot provide precise speedup control, making it difficult to meet practical requirements for user-specified acceleration targets. To address these limitations, we introduce MORCA, a cache scheduling framework trained through offline-to-online reinforcement learning to make latent-aware reuse/recompute decisions under user-specified acceleration targets. Extensive experiments on different video generation models across multiple target acceleration ratios demonstrate that MORCA achieves better generation fidelity than state-of-the-art caching methods under comparable computational budgets. Code is available at https://github.com/x10ngyx/MORCA.",
+   "needsFetch": false
+  },
+  {
+   "id": "3d393b3e98f36756",
+   "title": "Accurate but Not Humble: Evaluating Epistemic Humility in LLM Agents under Knowledge Conflict",
+   "category": "agent",
+   "channel": "hf_papers",
+   "url": "https://huggingface.co/papers/2610.12360",
+   "sources": [
+    {
+     "url": "https://huggingface.co/papers/2610.12360",
+     "name": "hf_papers"
+    },
+    {
+     "url": "https://arxiv.org/abs/2610.12360",
+     "name": "canonical"
+    }
+   ],
+   "tags": [],
+   "kind": "paper",
+   "summary": "When retrieved evidence contradicts an agent's prior beliefs, does it revise its answer, acknowledge uncertainty, or persist with an incorrect conclusion? Existing evaluations of agentic systems focus primarily on task success, offering limited insight into how agents handle such conflicts. We propose to evaluate agents on epistemic humility (EH): the agent's willingness to recognize, act on, and communicate uncertainty during task execution. We operationalize EH through three trajectory-level behavioral dimensions: Identify, Solve, and Escalate (ISE). Through knowledge conflict, situations where the backbone language model's parametric knowledge contradicts the evidence it encounters, or where two contextual sources disagree, we evaluate two conflict settings: (1) controlled conflict and (2) naturally occurring conflict during multi-step agentic execution, each paired with matched no-conflict controls. Evaluating four agents, we find that higher task accuracy does not necessarily correspond to greater epistemic humility: some high-accuracy configurations recognize conflicts during execution but do not communicate unresolved uncertainty in their incorrect final answers. Trajectory-level analysis further reveals that agents frequently detect conflicts in early steps of execution but fail to maintain or resolve them in later steps. Finally, we show that model-level interventions can improve EH, but often at the cost of task accuracy, suggesting that epistemic humility emerges from the interaction among the backbone model, agent harness, and evaluation environment.",
+   "needsFetch": false
+  },
+  {
+   "id": "ac3dc2887be5e28e",
+   "title": "Rationale-Guided Policy Optimization: Learning to Reason with Adaptive Rationale Scaffolding",
+   "category": "rl",
+   "channel": "hf_papers",
+   "url": "https://huggingface.co/papers/2610.07342",
+   "sources": [
+    {
+     "url": "https://huggingface.co/papers/2610.07342",
+     "name": "hf_papers"
+    },
+    {
+     "url": "https://arxiv.org/abs/2610.07342",
+     "name": "canonical"
+    }
+   ],
+   "tags": [],
+   "kind": "paper",
+   "summary": "On-policy reinforcement learning has become a central paradigm for improving the reasoning abilities of large language models. However, its effectiveness is often limited by reward sparsity: when a model fails to discover correct trajectories for difficult problems, the optimization process receives little useful signal and may stagnate. Existing approaches mitigate this issue by incorporating off-policy demonstrations, expert traces, or model-generated solutions, but they typically require the auxiliary data to match the format of the reinforcement-learning task, often relying on rejection sampling from stronger models to obtain suitable training trajectories. We introduce Rationale-Guided Policy Optimization (RGPO), a framework that adaptively leverages ground-truth rationale information according to the model's current capability while preserving its freedom to explore. Rather than treating reference solutions as fixed imitation targets, RGPO uses them as temporary scaffolds: rationales help the model generate improved responses, after which only higher-reward, model-generated solutions are transferred back to the original unguided setting. This design allows training to exploit available ground-truth information without requiring off-policy data to follow the same format as the RL task. Across both language-only and vision-language reasoning settings, RGPO consistently improves performance over RLVR baselines, and ablation studies show that adaptive rationale guidance is a key contributor to these gains. These results suggest that RGPO offers a practical and general approach for reducing reward sparsity, stabilizing reinforcement learning, and improving reasoning performance in both text-only and multimodal models.",
+   "needsFetch": false
+  },
+  {
+   "id": "83d50b8fffe7bd19",
+   "title": "WorldGuide: Goal-Directed Video World Model for Procedural Task Execution",
+   "category": "worldmodel",
+   "channel": "hf_papers",
+   "url": "https://huggingface.co/papers/2610.12459",
+   "sources": [
+    {
+     "url": "https://huggingface.co/papers/2610.12459",
+     "name": "hf_papers"
+    },
+    {
+     "url": "https://arxiv.org/abs/2610.12459",
+     "name": "canonical"
+    },
+    {
+     "url": "https://arxiv.org/abs/2610.12459v1",
+     "name": "arxiv"
+    }
+   ],
+   "tags": [
+    "cs.CV"
+   ],
+   "kind": "paper",
+   "summary": "Video generators and video-based world models can synthesize plausible visual trajectories, but long-horizon procedural tasks require generation to adapt to what has actually been produced. A model must determine the next action from its generated state, execute that action, and recognize when the task is complete. Open-loop generation cannot adapt to execution outcomes, while existing closed-loop systems often rely on pretrained executors or indirect verification. This leaves a gap between deciding an action and successfully realizing it. We formulate procedural video generation as closed-loop task execution in visual world space and introduce WorldGuide. Given only an initial image and a task goal, WorldGuide predicts an atomic action, generates its corresponding video clip, and uses the generated result to select the next action or terminate. The Planner and Executor are trained on the same step-level procedural demonstrations: the Planner learns to predict the next atomic action or task completion from visual progress, while the Executor is directly trained to realize the predicted actions. Hierarchical visual memory maintains state across long-horizon execution with bounded history token cost. Due to the lack of step-level action-video supervision for joint planner-executor training, we introduce WorldGuide Bench: approximately 59K step-annotated videos across 245 tasks and 27 procedural categories. WorldGuide achieves a 33.33\\% Task Success on WorldGuide-Bench, compared with 29.90\\% for the strong recent video model MiniMax-H3, even though MiniMax-H3 receives reference action plans, and achieves 47.69\\% on VideoCraft-Bench compared with 32.73\\% for MiniMax-H3 under goal-only conditioning. These results demonstrate the importance of coupling planning with learned e",
+   "needsFetch": false
+  }
+ ]
+}

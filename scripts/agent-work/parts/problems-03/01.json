@@ -1,0 +1,234 @@
+{
+ "id": "d5f812800250910d",
+ "tldr": "一次遍历维护历史最低价，O(n) 时间 O(1) 空间求出单笔交易最大利润。",
+ "keyPoints": [
+  "只能先买后卖，最多一笔交易",
+  "答案下界为 0，即可以不交易",
+  "枚举卖出日时最优买入必是前缀最低价",
+  "一次扫描同时维护最低价与最优利润"
+ ],
+ "why": "贪心 / DP 入门模板题，字节等大厂高频；其『维护前缀最优』思想可迁移到多类数组题。",
+ "difficulty": "easy",
+ "tags": [
+  "leetcode",
+  "array",
+  "greedy",
+  "dynamic-programming",
+  "easy"
+ ],
+ "entities": [
+  "LeetCode 121",
+  "动态规划",
+  "贪心"
+ ],
+ "diagram": {
+  "kind": "flow",
+  "title": "一次遍历求解流程",
+  "caption": "记住最低买入价，每天只做两件事：先算卖出的收益，再把今天当成未来买入候选。",
+  "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='买卖股票一次遍历流程'><rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>输入 prices</text><text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>n 天价格数组</text><line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,70 236,62 244,62' fill='var(--line-1)'/><rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>先算收益</text><text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>best = max(best, p - min)</text><line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,124 236,116 244,116' fill='var(--line-1)'/><rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>再更新最低价</text><text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>min = min(min, p)</text><line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,178 236,170 244,170' fill='var(--line-1)'/><rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>返回 best</text><text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>不交易时为 0</text></svg>",
+  "alt": "流程：读入价格数组，遍历中先算 best=max(best,p-min)，再更新 min=min(min,p)，最后返回 best。"
+ },
+ "concepts": [
+  {
+   "name": "Running Minimum（前缀最小值在线维护）",
+   "readable": "边扫描边记住到目前为止见过的最小价格，把它当买入价，用当天价格减它得到利润。",
+   "analogy": "逛跳蚤市场，一边走一边记住见过最便宜的摊位价；之后看到更贵的，就知道『在最低价买、现在卖』能赚多少。",
+   "analogyBreaksDown": "跳蚤市场的价会变、还能回头买；这里买入日必须在卖出日之前，最低价只能是当前天之前的，不能使用未来信息。",
+   "mechanism": "只维护一个前缀最小值加一个最优利润，避免为每个卖出日重新扫左侧，把 O(n²) 压到 O(n)、O(1) 空间。",
+   "visual": "横轴天数、纵轴价格折线；一条水平虚线标出已遍历区间的最低点，每天向上量到当前价即利润。",
+   "prerequisites": [
+    "数组遍历",
+    "时间复杂度基本概念"
+   ],
+   "selfTest": [
+    "为什么最优买入日一定是卖出日之前价格最低的一天？",
+    "先在遍历里更新 min 再算 profit 和反过来有区别吗？",
+    "数组严格递减时答案为什么是 0？"
+   ],
+   "formula": "\\mathrm{best}_j=\\max\\bigl(\\mathrm{best}_{j-1},\\ price_j-\\min_{0\\le i<j}price_i\\bigr)"
+  },
+  {
+   "name": "状态压缩 DP（双状态滚动）",
+   "readable": "把『第 i 天持有 / 不持有股票』两种状态的最大现金滚动更新，用两个变量代替整张 dp 表。",
+   "analogy": "像记账：今天要么手里有股票（记为负成本），要么空仓（现金为正），每天只问哪种更赚。",
+   "analogyBreaksDown": "这套状态机是为『不限次数但同一时刻只持一股、无附加费用』设计的简化版；一旦加冷冻期、手续费或最多 k 笔，转移与维度都会变，不能照搬。",
+   "mechanism": "定义 hold=持有时的最大现金、free=空仓时的最大现金，逐天转移；本题只需不断用 -p 刷新 hold、用 hold+p 刷新 free。",
+   "visual": "两个色块 hold / free 逐天向右推进，每天从上一列取值做 max 合并。",
+   "prerequisites": [
+    "动态规划状态定义"
+   ],
+   "selfTest": [
+    "hold 的初值为什么取负无穷或 0 要讲清楚？",
+    "本题 hold 的转移为何退化成 max(hold,-p)？",
+    "什么时候 free 会与贪心答案不同？"
+   ],
+   "formula": "hold=\\max(hold,-price),\\quad free=\\max(free,hold+price)"
+  }
+ ],
+ "formulas": [
+  {
+   "id": "f-best-time-stock-profit",
+   "name": "单笔交易最大利润递推（Best Single-Trade Profit Recurrence）",
+   "category": "engineering",
+   "latex": "\\mathrm{best}_j=\\max\\bigl(\\mathrm{best}_{j-1},\\ price_j-\\min_{0\\le i<j}price_i\\bigr),\\quad \\mathrm{best}_{-1}=0",
+   "symbols": [
+    [
+     "price_j",
+     "第 j 天的股票价格"
+    ],
+    [
+     "best_j",
+     "前 j 天做一笔交易的最大利润"
+    ],
+    [
+     "min_{0<=i<j}",
+     "j 之前的最低价（前缀最小值）"
+    ]
+   ],
+   "derivation": [
+    "枚举卖出日 j，利润等于 price_j 减去买入价。",
+    "固定 j 时，为使利润最大，买入价取 [0,j) 内的最低价。",
+    "记前缀最小值为该最低价，则当天最优利润为 price_j 减它。",
+    "答案取所有卖出日最优值的最大值，并设下界 0（可不交易）。"
+   ],
+   "analogy": "在价格曲线上，从每个波峰往前找它前面最低的波谷，取落差最大的一对。",
+   "pitfalls": [
+    "把买入价取成全局最小值，等于用了未来价格",
+    "忘记下界 0，出现负利润"
+   ],
+   "code": "def maxProfit(prices):\n    mn = float('inf'); best = 0\n    for p in prices:\n        best = max(best, p - mn)\n        mn = min(mn, p)\n    return best",
+   "sources": [
+    {
+     "title": "买卖股票的最佳时机（LeetCode 121）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/best-time-to-buy-and-sell-stock"
+    }
+   ]
+  }
+ ],
+ "selfCheck": {
+  "claims": [
+   "该题被字节 148 次、腾讯 29 次、拼多多 9 次等考过，共 192 次",
+   "难度为简单",
+   "最近一次出现 2026-07-14",
+   "本题属于动态规划类"
+  ],
+  "uncertain": [
+   "源信息未给题目示例，problem.examples 为自行构造并已用参考实现核对",
+   "各公司考频为采集层统计口径，未逐条核实"
+  ]
+ },
+ "teaching": {
+  "progressive": [
+   {
+    "level": "一句话",
+    "text": "一路记住最低价，卖在最高的地方。"
+   },
+   {
+    "level": "入门",
+    "text": "遍历价格数组，用历史最低价当买入价，每天算一次卖出利润并更新答案，这就是贪心。"
+   },
+   {
+    "level": "进阶",
+    "text": "本质是 dp：当天最优利润等于 max(昨天最优, 今天价 - 之前最低价)。只用一个 min 变量加一个 best，把 O(n²) 枚举压到 O(n)、O(1) 空间。"
+   },
+   {
+    "level": "专家",
+    "text": "它是『最多 k 笔交易』系列 k=1 的特例。通用做法用 hold/free 双状态滚动，k 大于 1 时再加一维即可（对应 122/123/188）。本题贪心与 DP 等价，因为 k=1 时 hold 转移退化为始终取最小买入价。"
+   }
+  ],
+  "socratic": [
+   {
+    "q": "如果不用前缀最小值，改成对每个卖出日重新扫左边会怎样？",
+    "a": "复杂度从 O(n) 退化到 O(n²)，而且没有新增信息——每次重扫算的还是同一个前缀最小值。"
+   },
+   {
+    "q": "先更新 min 再算 profit 行不行？",
+    "a": "会用到同一根 K 线同时买和卖，利润恒为 0。必须保证买入日严格早于卖出日。"
+   }
+  ],
+  "mechanism": "核心是时间序列上的在线最优化：把一次枚举所有买卖组合的过程，改写为一次遍历里的前缀极值维护，用常数个变量承载全部历史信息，因此无需存整张 dp 表。",
+  "boundary": "只适用于『最多一笔交易且先买后卖』。若允许做空、日内多次交易，或在买入日当天卖出，递推里 best 的下界与 min 的更新时机都要改。",
+  "analogyBoundary": "把最低价类比成『曾经最便宜的摊位』忽略了时间不可逆：只能选当前天之前的低价买入，不能用后面才出现的最低点回头买。",
+  "misconceptions": [
+   "把 min 初始化成 0，导致利润算成价格本身",
+   "以为要排序或双指针，其实一次遍历即可",
+   "忽略买卖顺序约束，直接返回最大值减最小值"
+  ],
+  "ownAnalysis": "（推断）这类『维护前缀极值』的模板还能迁移到最大子数组和、接雨水等题，本题是它最简单的一维形态；面试若被追问，可顺势讲出多状态 DP 的推广路径。",
+  "officialNotes": [],
+  "interviewAnswer": "结论是维护历史最低价 mn 与最大利润 best，遍历一次即可。对每天 p，先 best=max(best,p-mn) 表示今天卖出，再 mn=min(mn,p) 把它作为未来买入候选。时间 O(n)、空间 O(1)。它也可以写成双状态 DP，方便扩展到多笔交易。",
+  "studyPath": {
+   "prerequisites": [
+    "Python 基础",
+    "数组遍历",
+    "大 O 记号"
+   ],
+   "nextSteps": [
+    "LeetCode 122 买卖股票 II（多次交易）",
+    "LeetCode 123/188（最多 k 笔）",
+    "LeetCode 309（含冷冻期）"
+   ]
+  }
+ },
+ "problem": {
+  "title": "买卖股票的最佳时机",
+  "number": 121,
+  "difficulty": "easy",
+  "statement": "给定数组 prices，prices[i] 表示某支股票第 i 天的价格。你只允许选择某一天买入、并在之后的某一天卖出（最多一笔交易），返回能获得的最大利润；若无法获利则返回 0。",
+  "examples": [
+   {
+    "input": "prices = [7,1,5,3,6,4]",
+    "output": "5",
+    "why": "第 2 天 1 买入、第 5 天 6 卖出，利润 5 最大"
+   },
+   {
+    "input": "prices = [7,6,4,3,1]",
+    "output": "0",
+    "why": "价格单调递减，任何买入都亏，只能不交易"
+   }
+  ],
+  "approach": {
+   "idea": "枚举卖出日 j，那么最优买入日必是 j 之前价格最低的一天。于是只需一次遍历，边维护『到目前为止的最低价』min，边用 price-min 更新答案。",
+   "steps": [
+    "1. 初始化 min=正无穷、best=0。",
+    "2. 遍历每个价格 p：先 best=max(best, p-min)，表示假设今天卖出。",
+    "3. 再 min=min(min, p)，把今天加入『未来买入候选』。",
+    "4. 遍历结束返回 best。"
+   ],
+   "whyItWorks": "对任一卖出日 j，利润 price_j 减去买入价，买入价越小利润越大，因此最优买入价就是 [0,j) 的最小值。一次扫描同时覆盖所有卖出日、并实时维护各自的前缀最小值，故不遗漏任何买卖组合；best 初值 0 保证不交易的情形。",
+   "alternatives": [
+    {
+     "name": "暴力双重循环",
+     "complexity": "O(n²)/O(1)",
+     "when": "数据规模很小，或面试想先要一个能跑通的 baseline"
+    },
+    {
+     "name": "双状态动态规划",
+     "complexity": "O(n)/O(n)（可压成 O(1) 空间）",
+     "when": "题目升级为多次交易、含冷冻期或手续费时，改用 hold/free 状态可平滑推广"
+    }
+   ]
+  },
+  "solution": {
+   "python": "from typing import List\n\n\ndef maxProfit(prices: List[int]) -> int:\n    min_price = float('inf')\n    best = 0\n    for p in prices:\n        best = max(best, p - min_price)  # 假设今天卖出\n        min_price = min(min_price, p)    # 更新历史最低买入价\n    return best\n\n\nif __name__ == '__main__':\n    print(maxProfit([7, 1, 5, 3, 6, 4]))  # 5\n    print(maxProfit([7, 6, 4, 3, 1]))     # 0",
+   "python_alt": "from typing import List\n\n\ndef maxProfit(prices: List[int]) -> int:\n    hold = float('-inf')  # 持有股票时的最大收益（负数记为成本）\n    free = 0              # 空仓时的最大收益\n    for p in prices:\n        hold = max(hold, -p)\n        free = max(free, hold + p)\n    return free",
+   "notes": "先算收益再更新 min，保证买入日严格早于卖出日；best 初值 0 使『不交易』成为合法答案。min 用 float('inf') 初始化可自然处理负数价格。"
+  },
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(1)",
+   "why": "只遍历数组一次；额外只用 min、best 两个变量，与 n 无关。"
+  },
+  "pitfalls": [
+   "先更新 min 再算 profit，等于允许当天买当天卖，利润恒为 0",
+   "best 初值写成负无穷，单调递减时会返回负数",
+   "把买入价误用全局最小值，等于用了未来信息"
+  ],
+  "edgeCases": [
+   "prices 为空或只有一个元素时返回 0",
+   "价格单调递减时返回 0（不交易）",
+   "价格含 0 或负数时 min 需能取到，用 inf 初始化即可"
+  ],
+  "interviewTips": "开口先给 O(n)/O(1) 的贪心结论并解释为什么买入价取前缀最小，再写代码；如果面试官追问变体，主动说出双状态 DP 与 122/123 的推广，显示你掌握了这一族题的通用框架。"
+ }
+}

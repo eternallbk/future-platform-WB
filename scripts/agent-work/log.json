@@ -1,0 +1,5 @@
+{
+ "status": "ok",
+ "notes": "按 web/data/deep-read-plan.json 的清单执行，未自行另挑条目。队列 96 条：71 条深读（24 个批次中的 18 个 full 批次），25 条按证据剔除（14 条方向类子串误分类的法学/教育学/精神病学/天体物理/控制理论/无线感知论文、6 条求职吐槽与情绪帖、2 条 URL 为占位的 inbox 条目、1 条被归到 rl 的岗位帖改按岗位处理、2 条与目标方向无关的仓库），剔除依据逐条写在 scripts/agent-work/skips.json，条目仍留在卡片库可搜索。回填 45 条全部补齐：33 条只缺 teaching，6 条缺 diagram+teaching，6 条缺 diagram+formulas+teaching；回填只写缺失层，由 build_agent_payload.py 深合并进已有 enrichment，已有 tldr/概念/图解/公式没有被改写或删除。全部 116 条通过 scripts/validate_agent_out.py --strict（errors=0，13 条 warn 均为「摘要 <400 字的链接/仓库类条目无公式」，属允许项）。",
+ "errors": []
+}

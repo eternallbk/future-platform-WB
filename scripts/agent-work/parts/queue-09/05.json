@@ -1,0 +1,177 @@
+{
+  "id": "cc120f4ea3496ee9",
+  "tldr": "用「偏好奖励 + rubric 奖励」的组合而非简单加权，对文生图做后训练，Flux2dev 在 Arena 上 Elo 比基座高 69 分。",
+  "keyPoints": [
+    "文生图后训练难在没有单一奖励能覆盖全部人类偏好",
+    "奖励系统两路：用 Bradley-Terry 在人类偏好数据上训练的偏好奖励",
+    "另一路是 rubric 奖励，评估提示忠实度等并防刷分",
+    "简单加权平均会导致次优优化，作者提出奖励组合策略",
+    "Arena 榜单上 RL 训练的 Flux2dev Elo 比基座高 69；Ideogram-4 达 1223.5"
+  ],
+  "why": "「多个异构奖励如何组合」是 post-training 与生成式对齐的核心问题；偏好奖励 + rubric 防刷分的组合思路可直接迁移到多模态生成任务的 RLHF。",
+  "difficulty": "medium",
+  "tags": [
+    "posttraining",
+    "text-to-image",
+    "reward-composition",
+    "rlhf",
+    "rubric"
+  ],
+  "entities": [
+    "Flux2dev",
+    "Ideogram-4",
+    "Bradley-Terry",
+    "Arena",
+    "Arena-T2I-Training"
+  ],
+  "diagram": {
+    "kind": "flow",
+    "title": "偏好 + Rubric 奖励组合",
+    "caption": "两路异构奖励——一个管审美、一个管提示忠实并防刷分——经组合策略而非简单加权送进 RL。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='文生图后训练中偏好奖励与 rubric 奖励组合的流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>偏好奖励：Bradley-Terry 训练</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>审美感知</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>Rubric 奖励：提示忠实度+防刷分</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>可控属性</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>奖励组合策略（非简单加权）</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>关键设计</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>RL 后训练文生图模型</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>Elo 提升</text>\n</svg>",
+    "alt": "文生图后训练流程：Bradley-Terry 训练的偏好奖励与 rubric 奖励两路信号，经奖励组合策略后送入 RL 后训练。"
+  },
+  "concepts": [
+    {
+      "name": "Bradley-Terry Preference Reward（布拉德利-特里偏好奖励）",
+      "readable": "拿大量「人类更喜欢哪张图」的成对比较数据，训练一个打分器，让它给出的分差能解释人类的选择概率。",
+      "analogy": "像裁判看两张照片选出更喜欢的，反复训练出一个能预测大众口味的「品味打分器」。",
+      "analogyBreaksDown": "审美偏好高度主观、人群分歧大，而 Bradley-Terry 假设存在单一潜在分数、两两比较彼此一致，个体差异被平均掉，遇到风格偏好两极的样本就会失准。",
+      "mechanism": "用成对偏好而非绝对打分，避免标注者之间分数尺度不统一；模型只看分差，因此对分数整体平移不敏感，训练更稳。",
+      "visual": "画一个横轴为「分数差 r_w − r_l」的曲线，纵轴为「人类选前者更喜欢的概率」，曲线呈 S 形，中间陡两端平。",
+      "prerequisites": [
+        "偏好建模与奖励模型",
+        "sigmoid 与逻辑回归"
+      ],
+      "selfTest": [
+        "为什么用成对比较而不是绝对打分？",
+        "奖励只看分差有什么好处？",
+        "BT 模型在什么偏好分布下会失准？"
+      ],
+      "formula": "P(y_w \\succ y_l) = \\sigma\\big(r_\\theta(y_w) - r_\\theta(y_l)\\big)"
+    },
+    {
+      "name": "Reward Composition（奖励组合）",
+      "readable": "把「管审美」的偏好奖励和「管是否按要求画、并防作弊」的 rubric 奖励合起来用；作者发现直接按固定比例加权会次优，需要专门的组合策略。",
+      "analogy": "一个评委打「好不好看」，另一个评委打「有没有按题目画（比如要求三只猫）」；直接把两人的分按固定比例相加，模型就只顾一边，得设计更互补的合分方式。",
+      "analogyBreaksDown": "固定加权和是最简单的凸组合，论文说它次优恰恰说明最优组合可能是非线性或依赖当前状态的；把「合分」想象成单纯的加权平均会低估问题，但摘要未给出组合的具体形式。",
+      "mechanism": "两路奖励覆盖不同维度：偏好奖励覆盖广泛的用户意图与审美，rubric 奖励保证提示忠实并对可利用的奖励空子设防。组合策略的目标是让两者互补而非相互压制，避免模型朝单一奖励过度优化。",
+      "visual": "画两维奖励平面：横轴偏好分、纵轴 rubric 分，固定加权和的等值线是直线，作者的方法用一条弯曲的等值线表示「先保 rubric 再冲偏好」。",
+      "prerequisites": [
+        "多目标奖励与奖励塑形",
+        "RLHF 中的奖励聚合"
+      ],
+      "selfTest": [
+        "两路奖励各负责什么？",
+        "简单加权平均为什么会次优？",
+        "rubric 奖励如何起到防刷分的作用？"
+      ],
+      "formula": "R(y) = \\mathrm{Compose}\\big(r_{\\mathrm{pref}}(y),\\ r_{\\mathrm{rubric}}(y)\\big)"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-bradley-terry-reward",
+      "name": "Bradley-Terry 偏好损失（Bradley-Terry Preference Loss）",
+      "category": "generative",
+      "latex": "\\mathcal{L}_{\\mathrm{BT}} = -\\mathbb{E}_{(y_w, y_l)}\\Big[ \\log \\sigma\\big( r_\\theta(y_w) - r_\\theta(y_l) \\big) \\Big]",
+      "symbols": [
+        ["y_w", "被人类偏好的图像（winner）"],
+        ["y_l", "被人类不偏好的图像（loser）"],
+        ["r_\\theta", "待训练的偏好奖励模型"],
+        ["\\sigma", "sigmoid 函数"],
+        ["\\mathcal{L}_{\\mathrm{BT}}", "成对偏好损失"]
+      ],
+      "derivation": [
+        "第 1 步：人类偏好数据是成对比较，天然给出「谁更好」而非绝对分数。",
+        "第 2 步：假设存在潜在偏好分数 r，则选 y_w 的概率由分差经 sigmoid 给出。",
+        "第 3 步：最大化观测偏好的似然，等价于最小化负对数似然。",
+        "第 4 步：因为是成对损失，训练对分数整体平移不变，标注尺度差异被吸收。"
+      ],
+      "analogy": "像只问「这两张你更喜欢哪张」，不问「打几分」，最后反推出一个稳定的口味分数。",
+      "pitfalls": [
+        "以为可以直接拿它比较不同模型——只看分差，绝对分数无跨模型含义",
+        "忽略偏好数据有噪声/错标，BT 会把这些噪声拟合进奖励"
+      ],
+      "code": "import torch\nimport torch.nn.functional as F\ndef bt_loss(reward, y_w, y_l):\n    r_w, r_l = reward(y_w), reward(y_l)\n    return -F.logsigmoid(r_w - r_l).mean()   # -log sigmoid(r_w - r_l)",
+      "sources": [
+        {"title": "Post-Training Frontier Text-to-Image Models by Composing Preference and Rubric Rewards", "url": "https://huggingface.co/papers/2610.02967"}
+      ]
+    },
+    {
+      "id": "f-reward-composition",
+      "name": "异构奖励组合（Heterogeneous Reward Composition）",
+      "category": "generative",
+      "latex": "R(y) = \\mathrm{Compose}\\big(r_{\\mathrm{pref}}(y),\\ r_{\\mathrm{rubric}}(y)\\big) \\;\\ne\\; w_1 r_{\\mathrm{pref}}(y) + w_2 r_{\\mathrm{rubric}}(y)",
+      "symbols": [
+        ["r_{\\mathrm{pref}}", "偏好奖励（审美与整体人类偏好）"],
+        ["r_{\\mathrm{rubric}}", "rubric 奖励（提示忠实度等并防刷分）"],
+        ["w_1, w_2", "简单加权平均所用的固定权重"],
+        ["\\mathrm{Compose}", "作者提出的奖励组合策略"]
+      ],
+      "derivation": [
+        "第 1 步：单一奖励无法覆盖全部人类偏好，需要偏好奖励保证审美、rubric 保证忠实。",
+        "第 2 步：最直接的做法是固定权重相加，但实验显示它会带来次优的优化行为。",
+        "第 3 步：固定权重下模型可能过度优化权重大的那一路，忽略另一路。",
+        "第 4 步：改用组合策略在偏好优化与 rubric 满足之间取得更好平衡，从而提升 Elo。"
+      ],
+      "analogy": "两位评委一个看颜值一个看是否切题，简单按比例合分会让模型只顾一边；要按情况互补地合分。",
+      "pitfalls": [
+        "默认加权和就够用——论文明确说它次优",
+        "把 rubric 奖励只当成锦上添花，忽略它承担防刷分的角色"
+      ],
+      "code": "def compose_reward(pref, rubric, mode='naive', w1=0.5, w2=0.5):\n    if mode == 'naive':\n        return w1 * pref + w2 * rubric         # 次优：固定加权\n    # 组合策略：先保 rubric 门槛，再冲偏好（示意）\n    return pref if rubric > 0 else -1.0",
+      "sources": [
+        {"title": "Post-Training Frontier Text-to-Image Models by Composing Preference and Rubric Rewards", "url": "https://arxiv.org/abs/2610.02967"}
+      ]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "文生图模型视觉质量已很高，但后训练仍困难，因为没有单一奖励能覆盖全部人类偏好",
+      "奖励系统由两部分组成：偏好奖励与 rubric 奖励",
+      "偏好奖励在大规模人类偏好数据上用 Bradley-Terry 目标训练，捕捉整体审美与感知偏好",
+      "rubric 奖励显式评估提示忠实度等属性，并对奖励刷分提供防护",
+      "如何组合异构奖励是关键挑战；简单加权平均会导致次优优化行为",
+      "作者提出简单的奖励组合策略以更好平衡偏好优化与 rubric 满足",
+      "Arena 文生图榜单上，RL 训练的 Flux2dev 的 Elo 比基座高 69 分",
+      "后训练的 Ideogram-4 超过榜单上所有开源模型，Elo 达 1223.5",
+      "结论是需要覆盖面广且对优化下的利用具鲁棒性的奖励",
+      "发布 Arena-T2I-Training，一个 1K 训练数据子集，可恢复部分全量训练的增益"
+    ],
+    "uncertain": [
+      "奖励组合策略的确切形式（非线性/门槛/动态权重）摘要未给，公式中的 Compose 为按摘要重建的通用形式，需核对原文",
+      "Arena 榜单快照为 2026 年 9 月 4 日，Elo 数值随榜单更新会变，待核实",
+      "1K 子集「恢复多少增益」的具体比例摘要未给，待核实"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "给文生图模型两把尺子——一把量好不好看，一把量有没有按要求画——再聪明地合起来做后训练。"},
+      {"level": "入门", "text": "文生图画得越来越好看，但想用后训练继续提升很难，因为没有哪个单一奖励能代表所有人的偏好。这篇用两路奖励：一路用人类两两比较数据训练，学审美；一路用 rubric 检查是否忠实于提示词、还能防模型作弊。难点是怎么把两路合起来。"},
+      {"level": "进阶", "text": "关键发现是简单加权平均会次优——固定比例会让模型只顾权重大的那一路。于是作者设计了一个奖励组合策略，让偏好奖励负责覆盖广泛的用户意图，rubric 奖励保证提示忠实并堵住奖励空子，两者互补。做法本身很简单，但效果明显：RL 训练的 Flux2dev 在 Arena 上 Elo 比基座高 69 分。"},
+      {"level": "专家", "text": "与只用偏好奖励的 RLHF 相比，加入 rubric 相当于给优化加了「可验证的锚点」，既提供提示忠实度这类可判定的信号，又抑制模型钻偏好奖励空子。与只在语言模型上做 RLVR 相比，这里的 rubric 是图像属性级别的检查。作者还强调，好的奖励必须对优化下的利用具鲁棒性——这正回应了生成式 RL 里 reward hacking 的老问题。边界在于奖励覆盖的用户意图是否够广：覆盖不到的风格或属性，模型就学不到。"}
+    ],
+    "socratic": [
+      {"q": "为什么训练偏好奖励要用成对比较？", "a": "成对比较避免了标注者分数尺度不一致的问题，模型只学相对分差，对尺度平移不敏感，更稳。"},
+      {"q": "为什么加权平均奖励不够？", "a": "固定权重下模型会偏向权重大的那一路，忽略另一路；异构奖励需要互补组合而非线性叠加。"}
+    ],
+    "mechanism": "单一奖励要么覆盖不全（漏掉某些用户意图），要么易被优化利用（刷分）。作者用两路互补信号：偏好奖励提供广泛的、以人类比较为准的审美方向，rubric 奖励提供可判定的属性约束并对刷分设防。难点在聚合方式——固定权重会让一路压过另一路，于是需要能平衡两者、且对奖励利用更鲁棒的组合策略，从而让 RL 既提升观感又不牺牲提示忠实。",
+    "boundary": "当测试时的用户意图落在奖励训练覆盖之外（少见风格、罕见属性）时，模型得不到正确方向；当 rubric 与人类真实偏好冲突或写得过窄时，会压制偏好优化。摘要的 Elo 结论基于特定榜单快照，换榜单或评测口径后数值不可直接沿用。",
+    "analogyBoundary": "「两位评委合分」的类比在两位评委各评独立维度时成立；但两路奖励作用于同一个生成模型、会相互影响梯度方向，而且最优聚合可能随生成状态变化，把合分想成静态加权平均会误导。",
+    "misconceptions": [
+      "以为奖励只要多加几路就好——关键是组合方式，简单加权会次优。",
+      "把 rubric 奖励当成次要润色，忽略它承担防刷分的核心作用。",
+      "认为 Elo 提升 69 分是绝对质量提升，忽略它是特定榜单快照下的相对值。"
+    ],
+    "ownAnalysis": "（推断）这条的核心贡献不在模型结构，而在奖励工程：把「审美」与「可控属性」解耦后分别优化再组合，思路和语言侧 RLHF+规则奖励混合一致，只是落到图像属性上。可疑处在于 Elo 是相对榜单分数、会随对手与快照漂移，69 分与 1223.5 的可比性需谨慎；摘要也没给组合策略的公式，只给了「简单加权次优」这一对比。Arena-T2I-Training 只放 1K 子集，复现全量增益有限，这点作者也承认。",
+    "officialNotes": [
+      {"position": "论文称有效的前沿生成模型训练奖励需要覆盖广泛的用户意图且对优化下的利用具鲁棒性，并提出偏好与 rubric 奖励的组合策略", "source": "hf_papers: https://huggingface.co/papers/2610.02967"}
+    ],
+    "interviewAnswer": "这篇讲的是文生图的后训练。难点是文生图的「好」很主观，没有单一奖励能覆盖全部人类偏好。它的奖励系统分两路：一路是偏好奖励，用大规模人类两两比较数据按 Bradley-Terry 训练，学整体审美；另一路是 rubric 奖励，评估提示忠实度等属性，同时防模型刷分。真正的关键点是异构奖励怎么合——作者发现简单加权平均会次优，可能是模型只顾权重大的那一路，于是提出一个组合策略来平衡偏好优化和 rubric 满足。结果在 Arena 榜单上，RL 训练的 Flux2dev Elo 比基座高 69 分，后训练的 Ideogram-4 达到 1223.5，超过所有开源模型。核心洞见是：好的训练奖励既要覆盖面广，又要对优化过程中的利用有鲁棒性。",
+    "studyPath": {
+      "prerequisites": ["RLHF 与奖励模型", "Bradley-Terry 偏好模型", "扩散/流匹配生成模型后训练"],
+      "nextSteps": ["读原文核对奖励组合策略的具体形式", "对比语言侧 RLVR 与图像 rubric 奖励", "研究 reward hacking 的检测手段"]
+    }
+  }
+}

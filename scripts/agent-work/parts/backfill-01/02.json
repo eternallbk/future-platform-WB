@@ -1,0 +1,68 @@
+{
+  "id": "12192a17a1d97235",
+  "formulas": [
+    {
+      "id": "f-inference-kernel-fusion-traffic",
+      "name": "算子融合的访存缩减比（Memory Traffic of Kernel Fusion）",
+      "category": "engineering",
+      "latex": "R_{\\mathrm{traffic}} = \\frac{\\sum_{k=1}^{K} 2\\, n\\, d}{2\\, n\\, d} = K",
+      "symbols": [
+        ["K", "同一条张量链上被顺序执行的逐元素内核数量"],
+        ["n", "张量元素个数"],
+        ["d", "单个元素字节数，如 fp16 为 2"],
+        ["R_{\\mathrm{traffic}}", "访存流量缩减比，带宽受限时近似等于加速比"]
+      ],
+      "derivation": [
+        "第 1 步（动机）：自回归解码阶段是访存受限，瓶颈是显存流量而不是算力，每减少一次显存往返都能直接省时间。",
+        "第 2 步（未融合的流量）：K 个逐元素内核各自把整条张量读一遍、写一遍，总流量 = 2Knd。",
+        "第 3 步（融合后的流量）：把 K 个内核合成一个，中间结果留在寄存器或共享内存，只需读输入一次、写输出一次，流量 = 2nd。",
+        "第 4 步（相除）：R = 2Knd / 2nd = K，即带宽受限区间下，融合 K 个逐元素内核理论上最高带来约 K 倍加速。"
+      ],
+      "analogy": "像搬家：没融合时每搬一件东西都要从仓库到货车往返一趟（读加写各一次）；融合后一趟把整箱东西直接搬过去，往返次数从 2K 次降到 2 次。",
+      "pitfalls": [
+        "只有带宽受限的小 batch decode 才近似 K 倍；算力受限的大 batch prefill 收益很小",
+        "融合会抬高寄存器压力，过度融合反而降低 occupancy，实测未必更快",
+        "中间结果必须塞得进寄存器或共享内存，否则仍落回显存，R 达不到 K"
+      ],
+      "code": "def traffic_unfused(K, n, d=2):\n    return 2 * K * n * d          # K 个内核各自读加写一遍\n\ndef traffic_fused(n, d=2):\n    return 2 * n * d              # 只读输入、写输出各一次\n\nK, n = 6, 1 << 20\nprint(traffic_unfused(K, n) / traffic_fused(n))   # 约等于 K = 6\n",
+      "sources": [
+        {
+          "title": "pegainfer-project/pegainfer",
+          "url": "https://github.com/pegainfer-project/pegainfer"
+        }
+      ]
+    },
+    {
+      "id": "f-inference-roofline-intensity",
+      "name": "算术强度与 Roofline 耗时下界（Arithmetic Intensity & Roofline Bound）",
+      "category": "engineering",
+      "latex": "I = \\frac{\\mathrm{FLOPs}}{\\mathrm{Bytes}}, \\quad T_{\\min} = \\max\\left( \\frac{\\mathrm{FLOPs}}{\\pi_{\\mathrm{peak}}},\\; \\frac{\\mathrm{Bytes}}{\\beta_{\\mathrm{BW}}} \\right)",
+      "symbols": [
+        ["I", "算术强度，每访问一字节显存能完成的浮点运算数"],
+        ["\\pi_{\\mathrm{peak}}", "GPU 峰值算力，单位 FLOP/s"],
+        ["\\beta_{\\mathrm{BW}}", "显存带宽，单位 Byte/s"],
+        ["T_{\\min}", "该内核的理论耗时下界"],
+        ["FLOPs/Bytes", "算子总运算量与总访存量"]
+      ],
+      "derivation": [
+        "第 1 步（动机）：先判断一个内核是算力受限还是带宽受限，才能决定该优化算力还是优化访存。",
+        "第 2 步（定义算术强度）：I = FLOPs / Bytes，衡量单位访存能换取多少计算。",
+        "第 3 步（两条时间下界）：按算力算 T_compute = FLOPs / pi_peak，按带宽算 T_mem = Bytes / beta_BW。",
+        "第 4 步（取下界）：实际耗时不可能低于二者较大者，即 T_min = max(T_compute, T_mem)；I 低于机器拐点时带宽受限，decode 的逐 token 生成正是这种情况。"
+      ],
+      "analogy": "像用桶在井里打水：算力是你往桶里倒水的手速，带宽是井口出水速度。井口太小时你手速再快也没用，瓶颈在水流——这就是带宽受限。",
+      "pitfalls": [
+        "decode 阶段 batch=1 时算术强度极低，几乎总是带宽受限，此时优化算力没用",
+        "FLOPs 按理论值算会高估 I，稀疏或掩码算子的有效算力更低",
+        "roofline 给的是下界，真实耗时还受 occupancy、访存合并、kernel launch 开销影响"
+      ],
+      "code": "def roofline(flops, bytes_moved, peak_flops, bw):\n    t_comp = flops / peak_flops\n    t_mem = bytes_moved / bw\n    t_min = max(t_comp, t_mem)\n    regime = \"compute-bound\" if t_comp > t_mem else \"memory-bound\"\n    return t_min, regime\n\n# 例：峰值 312 TFLOP/s fp16、带宽 2 TB/s\nprint(roofline(2e9, 4e9, 312e12, 2e12))\n",
+      "sources": [
+        {
+          "title": "pegainfer-project/pegainfer",
+          "url": "https://github.com/pegainfer-project/pegainfer"
+        }
+      ]
+    }
+  ]
+}

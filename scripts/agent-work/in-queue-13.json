@@ -1,0 +1,118 @@
+{
+ "batchId": "queue-13",
+ "mode": "full",
+ "items": [
+  {
+   "id": "3573d5a391326adf",
+   "title": "阿里巴巴 Java 一面 · 面试题",
+   "category": "exam",
+   "channel": "kamacoder_notes",
+   "url": "https://notes.kamacoder.com/interview/java/alibaba-interview-11-23.html",
+   "sources": [
+    {
+     "url": "https://notes.kamacoder.com/interview/java/alibaba-interview-11-23.html",
+     "name": "kamacoder_notes"
+    }
+   ],
+   "tags": [
+    "面试题",
+    "面经",
+    "八股",
+    "interview"
+   ],
+   "kind": "interview",
+   "summary": "本文整理了阿里巴巴面试中关于慢SQL排查与优化、MySQL索引、Redis数据结构、设计模式、进程线程及SpringBoot自动装配等高频考点。详细解析了如何通过慢查询日志、explain执行计划定位慢SQL，并给出索引优化、数据库配置调整等解决方案。同时对比了B+树、B树、二叉树等数据结构差异，介绍了Redis的String、Hash、List等核心数据结构及其应用场景，以及观察者模式、装饰者模式的设计原理与实现。最后涵盖了线程状态转换和SpringBoot自动装配机制，是准备大厂面试的必备参考。",
+   "needsFetch": false
+  },
+  {
+   "id": "6b1d855864495bbf",
+   "title": "每日温度（LeetCode 739）· 大厂高频手撕题",
+   "category": "coding",
+   "channel": "codetop",
+   "url": "https://leetcode.cn/problems/daily-temperatures",
+   "sources": [
+    {
+     "url": "https://leetcode.cn/problems/daily-temperatures",
+     "name": "codetop"
+    }
+   ],
+   "tags": [
+    "leetcode",
+    "手撕",
+    "算法题",
+    "高频面试题",
+    "华为"
+   ],
+   "kind": "problem",
+   "summary": "739. 每日温度 - 给定一个整数数组 temperatures ，表示每天的温度，返回一个数组 answer ，其中 answer[i] 是指对于第 i 天，下一个更高温度出现在几天后。如果气温在这之后都不会升高，请在该位置用 0 来代替。 示例 1: 输入: temperatures = [73,74,75,71,69,72,76,73] 输出: [1,1,4,2,1,1,0,0] 示例 2: 输入: temperatures = [30,40,50,60] 输出: [1,1,1,0] 示例 3: 输入: temperatures = [30,60,90] 输出: [1,1,0] 提示： * 1 <= temperatures.length <= 105 * 30 <= temperatures[i] <= 100",
+   "needsFetch": false
+  },
+  {
+   "id": "d49207d57f4e9e74",
+   "title": "Harness-Aware Distillation for Small Language Model Agents",
+   "category": "posttraining",
+   "channel": "hf_papers",
+   "url": "https://huggingface.co/papers/2610.02858",
+   "sources": [
+    {
+     "url": "https://huggingface.co/papers/2610.02858",
+     "name": "hf_papers"
+    },
+    {
+     "url": "https://arxiv.org/abs/2610.02858",
+     "name": "canonical"
+    }
+   ],
+   "tags": [],
+   "kind": "paper",
+   "summary": "Language model agents are deployed with a harness, the software around the model that manages its context, tools, and feedback. When such an agent is distilled into a smaller one, the harness stays in place, so the student mainly needs the teacher-specific abilities that the harness cannot provide, such as acting correctly on harness information. Standard distillation, however, imitates the teacher's full outputs and treats the harness as part of the input. We propose Harness-Aware Distillation (HAD), which focuses distillation on what the teacher adds beyond the harness. HAD complements on-policy distillation with two components: an action preference that contrasts the same teacher's actions with and without the harness information, scored after the student's own reasoning, and a validity check that drops preference pairs whose preferred action contradicts the harness records. We show that the contrast gives the student information that imitating the teacher alone cannot provide, and HAD needs no task rewards, success labels, or future information. Across multiple long-horizon agent benchmarks and models, HAD outperforms on-policy distillation baselines with the same fixed harness. Our analysis shows that HAD enters fewer unproductive loops and recovers from errors more often than the baselines, and suggests that it adaptively keeps learnable feedback in its weights while reading state information from the harness.",
+   "needsFetch": false
+  },
+  {
+   "id": "10a9531f4231c1c1",
+   "title": "160. 相交链表 · 题解",
+   "category": "coding",
+   "channel": "programmercarl",
+   "url": "https://programmercarl.com/algo/other/0160-intersection-of-two-linked-lists.html",
+   "sources": [
+    {
+     "url": "https://programmercarl.com/algo/other/0160-intersection-of-two-linked-lists.html",
+     "name": "programmercarl"
+    }
+   ],
+   "tags": [
+    "算法题",
+    "题解",
+    "leetcode",
+    "手撕",
+    "algo"
+   ],
+   "kind": "problem",
+   "summary": "代码随想录是最系统的算法与数据结构学习网站，提供清晰的LeetCode刷题路线与力扣刷题攻略，涵盖数组、链表、栈、队列、二叉树、图、哈希表、动态规划、贪心算法、回溯、排序、查找等核心算法知识点。网站配套详细题解与高频面试题解析，帮助程序员高效刷题，快速掌握算法思想，提升编程能力。无论是校招、社招还是大厂面试，代码随想录都是最佳的算法学习与刷题参考网站。",
+   "needsFetch": false
+  },
+  {
+   "id": "8f0349de263db386",
+   "title": "字符串相乘（LeetCode 43）· 大厂高频手撕题",
+   "category": "coding",
+   "channel": "codetop",
+   "url": "https://leetcode.cn/problems/multiply-strings",
+   "sources": [
+    {
+     "url": "https://leetcode.cn/problems/multiply-strings",
+     "name": "codetop"
+    }
+   ],
+   "tags": [
+    "leetcode",
+    "手撕",
+    "算法题",
+    "高频面试题",
+    "拼多多"
+   ],
+   "kind": "problem",
+   "summary": "43. 字符串相乘 - 给定两个以字符串形式表示的非负整数 num1 和 num2，返回 num1 和 num2 的乘积，它们的乘积也表示为字符串形式。 注意：不能使用任何内置的 BigInteger 库或直接将输入转换为整数。 示例 1: 输入: num1 = \"2\", num2 = \"3\" 输出: \"6\" 示例 2: 输入: num1 = \"123\", num2 = \"456\" 输出: \"56088\" 提示： * 1 <= num1.length, num2.length <= 200 * num1 和 num2 只能由数字组成。 * num1 和 num2 都不包含任何前导零，除了数字0本身。",
+   "needsFetch": false
+  }
+ ]
+}

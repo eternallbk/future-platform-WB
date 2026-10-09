@@ -1,0 +1,65 @@
+{
+ "batchId": "needsfetch-01",
+ "mode": "full",
+ "items": [
+  {
+   "id": "fb667041cf928c83",
+   "title": "Multimodal open d1 decision models for the edge",
+   "category": "multimodal",
+   "channel": "hf_blog_rss",
+   "url": "https://huggingface.co/blog/LiquidAI/open-d1",
+   "sources": [
+    {
+     "url": "https://huggingface.co/blog/LiquidAI/open-d1",
+     "name": "hf_blog_rss"
+    }
+   ],
+   "tags": [
+    "blog"
+   ],
+   "kind": "notes",
+   "summary": "",
+   "needsFetch": true
+  },
+  {
+   "id": "483764c59e96fd52",
+   "title": "Fixing GRPO's credit assignment problem without evaluating every step",
+   "category": "posttraining",
+   "channel": "hn",
+   "url": "https://arxiv.org/abs/2609.36178",
+   "sources": [
+    {
+     "url": "https://arxiv.org/abs/2609.36178",
+     "name": "hn"
+    },
+    {
+     "url": "https://news.ycombinator.com/item?id=49934012",
+     "name": "canonical"
+    }
+   ],
+   "tags": [],
+   "kind": "notes",
+   "summary": "",
+   "needsFetch": true
+  },
+  {
+   "id": "d235d4d0dd5acd4b",
+   "title": "The Agent Said It Was Done. The Database Disagreed.",
+   "category": "agent",
+   "channel": "hf_blog_rss",
+   "url": "https://huggingface.co/blog/microsoft/thinkingbox",
+   "sources": [
+    {
+     "url": "https://huggingface.co/blog/microsoft/thinkingbox",
+     "name": "hf_blog_rss"
+    }
+   ],
+   "tags": [
+    "blog"
+   ],
+   "kind": "notes",
+   "summary": "",
+   "needsFetch": true
+  }
+ ]
+}

@@ -1,0 +1,74 @@
+{
+ "id": "a252f980703a2733",
+ "tldr": "用执行对齐的渐进噪声，让异步重规划的生成式机器人策略跨动作块从执行一致的生成状态续接，而非从独立噪声重启。",
+ "keyPoints": [
+  "连续异步重规划对实时生成式机器人策略是必需的",
+  "独立随机初始化会导致动作块间的模式切换与不连续",
+  "EAPN 在块间与块内两个层级都引入结构化随机性",
+  "跨重规划传播共享噪声轨迹并与其实际执行位移对齐",
+  "新块结合已提交动作上下文，从一致生成状态续接"
+ ],
+ "why": "生成式策略 + 异步重规划是具身与世界模型方向的热点；「如何在重规划间保持生成一致」是扩散策略类岗位的常见追问。",
+ "difficulty": "hard",
+ "tags": ["multimodal","robot-policy","diffusion-policy","replanning","embodied"],
+ "entities": ["EAPN","D3IL","Kinetix","LIBERO"],
+ "diagram": {
+  "kind": "flow",
+  "title": "EAPN 的跨块噪声对齐",
+  "caption": "共享噪声轨迹跟着实际执行位移走，让新动作块从一致的生成状态继续，而不是重新掷骰子。",
+  "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='EAPN 四步流程'><rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>重规划步 t</text><text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>共享噪声轨迹</text><line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,70 236,62 244,62' fill='var(--line-1)'/><rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>与实际执行位移对齐</text><text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>块间相关</text><line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,124 236,116 244,116' fill='var(--line-1)'/><rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>块内时间相关建模</text><text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>动作时间轴</text><line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,178 236,170 244,170' fill='var(--line-1)'/><rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>条件生成新块</text><text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>从一致状态续接</text></svg>",
+  "alt": "四步流程：重规划步 t 携带共享噪声轨迹→与实际执行位移对齐形成块间相关→块内建模动作时间相关→结合已提交上下文条件生成新块。"
+ },
+ "concepts": [
+  {
+   "name": "Execution-Aligned Inter-Chunk Correlation（执行对齐的块间相关）",
+   "readable": "重规划时不让噪声重新随机，而是让噪声轨迹跟着机器人实际走出的位移一起演化，使相邻动作块的生成起点相互关联。",
+   "analogy": "像接力赛交棒：下一棒从上一棒实际跑到的位置接，而不是回到起点重新起跑，否则节奏全乱。",
+   "analogyBreaksDown": "交棒是确定的物理位置，这里「对齐」的是随机噪声轨迹与位移的耦合，是概率性的；位移可能因延迟滞后，对齐本身有误差。",
+   "mechanism": "跨重规划传播同一条噪声轨迹，并用实际执行位移校正它，形成块间相关；再把这段随机历史与已提交动作作为条件，使新块落在与执行一致的生成状态上。",
+   "visual": "画两条随时间演化的折线：一条是真实执行位移，一条是噪声轨迹，用同相位表示对齐；对比独立采样的噪声为随机抖动。",
+   "prerequisites": ["扩散/流匹配策略","异步重规划","随机微分方程采样"],
+   "selfTest": ["为什么独立随机初始化会导致模式切换？","「执行对齐」对齐的到底是什么量？","块间相关如何影响生成的一致性？"],
+   "formula": "\\epsilon_{t+1}=\\rho\\,\\epsilon_{t}+(1-\\rho)\\,\\Psi(\\Delta \\mathbf{a}_{t})"
+  }
+ ],
+ "formulas": [
+  {
+   "id": "f-eapn-interchunk-noise-alignment",
+   "name": "执行对齐的块间噪声传播（Execution-Aligned Noise Propagation）",
+   "category": "multimodal",
+   "latex": "\\epsilon_{t+1}=\\rho\\,\\epsilon_{t}+(1-\\rho)\\,\\Psi(\\Delta \\mathbf{a}_{t})",
+   "symbols": [["\\epsilon_{t}","重规划步 t 的共享噪声轨迹"],["\\epsilon_{t+1}","下一步的噪声轨迹"],["\\rho","块间相关强度（0 到 1）"],["\\Delta \\mathbf{a}_{t}","实际执行位移"],["\\Psi","把位移映射到噪声空间的对齐函数"]],
+   "derivation": ["第 1 步：动机——独立重采样噪声会让相邻动作块的生成起点不相关，导致模式切换。","第 2 步：让下一步噪声继承上一步的噪声轨迹，形成跨块记忆。","第 3 步：用实际执行位移 \\Delta a_t 校正该轨迹，使噪声与实际运动对齐。","第 4 步：把对齐后的噪声作为条件，生成与执行一致的新动作块。"],
+   "analogy": "像给噪声装了个「惯性」：它不会每块重掷，而是顺着机器人真正走过的路延续下去。",
+   "pitfalls": ["把 \\rho 设为 0 就退化为独立采样，失去块间相关","误以为对齐的是时间戳；对齐的是执行位移","忽略推理延迟会让位移与噪声错位，需要持续校正"],
+   "code": "import torch\nrho = 0.8\ndef align_noise(eps, delta_a, Psi):\n    return rho * eps + (1 - rho) * Psi(delta_a)\neps = torch.randn(16, 7)          # 上一步噪声轨迹\nPsi = torch.nn.Linear(7, 7)       # 位移到噪声空间\ndelta_a = torch.randn(16, 7)      # 实际执行位移\nprint(align_noise(eps, delta_a, Psi).shape)  # torch.Size([16, 7])",
+   "sources": [{"title": "Execution-Aligned Progressive Noise for Consistent Asynchronous Replanning in Generative Robot Policies", "url": "https://huggingface.co/papers/2610.06090"}]
+  }
+ ],
+ "selfCheck": {
+  "claims": ["连续异步重规划对实时生成式机器人策略是必需的","独立的随机初始化会造成跨动作块的模式切换与不连续续接","EAPN 在块间与块内两个层级引入结构化随机性","跨重规划传播共享噪声轨迹并与其实际执行位移对齐，形成执行对齐的块间相关","新块结合已提交动作上下文条件生成，从执行一致的生成状态续接","在 D3IL 上改善多模态行为一致性，Kinetix 平均成功率 88.59%","LIBERO 在长推理延迟下仍稳健","真机 Object Storage 成功率 90.0%，双臂 Cloth Folding 96.7%"],
+  "uncertain": ["两条公式为按摘要重建的通用形式（线性对齐与 AR(1)），原文精确参数化待核实","D3IL 上「多模态行为一致性」的具体指标与数值摘要未给","推理延迟的具体设置与 LIBERO 的量化结果摘要未逐项列出"]
+ },
+ "teaching": {
+  "progressive": [
+   {"level": "一句话", "text": "重规划时别让噪声重新掷骰子，让它跟着机器人走过的路延续。"},
+   {"level": "入门", "text": "生成式机器人策略要边执行边重规划。如果每个新动作块都从独立随机噪声开始，块间就会跳变。EAPN 让噪声在块间共享并跟着实际执行位移走，块内也让相邻时刻的噪声相关，于是新块从一致的生成状态续接。"},
+   {"level": "进阶", "text": "EAPN 分两个层级加结构化随机性：块间传播一条共享噪声轨迹，并用实际执行位移去校正它，形成执行对齐的块间相关；块内沿动作时间轴建模时间相关。再把这段随机历史与已提交的动作上下文一起作为条件，让新块接着执行状态生成，而不是从独立噪声重启。评测覆盖 D3IL、Kinetix、LIBERO 与真机。"},
+   {"level": "专家", "text": "与同步重规划相比，异步重规划会在上一块未执行完时就开始下一块规划，独立性假设最容易失效。EAPN 的思路是把「随机性」也当成需要跨块连续的状态：块间用执行位移对齐的噪声轨迹、块内用时间相关噪声，共同构造与执行一致的生成初值。这带来多模态行为一致性与长延迟稳健性，但它的对齐依赖对位移的准确估计，异步延迟过大时对齐误差会累积（推断）。"}
+  ],
+  "socratic": [
+   {"q": "如果不做块间噪声对齐会怎样？", "a": "每个新块从独立随机初值生成，可能导致模式切换与续接不连续，机器人动作在接缝处跳变。"},
+   {"q": "为什么要在块内也加时间相关噪声？", "a": "块内各步噪声若独立，动作在时间上会抖动、缺一致性；AR(1) 让相邻步噪声相关，生成轨迹更平滑。"},
+   {"q": "为什么要用实际执行位移而不是规划中的位移？", "a": "因为异步重规划下执行会滞后于规划，只有用实际执行的位移对齐噪声轨迹，生成状态才真正与机器人当前位置一致。"}
+  ],
+  "mechanism": "核心是把噪声从「每块独立的随机数」升级为「跨块连续、且与实际执行挂钩的随机状态」。生成式策略的动作由噪声驱动，初值不同就落到不同模态；异步下上一块还没执行完，若不携带历史，下一块的初值与执行状态脱节，接缝处就出现模式切换。块间用位移对齐的共享轨迹、块内用时间相关噪声，共同让生成沿执行轨迹平滑延续。",
+  "boundary": "方法依赖对实际执行位移的估计与对齐函数 Psi 的设计，位移噪声大或延迟过长时对齐误差会累积（推断）；摘要主要在抓取/操作类任务（D3IL、Kinetix、LIBERO 与真机）验证，能否推广到高动态或强接触任务待核实；超参数 rho、alpha 的敏感性摘要未给。",
+  "analogyBoundary": "「接力交棒」和「开车重规划」的类比失效处：交棒位置与方向盘角度都是确定可测的量，而这里要对齐的是随机噪声轨迹与位移的耦合，是概率性的；且噪声没有物理惯性，全靠公式人为引入相关性。",
+  "misconceptions": ["以为只是把上一块的动作直接拼过来；关键是传播并对齐噪声轨迹。","以为块间和块内相关是一回事；两者是不同层级的结构化随机性。","把异步重规划等同于同步重规划；异步下独立性假设更易失效。"],
+  "ownAnalysis": "把噪声一致性显式建模，与扩散策略里 action chunking 的接缝问题直接相关：以往多用重叠动作拼接或时序集成缓解，而 EAPN 从生成初值层面入手（推断：比后处理拼接更本质）。用实际执行位移而非计划位移对齐是关键工程洞察（推断）。可疑处是累积误差：若某步估计错，可能沿递归传播，摘要未提纠错机制（待核实）。",
+  "officialNotes": [{"position": "独立随机初始化会引起跨动作块的模式切换与不一致续接；EAPN 在块间与块内引入结构化随机性，使新块从执行一致的生成状态续接。", "source": "https://huggingface.co/papers/2610.06090"}],
+  "interviewAnswer": "生成式机器人策略要异步重规划，但每个新动作块若从独立随机噪声开始，块间就会模式切换、续接不连续。EAPN 在块间传播一条共享噪声轨迹并用实际执行位移对齐，形成执行对齐的块间相关；块内用时间相关噪声让动作平滑。再把这段随机历史和已提交动作一起作为条件，让新块从与执行一致的生成状态续接。",
+  "studyPath": {"prerequisites": ["扩散/流匹配策略","action chunking","异步重规划"], "nextSteps": ["复现块间与块内噪声相关性的构造","对比重叠拼接等接缝处理方案","在带延迟的仿真环境中测试一致性"]}
+ }
+}

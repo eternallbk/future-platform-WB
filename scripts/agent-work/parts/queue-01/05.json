@@ -1,0 +1,184 @@
+{
+  "id": "f5c24c7fe049da47",
+  "tldr": "先做联合因子图标定造出 DROID-3D 度量深度数据，再训一个联合预测多视角 RGB 与深度的视频世界模型，RGB 预测反而涨 1.48 dB。",
+  "keyPoints": [
+    "世界模型用数据替代机器人仿真器，服务于策略评估、改进与规划",
+    "这些用途都要求忠实的 3D 几何，但视频世界模型只用 RGB 训练",
+    "逐帧看着对，rollout 拼起来却不构成一致的 3D 世界",
+    "缺口需大规模 3D 监督，以及不破坏预训练视频先验的架构",
+    "联合因子图标定产出 DROID-3D，DepthWorld 用空间 latent 分块联合预测 RGB 与深度"
+  ],
+  "why": "世界模型是机器人/具身方向热点；「几何一致性」与「不破坏预训练先验的适配」是面试区分点，且与视频生成、多视角一致性直接相通。",
+  "difficulty": "hard",
+  "tags": [
+    "world-model",
+    "robotics",
+    "3d",
+    "diffusion",
+    "depth",
+    "multiview"
+  ],
+  "entities": [
+    "DepthWorld",
+    "DROID-3D",
+    "DROID",
+    "Stable Video Diffusion",
+    "Variational Autoencoder"
+  ],
+  "diagram": {
+    "kind": "flow",
+    "title": "DepthWorld 数据与建模流程",
+    "caption": "先用联合因子图标定出带度量深度的数据，再让视频世界模型联合预测 RGB 与深度。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='DepthWorld 四层流程：多视角 RGB、联合因子图标定、DROID-3D、联合预测 RGB 与深度'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>多视角 RGB episode</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>同一物理机器人采集</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>联合因子图标定</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>共享运动学 + 每场景外参</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>DROID-3D</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>密集度量深度 + 重标定外参</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>DepthWorld 联合预测</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>多视角 RGB + 深度</text>\n</svg>",
+    "alt": "四层竖排流程：多视角 RGB episode→联合因子图标定→产出 DROID-3D 度量深度→DepthWorld 联合预测多视角 RGB 与深度。"
+  },
+  "concepts": [
+    {
+      "name": "Joint Factor Graph Calibration（联合因子图标定）",
+      "readable": "把同一机器人采集的所有 episode 放进一张优化图一起解，既求出这台机器人共享的运动学参数，也求出每个场景各自的相机外参。",
+      "analogy": "像用多部相机拍同一实验室：单看一部无法判断谁的镜头装歪了，把所有照片一起解，才能同时定出相机怎么装和实验室在哪。",
+      "analogyBreaksDown": "实验室是静态的，而机器人会动：必须区分「机器人自身运动学」与「场景外参」两类未知量，若运动学建模有偏，误差会被错误吸收进外参。",
+      "mechanism": "以学习式立体深度为观测量，把同一物理机器人跨 episode 的共享运动学参数与每场景外参写进一个联合因子图共同优化。共享参数跨场景提供强约束，提升标定精度，从而得到度量尺度可靠的深度与重标定外参。",
+      "visual": "一张二部图：左侧一个大圆是机器人共享运动学参数，右侧多个小圆是各场景外参，每个场景还挂着观测因子方块，边表示残差连接。",
+      "prerequisites": [
+        "相机模型与重投影误差",
+        "因子图 / 束调整（bundle adjustment）",
+        "立体深度估计"
+      ],
+      "selfTest": [
+        "为什么要把不同 episode 放在同一图里联合求解？",
+        "共享运动学参数与外参差别在哪？",
+        "用学习式立体深度作观测有什么风险？"
+      ],
+      "formula": "\\min_{T_{i}, \\xi} \\sum_{i,j} \\rho\\left( \\| \\pi(T_{i}, \\xi, X_{j}) - u_{ij} \\|^{2} \\right)"
+    },
+    {
+      "name": "Spatial Latent Tiling（空间潜变量分块）",
+      "readable": "把多视角的 RGB 与深度打包成一张带空间分块的潜变量，让原本的 VAE 完全不用改就能同时装下多个视角与深度。",
+      "analogy": "像把几张照片拼成一张大拼图送进同一台扫描仪：扫描仪不用认识这是拼图，照样按网格逐块处理。",
+      "analogyBreaksDown": "拼图块之间本来没关系，而不同视角是同一场景的不同投影，必须几何一致；仅靠分块拼接不保证跨视角一致，一致性要靠深度监督来拉。",
+      "mechanism": "在空间维度把多视角图像与深度图平铺进一个潜变量网格，使预训练 VAE 的接口与权重完全不变，从而在吸收新模态监督的同时不破坏视频先验；深度与 RGB 共享同一去噪骨干，实现联合预测。",
+      "visual": "一个网格矩形：左半是 RGB 视角块，右半是深度块，用不同填充纹样区分，外框标注「同一 VAE 潜空间」。",
+      "prerequisites": [
+        "潜空间扩散与 VAE 接口",
+        "多视角几何（外参与投影）",
+        "视频扩散模型结构"
+      ],
+      "selfTest": [
+        "为什么保持 VAE 不变很重要？",
+        "空间分块如何让一个模型同时处理 RGB 与深度？",
+        "只做分块而不加深度监督会缺什么？"
+      ],
+      "formula": ""
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-joint-factor-reproj",
+      "name": "联合因子图重投影误差最小化（Joint Factor Graph Reprojection）",
+      "category": "worldmodel",
+      "latex": "\\min_{T_{i}, \\xi} \\sum_{i,j} \\rho\\left( \\| \\pi(T_{i}, \\xi, X_{j}) - u_{ij} \\|^{2} \\right)",
+      "symbols": [
+        ["T_{i}", "第 i 个待估外参/位姿（每场景外参）"],
+        ["\\xi", "同一物理机器人跨 episode 共享的运动学参数"],
+        ["X_{j}", "第 j 个三维点（由学习式立体深度给出）"],
+        ["u_{ij}", "三维点在图像上的观测像素坐标"],
+        ["\\pi(\\cdot)", "相机投影函数"],
+        ["\\rho(\\cdot)", "鲁棒损失核，抑制外点"]
+      ],
+      "derivation": [
+        "第 1 步：单条 episode 标定信息不足，容易把运动学误差吸收进外参。",
+        "第 2 步：同一机器人在所有 episode 共享同一套运动学参数，构成强约束。",
+        "第 3 步：把共享运动学与每场景外参写进同一因子图，观测来自学习式立体深度。",
+        "第 4 步：最小化重投影残差即同时恢复两类未知量，得到度量可靠的几何。"
+      ],
+      "analogy": "像集体调表：一个人的表不可信，但把所有人的表与共同标准一起对齐，就能同时校准每块表和公共偏差。",
+      "pitfalls": [
+        "把共享运动学当固定已知量，忽略它才是跨场景约束来源",
+        "不使用鲁棒核，深度外点会主导优化",
+        "混淆「度量深度」与「相对深度」，后者无法直接用于几何推理"
+      ],
+      "code": "import torch\ndef residual(X, T, xi, uv, project):\n    pred = project(X, T, xi)             # [N,2]\n    return (pred - uv).norm(dim=-1)\ndef robust_cost(r, delta=1.0):\n    return torch.where(r.abs() < delta, 0.5*r**2, delta*(r.abs()-0.5*delta)).sum()",
+      "sources": [
+        {"title": "DepthWorld: 3D World Model for Robot Manipulation", "url": "https://arxiv.org/abs/2610.08780v1"}
+      ]
+    },
+    {
+      "id": "f-multiview-rgbd-joint",
+      "name": "多视角 RGB-深度联合去噪目标（Multi-view RGB-D Joint Denoising）",
+      "category": "worldmodel",
+      "latex": "L = \\mathbb{E}_{t, \\epsilon}\\left[ \\| \\epsilon - \\epsilon_{\\theta}(z_{t}, t, c) \\|_{2}^{2} \\right] + \\lambda \\, \\mathbb{E}_{t}\\left[ \\| d - d_{\\theta}(z_{t}, t, c) \\|_{1} \\right]",
+      "symbols": [
+        ["z_{t}", "加噪后的多视角潜变量（RGB 与深度分块共处同一潜空间）"],
+        ["\\epsilon", "加入的标准高斯噪声"],
+        ["\\epsilon_{\\theta}", "去噪网络对噪声的预测"],
+        ["d", "目标度量深度"],
+        ["d_{\\theta}", "网络对深度的预测"],
+        ["c", "条件（动作、时间步、视角编号等）"],
+        ["\\lambda", "深度损失权重"]
+      ],
+      "derivation": [
+        "第 1 步：标准视频扩散目标只监督 RGB，rollout 逐帧像但无一致几何。",
+        "第 2 步：把深度作为额外监督通道，与 RGB 共享同一去噪骨干。",
+        "第 3 步：RGB 走噪声预测的 L2 目标，深度走 L1 目标（对深度异常更稳健）。",
+        "第 4 步：两项联合优化，使模型同时获得外观与几何预测能力。"
+      ],
+      "analogy": "像同时练写生与素描：只画外观会失真，加上结构与明暗约束反而让画面更准。",
+      "pitfalls": [
+        "以为加深度监督会牺牲 RGB 质量——摘要报告 RGB 反而提升 1.48 dB",
+        "深度用 L2 监督对离群深度敏感，通常更适合 L1",
+        "忘记深度分块与 RGB 分块共享 VAE 接口这一前提"
+      ],
+      "code": "import torch.nn.functional as F\ndef joint_loss(eps_pred, eps, d_pred, d_gt, lam=0.5):\n    l_rgb = F.mse_loss(eps_pred, eps)          # 噪声预测 L2\n    l_dep = F.l1_loss(d_pred, d_gt)            # 深度 L1\n    return l_rgb + lam * l_dep",
+      "sources": [
+        {"title": "DepthWorld: 3D World Model for Robot Manipulation", "url": "https://arxiv.org/abs/2610.08780v1"}
+      ]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "世界模型是传统仿真器的数据驱动替代，应用涵盖策略评估、改进与规划，且都依赖忠实的 3D 几何",
+      "当前基于视频的世界模型只用 RGB 训练，rollout 逐帧看似正确却无法组成一致的 3D 世界",
+      "补缺口需要面向操作的大规模 3D 监督，以及能在不扰动强预训练视频先验前提下吸收它的架构",
+      "标定流程结合学习式立体深度与联合因子图，把同一物理机器人的所有 episode 汇聚以恢复共享运动学参数与每场景外参",
+      "在 DROID 上得到 DROID-3D，提供密集度量深度与重标定多视角外参；外部相机在 90% episode 上重投影误差小于 0.7 px",
+      "DepthWorld 基于 Stable Video Diffusion，用空间潜变量分块联合预测多视角 RGB 与深度，且保持预训练 VAE 不变",
+      "深度监督使 RGB 预测在同预算下比相同 RGB-only 基线提升 +1.48 dB PSNR，同时给出准确的度量深度"
+    ],
+    "uncertain": [
+      "空间潜变量分块的具体平铺方式与视角数摘要未给出，待核实",
+      "联合去噪目标中深度损失形式与权重为按摘要重建的通用形式，需核对原文",
+      "因子图的具体因子构成与鲁棒核选择摘要未说明，待核实",
+      "「90% episode」的统计口径与内部相机情况摘要未说明，待核实"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "给视频世界模型补上真实深度，让它学会拼出一个一致的三维世界。"},
+      {"level": "入门", "text": "机器人可用世界模型代替仿真器做策略评估与规划，但这些用途都要求几何正确。现在的视频世界模型只看 RGB，单帧看着挺像，连起来却不是前后一致的 3D 世界。DepthWorld 先用标定流程造出带度量深度的数据，再训一个同时预测多视角 RGB 与深度的模型。"},
+      {"level": "进阶", "text": "数据侧用学习式立体深度当观测，把同一台机器人的所有 episode 放进一个联合因子图共同求解，得到共享运动学参数与每场景外参，从而产出带度量深度的 DROID-3D。模型侧基于 Stable Video Diffusion，用空间潜变量分块把多视角 RGB 与深度塞进同一潜空间，完全不动预训练 VAE，实现联合去噪预测。"},
+      {"level": "专家", "text": "两个设计都指向同一原则：增加监督时要保护预训练先验。数据侧靠跨 episode 共享运动学约束把标定从不可辨识变为可辨识，得到度量尺度可靠的多视角几何；模型侧靠空间分块让 RGB 与深度共享冻结 VAE 接口，避免改 tokenizer 带来的分布漂移。结果是双赢——深度监督不仅给几何，还把 RGB 预测在同预算下提升 1.48 dB PSNR。局限在于仍依赖学习式立体深度质量，且标定流程假定「同一物理机器人」。"}
+    ],
+    "socratic": [
+      {"q": "为什么视频世界模型逐帧看起来对却不能用？", "a": "它只被 RGB 监督，学到的是外观连续性而非三维一致性；rollout 单看合理，跨帧或跨视角拼起来几何就崩。"},
+      {"q": "为什么不直接重训 VAE 让 latent 容纳深度？", "a": "改 VAE 会让 latent 分布漂移并破坏预训练视频先验；用空间分块共享原接口，就能加监督而不动先验。"}
+    ],
+    "mechanism": "几何一致性是 3D 世界里不能被外观损失替代的约束，但它又必须在不破坏预训练视频先验的前提上加进去。作者把「加监督」与「改接口」解耦：数据上靠跨 episode 共享运动学把标定变成可辨识问题，模型上靠空间分块复用冻结 VAE。于是深度监督只增加目标项、不改变 latent 语义，既保住先验又注入几何。",
+    "boundary": "标定流程要求数据来自同一台物理机器人且运动学可共享；多台机器人或运动学漂移时假设失效。空间分块要求各视角外参已知，标定误差会直接传导为几何误差。若任务不需要度量几何，额外深度监督收益有限。",
+    "analogyBoundary": "「拼图送进扫描仪」类比忽略了跨视角几何约束：扫描仪不在乎拼图块关系，而这里多视角必须严格一致，一致性完全由标定与深度监督承担，不能在类比里被省略。",
+    "misconceptions": [
+      "以为深度监督会拖累 RGB 生成——摘要报告 RGB 反而提升 1.48 dB。",
+      "把 DROID-3D 当成新采集的数据集——它是在已有 DROID 上做标定得到的。",
+      "认为改了 VAE 才能支持深度，忽略 VAE 明确保持不变。"
+    ],
+    "ownAnalysis": "最值得学的工程思想（推断）是「保护预训练先验的同时加新监督」：空间 latent tiling 与 GRACE 的残差 latent 思路相通，都不动 tokenizer 而扩展监督。可疑处：+1.48 dB 是「同等训练预算」下的比较，若深度标注成本未计入则不完全公平；DROID-3D 的深度来自学习式立体而非真值，重投影误差小于 0.7 px 衡量的是外参质量而非深度绝对精度，需核对原文确认二者区分。",
+    "officialNotes": [
+      {"position": "标定流程在 DROID 上产出 DROID-3D；DepthWorld 基于 Stable Video Diffusion 用空间潜变量分块联合预测多视角 RGB 与深度并保持 VAE 不变，深度监督使 RGB 预测提升 1.48 dB PSNR", "source": "arxiv: 2610.08780v1"}
+    ],
+    "interviewAnswer": "我会从问题讲起：世界模型要替代仿真器做策略评估和规划，就必须有忠实的 3D 几何，但现有视频世界模型只用 RGB 训练，rollout 逐帧像、拼起来不一致。DepthWorld 分两步：数据上把同一台机器人的所有 episode 放进联合因子图，配合学习式立体深度恢复共享运动学参数与每场景外参，产出带度量深度的 DROID-3D；模型上基于 Stable Video Diffusion，用空间 latent 分块让多视角 RGB 与深度共用一个冻结 VAE，做联合去噪。有意思的是深度监督不仅给几何，还让 RGB 预测在同预算下涨了 1.48 dB。",
+    "studyPath": {
+      "prerequisites": ["多视角几何与相机标定", "扩散模型与潜空间扩散", "视频生成 / 世界模型基础"],
+      "nextSteps": ["读原文的标定流程与因子图设计", "对比 RGB-only 与 RGB-D 联合预测的消融", "思考如何把几何一致性用于机器人策略评估"]
+    }
+  }
+}

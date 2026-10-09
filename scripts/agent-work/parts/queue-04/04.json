@@ -1,0 +1,130 @@
+{
+  "id": "864aa5f7df07768d",
+  "tldr": "EmbodiedRSI 用快慢双系统 + 假设图把机器人试验变成代码与技能的共同进化，按价值信息选实验，RoboCasa365 达 77.0% 成功率。",
+  "keyPoints": [
+    "机器人基础模型在物体位置或任务指令变化时会退化，重训数据昂贵",
+    "现有自演化 harness 在决定改哪段代码/技能时浪费机器人试验",
+    "快慢双系统架构，竞争的代码与技能假设存在假设图里",
+    "价值信息实验选择挑能区分假设的物理实验，结果驱动代码-技能共演化",
+    "RoboCasa365 77.0% 总成功、71.3% Composite-Unseen（最佳基线 40.1%），真机零样本 71.3%"
+  ],
+  "why": "把「主动实验设计」引入具身智能体自进化，是 agent + world model 交叉的前沿范式，面试里能讲清「试验怎么花在刀刃上」很加分。",
+  "difficulty": "hard",
+  "tags": ["agent", "embodied-ai", "self-evolving", "worldmodel", "robot-learning"],
+  "entities": ["EmbodiedRSI", "Hypothesis Graph", "Value-of-Information Experiment Selection", "Code-Skill Co-Evolution", "RoboCasa365", "LIBERO-Pro"],
+  "diagram": {
+    "kind": "architecture",
+    "title": "EmbodiedRSI 快慢双系统",
+    "caption": "慢系统建记忆，快系统选实验，结果反哺代码与技能。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='EmbodiedRSI 快慢双系统架构'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>假设图</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>竞争的代码/技能假设</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>价值信息实验选择</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>挑最能区分假设的物理实验</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>代码-技能共演化</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>用实验结果改代码与技能</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>分层记忆</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>按价值挑选有效记忆</text>\n</svg>",
+    "spec": {
+      "type": "architecture",
+      "nodes": [
+        {"label": "假设图", "detail": "竞争的代码与技能假设"},
+        {"label": "VoI 实验选择", "detail": "挑能区分假设的物理实验"},
+        {"label": "代码-技能共演化", "detail": "实验结果改写代码与技能"},
+        {"label": "分层记忆", "detail": "按对快系统的价值筛选"}
+      ],
+      "edges": [
+        {"from": 0, "to": 1, "label": "生成候选实验"},
+        {"from": 1, "to": 2, "label": "物理试验结果"},
+        {"from": 2, "to": 3, "label": "慢系统沉淀"},
+        {"from": 3, "to": 0, "label": "记忆回灌"}
+      ]
+    },
+    "alt": "EmbodiedRSI 的假设图产生候选实验，按价值信息选出物理试验，结果驱动代码与技能共演化并沉淀为分层记忆。"
+  },
+  "concepts": [
+    {
+      "name": "Value-of-Information Experiment Selection",
+      "readable": "机器人每次试一次都要花时间，所以不随便试，而是先评估「做这个实验能多大程度上分辨出我手上哪套假设是对的」，挑最能消除不确定性的那个去做。",
+      "analogy": "像医生开检查：不会把所有项目都做一遍，而是先做那个「无论阴性阳性都能大幅缩小诊断范围」的检查，其余留到必要时再查。",
+      "analogyBreaksDown": "医学检查的结果分布相对稳定、可量化；机器人实验的噪声来自硬件磨损、光照、物体初始状态，单次试验的区分度很低，需要多次重复才能得到可靠信号，这会削弱单次信息增益的估计。",
+      "mechanism": "把「探索该做什么」形式化为对假设空间不确定性的减少量，用互信息/熵减作为打分，从而把有限的真机试验预算优先分配给那些能把候选假设劈成两半的实验，避免在区分度低的实验上浪费样本。",
+      "visual": "画一张二维散点图：横轴是每个候选实验的预期信息增益，纵轴是执行成本，理想区域在左上；每个点用圆圈大小表示该假设当前的置信度，点越靠左上越优先被选中。",
+      "prerequisites": ["强化学习中的探索与信息增益", "贝叶斯实验设计基础", "机器人任务成功率评测协议"],
+      "selfTest": [
+        "为什么不能简单地「把成功率最低的技能先修」？",
+        "信息增益高的实验为什么往往成本也高？",
+        "在全失败或全成功的组里，VoI 会发生什么？"
+      ],
+      "formula": "\\mathrm{VoI}(e) = H(\\theta) - \\mathbb{E}_{o \\sim p(o \\mid e)}\\!\\left[ H(\\theta \\mid o, e) \\right]"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-value-of-information",
+      "name": "实验价值信息（Value of Information）",
+      "category": "agent",
+      "latex": "\\mathrm{VoI}(e) = H(\\theta) - \\mathbb{E}_{o \\sim p(o \\mid e)}\\!\\left[ H(\\theta \\mid o, e) \\right]",
+      "symbols": [
+        ["e", "候选物理实验（一组代码/技能的尝试）"],
+        ["\\theta", "假设图里的代码与技能假设集合"],
+        ["H(\\theta)", "当前假设分布的先验熵"],
+        ["o", "实验 e 得到的观测/结果"],
+        ["H(\\theta \\mid o, e)", "观测后的后验熵"],
+        ["\\mathrm{VoI}(e)", "该实验预期能消除的不确定性"]
+      ],
+      "derivation": [
+        "动机：真机试验预算有限，要挑最能推进判断的实验。",
+        "先验不确定性用假设分布熵 H(theta) 度量。",
+        "假设实验 e 会产生观测 o，观测后按贝叶斯更新得到后验熵。",
+        "对可能的观测取期望，与先验熵之差即为预期信息增益，排序后选最大者执行。"
+      ],
+      "analogy": "像二十问游戏：每次都问那个能把可能性一刀切开的问题，而不是随便猜一个答案去验证。",
+      "pitfalls": [
+        "把成功率提升直接当 VoI，忽略它可能与区分假设无关",
+        "忽略执行成本，导致总选最贵但增益略高的实验",
+        "只用单次试验估增益，真机噪声会放大方差"
+      ],
+      "code": "import numpy as np\ndef voi(prior, likelihoods):\n    # prior: (K,) 假设概率; likelihoods: (E,K,W) 每个实验在每种假设下观测的分布\n    H = lambda p: -np.sum(p[p>0]*np.log(p[p>0]))\n    out = []\n    for lik in likelihoods:          # lik: (K,W)\n        Hpost = 0.0\n        for w in range(lik.shape[1]):\n            joint = prior * lik[:, w]\n            post = joint / joint.sum()\n            Hpost += joint.sum() * H(post)\n        out.append(H(prior) - Hpost)\n    return np.array(out)",
+      "sources": [{"title": "EmbodiedRSI: Active Continual Robot Learning Through Hypothesis-Guided Co-Evolution", "url": "https://arxiv.org/abs/2610.10498v1"}]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "机器人基础模型在物体位置或任务指令变化时性能会退化",
+      "EmbodiedRSI 是自演化 agentic harness，自主决定下一步探索方向",
+      "采用快慢双系统架构，代码与技能假设维护在假设图中",
+      "用价值信息实验选择挑选能区分假设的物理实验，结果驱动代码-技能共演化",
+      "慢系统构建分层记忆，按价值选择有效记忆供快系统使用",
+      "RoboCasa365 达 77.0% 总体、71.3% Composite-Unseen，最佳基线 40.1%；LIBERO-Pro 86.8%；真机零样本 71.3%"
+    ],
+    "uncertain": [
+      "公式为按摘要中 Value-of-Information Experiment Selection 重建的通用信息增益形式，需核对原文具体打分函数",
+      "假设图的更新规则、代码与技能的具体表示形式摘要未给出，待核实",
+      "真机零样本评测的任务集合与评测协议摘要未细述，待核实"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "让机器人自己设计最能答疑的实验，再把答案变成更会干活的代码。"},
+      {"level": "入门", "text": "机器人基础模型遇到新位置或新指令就变笨，重训又太贵。EmbodiedRSI 让智能体把自己当成实验者：手里有多套互相竞争的代码和技能假设，每次挑一个最能分辨对错的实验去做，用结果同时改代码和技能，并把经验存成记忆。"},
+      {"level": "进阶", "text": "关键是双系统分工：快系统负责在假设图上做实验选择与代码/技能改写，慢系统把结果沉淀成分层记忆并按价值筛选。核心创新是价值信息实验选择——不是按成功率排序，而是按「这个实验能消除多少假设不确定性」排序，让每单位真机时间的信息收益最大。"},
+      {"level": "专家", "text": "相比朴素的失败驱动迭代，它把探索问题从「修哪个 bug」提升为「做哪个实验」；相比超参式自适应，它同时演化代码与技能两种载体。边界是 VoI 的估计依赖对结果分布的建模，真机噪声与长时程信用分配会带来偏差；此外它需要可自主执行的实验接口和较稳的仿真到真机迁移，否则选出的实验在真机上不可行。"}
+    ],
+    "socratic": [
+      {"q": "为什么不直接把最差的任务多练几遍？", "a": "最差的任务不一定最有信息量；重复已经确定的失败只是补贴，不能区分多套假设，应选能一刀切开假设空间的实验。"},
+      {"q": "为什么要同时演化代码和技能，只改一个不行吗？", "a": "失败既可能来自高层逻辑（代码），也可能来自底层执行（技能），只改一边会误判归因；两者的联合假设空间才完整。"},
+      {"q": "慢系统如果只存成功记忆会怎样？", "a": "会丢掉「为什么失败」这类高价值信息，后续在相似情境下可能重复踩坑；因此摘要强调按价值选择记忆，而不是只留成功。"
+      }
+    ],
+    "mechanism": "必须引入实验选择，是因为真机时间是最稀缺资源：随机试错或按成功率贪心都会把预算花在区分度低的方向上；只有用信息增益对实验排序，才能让每一条实验数据同时服务于「验证假设」和「改进代码」两个目标，实现样本效率与性能提升兼得。",
+    "boundary": "需要可反复执行且风险可控的实验接口；真机噪声大、单次试验区分度低时 VoI 估计不准；若假设空间没有被穷举或假设图构建有偏，实验选择会在错误假设里打转；跨场景零样本仍依赖基础模型的迁移能力。",
+    "analogyBoundary": "「医学检查」类比失效在于：检查结果的条件分布可以事先标定，而机器人实验的观测分布随硬件状态漂移，且部分实验会改变环境与物体状态，使后续实验的前提被污染。",
+    "misconceptions": [
+      "把它当作又一个 RL 微调，忽略核心在「实验选择的 harness」而非策略梯度",
+      "以为 77.0% 是纯模型能力；其中很大一部分来自代码与技能的持续改写",
+      "把信息增益当成最终目标，忽略它只是手段，最终目标仍是任务成功率"
+    ],
+    "ownAnalysis": "这个工作与「自演化智能体 + 主动学习」两条线交汇，思路是给 agent 加一层实验设计（推断）。可疑处在于假设图从哪来：若由 LLM 提出代码/技能假设，假设质量的上限就受 LLM 先验限制，信息增益可能被「候选集本身偏了」压低（推断）。另外从 RoboCasa365 的 40.1%→77.0% 跨度很大，需留意基线是否与本文同预算同接口（待核实）。",
+    "officialNotes": [
+      {"position": "作者称现有自演化 harness 在用机器人试验决定改哪些代码与技能时效率低下，并称 EmbodiedRSI 可零样本迁移到真实机器人", "source": "arxiv https://arxiv.org/abs/2610.10498v1"}
+    ],
+    "interviewAnswer": "EmbodiedRSI 解决的是机器人基础模型在新位置或新指令下退化、而重训数据又贵的问题。它把自演化做成快慢双系统：快系统在假设图里维护互相竞争的代码与技能假设，用价值信息准则挑选最能区分这些假设的物理实验，再把实验结果用于代码与技能的共同演化；慢系统建分层记忆并按价值筛选。结果是 RoboCasa365 从最佳基线的 40.1% 提到 77.0%，Composite-Unseen 71.3%，真机零样本也有 71.3%。我认为核心可迁移点是「把探索当实验设计」而不是试错。",
+    "studyPath": {
+      "prerequisites": ["强化学习探索与信息增益", "贝叶斯实验设计", "机器人任务评测协议"],
+      "nextSteps": ["复现 VoI 打分与假设图更新", "研究 LLM 生成假设的可靠性", "对比 Voyager 等自演化智能体"]
+    }
+  }
+}

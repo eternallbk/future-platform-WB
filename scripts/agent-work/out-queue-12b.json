@@ -1,0 +1,926 @@
+{
+ "batchId": "queue-12b",
+ "entries": [
+  {
+   "id": "30834584ad427694",
+   "tldr": "用卫星影像近似无人机俯视视角，自动生成 118K 长程城市级 VLN 回合，并给出三任务族记忆消融与真机迁移验证。",
+   "keyPoints": [
+    "以高清卫星影像近似无人机俯视观测，免去昂贵三维重建",
+    "cue-to-episode 自动流水线：18 城市 59 场景 118K 回合，均长 379 m",
+    "三类任务：Boundary 环路进度、Landmark 地标定位、Route 计数跟线",
+    "古典 VLN 与 LVLM 智能体在城市级导航上仍普遍吃力",
+    "SwiftVLN 可切换记忆模块，卫星训练模型可迁移到真机观测"
+   ],
+   "why": "长程导航要求长期记忆与地理空间定位，正是多模态智能体、具身与世界模型方向的核心能力，且强调可扩展基准与记忆设计。",
+   "difficulty": "hard",
+   "tags": [
+    "multimodal",
+    "vln",
+    "uav",
+    "benchmark",
+    "long-horizon",
+    "embodied"
+   ],
+   "entities": [
+    "SatNav",
+    "SwiftVLN",
+    "UAV",
+    "VLN",
+    "LVLM",
+    "Boundary",
+    "Landmark",
+    "Route"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "SatNav 构建与评测流程",
+    "caption": "一张图看懂：卫星影像经自动流水线扩成数十万级长程回合，再用三任务族压测记忆，最后做真机迁移。",
+    "svg": "<svg viewBox='0 0 560 300' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='SatNav 数据构建与评测五步流程'><rect x='60' y='16' width='440' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='76' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>卫星影像</text><text x='484' y='40' font-size='13' text-anchor='end' fill='currentColor'>近似无人机俯视视角</text><line x1='280' y1='54' x2='280' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='280,70 276,62 284,62' fill='var(--line-1)'/><rect x='60' y='70' width='440' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='76' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>cue-to-episode</text><text x='484' y='94' font-size='13' text-anchor='end' fill='currentColor'>自动生成回合</text><line x1='280' y1='108' x2='280' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='280,124 276,116 284,116' fill='var(--line-1)'/><rect x='60' y='124' width='440' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='76' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>118K 回合</text><text x='484' y='148' font-size='13' text-anchor='end' fill='currentColor'>59 场景 / 18 城市</text><line x1='280' y1='162' x2='280' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='280,178 276,170 284,170' fill='var(--line-1)'/><rect x='60' y='178' width='440' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='76' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>三类任务</text><text x='484' y='202' font-size='13' text-anchor='end' fill='currentColor'>Boundary/Landmark/Route</text><line x1='280' y1='216' x2='280' y2='224' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='280,232 276,224 284,224' fill='var(--line-1)'/><rect x='60' y='232' width='440' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='76' y='256' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>智能体评测</text><text x='484' y='256' font-size='13' text-anchor='end' fill='currentColor'>卫星到无人机迁移</text></svg>",
+    "alt": "五步流程：卫星影像→自动线索到回合流水线→118K 回合（59 场景 18 城市）→三类任务→智能体评测与卫星到无人机迁移。"
+   },
+   "concepts": [
+    {
+     "name": "卫星到无人机的视角替代（Satellite-to-UAV View Substitution）",
+     "readable": "用高清卫星正射影像当作无人机朝下拍的画面来近似观测，从而不必先重建三维城市，就能批量造出导航回合。",
+     "analogy": "像用地图软件的正射俯视图代替你亲自飞上去拍的照片：都能看清街区布局，省掉真机飞行与三维建模的成本。",
+     "analogyBreaksDown": "卫星图是高空正射俯视，清晰度、阴影随天气季节变化；无人机是低空近距斜视，有视差、遮挡与更粗的纹理尺度，低矮物体与立体高度信息会缺失，二者并不等价。",
+     "mechanism": "关键取舍是「可扩展优先」：放弃真实无人机视角的保真度，换取 18 城市 59 场景的规模与地理多样性；再用卫星→无人机迁移实验检验这份近似是否可用。",
+     "visual": "左右两张街区图并排：左为卫星正射俯视（平面、纹理细），右为无人机低空斜视（透视、有遮挡），中间箭头标「近似替代」，并在视差与遮挡处用高亮标出差异。",
+     "prerequisites": [
+      "视觉语言导航 VLN 基本设定",
+      "无人机/遥感视角常识",
+      "智能体模仿学习式评测流程"
+     ],
+     "selfTest": [
+      "为什么用卫星影像能大幅降低基准构建成本？",
+      "卫星视角与无人机俯视视角在哪些方面不一致？",
+      "这种替代会让哪类导航指令变得不可解？"
+     ],
+     "formula": ""
+    },
+    {
+     "name": "长程记忆与地理空间定位（Long-Horizon Memory & Geospatial Grounding）",
+     "readable": "城市级任务动辄数百米、上百步决策，智能体必须记住走过的环路、认出的地标与已走的步数，并把指令里的位置词落到真实空间。",
+     "analogy": "像在陌生城市按「先绕这个街区两圈，再找红色屋顶那栋楼」的口头指令送快递：你得记住绕了几圈、认出地标，还得一路数着路口。",
+     "analogyBreaksDown": "人能随时停下问路、看真实招牌并自然遗忘无关细节；智能体只有离散观测与有限上下文，「记住」依赖显式记忆模块，一旦压缩就会丢掉环路进度这类关键历史。",
+     "mechanism": "三任务族把长程能力拆开压测：Boundary 考环路进度追踪、Landmark 考地标空间定位、Route 考带计数线索的跟线；SwiftVLN 让记忆模块可切换，使这些能力能被单独消融归因。",
+     "visual": "俯视图上一条蜿蜒轨迹，起点终点标记；沿途关键帧用小方框表示「记忆写入」，环形路段用叠加色显示已绕圈进度，地标用星形标注，步数计数用刻度线表示。",
+     "prerequisites": [
+      "部分可观测序列决策",
+      "长上下文与记忆增强网络",
+      "导航评测指标（成功率/进度）"
+     ],
+     "selfTest": [
+      "为什么长程任务比单步视觉问答更依赖记忆模块？",
+      "Boundary 与 Route 任务各压测什么能力？",
+      "显式记忆模块与把全部历史塞进上下文相比的取舍是什么？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-vln-navigation-success-rate",
+     "name": "导航成功率（Navigation Success Rate）",
+     "category": "multimodal",
+     "latex": "\\mathrm{SR}=\\frac{1}{N}\\sum_{i=1}^{N}\\mathbf{1}[\\hat{\\tau}_i \\ \\mathrm{succeeds}]",
+     "symbols": [
+      [
+       "N",
+       "评测回合总数"
+      ],
+      [
+       "\\hat{\\tau}_i",
+       "第 i 个回合智能体实际执行的轨迹"
+      ],
+      [
+       "SR",
+       "成功率，即成功回合占比"
+      ],
+      [
+       "\\mathbf{1}[\\cdot]",
+       "指示函数，该回合判定成功则为 1，否则为 0"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：长程导航是回合制任务，单个回合只有「到达且满足指令约束」或「未完成」两种结局，天然可二值化。",
+      "第 2 步：把每个回合的成败用一个指示函数取值，避免不同航程长度的回合互相干扰。",
+      "第 3 步：对所有回合取平均，得到与回合长度无关的整体成功率，便于跨场景/跨城市比较。",
+      "第 4 步：城市级任务还需配套进度或路径效率指标（如 Boundary 的环路进度），否则只看得分不看过程，摘要未给具体定义。"
+     ],
+     "analogy": "像统计一场考试的整体通过率：先给每份卷子判「过/不过」，再除以人数；它回答「多少人做对了」，但不告诉你做得多快、绕了多远。",
+     "pitfalls": [
+      "把成功率当唯一指标：长程任务里成功但绕远路的轨迹会被高估，需要配合路径效率或进度指标。",
+      "不同回合长度未归一：不先二值化而直接平均距离，会让短回合主导结果。",
+      "忽略判定协议：是否算成功依赖到达阈值与指令约束，阈值不同数字不可比。"
+     ],
+     "code": "import torch\n\ndef success_rate(flags):\n    # flags: list[int]，每个回合 1=成功 0=失败\n    f = torch.tensor(flags, dtype=torch.float32)\n    return f.mean().item()\n\nprint(success_rate([1, 1, 0, 1, 0]))  # 0.6",
+     "sources": [
+      {
+       "title": "SatNav: A Scalable Benchmark for Long-Horizon UAV Vision-Language Navigation from Satellite Imagery",
+       "url": "https://huggingface.co/papers/2609.31507"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "SatNav 是基于高清卫星影像构建的可扩展长程无人机视觉语言导航基准",
+     "卫星裁剪图被用作无人机俯视视角的近似观测",
+     "通过自动 cue-to-episode 流水线从 18 城市 59 场景构建 118K 个回合，平均轨迹长度 379 m",
+     "定义 Boundary、Landmark、Route 三类任务，分别针对环路进度追踪、地标空间定位、带计数线索的路线跟随",
+     "在 SatNav 上评测古典 VLN 智能体与基于 LVLM 的智能体，显示城市尺度导航仍然困难",
+     "提出可切换记忆模块的模块化框架 SwiftVLN，并做了系统的记忆设计消融",
+     "卫星训练模型可在真实飞行无人机观测上运行，说明实用相关性"
+    ],
+    "uncertain": [
+     "公式为按 VLN 评测惯例重建的通用成功率形式，原文的具体指标定义与阈值待核实",
+     "SwiftVLN 的具体记忆模块构成与消融设置摘要未给，待核实",
+     "卫星到无人机迁移的具体成功率数字摘要未给，待核实",
+     "三类任务的详细指令模板与评测协议摘要仅给名称，待核实",
+     "平均轨迹长度 379 m 与 118K 回合是否为最终发布版本的数字，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "让无人机按口头指令在城市里飞几百米，还给了个能大批量出题的新基准。"
+     },
+     {
+      "level": "入门",
+      "text": "城市级无人机视觉语言导航要求智能体跟着自然语言指令跨越大范围城区，必须长程记忆加空间定位。SatNav 用高清卫星影像近似无人机俯视画面，自动生成 18 城市 59 场景共 118K 个回合、平均航程 379 米，把造题从昂贵三维重建中解放出来。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键设计是以可扩展换保真：卫星正射影像便宜、覆盖广，可当无人机朝下看的近似观测，于是能用自动 cue-to-episode 流水线批量产回合。为压测长程能力，定义 Boundary/Landmark/Route 三族任务，分别考环路进度、地标定位、带计数线索的跟线。基线显示古典 VLN 与 LVLM 智能体在城市尺度都吃力；作者再给可切换记忆模块的 SwiftVLN 做消融，并用卫星训练模型在真机无人机观测上做迁移验证。"
+     },
+     {
+      "level": "专家",
+      "text": "相对依赖三维重建资产的旧基准，SatNav 的赌注是视角替代的可用性：卫星正射俯视与无人机低空斜视在视差、遮挡、纹理尺度上并不一致，作者用卫星→无人机迁移实验来检验。三任务族相当于把长程导航拆成可单独度量的记忆子问题（进度追踪/空间定位/计数跟线），SwiftVLN 的可切换记忆让消融可归因。局限在于观测仍是近似、真实飞行数据有限，379 米量级的回合对显式记忆的容量与压缩策略提出强需求；复杂城区与动态障碍下的迁移稳定性待核实。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不用真实无人机采数据，而要借卫星影像？",
+      "a": "真机飞行采数据昂贵、地理覆盖窄、难以规模化；卫星影像便宜且覆盖广，能撑起 18 城市 118K 回合的规模，代价是视角不保真。"
+     },
+     {
+      "q": "为什么要把任务拆成 Boundary/Landmark/Route 三族？",
+      "a": "长程导航的失败可能来自记忆、定位或计数不同环节，混在一起无法归因；拆族后每族单独压测一种能力，便于定位短板。"
+     },
+     {
+      "q": "如果把记忆模块换成把历史全塞进上下文会怎样？",
+      "a": "城市级回合长、观测多，全塞会撑爆上下文并稀释注意力；显式可切换记忆才能压缩与消融，这正是 SwiftVLN 的设计动机。"
+     }
+    ],
+    "mechanism": "长程导航的瓶颈不是单帧识别，而是跨时间保持一致：绕圈进度、地标对应、步数计数都要求把历史压成可用状态。SatNav 先解决数据侧——用卫星影像绕开三维重建，让长程回合可规模化生成；再解决评测侧——用三任务族把记忆子能力隔离出来，逼智能体分别证明进度追踪、空间定位、计数跟线。SwiftVLN 的模块化记忆是为可归因而设计：只有记忆能替换，消融才能说明提升来自记忆而非别的部件。",
+    "boundary": "当任务只需单步或短程定位时，长程记忆与卫星替代都不必要甚至引入噪声；当视角差异极大（低空斜视、强遮挡、动态行人车辆）时，卫星近似会失效，迁移到真机也可能掉点。摘要未给迁移成功率与复杂城区结果，泛化边界待核实。",
+    "analogyBoundary": "「用地图俯视图代替亲拍照片」在平面街区布局上成立，但卫星缺少低空斜视的视差与遮挡、看不出立体高度，还受天气与季节影响；观测与真实飞行差得越远，指令里涉及高度与遮挡的部分越不可解。",
+    "misconceptions": [
+     "以为卫星替代等价于真机视角：二者在视差、遮挡、纹理尺度上均不同，故需专门做迁移实验。",
+     "以为 118K 回合就是高质量真机数据：它们是卫星近似自动生成，真机验证只在有限范围。",
+     "以为长程导航只要堆更大模型：更依赖记忆设计与任务拆解，而非单纯增加参数。"
+    ],
+    "ownAnalysis": "把长程导航难点拆成可测量的记忆子能力，并用可切换记忆模块做消融，这个思路与近期具身智能体的「记忆—规划分离」一致（推断）。用卫星影像替代真机是典型的可扩展性权衡：牺牲观测保真换取地理多样性，其价值取决于卫星→无人机迁移的实测落差，而摘要只给了定性结论、没有数字（待核实）。可疑点：自动生成的指令是否模板化，可能让三任务族评测虚高，需要看指令多样性与人类一致性检验。",
+    "officialNotes": [
+     {
+      "position": "城市级导航仍然困难，卫星训练的导航模型可在真实飞行无人机观测上运行，显示 SatNav 的实用相关性",
+      "source": "https://huggingface.co/papers/2609.31507"
+     }
+    ],
+    "interviewAnswer": "我关注过 SatNav，它做的是长程无人机视觉语言导航基准。核心洞察是旧基准要靠昂贵三维重建、难以规模化，于是用高清卫星影像近似无人机俯视观测，用自动的线索到回合流水线在 18 城市 59 场景造出 118K 个回合、平均航程 379 米。为压测长程能力，它定义 Boundary、Landmark、Route 三族任务，分别考环路进度、地标定位和带计数的跟线，基线显示古典 VLN 和 LVLM 智能体在城市尺度都吃力；作者还给了可切换记忆的 SwiftVLN 做系统消融，并验证卫星训练的模型能迁到真机观测。",
+    "studyPath": {
+     "prerequisites": [
+      "视觉语言导航 VLN 与模仿学习式评测",
+      "部分可观测序列决策",
+      "记忆增强网络"
+     ],
+     "nextSteps": [
+      "读 SatNav 项目页看三任务族的指令样例",
+      "复现 SwiftVLN 的记忆消融思路",
+      "对比卫星近似与真机观测之间的域差迁移"
+     ]
+    }
+   }
+  },
+  {
+   "id": "2fa52382eb7a2831",
+   "tldr": "一本大模型基础书，用预训练、生成、提示、对齐、推理、推理六章串起主干概念，可当面试复习清单。",
+   "keyPoints": [
+    "定位为基础概念综述，而非覆盖所有前沿技术",
+    "六章：预训练、生成模型、提示、对齐、推理、推理",
+    "面向大学生、从业者与 NLP 相关领域读者",
+    "可作为了解大语言模型的参考书"
+   ],
+   "why": "覆盖预训练到推理的完整链路，正好对应 post-training 与生成式方向实习面试的知识框架，可作复习清单与查漏补缺依据。",
+   "difficulty": "easy",
+   "tags": [
+    "llm",
+    "foundation",
+    "survey",
+    "pretraining",
+    "alignment",
+    "reasoning"
+   ],
+   "entities": [
+    "large language models",
+    "pre-training",
+    "generative models",
+    "prompting",
+    "alignment",
+    "inference",
+    "reasoning"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "大模型六章主线",
+    "caption": "一张图看懂：本书把大模型知识按六章排成一条从预训练到推理的主干，方便逐章对照复习。",
+    "svg": "<svg viewBox='0 0 620 340' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='大语言模型基础书六章主线流程'><rect x='70' y='16' width='480' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='86' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>预训练</text><text x='534' y='40' font-size='13' text-anchor='end' fill='currentColor'>Pre-training</text><line x1='310' y1='54' x2='310' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='310,70 306,62 314,62' fill='var(--line-1)'/><rect x='70' y='70' width='480' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='86' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>生成模型</text><text x='534' y='94' font-size='13' text-anchor='end' fill='currentColor'>Generative Models</text><line x1='310' y1='108' x2='310' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='310,124 306,116 314,116' fill='var(--line-1)'/><rect x='70' y='124' width='480' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='86' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>提示</text><text x='534' y='148' font-size='13' text-anchor='end' fill='currentColor'>Prompting</text><line x1='310' y1='162' x2='310' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='310,178 306,170 314,170' fill='var(--line-1)'/><rect x='70' y='178' width='480' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='86' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>对齐</text><text x='534' y='202' font-size='13' text-anchor='end' fill='currentColor'>Alignment</text><line x1='310' y1='216' x2='310' y2='224' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='310,232 306,224 314,224' fill='var(--line-1)'/><rect x='70' y='232' width='480' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='86' y='256' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>推理（Inference）</text><text x='534' y='256' font-size='13' text-anchor='end' fill='currentColor'>高效解码</text><line x1='310' y1='270' x2='310' y2='278' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='310,286 306,278 314,278' fill='var(--line-1)'/><rect x='70' y='286' width='480' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='86' y='310' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>推理（Reasoning）</text><text x='534' y='310' font-size='13' text-anchor='end' fill='currentColor'>多步思考</text></svg>",
+    "alt": "六章主线流程：预训练→生成模型→提示→对齐→推理（Inference 高效解码）→推理（Reasoning 多步思考）。"
+   },
+   "concepts": [
+    {
+     "name": "大模型基础主干（LLM Foundations Backbone）",
+     "readable": "把大模型知识拆成六个阶段：预训练打底、生成建模、提示引导、对齐偏好、推理（inference）高效解码、推理（reasoning）多步思考。",
+     "analogy": "像培养一个新人：先上通识课（预训练）、学会把话说完整（生成）、学会看提示做事（提示）、做岗前合规培训（对齐）、再练手速（inference）与解题思路（reasoning）。",
+     "analogyBreaksDown": "培养人的阶段是先后串行且互斥的，而大模型里这些能力并非严格先后：后训练会反过来改变生成与对齐表现，提示甚至能在推理时临时改变行为，阶段边界是模糊重叠的。",
+     "mechanism": "用「能力层级」而非「技术年代」组织知识，读者能据此定位某个方法属于哪一环、解决什么问题、与上下游如何衔接，从而把零散论文挂到统一骨架上。",
+     "visual": "一条从上到下的六段色带，每段标一章；左侧列「它需要什么输入能力」，右侧列「它产出什么能力」，段间用箭头表示依赖关系。",
+     "prerequisites": [
+      "Transformer 与自注意力基础",
+      "语言建模与交叉熵损失",
+      "监督微调 SFT 的基本概念"
+     ],
+     "selfTest": [
+      "六章里哪一章最接近 post-training 方向？",
+      "为什么说这些阶段不是严格串行的？",
+      "给你一篇新论文，你怎么判断它属于哪一章？"
+     ],
+     "formula": ""
+    },
+    {
+     "name": "两个「推理」：Inference 与 Reasoning",
+     "readable": "书里 inference 指把训练好的模型跑起来生成（高效解码），reasoning 指让模型做多步思考再作答；中文都译作推理，极易混淆。",
+     "analogy": "inference 像把菜端上桌（快不快、够不够热），reasoning 像厨师怎么把这道复杂菜一步步做出来（思路对不对）。",
+     "analogyBreaksDown": "上菜与做菜是同一顿饭的先后环节，而 inference 与 reasoning 在工程上正交：可以解码很快但思路错，也可以思路对但解码很慢；优化手段（KV 缓存 vs 思维链）也完全不同。",
+     "mechanism": "术语区分是关键设计：把它俩分成两章，读者才不会把「推理加速」（inference 优化）与「提升推理能力」（reasoning 训练或提示）混为一谈，这正是面试常见追问点。",
+     "visual": "左右两个框：左标 Inference，轴为延迟/吞吐，画 KV 缓存与批处理；右标 Reasoning，轴为正确率/思考步数，画思维链展开；中间画一条竖线标注「别混」。",
+     "prerequisites": [
+      "自回归解码过程",
+      "KV 缓存与采样策略",
+      "思维链提示"
+     ],
+     "selfTest": [
+      "KV 缓存优化的是 inference 还是 reasoning？",
+      "思维链展开属于哪一类？",
+      "为什么中文里这两个术语会撞车？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-llm-autoregressive-factorization",
+     "name": "自回归分解（Autoregressive Factorization）",
+     "category": "foundation",
+     "latex": "p(x_1,\\dots,x_T)=\\prod_{t=1}^{T} p(x_t \\mid x_{<t})",
+     "symbols": [
+      [
+       "x_t",
+       "序列中第 t 个 token"
+      ],
+      [
+       "x_{<t}",
+       "第 t 个 token 之前的所有 token，即上下文"
+      ],
+      [
+       "T",
+       "序列长度"
+      ],
+      [
+       "p(x_t \\mid x_{<t})",
+       "模型在给定上下文下对下一个 token 的条件概率"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：动机——直接建模整段文本的联合概率维度爆炸，无法枚举，需要拆成可计算的小块。",
+      "第 2 步：用概率链式法则把联合概率按顺序展开为逐步条件概率的乘积。",
+      "第 3 步：让模型（如 Transformer）用同一套参数在每一步输出「下一个 token」的分布，实现参数共享。",
+      "第 4 步：训练即最大化对数似然，等价于最小化每步的交叉熵（负对数似然）。"
+     ],
+     "analogy": "像文字接龙：把「写一整句话」拆成一连串「看到前面几个字，猜下一个字」，每一步都只做一个小预测，连起来就是一整段。",
+     "pitfalls": [
+      "把联合概率直接当独立乘积分：条件概率顺序与方向不能随意打乱。",
+      "混淆训练目标与推理过程：训练用教师强制（teacher forcing）并行算各步，推理必须逐步生成。",
+      "以为最大化似然就等于对话质量好：它只优化下一 token 概率，不含偏好与指令遵循。"
+     ],
+     "code": "import torch, torch.nn.functional as F\n\nlogits = torch.randn(2, 5, 100)            # B,T,V\nlabels = torch.randint(0, 100, (2, 5))    # 每个位置的目标 token\nlogp = F.log_softmax(logits, dim=-1)\nnll = -logp.gather(-1, labels.unsqueeze(-1)).squeeze(-1)\nprint(nll.mean())    # 即 -mean log p(x_t | x_<t)，越小越好",
+     "sources": [
+      {
+       "title": "Foundations of Large Language Models",
+       "url": "https://arxiv.org/abs/2501.09223"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "这是一本关于大语言模型的书，聚焦基础概念而非覆盖所有前沿技术",
+     "全书分为六章：预训练、生成模型、提示、对齐、推理、推理",
+     "目标读者为大学生、从业者及自然语言处理相关领域的人",
+     "可作为对大语言模型感兴趣者的参考书"
+    ],
+    "uncertain": [
+     "公式为按大语言模型基础惯例重建的通用形式（自回归分解），书中具体表述待核实",
+     "六章中 inference 与 reasoning 的中文译名（均作推理）与书中原词对应关系待核实",
+     "本书具体版本、更新日期与是否含代码示例摘要未给，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "一本把大模型从预训练讲到推理的基础书，适合当复习提纲。"
+     },
+     {
+      "level": "入门",
+      "text": "这本书定位为基础概念而非最新技术全集，按六个主题组织：预训练、生成模型、提示、对齐、推理（inference）与推理（reasoning）。它面向大学生、从业者和自然语言处理相关领域读者，可作为系统了解大模型的参考书。"
+     },
+     {
+      "level": "进阶",
+      "text": "它把大模型知识按能力层级串成主线：先用预训练建立语言建模底子，再讲生成模型如何解码采样，提示如何不改参数地引导行为，对齐如何把输出调向人类偏好，最后区分 inference（高效解码）与 reasoning（多步思考）。这种组织让读者能把零散方法挂到统一骨架上，定位每个技术属于哪一环、与上下游如何衔接。"
+     },
+     {
+      "level": "专家",
+      "text": "作为基础综述，它的价值在知识地图而非前沿细节：预训练—生成—提示—对齐—推理这条链与 post-training 岗位的面试框架高度重合，可当查漏清单。用它时要清醒：覆盖的是基础概念，不含最新模型与训练配方；inference 与 reasoning 的中文撞车是常见混淆点，二者优化手段正交（KV 缓存/批处理 vs 思维链/强化学习）。建议按章节对照自己的项目与论文，明确哪一环能深入讲。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不直接读最新论文，而要先看这本基础书？",
+      "a": "最新论文默认你懂预训练、解码、对齐等基础；缺骨架时读论文只能记住招式、无法归位与对比，面试也讲不出取舍。"
+     },
+     {
+      "q": "如果跳过对齐那一章会怎样？",
+      "a": "你会以为大模型只是「续写得更像」，无法解释预训练模型为何不合用、为何要做 SFT 与偏好优化，post-training 的核心动机就丢了。"
+     },
+     {
+      "q": "inference 与 reasoning 都叫推理，混着讲有什么代价？",
+      "a": "会把「推理加速」与「提升推理能力」搞混，二者优化手段（KV 缓存/批处理 vs 思维链/强化学习）完全不同，面试一追问就露怯。"
+     }
+    ],
+    "mechanism": "这本书的设计动机是给初学者一条可靠主干：按能力层级（建模→解码→引导→对齐→思考）而非按年代组织，读者能把每个方法与上下游挂钩。它刻意只讲基础概念而放弃前沿覆盖，好处是知识稳定、不易过时；代价是需要读者自己补最新进展。术语上把 inference 与 reasoning 并列为两章，正是为逼读者区分工程效率与认知能力这两条正交的优化线。",
+    "boundary": "当你要面试最新模型的具体训练细节时，这本基础书明显不够——它不含前沿技术与配方。它也不提供可运行的代码与数据，属纯概念。若读者缺少 Transformer 与概率基础，部分章节会显得抽象。",
+    "analogyBoundary": "「培养新人」的类比在阶段串行性上失效：大模型的能力并非先学完再用，后训练会反过来改变生成与对齐表现，提示甚至能在推理时临时改行为，阶段边界是模糊重叠的。",
+    "misconceptions": [
+     "以为它是大模型技术全集：作者明确说聚焦基础概念而非覆盖所有前沿。",
+     "把 inference 与 reasoning 都当「推理」混用，混淆效率优化与能力提升。",
+     "以为读完就能面试：仍需自行补最新方法与项目细节。"
+    ],
+    "ownAnalysis": "把六章读成一条 post-training 求职的知识地图是合理的（推断）：预训练给动机、生成给解码直觉、提示与对齐对应 SFT 与偏好优化、inference 对应工程效率、reasoning 对应近期热点。可疑处在「基础综述」的时效性——该领域半年就换代，基础概念稳定但案例与技术会过时（版本更新时间待核实）。建议把它当索引而非终点：每读完一章，去找该章 1–2 篇近期代表作对照阅读。",
+    "officialNotes": [
+     {
+      "position": "本书聚焦大语言模型的基础概念，不追求覆盖所有前沿技术，可作为参考书",
+      "source": "https://huggingface.co/papers/2501.09223"
+     }
+    ],
+    "interviewAnswer": "我读过一本叫 Foundations of Large Language Models 的基础书，它按六个主题组织：预训练、生成模型、提示、对齐、inference 和 reasoning。它不追前沿，价值是给我一条主干——预训练建立语言建模底子，生成讲解码采样，提示不改参数地引导，对齐把输出调向人类偏好，最后区分 inference 的高效解码与 reasoning 的多步思考。我拿它当面试复习清单，逐章对照自己的项目和论文，明确哪一环能讲深，再去补最新方法。",
+    "studyPath": {
+     "prerequisites": [
+      "Transformer 与自注意力",
+      "概率与语言建模基础",
+      "SFT 与偏好优化概念"
+     ],
+     "nextSteps": [
+      "逐章找 1–2 篇代表作对照阅读",
+      "把六章映射到目标岗位的 JD 要点",
+      "深入 post-training 相关内容做一次项目复现"
+     ]
+    }
+   }
+  },
+  {
+   "id": "a81c60485ba7615c",
+   "tldr": "单次前向即输出整段动作块的多个候选峰值，配 DAPS 分工与 ETBT 跨块传递，兼顾多模态行为与闭环一致。",
+   "keyPoints": [
+    "单次前向联合预测完整动作块候选、概率质量与轨迹尺度",
+    "DAPS 用轨迹级后验责任分工峰值，并施加质量-尺度调制的重叠约束",
+    "ETBT 在可交换候选集间做几何对应，跨重规划保持一致性",
+    "Push-T 覆盖率 91.40%，LIBERO 平均成功率 97.25%",
+    "双臂真实任务 50/50 成功，时延 218.24ms 降到 75.80ms"
+   ],
+   "why": "同一观测多条可行轨迹、闭环重规划要一致、推理要快，三者正是具身/机器人多模态算法岗的核心考点。",
+   "difficulty": "hard",
+   "tags": [
+    "multimodal",
+    "imitation-learning",
+    "action-chunking",
+    "robot-policy",
+    "mixture-model"
+   ],
+   "entities": [
+    "Conditional Trajectory Peaks",
+    "CTP",
+    "DAPS",
+    "ETBT",
+    "Push-T",
+    "D3IL",
+    "LIBERO",
+    "pi_0.5"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "CTP 单次前向多模态流程",
+    "caption": "一张图看懂：观测经一次前向就得到多个候选动作峰，再靠 DAPS 与 ETBT 分工与跨块对齐。",
+    "svg": "<svg viewBox='0 0 480 238' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='CTP 五步流程'><rect x='56' y='14' width='368' height='34' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='36' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>同一观测</text><text x='408' y='36' font-size='13' text-anchor='end' fill='currentColor'>多种可行未来</text><line x1='240' y1='48' x2='240' y2='52' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,57 236,51 244,51' fill='var(--line-1)'/><rect x='56' y='58' width='368' height='34' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='80' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>单次前向</text><text x='408' y='80' font-size='13' text-anchor='end' fill='currentColor'>候选 / 质量 / 尺度</text><line x1='240' y1='92' x2='240' y2='96' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,101 236,95 244,95' fill='var(--line-1)'/><rect x='56' y='102' width='368' height='34' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='124' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>DAPS 峰值特化</text><text x='408' y='124' font-size='13' text-anchor='end' fill='currentColor'>轨迹级后验责任</text><line x1='240' y1='136' x2='240' y2='140' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,145 236,139 244,139' fill='var(--line-1)'/><rect x='56' y='146' width='368' height='34' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='168' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>ETBT 信念传递</text><text x='408' y='168' font-size='13' text-anchor='end' fill='currentColor'>候选集几何对应</text><line x1='240' y1='180' x2='240' y2='184' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,189 236,183 244,183' fill='var(--line-1)'/><rect x='56' y='190' width='368' height='34' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='212' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>执行动作块</text><text x='408' y='212' font-size='13' text-anchor='end' fill='currentColor'>闭环一致性</text></svg>",
+    "alt": "五步流程：同一观测→单次前向输出候选/质量/尺度→DAPS 峰值特化→ETBT 跨块信念传递→执行动作块。"
+   },
+   "concepts": [
+    {
+     "name": "Multimodal Action-Chunk Policy（多模态动作块策略）",
+     "readable": "同一次观测下机器人可能有多种合理走法；策略不输出单条轨迹，而是一次性给出整段动作块的多个候选峰值及各自权重与尺度。",
+     "analogy": "像导航同时给出「走高速」和「走省道」两条完整路线并标注各自动辄概率，而不是只告诉你下一个路口怎么拐。",
+     "analogyBreaksDown": "导航的路线是离散可读的选项；这里候选是连续高维动作块，峰间会重叠混合、能采出中间轨迹，且还必须满足机器人动力学可执行。",
+     "mechanism": "把动作块建模成混合分布，单次前向同时回归每个峰的位置、质量与被选概率与尺度，避免多轮采样造成的时延。",
+     "visual": "横轴动作块时间步、纵轴关节角，画 K 条不同颜色曲线代表 K 个峰值；线粗反映尺度，透明度反映质量。",
+     "prerequisites": [
+      "模仿学习/行为克隆",
+      "动作分块 action chunking",
+      "混合密度网络"
+     ],
+     "selfTest": [
+      "为什么多模态策略不能用单条 L2 回归直接拟合？",
+      "概率质量 m 与轨迹尺度 s 分别控制什么？",
+      "单次前向相比多轮采样在闭环里有什么好处？"
+     ],
+     "formula": "\\pi_\\theta(A\\mid o)=\\sum_{k=1}^{K} m_k(o)\\,\\mathcal{N}(A;\\mu_k(o),s_k(o)^2 I)"
+    },
+    {
+     "name": "Evidence-Gated Belief Transport（证据门控的信念传递）",
+     "readable": "重规划时上一块选过的候选顺序会变，ETBT 用几何对应把上一步的信念搬过来，但允许当前观测证据推翻历史约束。",
+     "analogy": "换班交接：新同事继承旧同事的待办清单，但现场发现清单过时，可以按现场证据改掉。",
+     "analogyBreaksDown": "交接的是有明确条目的文字清单；这里是候选集之间的软对应，而且「证据」是策略自己给的分数，可能被错误的高分峰带偏。",
+     "mechanism": "对相邻动作块的两组可交换候选做几何对应（按轨迹距离/尺度对齐），再按当前策略证据门控地融合历史信念，使行为跨块连贯又不过度僵化。",
+     "visual": "上下两排各 K 个散点代表上一步与当前的候选，连线表示对应关系，线宽表示传递权重，被证据否决的连线用虚线。",
+     "prerequisites": [
+      "最优传输/集合匹配直觉",
+      "闭环重规划",
+      "时序信念更新"
+     ],
+     "selfTest": [
+      "为什么候选集是可交换的、排序会变？",
+      "如果没有证据门控会怎样？",
+      "ETBT 与直接续接上一个动作块差别在哪？"
+     ],
+     "formula": "b_k^{t}\\propto (1-\\gamma)\\sum_{j} T_{jk}\\,b_j^{t-1}+\\gamma\\,e_k^{t}"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-ctp-mixture-peak-policy",
+     "name": "动作块峰值混合策略（Action-Chunk Peak Mixture Policy）",
+     "category": "multimodal",
+     "latex": "\\pi_\\theta(A\\mid o)=\\sum_{k=1}^{K} m_k(o)\\,\\mathcal{N}(A;\\mu_k(o),s_k(o)^2 I)",
+     "symbols": [
+      [
+       "A",
+       "长度 H 的动作块，A 属于 R^{H 乘 d}"
+      ],
+      [
+       "o",
+       "当前观测（多模态输入）"
+      ],
+      [
+       "K",
+       "峰值（候选轨迹）个数"
+      ],
+      [
+       "m_k(o)",
+       "第 k 个峰的概率质量（被选权重）"
+      ],
+      [
+       "mu_k(o)",
+       "第 k 个峰的中心，即一条完整动作块"
+      ],
+      [
+       "s_k(o)",
+       "第 k 个峰的尺度/不确定度"
+      ],
+      [
+       "pi_theta",
+       "参数 theta 的策略分布"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：动机——同一观测对应多条可执行未来，单峰回归会把它们平均成现实中不可行的中间轨迹。",
+      "第 2 步：用 K 个高斯峰对整段动作块分布建模，允许同观测对应多个模态。",
+      "第 3 步：单次前向同时回归 mu_k、m_k、s_k，避免迭代采样带来的时延。",
+      "第 4 步：闭环执行时按 m_k 选峰或采样，重规划时用 s_k 度量置信。"
+     ],
+     "analogy": "像天气预报同时给出晴天与阴天两套完整方案并附概率，而不是把两套方案平均成「半晴半阴」。",
+     "pitfalls": [
+      "误以为峰数 K 越大越好：K 过大会让峰重叠、责任分配退化。",
+      "把 m_k 与 s_k 混为一谈：m 是被选概率，s 是单峰内部的散布。",
+      "忽略尺度调制：DAPS 用质量与尺度共同约束峰重叠，缺一会让峰挤在一起。"
+     ],
+     "code": "import torch, math\nK, H, d = 4, 16, 7\nmu = torch.randn(K, H, d)          # 每个峰一条动作块\nm = torch.randn(K).softmax(0)      # 概率质量\nlog_s = torch.randn(K)\nA = torch.randn(H, d)\nlp = -0.5*(((A[None]-mu)**2).sum((1,2))/torch.exp(2*log_s)\n           + H*d*log_s + H*d*math.log(2*math.pi))\np = (m*torch.exp(lp)).sum(0)\nprint(p.item())",
+     "sources": [
+      {
+       "title": "Conditional Trajectory Peaks: Single-Pass Multimodal Policies over Action Chunks",
+       "url": "https://huggingface.co/papers/2610.06104"
+      }
+     ]
+    },
+    {
+     "id": "f-ctp-daps-responsibility",
+     "name": "分布感知的峰值责任（Distribution-Aware Peak Responsibility）",
+     "category": "multimodal",
+     "latex": "r_k=\\frac{m_k\\,\\mathcal{N}(A;\\mu_k,s_k^2 I)}{\\sum_{j=1}^{K} m_j\\,\\mathcal{N}(A;\\mu_j,s_j^2 I)}",
+     "symbols": [
+      [
+       "r_k",
+       "轨迹 A 归第 k 个峰的后验责任（软分配）"
+      ],
+      [
+       "m_k",
+       "第 k 个峰的概率质量"
+      ],
+      [
+       "N",
+       "高斯密度"
+      ],
+      [
+       "mu_k, s_k",
+       "第 k 个峰的中心与尺度"
+      ],
+      [
+       "A",
+       "被分配的实际轨迹动作块"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：DAPS 要让每个峰专注一片轨迹，先算每条轨迹属于各峰的后验责任。",
+      "第 2 步：责任等于先验质量 m_k 乘以该峰对轨迹 A 的似然，再在所有峰上归一化。",
+      "第 3 步：用轨迹级责任而非逐步责任，保证整条动作块的模态分配一致。",
+      "第 4 步：在质量-尺度调制的重叠约束下更新峰参数，避免峰塌缩。"
+     ],
+     "analogy": "像把一叠作业按「谁最擅长批这类题」软分配：不硬性指派，而是按老师专长乘题目难度分布来分。",
+     "pitfalls": [
+      "把责任当硬标签：CTP 用软责任，硬分配会丢掉多模态性。",
+      "只按似然分配而不乘先验质量：会让小质量峰被噪声放大。",
+      "忽略尺度调制：尺度大（不确定）的峰会吞掉邻近轨迹。"
+     ],
+     "code": "import torch, math\nm = torch.tensor([0.5, 0.3, 0.2]); mu = torch.zeros(3)\ns = torch.tensor([0.2, 0.8, 0.5]); A = torch.tensor(0.1)\nlp = -0.5*((A-mu)**2/s**2 + torch.log(2*math.pi*s**2))\nr = m*torch.exp(lp); r = r/r.sum()\nprint(r)",
+     "sources": [
+      {
+       "title": "Conditional Trajectory Peaks: Single-Pass Multimodal Policies over Action Chunks",
+       "url": "https://huggingface.co/papers/2610.06104"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "CTP 是单次前向策略框架，联合预测完整动作块候选、概率质量与轨迹尺度",
+     "DAPS 用轨迹级后验责任与质量-尺度调制的重叠约束特化峰值",
+     "ETBT 通过可交换候选集间的几何对应维持跨块一致性，并允许当前策略证据覆盖历史约束",
+     "Push-T 覆盖率 91.40%；D3IL Avoiding/Aligning/Sorting-2 成功率 100.0%/79.72%/84.44%",
+     "LIBERO 平均成功率 97.25%",
+     "真实双臂两盘任务 50 次试验全部成功并保留两种放置模式",
+     "瓶身扶正与笔入笔架成功率与 pi_0.5 相当，推理时延从 218.24 ms 降到 75.80 ms"
+    ],
+    "uncertain": [
+     "公式为按摘要重建的通用形式（高斯混合 + 后验责任），原文具体参数化待核实",
+     "ETBT 的几何对应与证据门控的具体算子形式摘要未给，待核实",
+     "DAPS 中质量-尺度调制重叠约束的确切损失形式待核实",
+     "峰数 K、动作块长度 H 等超参摘要未给，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "机器人看一眼场景，一次就算出好几种可行的整段动作方案。"
+     },
+     {
+      "level": "入门",
+      "text": "同一观测下往往有多条合理轨迹，单峰回归会把它们平均成不可行的中间路线。CTP 用混合模型一次前向输出 K 个完整动作块候选与各自概率、尺度；DAPS 让每个峰专注不同轨迹，ETBT 在重规划时把上一块的信念对齐过来，保持闭环一致。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键是「单次前向 + 显式多模态」：把整段动作块参数化为 K 个高斯峰，同时回归中心、质量、尺度，避免扩散/多轮采样带来的百毫秒级时延。DAPS 用轨迹级后验责任做软分配，并施加质量-尺度调制的重叠约束防止峰塌缩；ETBT 在相邻重规划的候选集之间做几何对应，再用当前策略证据门控历史信念，使行为跨块连贯。"
+     },
+     {
+      "level": "专家",
+      "text": "相对扩散策略（多步去噪、慢）与单峰行为克隆（不可行平均），CTP 走一次性混合密度加闭环保守的路线：Push-T 覆盖率 91.40%、LIBERO 97.25%，双臂真实任务 50/50，时延 218.24 ms 降到 75.80 ms。代价是对峰数 K、重叠约束与传输算子的设计敏感：K 过小丢模态、过大责任退化；ETBT 若被错误高分峰带偏会破坏一致性；摘要只在特定基准与少量真实任务上验证，泛化待核实。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不用多轮采样、要改成单次前向？",
+      "a": "采样式多模态（如扩散）需要多步去噪，推理时延高；闭环重规划会累积这个差距，摘要显示 CTP 把时延从 218.24 ms 压到 75.80 ms。"
+     },
+     {
+      "q": "如果重规划时不传递历史信念会怎样？",
+      "a": "相邻动作块可能各选不同模态，出现前后矛盾与抖动；ETBT 正是为此维持跨块一致，同时保留被新证据推翻的余地。"
+     },
+     {
+      "q": "为什么不能用简单的 L2 回归拟合专家动作？",
+      "a": "同观测对应多模态动作时，L2 会收敛到各模态的均值，得到现实中不可执行的中间轨迹，这正是混合建模要避免的。"
+     }
+    ],
+    "mechanism": "CTP 的设计动机是：多模态不可回避，但采样式多模态太慢。于是把多模态编码进分布参数而非采样步数——单次前向给出 K 个峰即可直接选峰执行。DAPS 必须用轨迹级（而非帧级）责任，否则整条动作块的模态分配会碎片化；重叠约束必须同时受质量与尺度调制，否则小质量或大尺度峰会互相吞并。ETBT 必须允许证据覆盖历史，否则一旦早期选错模态，闭环会锁死在错误约束上。",
+    "boundary": "当同一观测其实只有一种合理解时，多峰反而引入冗余与选峰噪声；当轨迹模态数远超 K 或模态间高度重叠时，峰责任会退化、混合优势消失。摘要只在 Push-T、D3IL、LIBERO 与少量双臂真实任务上验证，跨本体/跨任务泛化与 ETBT 在长程重规划下的漂移待核实。",
+    "analogyBoundary": "「导航给两条路线」的类比在连续高维动作块上失效：路线离散可读可选，而这里是连续高斯峰的软混合，峰间会重叠、能采出中间轨迹；且动作块还要满足动力学可执行，导航不需要。",
+    "misconceptions": [
+     "以为 CTP 是扩散策略：它不做多步去噪，而是单次前向输出混合分布参数。",
+     "以为候选多就更好：K 过大会让峰重叠、责任退化。",
+     "以为 ETBT 是把上一个动作块直接续接：它做的是候选集几何对应加证据门控，而非硬续接。"
+    ],
+    "ownAnalysis": "把「多模态」从采样步数搬到分布参数，与混合密度网络/隐式行为克隆一脉相承，CTP 的增量在于显式建模尺度并把跨块一致性当一等公民（推断）。时延 218.24 ms 到 75.80 ms 是相对 pi_0.5 的对比，说明收益主要在推理效率而非绝对精度（推断）。可疑点：摘要未给多模态性本身的度量是否优于扩散基线；ETBT 的几何对应在候选元素可交换时如何保持对应稳定，值得核实。",
+    "officialNotes": [
+     {
+      "position": "单次前向的轨迹建模可以同时兼顾多模态行为、闭环一致性与高效推理",
+      "source": "https://huggingface.co/papers/2610.06104"
+     }
+    ],
+    "interviewAnswer": "CTP 解决机器人模仿学习里「同一观测多种可行未来」和「重规划要保持一致」两个问题。它在一次前向里同时输出 K 条完整动作块候选与各自概率质量、尺度，用 DAPS 按轨迹级后验责任让每个峰专注一片轨迹，并加质量-尺度调制的重叠约束防止峰塌缩；再用 ETBT 在相邻重规划的候选集之间做几何对应、按当前证据门控历史信念。结果 Push-T 覆盖率 91.40%、LIBERO 97.25%，双臂真实任务 50 次全成，时延从 218 ms 降到 76 ms。",
+    "studyPath": {
+     "prerequisites": [
+      "模仿学习/行为克隆",
+      "混合密度网络与 EM 直觉",
+      "动作分块 action chunking"
+     ],
+     "nextSteps": [
+      "对比 Diffusion Policy 的多步去噪与 CTP 的单次混合",
+      "复现后验责任分配与重叠约束的小实验",
+      "思考 ETBT 迁移到具身/世界模型的时序一致性"
+     ]
+    }
+   }
+  },
+  {
+   "id": "cd1021a7ce7dafcf",
+   "tldr": "MemFold 把查询条件下的文本记忆压成 K 个向量，用组相对奖励加置信度门控的 on-policy 蒸馏，按行为优化这块软记忆。",
+   "keyPoints": [
+    "固定预算软记忆：文本记忆压成 K 个连续向量作读者接口",
+    "读者在自己的 rollout 上训练，不学参考答案也不重建文本",
+    "两路信号：任务结果的组相对奖励 + 置信度门控的 on-policy 蒸馏",
+    "教师只用文本记忆重评学生采样 token，从不被采样，推理时移除",
+    "PersonaMem-32K/128K 上三种 Qwen 骨干精度最高，历史越长领先越大"
+   ],
+   "why": "长上下文记忆压缩 + 用 RL 与蒸馏直接按行为优化，是后训练与 Agent 记忆方向的面试高频点。",
+   "difficulty": "hard",
+   "tags": [
+    "rl",
+    "post-training",
+    "long-context",
+    "memory",
+    "distillation",
+    "personalization"
+   ],
+   "entities": [
+    "MemFold",
+    "PersonaMem-32K",
+    "PersonaMem-128K",
+    "PrefEval",
+    "LongMemEval",
+    "Qwen"
+   ],
+   "diagram": {
+    "kind": "architecture",
+    "title": "MemFold 软记忆训练回路",
+    "caption": "一张图看懂：文本记忆压成 K 个向量，读者在自身 rollout 上吃两路信号，教师推理时移除。",
+    "svg": "<svg viewBox='0 0 480 244' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='MemFold 六步架构'><rect x='56' y='12' width='368' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='32' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>长程用户历史</text><text x='408' y='32' font-size='13' text-anchor='end' fill='currentColor'>查询条件文本记忆</text><line x1='240' y1='42' x2='240' y2='45' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,50 236,45 244,45' fill='var(--line-1)'/><rect x='56' y='50' width='368' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='70' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>压缩为 K 个向量</text><text x='408' y='70' font-size='13' text-anchor='end' fill='currentColor'>读者的记忆接口</text><line x1='240' y1='80' x2='240' y2='83' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,88 236,83 244,83' fill='var(--line-1)'/><rect x='56' y='88' width='368' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='108' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>读者自身 rollout</text><text x='408' y='108' font-size='13' text-anchor='end' fill='currentColor'>在软记忆下作答</text><line x1='240' y1='118' x2='240' y2='121' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,126 236,121 244,121' fill='var(--line-1)'/><rect x='56' y='126' width='368' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='146' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>组相对奖励</text><text x='408' y='146' font-size='13' text-anchor='end' fill='currentColor'>任务结果，主增益来源</text><line x1='240' y1='156' x2='240' y2='159' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,164 236,159 244,159' fill='var(--line-1)'/><rect x='56' y='164' width='368' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='184' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>门控式 on-policy 蒸馏</text><text x='408' y='184' font-size='13' text-anchor='end' fill='currentColor'>冻结教师重评 token</text><line x1='240' y1='194' x2='240' y2='197' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,202 236,197 244,197' fill='var(--line-1)'/><rect x='56' y='202' width='368' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='222' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>更新记忆与读者</text><text x='408' y='222' font-size='13' text-anchor='end' fill='currentColor'>推理移除教师</text></svg>",
+    "alt": "六步架构：长程历史→压成 K 向量→读者自身 rollout→组相对奖励→门控 on-policy 蒸馏→更新记忆与读者（推理移除教师）。"
+   },
+   "concepts": [
+    {
+     "name": "Soft Memory Interface（软记忆接口）",
+     "readable": "把「这个用户是谁、要什么」的文本记忆压成固定 K 个连续向量，作为读者每次作答唯一能看到的历史接口，让输入长度不随历史增长。",
+     "analogy": "像给新同事一页「客户备忘卡」而不是整套聊天记录：内容少但必须抓住要害。",
+     "analogyBreaksDown": "备忘卡是人类可读、可核对的文字；这里的 K 个向量没有可读语义，出错时无法指出哪一句被记错，只能靠行为指标间接判断。",
+     "mechanism": "固定预算换来恒定输入长度与稳定成本；但不以重建文本为目标，而按下游行为优化，避免监督落在读者从不产生的序列上。",
+     "visual": "画一条随历史线性增长的文本 token 曲线，与一条水平的 K 向量常数线对比；右侧用热力块表示 K 个向量，色深表示被读者利用程度。",
+     "prerequisites": [
+      "上下文压缩/记忆",
+      "Transformer 输入长度与成本",
+      "策略梯度基础"
+     ],
+     "selfTest": [
+      "软记忆与检索式文本记忆在成本上差在哪？",
+      "为什么按行为优化比按重建文本优化更直接？",
+      "固定 K 会带来什么信息瓶颈？"
+     ],
+     "formula": "m_{\\mathrm{soft}}=f_\\phi(q,\\,m_{\\mathrm{text}})\\in\\mathbb{R}^{K\\times d}"
+    },
+    {
+     "name": "On-Policy Distillation with a Frozen Re-scoring Teacher（冻结教师的重评式 on-policy 蒸馏）",
+     "readable": "教师持有完整文本记忆但从不生成；它只在学生自己采出的 token 上打分，用这个分数作额外监督，把监督留在学生当前分布上。",
+     "analogy": "像教练不出手演示，只在你实际打的每一拍旁边标注好坏，让你在自己的动作上改进。",
+     "analogyBreaksDown": "教练能给出可解释的纠正；教师只给 token 级概率，学生无法直接知道错在「记漏偏好」还是「表达不佳」。",
+     "mechanism": "避免 off-policy 分布漂移与额外自回归解码：教师只做一次前向重评，推理时整个教师被移除，不增加部署成本。",
+     "visual": "画学生采样出的一条 token 序列，每个 token 上方标注教师置信度柱高与门控开关，只有亮着的 token 计入蒸馏损失。",
+     "prerequisites": [
+      "知识蒸馏",
+      "on-policy 与 off-policy 的区别",
+      "置信度门控"
+     ],
+     "selfTest": [
+      "为什么教师不能被采样？",
+      "置信度门控筛掉了什么？",
+      "为什么说它不增加推理成本？"
+     ],
+     "formula": "\\mathcal{L}_{\\mathrm{dis}}=-\\sum_{t}\\mathbb{1}[c_t\\ge\\tau]\\,p_T(y_t\\mid m_{\\mathrm{text}},x,y_{<t})\\,\\log\\pi_\\theta(y_t\\mid m_{\\mathrm{soft}},x,y_{<t})"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-memfold-group-relative-advantage",
+     "name": "组相对优势（Group-Relative Advantage）",
+     "category": "rl",
+     "latex": "\\hat{A}_i=\\frac{r_i-\\bar{r}}{\\mathrm{std}(r)+\\epsilon}",
+     "symbols": [
+      [
+       "r_i",
+       "第 i 次 rollout 的任务结果奖励"
+      ],
+      [
+       "bar r",
+       "同一组内所有 rollout 的平均奖励"
+      ],
+      [
+       "std(r)",
+       "组内奖励标准差"
+      ],
+      [
+       "epsilon",
+       "数值稳定项"
+      ],
+      [
+       "hat A_i",
+       "第 i 次 rollout 的相对优势"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：对同一 prompt 采样多条 rollout，得到一组奖励。",
+      "第 2 步：用组内均值与标准差把奖励归一化为相对优势，省掉独立的 value 网络。",
+      "第 3 步：用相对优势加权策略梯度，鼓励组内相对更好的 rollout。",
+      "第 4 步：与蒸馏信号相加后一起更新读者与软记忆。"
+     ],
+     "analogy": "像同一场考试按排名给分：不看你绝对几分，而看你在本组里比别人高多少，自然消除题目难度差异。",
+     "pitfalls": [
+      "误以为需要训练 critic/value 网络：组相对做法不需要。",
+      "组太小或奖励全相同会让标准差趋近 0、优势失真，需 epsilon 兜底。",
+      "把绝对奖励与相对优势混用会引入难度偏置。"
+     ],
+     "code": "import torch\nr = torch.tensor([0.1, 0.6, 0.9, 0.4])   # 同组 rollout 奖励\nA = (r - r.mean()) / (r.std(unbiased=False) + 1e-8)\nprint(A)",
+     "sources": [
+      {
+       "title": "MemFold: Learning Compact Soft Memory for Long-Context Personalization via On-Policy Optimization",
+       "url": "https://huggingface.co/papers/2609.36435"
+      }
+     ]
+    },
+    {
+     "id": "f-memfold-confidence-gated-distillation",
+     "name": "置信度门控的 on-policy 蒸馏（Confidence-Gated On-Policy Distillation）",
+     "category": "posttraining",
+     "latex": "\\mathcal{L}_{\\mathrm{dis}}=-\\sum_{t}\\mathbb{1}[c_t\\ge\\tau]\\,p_T(y_t\\mid m_{\\mathrm{text}},x,y_{<t})\\,\\log\\pi_\\theta(y_t\\mid m_{\\mathrm{soft}},x,y_{<t})",
+     "symbols": [
+      [
+       "y_t",
+       "学生采样出的第 t 个 token"
+      ],
+      [
+       "c_t",
+       "教师在该位置的置信度，用作门控量"
+      ],
+      [
+       "tau",
+       "门控阈值"
+      ],
+      [
+       "p_T",
+       "冻结文本记忆教师给出的概率，只作权重不反传"
+      ],
+      [
+       "pi_theta",
+       "学生（读者）在软记忆条件下的概率"
+      ],
+      [
+       "m_text 与 m_soft",
+       "文本记忆与软记忆接口"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：学生在软记忆下采样一条 rollout。",
+      "第 2 步：冻结教师用完整文本记忆，对学生的每个采样 token 打分。",
+      "第 3 步：只保留教师置信度不低于 tau 的位置，避免噪声监督。",
+      "第 4 步：用教师概率作停止梯度的权重，最大化学生对同一 token 的对数概率，监督留在学生分布上；推理时移除教师。"
+     ],
+     "analogy": "像批改作文只看老师有把握的那些句子：没把握的句子不给评语，避免把噪声当标准。",
+     "pitfalls": [
+      "以为教师也生成序列：教师只前向重评，从不被采样。",
+      "忽略门控：低置信位置会把教师的错误偏好灌给学生。",
+      "以为推理更贵：教师在部署时被整个移除。"
+     ],
+     "code": "import torch\ntau = 0.7\np_T = torch.tensor([0.9, 0.4, 0.8])   # 教师对学生 token 的概率\nc   = torch.tensor([0.95, 0.5, 0.85]) # 教师置信度\nlogp_s = torch.tensor([-0.7, -1.1, -0.6])\ngate = (c >= tau).float()\nloss = -(gate * p_T * logp_s).sum()\nprint(loss.item())",
+     "sources": [
+      {
+       "title": "MemFold: Learning Compact Soft Memory for Long-Context Personalization via On-Policy Optimization",
+       "url": "https://huggingface.co/papers/2609.36435"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "MemFold 用固定预算软记忆：查询条件下的文本记忆被压成 K 个连续向量作为读者接口",
+     "读者在自己的 rollout 上训练，而不是重建文本或模仿参考答案",
+     "两路信号：任务结果的组相对奖励 + 置信度门控的 on-policy 蒸馏",
+     "教师用文本记忆重评学生采样 token，从不被采样，推理时完全移除",
+     "三种 Qwen 骨干上 PersonaMem-32K 与 128K 精度最高，且历史越长领先越大",
+     "可零目标域训练迁移到 PrefEval 与 LongMemEval",
+     "消融显示任务增益主要来自奖励项，教师信号带来较小额外增益；记忆干预显示读者依赖软记忆的实例特定内容"
+    ],
+    "uncertain": [
+     "K 的具体取值与软记忆维度摘要未给，待核实",
+     "公式为按摘要重建的通用形式，组相对优势与蒸馏损失的精确形式待核对原文",
+     "置信度 c_t 的确切定义（教师熵/最大概率/其它）待核实",
+     "PersonaMem-32K/128K 的绝对精度数值摘要未给，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "把用户历史压成一小段「软记忆」，用奖励和蒸馏按实际表现来训练它。"
+     },
+     {
+      "level": "入门",
+      "text": "服务同一用户要记住哪些偏好还在、哪些被改、哪些约束生效，但记住不等于会用。MemFold 把查询条件下的文本记忆压成 K 个向量当读者的记忆接口，再让读者在自己生成的回答上接受两种打分：任务结果的相对奖励，以及持有完整文本记忆的教师对它 token 的重新评分。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键取舍是监督的位置。用文本记忆则输入随历史增长；用固定向量但按重建文本或模仿参考答案训练，又是在读者从不产生的序列上打分。MemFold 改按行为优化：读者自己 rollout，组相对奖励看任务结果，置信度门控的 on-policy 蒸馏让教师只在学生采样出的 token 上、且只在高置信位置补信号，而教师从不出现在推理路径里。"
+     },
+     {
+      "level": "专家",
+      "text": "相对文本记忆与检索式方案，MemFold 用常数预算换稳定成本；相对普通压缩训练，它把监督从重建/模仿移到行为。三种 Qwen 骨干上 PersonaMem-32K/128K 精度最高、历史越长领先越大，并可零目标域训练迁移到 PrefEval 与 LongMemEval。代价是任务级奖励稀疏，且教师仅在学生分布上重评——若学生从未采样到正确 token，教师信号也拉不回来；K 的信息瓶颈在历史极长或偏好频繁修订时可能丢信息。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "如果直接让读者在文本记忆上训练，为什么不够？",
+      "a": "文本记忆让读者输入随历史线性增长，成本与上下文上限都受限；而且它把「保留信息」与「按信息行动」分开优化，两者并不等价。"
+     },
+     {
+      "q": "为什么蒸馏不能让教师直接生成答案？",
+      "a": "教师生成会引入 off-policy 分布与额外自回归解码，监督落在学生不会产生的序列上；只重评学生的采样 token 才能把监督留在学生当前分布，且推理时零成本。"
+     },
+     {
+      "q": "如果去掉奖励项只留蒸馏会怎样？",
+      "a": "摘要消融显示任务增益主要来自奖励项，教师信号只带来较小额外增益；去掉奖励，读者缺少任务结果信号，行为优化会失去方向。"
+     }
+    ],
+    "mechanism": "核心是「按行为优化记忆」：记忆的价值不由能否重建文本决定，而由它支撑的作答质量决定。因此必须让读者在自己的分布上采样（否则优化的是别人的序列），必须用任务结果作主信号（否则记忆退化为文本压缩），教师只做分布内的辅助重评（否则把学生没见过的正确序列强灌进去，反而抖动）。固定 K 个向量是刻意的信息瓶颈：强制记忆只保留对行为有用的实例特定信息。",
+    "boundary": "当历史极长或偏好频繁修订、而 K 又偏小时，信息瓶颈会丢掉关键约束；任务级奖励稀疏，若一条 rollout 内正确 token 概率极低，组相对优势与教师重评都难提供梯度。摘要的验证集中在 PersonaMem 与少量迁移基准、三种 Qwen 骨干，跨模型族/跨语言与超长历史的稳健性待核实。",
+    "analogyBoundary": "「教练在你打拍时标注」的类比在 token 级监督上失效：教练能指出「你记错了用户偏好」这类语义错误，而教师只提供 token 概率，学生无法定位错误来源；且教练不必冻结，这里的教师是固定的。",
+    "misconceptions": [
+     "以为软记忆能像文本一样读出来：它是无语义的 K 个向量，出错无法定位到具体句子。",
+     "以为蒸馏的教师也参与推理：教师在推理时被完全移除。",
+     "以为收益主要来自蒸馏：消融显示主要是奖励项，蒸馏只补一小部分。"
+    ],
+    "ownAnalysis": "MemFold 把「记忆」从数据类型重定义为「行为接口」，与可学习 soft prompt / 压缩 token 的思路同源，但用 RL 与 on-policy 蒸馏而非重建目标来训练（推断）。置信度门控的意图应是过滤教师低把握位置，避免把噪声当监督（推断）。可疑处：教师与学生共享同一底座时，重评信号可能主要来自「文本记忆可见性」而非新知识；任务级奖励在长对话里如何归因到「哪段记忆有用」摘要未说明，记忆干预只证明了相关性。绝对精度未给，需核实。",
+    "officialNotes": [
+     {
+      "position": "固定预算的软记忆应当按其支撑的行为来优化，而非按文本重建或模仿参考答案",
+      "source": "https://huggingface.co/papers/2609.36435"
+     }
+    ],
+    "interviewAnswer": "MemFold 解决长程服务同一用户的问题：要记住偏好、修订与当前约束，但记住不等于会用。它把查询条件下的文本记忆压成 K 个连续向量作为读者接口，再让读者在自己采样的 rollout 上接受两路信号——任务结果的组相对奖励，以及一个持有完整文本记忆、从不被采样的冻结教师对学生 token 的置信度门控重评。这样监督留在学生当前分布，推理时教师移除。三种 Qwen 骨干上 PersonaMem-32K/128K 精度最高，历史越长领先越大，并零目标域训练迁移到 PrefEval 与 LongMemEval。",
+    "studyPath": {
+     "prerequisites": [
+      "策略梯度/GRPO 类组相对方法",
+      "知识蒸馏（on-policy 与 off-policy）",
+      "长上下文与记忆压缩"
+     ],
+     "nextSteps": [
+      "读 GRPO 与 GKD 类工作，对比蒸馏信号差异",
+      "复现文本记忆到 K 向量压缩加行为优化的小闭环",
+      "思考软记忆在 Agent/多模态长程任务上的迁移"
+     ]
+    }
+   }
+  }
+ ],
+ "skipped": [
+  {
+   "id": "2459123f398960a0",
+   "reason": "off-direction",
+   "evidence": "摘要为无线感知与传感器融合的可复现性研究：'We investigate whether ambient WiFi Channel State Information (CSI) can substitute for a body-worn inertial measurement unit (IMU) in human activity recognition (HAR)'，结论为 'Under a controlled, multi-seed evaluation, WiFi is systematically weak: every backbone we try reaches 6-11% weighted accuracy on the 27-class set, against 73-80% for IMU'。其核心是 WiFi CSI 表征修复、受试者独立评测与 CSI-IMU 门控融合的对比，属无线感知/人体活动识别领域；标题中的 'Multimodal' 仅指传感器模态融合，与多模态算法 / post-training / 生成式 / 世界模型方向无实质技术关联。"
+  }
+ ]
+}

@@ -1,0 +1,680 @@
+{
+ "batchId": "backfill-01",
+ "mode": "backfill",
+ "items": [
+  {
+   "id": "08bb5fe94761a493",
+   "title": "chrisliu298/awesome-on-policy-distillation - A curated collection of papers, technical reports, frameworks, and tools for on-policy distillation (OPD) of large language models",
+   "category": "posttraining",
+   "channel": "github",
+   "url": "https://github.com/chrisliu298/awesome-on-policy-distillation",
+   "sources": [
+    {
+     "url": "https://github.com/chrisliu298/awesome-on-policy-distillation",
+     "name": "github"
+    }
+   ],
+   "tags": [
+    "awesome",
+    "awesome-list",
+    "distillation",
+    "gkd",
+    "knowledge-distillation",
+    "llm",
+    "llm-distillation",
+    "llm-training"
+   ],
+   "kind": "repo",
+   "summary": "A curated collection of papers, technical reports, frameworks, and tools for on-policy distillation (OPD) of large language models",
+   "needsFetch": false,
+   "missing": [
+    "formulas"
+   ],
+   "backfillWeight": 1.0,
+   "existingEnrichment": {
+    "tldr": "一份关于大模型「同策略蒸馏（OPD）」的精选资源仓库，汇总论文、技术报告、框架与工具。",
+    "keyPoints": [
+     "收录 on-policy distillation（OPD）方向的论文与技术报告",
+     "同时汇总可用的框架与工具链接",
+     "标签覆盖 knowledge-distillation、gkd、llm-training",
+     "面向 LLM 蒸馏与训练实践者的索引型仓库"
+    ],
+    "why": "后训练里蒸馏是与 RLHF/RLVR 并列的主线；这份清单是同策略蒸馏的入口，便于系统建立从 off-policy KD 到 OPD 的知识地图。",
+    "difficulty": "medium",
+    "tags": [
+     "awesome-list",
+     "distillation",
+     "gkd",
+     "knowledge-distillation",
+     "llm-training"
+    ],
+    "entities": [
+     "on-policy distillation",
+     "OPD",
+     "GKD",
+     "knowledge distillation",
+     "LLM"
+    ],
+    "diagram": {
+     "kind": "flow",
+     "title": "OPD 清单使用路径",
+     "caption": "这是一张索引地图：先看分区，再挑方法，最后顺标签找到实现。",
+     "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='同策略蒸馏清单仓库使用流程'><rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>README.md 索引</text><text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>awesome-list 入口</text><line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,70 236,62 244,62' fill='var(--line-1)'/><rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>主题分区</text><text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>论文/报告/框架/工具</text><line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,124 236,116 244,116' fill='var(--line-1)'/><rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>定位 OPD 方法</text><text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>如 GKD 同策略蒸馏</text><line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,178 236,170 244,170' fill='var(--line-1)'/><rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>顺着标签找实现</text><text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>复现或对比 off-policy KD</text></svg>",
+     "alt": "自上而下四层：README 索引入口，主题分区分论文/报告/框架/工具，定位 OPD 方法如 GKD，最后顺标签找实现。"
+    },
+    "concepts": [
+     {
+      "name": "同策略蒸馏（On-Policy Distillation, OPD）",
+      "readable": "传统蒸馏让学生去拟合教师的输出或教师访问过的数据，属于 off-policy。OPD 让学生先自己生成轨迹，再让教师在这些「学生实际会走到」的状态上给监督，缩小训练分布与推理分布的落差。",
+      "analogy": "像学开车：不是只看教练开一遍（off-policy），而是自己开、教练坐副驾，在你真正会犯错的那个路口纠正你（on-policy）。",
+      "analogyBreaksDown": "教练能实时喊停并重来，学生模型是离线采一批轨迹再更新；若学生分布与教师差距过大，教师的纠正信号本身可能并不可靠。",
+      "mechanism": "在学生的采样分布上计算教师目标（logits/概率或评分），让监督覆盖学生真实会遇到的状态，缓解曝光偏差 exposure bias 与分布漂移。",
+      "visual": "画两条采样流：off-policy 从教师分布采样并冻结数据集；on-policy 让学生策略采样→教师在那些状态打分→回传更新，箭头回到学生策略形成闭环。",
+      "prerequisites": [
+       "知识蒸馏基础（KD loss、温度）",
+       "策略梯度与 on/off-policy 的区分",
+       "自回归生成与序列级监督"
+      ],
+      "selfTest": [
+       "OPD 与普通 KD 最关键的区别在数据从哪来吗？",
+       "为什么 on-policy 能缓解曝光偏差？",
+       "学生太弱时 OPD 会出什么问题？"
+      ],
+      "formula": ""
+     },
+     {
+      "name": "广义知识蒸馏（Generalized Knowledge Distillation, GKD）",
+      "readable": "一类把 on-policy 与 off-policy 蒸馏统一起来的框架：可以选择用教师数据还是学生自身生成的数据，并配合不同散度与采样方式在两者间插值；仓库标签中的 gkd 即指这一路线。",
+      "analogy": "像一个可调的练习配方：你可以决定多少练习来自标准答案（教师），多少来自自己先做再对答案（学生生成）。",
+      "analogyBreaksDown": "配方不解决教师本身出错的情况；插值权重与散度选择高度依赖任务，并不存在通用最优。",
+      "mechanism": "用学生生成的序列提供 token 级软监督，并在 on-policy 与 off-policy 数据间混合/插值，平衡监督可靠性与分布匹配；标签 gkd 说明本清单收录了该代表工作。",
+      "visual": "画一条水平轴：左端 off-policy（教师数据）、右端 on-policy（学生数据）；轴上标不同混合比，每个点旁边标所用散度（KL/JS）。",
+      "prerequisites": [
+       "KL/JS 散度",
+       "序列级自回归监督",
+       "蒸馏中的温度与软标签"
+      ],
+      "selfTest": [
+       "GKD 相比固定使用教师数据的好处是什么？",
+       "为什么用序列级软标签而不是只做 SFT？",
+       "混合比如何影响收敛与稳定性？"
+      ],
+      "formula": ""
+     }
+    ],
+    "formulas": [],
+    "selfCheck": {
+     "claims": [
+      "仓库自我描述为 OPD 方向的论文、技术报告、框架与工具合集",
+      "标签含 knowledge-distillation、gkd、llm-training、distillation",
+      "仓库分类 category 为 posttraining，属于大模型后训练范畴"
+     ],
+     "uncertain": [
+      "仓库具体目录结构与文件名按 awesome-list 惯例推断（入口为 README.md），待核实",
+      "是否含可运行代码或仅为链接，待核实",
+      "GKD 是否为清单中的一个独立分区/条目，待核实"
+     ]
+    },
+    "teaching": {
+     "progressive": [
+      {
+       "level": "一句话",
+       "text": "一份把大模型「同策略蒸馏」相关论文、报告、框架和工具汇到一起的清单仓库。"
+      },
+      {
+       "level": "入门",
+       "text": "仓库本身不训练模型，而是做索引：把 on-policy distillation（OPD）方向的论文、技术报告、框架和工具分类整理。标签里出现 gkd、knowledge-distillation、llm-training，说明它是给做 LLM 蒸馏的人看的地图。"
+      },
+      {
+       "level": "进阶",
+       "text": "OPD 的核心是让监督发生在学生自己采样的分布上：先让学生生成轨迹，再由教师在那些状态上给软监督，从而弥合训练与推理的分布差。清单的作用是把 off-policy KD、on-policy KD、GKD 等路线并排，便于对比动机与评测。"
+      },
+      {
+       "level": "专家",
+       "text": "它的价值在于把分散的 OPD 工作（含 GKD 这类统一框架）与可用实现串成索引，方便快速定位「方法—代码—评测」三件套。作为 awesome-list，内容以链接为主、随社区更新，具体分区与条目以仓库当前 README 为准；因此它更适合当路线图而非实现参考。"
+      }
+     ],
+     "socratic": [
+      {
+       "q": "没有这种清单会怎样？",
+       "a": "OPD 论文与实现散落各处，交叉对比成本高，还容易漏掉同策略与离策略的关键差异。"
+      },
+      {
+       "q": "为什么不能只看单篇 OPD 论文？",
+       "a": "单篇只给一个配方；清单能横向看清散度、采样与评测差异，避免以偏概全。"
+      }
+     ],
+     "mechanism": "它不改变算法，而是用结构化索引降低检索成本：把方法、代码、报告分层归档，让人先建立路线图再深入单篇，避免一上来就陷进细节。",
+     "boundary": "作为链接清单，它不保证链接可用、方法被复现或结论正确；对具体实现细节没有解释，需要回到原始论文与代码。",
+     "analogyBoundary": "把它当「地图」合适，但地图不保证每条路都通、每个地标都还在；更新滞后时可能指向过时工作。",
+     "misconceptions": [
+      "把 awesome-list 当成代码库或基准",
+      "以为 OPD 就是普通 KD 换个名字",
+      "只收藏不读原论文"
+     ],
+     "ownAnalysis": "（推断）这类清单常随热点快速增删，标签里出现 gkd 暗示作者关注统一框架路线。对求职者而言，它是建立后训练蒸馏知识地图的入口，但必须落到具体论文与复现，不能停在收藏。",
+     "officialNotes": [
+      {
+       "position": "仓库自我描述为「on-policy distillation (OPD) of large language models 的论文、技术报告、框架与工具精选合集」",
+       "source": "github https://github.com/chrisliu298/awesome-on-policy-distillation"
+      }
+     ],
+     "interviewAnswer": "这是我做后训练蒸馏时用的索引仓库，它把 on-policy distillation 的论文、技术报告、框架和工具归类。我一般从这里建路线图：先分清 off-policy KD、on-policy KD 和 GKD 的差别，再挑代表工作读原文和复现。它本身不实现算法，价值在检索效率。",
+     "studyPath": {
+      "prerequisites": [
+       "知识蒸馏基础",
+       "on/off-policy 概念",
+       "LLM 训练与微调流程"
+      ],
+      "nextSteps": [
+       "按目录精读 GKD 等代表工作",
+       "找可运行框架做最小复现",
+       "对比 OPD 与 SFT/RLHF 的评测口径"
+      ]
+     }
+    }
+   }
+  },
+  {
+   "id": "12192a17a1d97235",
+   "title": "pegainfer-project/pegainfer - Pure Rust + CUDA LLM inference engine — no PyTorch, OpenAI-compatible, serves Qwen3 to Kimi-K2",
+   "category": "engineering",
+   "channel": "github",
+   "url": "https://github.com/pegainfer-project/pegainfer",
+   "sources": [
+    {
+     "url": "https://github.com/pegainfer-project/pegainfer",
+     "name": "github"
+    }
+   ],
+   "tags": [
+    "cuda",
+    "cuda-kernels",
+    "deepseek",
+    "gpu",
+    "inference",
+    "inference-engine",
+    "kimi",
+    "kimi-k2",
+    "Rust"
+   ],
+   "kind": "repo",
+   "summary": "Pure Rust + CUDA LLM inference engine — no PyTorch, OpenAI-compatible, serves Qwen3 to Kimi-K2",
+   "needsFetch": false,
+   "missing": [
+    "formulas"
+   ],
+   "backfillWeight": 1.0,
+   "existingEnrichment": {
+    "tldr": "纯 Rust + CUDA 的 LLM 推理引擎，不依赖 PyTorch，兼容 OpenAI 接口，宣称可服务 Qwen3 到 Kimi-K2。",
+    "keyPoints": [
+     "纯 Rust 实现、用 CUDA 写内核的 LLM 推理引擎。",
+     "不依赖 PyTorch，属于脱离训练框架的独立部署栈。",
+     "对外提供 OpenAI 兼容接口，便于直接替换现有服务。",
+     "宣称可服务从 Qwen3 到 Kimi-K2 的模型范围。",
+     "Rust 的内存安全与 CUDA 的性能构成其工程卖点。"
+    ],
+    "why": "推理引擎是生成式落地的核心环节；理解『纯 Rust + 无 PyTorch』的取舍，能讲清部署栈与训练栈的边界，算法岗常问推理性能与 OpenAI 兼容的意义。",
+    "difficulty": "medium",
+    "tags": [
+     "rust",
+     "cuda",
+     "inference",
+     "llm",
+     "kv-cache",
+     "openai-api"
+    ],
+    "entities": [
+     "pegainfer",
+     "Rust",
+     "CUDA",
+     "PyTorch",
+     "Qwen3",
+     "Kimi-K2"
+    ],
+    "diagram": {
+     "kind": "architecture",
+     "title": "pegainfer 推理栈分层",
+     "caption": "接口层负责被集成，中间层负责调度与前向，底层 CUDA 内核吃 GPU 算力。",
+     "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='pegainfer 推理栈：OpenAI 兼容接口接收请求，经调度与 Rust 运行时前向，落到 CUDA 内核在 GPU 上执行'><rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>接口层</text><text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>OpenAI 兼容 API</text><line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,70 236,62 244,62' fill='var(--line-1)'/><rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>调度层</text><text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>批处理 · KV cache 管理</text><line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,124 236,116 244,116' fill='var(--line-1)'/><rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>前向层</text><text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>Rust 运行时 · 无 PyTorch</text><line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,178 236,170 244,170' fill='var(--line-1)'/><rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>执行层</text><text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>CUDA 内核 · GPU</text></svg>",
+     "alt": "pegainfer 四层推理栈自上而下：OpenAI 兼容接口 → 批处理与 KV cache 调度 → 无 PyTorch 的 Rust 前向运行时 → CUDA 内核在 GPU 上执行"
+    },
+    "concepts": [
+     {
+      "name": "KV 缓存（KV Cache）",
+      "readable": "自回归生成时每步只产出新 token，但注意力要看全部历史。若不缓存，每步都要重算所有历史 token 的 Key 与 Value；KV cache 把历史 K/V 存下来，每步只算新 token 的 K/V 并拼接使用，用显存换计算，是推理引擎最核心的优化之一。",
+      "analogy": "做菜每加一步都回看之前的步骤。把已用过的备料（历史 K/V）提前切好摆在案板上随时取用，就不用每次从头重切；案板越大能备的料越多。",
+      "analogyBreaksDown": "案板大小是固定的物理限制；而 KV cache 的显存占用随序列长度线性增长，长上下文或大并发时会把显存吃光，且不同请求长度不一，需要分页与调度来管理，不像案板那样静态。",
+      "mechanism": "关键设计是缓存每层每步的 K、V 张量并在解码时复用：显存占用为 2 × 层数 × KV 头数 × 头维 × 序列长 × 字节数。为降低它，常用 GQA/MQA 减少 KV 头数、用低精度或分页管理，这也是推理引擎调度的主战场。",
+      "visual": "横轴为生成的 token 步数，纵轴为显存占用，画一条随步数线性上升的直线代表 KV cache；再画一条水平的显存上限线，交点处即为最大序列长度或并发上限。",
+      "prerequisites": [
+       "Transformer 自注意力与 K/V/Q 的含义",
+       "自回归解码的逐步生成流程",
+       "混合精度与显存容量的基本概念"
+      ],
+      "selfTest": [
+       "KV cache 用计算换来了什么，又付出了什么代价？",
+       "为什么 KV cache 显存随序列长度线性增长？",
+       "GQA/MQA 是如何减少 KV cache 占用的？"
+      ],
+      "formula": "\\mathrm{Mem}_{\\mathrm{KV}} = 2 \\times L \\times H_{kv} \\times d_{h} \\times S \\times b"
+     },
+     {
+      "name": "OpenAI 兼容接口（OpenAI-compatible API）",
+      "readable": "推理引擎对外暴露与 OpenAI 相同的 HTTP 接口协议（如 chat completions 的请求/响应格式）。应用只要把 base_url 指过来，原有按 OpenAI 写的代码几乎不用改就能换后端。它是推理引擎能否被快速采用的关键产品化设计。",
+      "analogy": "像统一了插座标准：任何按这个标准做的电器（应用）都能插到任何符合标准的插座（推理后端）上，换插座不用换电器。",
+      "analogyBreaksDown": "插座标准保证的是通电这一件事；接口兼容只覆盖协议格式，不保证输出行为、流式细节、工具调用与采样语义完全一致，换后端仍可能出现行为差异，迁移未必真的『零成本』。",
+      "mechanism": "关键做法是复刻 OpenAI 的请求/响应 JSON 结构与流式（SSE）增量格式，把内部推理结果映射成同样的字段。这样客户端 SDK、工具链与上层应用都能直接复用，把后端的切换成本压到最低。",
+      "visual": "左边画一个『应用』方框，右边并列几个『推理后端』方框（本项目/其它引擎），中间用同一种形状的接头（同协议）相连，表示后端可任意替换。",
+      "prerequisites": [
+       "HTTP 与 REST/JSON 基础",
+       "LLM 对话接口的请求响应结构",
+       "流式输出的基本概念"
+      ],
+      "selfTest": [
+       "OpenAI 兼容接口对采用一个推理引擎意味着什么？",
+       "格式兼容是否等于行为完全一致？",
+       "为什么说接口兼容是推理后端标准化的信号？"
+      ],
+      "formula": ""
+     }
+    ],
+    "formulas": [],
+    "selfCheck": {
+     "claims": [
+      "pegainfer 是一个 LLM 推理引擎。",
+      "其实现为纯 Rust + CUDA，不使用 PyTorch。",
+      "它兼容 OpenAI 接口。",
+      "它宣称可服务 Qwen3 到 Kimi-K2 的模型。"
+     ],
+     "uncertain": [
+      "支持的具体模型清单、量化方案与吞吐/延迟数据摘要未给出，待核实。",
+      "『Qwen3 到 Kimi-K2』是完整支持范围还是举例说明，摘要未明确，待核实。",
+      "是否支持多卡/分布式推理与批处理细节摘要未说明，待核实。",
+      "KV cache 公式为按自回归解码通用形式重建，具体实现（是否分页、精度）需核对原文，待核实。",
+      "KV 缓存显存公式(2*L*H_kv*d_h*S*b)与 RTP-LLM 条目的同名公式重复，已按去重规则移出本条，公式库中已有同 id 的等价条目可供参考。"
+     ]
+    },
+    "teaching": {
+     "progressive": [
+      {
+       "level": "一句话",
+       "text": "一个用 Rust 和 CUDA 重写的 LLM 推理引擎，不靠 PyTorch，接口跟 OpenAI 一样。"
+      },
+      {
+       "level": "入门",
+       "text": "跑大模型不一定要用 PyTorch。pegainfer 用纯 Rust 写推理引擎、用 CUDA 写算子，对外暴露与 OpenAI 相同的接口，所以现有按 OpenAI 写的应用几乎不用改就能接上。它宣称覆盖从 Qwen3 到 Kimi-K2 这类模型。"
+      },
+      {
+       "level": "进阶",
+       "text": "训练用 PyTorch，但部署时框架会带来运行时开销与依赖负担。pegainfer 选择纯 Rust（内存安全、无 GC、部署简单）加 CUDA 内核（性能），并把 KV cache、批处理这些推理工程自己做一遍；OpenAI 兼容接口是关键的产品化设计，让下游零成本替换后端。"
+      },
+      {
+       "level": "专家",
+       "text": "『不用 PyTorch』的取舍很清楚：失去生态与算子复用，换来更可控的运行时、更小的依赖面和更低的部署成本；代价是要自行维护大量内核与模型适配，模型支持面通常窄于 vLLM/SGLang 这类社区方案。OpenAI 兼容把迁移成本压到最低，符合推理后端标准化的趋势。摘要未给吞吐/延迟等可比数据，实际竞争力待核实。"
+      }
+     ],
+     "socratic": [
+      {
+       "q": "为什么推理引擎要刻意去掉 PyTorch 依赖？",
+       "a": "PyTorch 面向训练、运行时重且依赖多；推理只需前向，自建精简栈能减小体积、启动更快、部署更简单，也便于精细控制内存。"
+      },
+      {
+       "q": "OpenAI 兼容接口对工程落地有什么意义？",
+       "a": "绝大多数应用按 OpenAI 协议写，兼容意味着改一个 base_url 即可切换后端，迁移成本近乎为零，这是推理引擎能否被采用的关键。"
+      },
+      {
+       "q": "纯 Rust 相比 C++ 写推理引擎的优势在哪？",
+       "a": "Rust 在编译期保证内存与线程安全，减少并发推理中的悬垂指针、数据竞争类 bug，同时保留接近 C 的性能，适合长时间运行的服务。"
+      }
+     ],
+     "mechanism": "推理阶段的瓶颈不是模型结构，而是内存与调度：KV cache 的显存占用、批处理效率、算子与显存带宽的匹配。把推理从训练框架里剥出来单独实现，才能针对这些瓶颈做减法与定制。Rust 负责并发与内存安全，CUDA 负责算力，OpenAI 接口负责被集成，三者各解决部署栈的一环。",
+     "boundary": "自研推理引擎的适用面受模型适配成本限制：模型结构或量化格式一变就要改代码，覆盖范围通常不如成熟社区方案；若团队没有长期维护底层内核的能力，迁移收益可能低于维护成本。摘要未给性能与模型覆盖的完整清单，具体适用性需核实。",
+     "analogyBoundary": "『换插座就能用』的类比忽略了接口兼容只覆盖协议层，不覆盖性能与行为：某些模型的输出细节、工具调用、流式格式可能与 OpenAI 不完全一致，迁移未必零成本。",
+     "misconceptions": [
+      "以为『不用 PyTorch』就更快，实际性能取决于内核与调度，去掉框架只是去掉了开销来源之一。",
+      "以为 OpenAI 兼容就等于行为完全一致，格式兼容不等于语义与精度对齐。",
+      "把推理引擎和训练框架混为一谈，二者优化的目标与瓶颈完全不同。"
+     ],
+     "ownAnalysis": "纯 Rust + CUDA 的推理引擎近年增多，共同动机是摆脱 PyTorch 运行时、追求部署可控与低依赖（推断）。OpenAI 兼容接口几乎成了这类项目的标配，说明推理后端正在标准化、可替换（推断）。可疑处：摘要称『serves Qwen3 to Kimi-K2』，但未说清是完整支持的模型清单还是举例，也未给量化与吞吐数据；作为求职素材，若要写进简历需先核实真实基准。",
+     "officialNotes": [
+      {
+       "position": "项目自称 Pure Rust + CUDA LLM inference engine、no PyTorch、OpenAI-compatible，可服务 Qwen3 到 Kimi-K2。",
+       "source": "GitHub 仓库描述 pegainfer"
+      }
+     ],
+     "interviewAnswer": "pegainfer 是一个纯 Rust 加 CUDA 的 LLM 推理引擎，不依赖 PyTorch，对外提供 OpenAI 兼容接口，宣称能服务从 Qwen3 到 Kimi-K2 的模型。它的取舍很清楚：去掉 PyTorch 换来更小的依赖面和更可控的运行时，但模型适配和内核都要自己维护，支持面通常窄于 vLLM 这类社区方案。OpenAI 兼容是关键设计，应用改个 base_url 就能切换，迁移成本极低。它让我更关注推理阶段的真实瓶颈，也就是 KV cache 显存和批处理调度。",
+     "studyPath": {
+      "prerequisites": [
+       "Transformer 前向与自回归解码",
+       "KV cache 与显存占用",
+       "OpenAI Chat Completions 接口协议",
+       "Rust/CUDA 基础（读代码用）"
+      ],
+      "nextSteps": [
+       "读 pegainfer 仓库的模型支持与量化说明",
+       "对比 vLLM/SGLang 的调度与兼容策略",
+       "用 KV cache 公式估算一次自己的部署显存"
+      ]
+     }
+    }
+   }
+  },
+  {
+   "id": "17807f6b228bf63a",
+   "title": "bentoml/BentoML - The easiest way to serve AI apps and models - Build Model Inference APIs, Job queues, LLM apps, Multi-model pipelines, and more!",
+   "category": "engineering",
+   "channel": "github",
+   "url": "https://github.com/bentoml/BentoML",
+   "sources": [
+    {
+     "url": "https://github.com/bentoml/BentoML",
+     "name": "github"
+    }
+   ],
+   "tags": [
+    "ai-inference",
+    "deep-learning",
+    "generative-ai",
+    "inference-platform",
+    "llm",
+    "llm-inference",
+    "llm-serving",
+    "llmops",
+    "Python"
+   ],
+   "kind": "repo",
+   "summary": "The easiest way to serve AI apps and models - Build Model Inference APIs, Job queues, LLM apps, Multi-model pipelines, and more!",
+   "needsFetch": false,
+   "missing": [
+    "formulas"
+   ],
+   "backfillWeight": 1.0,
+   "existingEnrichment": {
+    "tldr": "把 AI 模型封装成可部署在线推理 API 的服务框架，支持任务队列、LLM 应用与多模型流水线。",
+    "keyPoints": [
+     "定位：以最简单的方式 serve AI 应用与模型。",
+     "能力一：构建模型推理 API。",
+     "能力二：任务队列（job queue）。",
+     "能力三：LLM 应用与多模型流水线编排。"
+    ],
+    "why": "算法实习也要把 demo 上线：面试常问模型服务化、批处理与多模型编排。BentoML 是把训练成果变成可调用接口的最短路径之一。",
+    "difficulty": "medium",
+    "tags": [
+     "serving",
+     "llmops",
+     "inference",
+     "deployment",
+     "python",
+     "pipeline"
+    ],
+    "entities": [
+     "BentoML"
+    ],
+    "diagram": {
+     "kind": "flow",
+     "title": "BentoML 服务化路径",
+     "caption": "把模型和代码打成一个可部署单元，对外同时提供同步推理 API、异步任务队列与多模型流水线三种入口。",
+     "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='BentoML 服务化路径：模型与代码打包成部署单元，对外提供模型推理 API、任务队列、LLM 应用与多模型流水线三类入口，供客户端调用'><rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>模型 + 代码</text><text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>定义推理逻辑</text><line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,70 236,62 244,62' fill='var(--line-1)'/><rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>打成部署单元</text><text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>依赖与配置打包</text><line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,124 236,116 244,116' fill='var(--line-1)'/><rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>三类入口</text><text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>API / 队列 / 流水线</text><line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,178 236,170 244,170' fill='var(--line-1)'/><rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>客户端调用</text><text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>同步或异步取结果</text></svg>",
+     "alt": "BentoML 服务化四步：把模型与代码定义好推理逻辑 → 打成含依赖配置的部署单元 → 暴露模型推理 API、任务队列、LLM 应用与多模型流水线三类入口 → 客户端同步或异步调用取结果"
+    },
+    "concepts": [
+     {
+      "name": "模型服务化 (Model Serving)",
+      "readable": "训练好的模型只是一堆权重和代码，线上要的是「发一个请求、拿一个结果」的接口。服务化就是给模型套上一层网络服务：加载权重、定义输入输出、处理并发与批处理，让它能被别的系统调用。",
+      "analogy": "家里会做菜不等于开了餐馆：得有人点单、有厨房排期、有上菜流程，顾客才点得动。服务化就是把「会做菜」变成「能营业」。",
+      "analogyBreaksDown": "餐馆的菜做了就消耗、卖完就没了，而模型服务的同一份权重可以并发被无数请求共享，瓶颈在显存与算力排队而非原料消耗，类比里「卖一份少一份」的资源约束并不成立。",
+      "mechanism": "关键设计是把模型加载与请求处理解耦：进程启动时加载权重常驻显存，请求进来后做动态批处理（攒批后一起前向）以提升吞吐，同时把打包、依赖、版本、扩缩容一并纳入部署单元，避免「本机能跑、线上跑不起来」。",
+      "visual": "画一个请求队列（多个小方块）汇入一个批处理闸门，闸门按固定时间窗口合并成一个大块送入 GPU，再分流回各请求；闸门窗口越宽吞吐越高但单请求延迟越大。",
+      "prerequisites": [
+       "HTTP/RPC 接口与 JSON 序列化基本概念",
+       "GPU 显存与吞吐/延迟的权衡",
+       "容器与依赖打包的基本常识"
+      ],
+      "selfTest": [
+       "为什么服务化要强调动态批处理，而不是来一个请求算一个？",
+       "吞吐和单请求延迟通常是什么关系？",
+       "「本机能跑」到「线上能跑」之间常见的坑有哪些？"
+      ],
+      "formula": ""
+     },
+     {
+      "name": "多模型流水线 (Multi-model Pipeline)",
+      "readable": "一个 AI 应用常不止一个模型：先做预处理、再跑主体模型、最后做后处理或审校。流水线把多个模型/步骤串起来，前一个的输出直接喂给下一个，对外只暴露一个接口，中间调度由框架负责。",
+      "analogy": "工厂流水线：原料经过多道工位逐步加工，最后出成品；工人不需要自己把半成品搬到下一站，传送带负责衔接。",
+      "analogyBreaksDown": "工厂流水线上每道工位处理速度可以调平，节拍稳定；而 AI 流水线的各阶段耗时差异极大（预处理毫秒级、大模型秒级），且下游能否批处理取决于上游是否已凑够批，节拍很难对齐，类比掩盖了这种动态不均衡。",
+      "mechanism": "设计要点是让各阶段独立可扩缩、且能各自批处理：上游输出先进入缓冲，下游按自己的批处理窗口消费；同时要处理背压（下游慢时上游不能无限堆请求）与错误传播（某阶段失败如何回滚或降级）。",
+      "visual": "画一条横向管道，分为三段并标注各自耗时；段间画缓冲池（小方格队列），缓冲池变红表示下游积压、触发背压；管道上方标注「客户端只见一个入口」。",
+      "prerequisites": [
+       "异步任务与队列的基本概念",
+       "生产者-消费者与背压",
+       "常见预处理/后处理在 AI 应用中的位置"
+      ],
+      "selfTest": [
+       "流水线相比把所有步骤写成一个函数，优势在哪？",
+       "下游变慢时如果没有背压会发生什么？",
+       "多模型流水线里某阶段出错，通常有哪些处理策略？"
+      ],
+      "formula": ""
+     }
+    ],
+    "formulas": [],
+    "selfCheck": {
+     "claims": [
+      "BentoML 的自我定位是「以最简单的方式 serve AI 应用与模型」。",
+      "它可以用来构建模型推理 API。",
+      "它支持任务队列（job queue）。",
+      "它支持 LLM 应用与多模型流水线。"
+     ],
+     "uncertain": [
+      "摘要仅为一句自述，未给出任何实现细节、性能数据或与竞品的对比，待核实。",
+      "「任务队列」与「多模型流水线」在本项目中的具体 API 形态与调度机制摘要未说明，待核实。",
+      "本条为仓库卡片，摘要不足 400 字且未给方法细节，故 formulas 置空。"
+     ]
+    },
+    "teaching": {
+     "progressive": [
+      {
+       "level": "一句话",
+       "text": "一个把 AI 模型变成可上线调用接口的框架，顺带管队列和多模型串联。"
+      },
+      {
+       "level": "入门",
+       "text": "模型训练完只是权重文件，线上要的是能接收请求、返回结果的接口。BentoML 帮你把模型和代码打包成一个可部署单元，对外暴露推理 API；除此之外它还管异步任务队列（耗时任务排队跑）和 LLM 应用、多模型流水线（多个模型串起来一个接口对外）。"
+      },
+      {
+       "level": "进阶",
+       "text": "服务化的核心矛盾是吞吐与延迟：来一个请求算一个最简单，但 GPU 利用率低。框架通常做动态批处理——把一小段时间窗内的请求攒成一批一起前向，吞吐上去、单请求延迟略增。多模型流水线则要解决异构耗时的衔接问题：各阶段独立扩缩、中间加缓冲、下游慢时要有背压，否则请求堆积会把整个服务拖垮。"
+      },
+      {
+       "level": "专家",
+       "text": "BentoML 这类框架的价值在于把「模型 → 服务」之间的工程琐事标准化：依赖打包、权重加载常驻、批处理调度、多阶段编排、版本与扩缩容。对填简历的项目，它能让 demo 从「本机 notebook」变成「有接口、有并发、能压测」的在线服务，这正是校招工程岗面试区分「只会训练」与「能落地」的关键。边界：摘要只给了一句宣传语，未披露它在高并发 LLM 场景下与专用推理引擎（如 vLLM 类）的差异，选型时不能仅凭此句。"
+      }
+     ],
+     "socratic": [
+      {
+       "q": "如果只写一个 Flask 接口加载模型，会缺什么？",
+       "a": "缺动态批处理（GPU 利用率低）、缺队列与背压（长任务会阻塞）、缺依赖与版本打包（换机器跑不起来）、缺多阶段编排，扩缩容也全靠自己写。"
+      },
+      {
+       "q": "为什么多模型流水线不能简单地顺序调用几个函数？",
+       "a": "顺序调用时各阶段被迫同频、无法独立扩缩与批处理，慢阶段会成为全链路瓶颈，且没有缓冲与背压，错误也无法隔离降级。"
+      }
+     ],
+     "mechanism": "模型服务的瓶颈通常不在单次前向速度，而在「如何把请求凑成能喂满 GPU 的批」。因此框架的核心设计是把请求接收与前向执行解耦：请求先入队，调度器按时间窗或批大小攒批，再统一执行并分发结果。这个解耦同时带来队列、并发、背压等一整套能力，也让多模型流水线可以用同一种「缓冲 + 批处理」的方式拼接各阶段。",
+     "boundary": "适合需要快速把模型做成在线服务的场景；但若追求极致吞吐（如大批量 LLM 推理），专用推理引擎在显存管理、KV 缓存优化上通常更深。摘要未给任何性能与并发数据，无法据此判断其在高负载下的表现边界。",
+     "analogyBoundary": "「开餐馆」的类比忽略了资源形态差异：餐馆的菜是消耗品，卖完即止；而模型权重是可被无数请求共享的常驻资源，瓶颈是可并发量与显存，而不是原料耗尽，因此「多做一份多花一份成本」的直觉在服务化里并不适用。",
+     "misconceptions": [
+      "以为服务化就是写个 HTTP 接口包住模型，忽略了批处理、队列、依赖打包这些决定线上可用性的部分。",
+      "把「任务队列」当成只是异步化，其实它还承担削峰与背压职责。",
+      "以为多模型流水线只是顺序调用，忽略了各阶段独立扩缩与缓冲隔离的必要性。"
+     ],
+     "ownAnalysis": "BentoML 在求职语境里的价值是「把训练成果工程化」：同样是做一个多模态 demo，能否给出可调用接口、能否交代并发与批处理策略、能否说清多模型如何编排，直接决定面试官对你工程能力的判断（推断）。可疑之处：摘要只有一句话自述，没有架构图、没有性能数字、也没提与 vLLM/TGI 类推理引擎的关系，因此对其在 LLM 大并发下的实际定位无法评估，需要看仓库文档才能确认。",
+     "officialNotes": [
+      {
+       "position": "BentoML 自述为「serve AI 应用与模型最简单的方式」，可构建模型推理 API、任务队列、LLM 应用与多模型流水线。",
+       "source": "github: bentoml/BentoML"
+      }
+     ],
+     "interviewAnswer": "BentoML 是一个把 AI 模型服务化的框架，它的自述定位是「以最简单的方式部署 AI 应用和模型」，能力上覆盖模型推理 API、任务队列、LLM 应用和多模型流水线。我会从服务化的核心矛盾去讲：来一个请求算一个虽然简单但 GPU 利用率低，所以要动态批处理，把时间窗内的请求攒成一批一起前向，吞吐上去、延迟略增；多模型流水线则要处理各阶段耗时差异，用缓冲和背压把慢阶段隔离住。对我做的生成类项目，它的意义是能把 demo 从本机脚本变成有接口、有并发、能压测的在线服务。",
+     "studyPath": {
+      "prerequisites": [
+       "HTTP 接口与 JSON 序列化的基本概念",
+       "GPU 批处理与吞吐/延迟权衡",
+       "容器化与依赖打包常识"
+      ],
+      "nextSteps": [
+       "用 BentoML 把自己一个模型项目跑成可调用接口",
+       "对比专用 LLM 推理引擎（vLLM 类）在批处理与显存管理上的做法",
+       "给服务加上简单压测，记录吞吐与延迟随批大小的变化"
+      ]
+     }
+    }
+   }
+  },
+  {
+   "id": "b7b17a114ffa47c7",
+   "title": "XuankunRong/Awesome-LVLM-Safety - A curated list of resources dedicated to the safety of Large Vision-Language Models. This repository aligns with our survey titled A Survey of Safety on Large Vision-Language Models: Attacks, Defenses, and Evaluations.",
+   "category": "multimodal",
+   "channel": "github",
+   "url": "https://github.com/XuankunRong/Awesome-LVLM-Safety",
+   "sources": [
+    {
+     "url": "https://github.com/XuankunRong/Awesome-LVLM-Safety",
+     "name": "github"
+    }
+   ],
+   "tags": [],
+   "kind": "repo",
+   "summary": "A curated list of resources dedicated to the safety of Large Vision-Language Models. This repository aligns with our survey titled A Survey of Safety on Large Vision-Language Models: Attacks, Defenses, and Evaluations.",
+   "needsFetch": false,
+   "missing": [
+    "formulas"
+   ],
+   "backfillWeight": 1.0,
+   "existingEnrichment": {
+    "tldr": "LVLM 安全方向的资源清单仓库，按攻击、防御、评测三条主线收录论文与数据集，与同名综述配套。",
+    "keyPoints": [
+     "收录大视觉语言模型（LVLM）安全相关的资源",
+     "栏目主线为 Attacks、Defenses、Evaluations 三类",
+     "与综述 A Survey of Safety on LVLMs 对应",
+     "属策展清单（curated list），非单篇方法论文"
+    ],
+    "why": "对做多模态安全与对齐的求职者，它是快速定位「攻击—防御—评测」代表工作的地图，面试可据此讲清安全评测口径。",
+    "difficulty": "easy",
+    "tags": [
+     "multimodal",
+     "vlm",
+     "safety",
+     "survey",
+     "awesome-list"
+    ],
+    "entities": [
+     "Large Vision-Language Models",
+     "Awesome-LVLM-Safety",
+     "A Survey of Safety on Large Vision-Language Models"
+    ],
+    "diagram": {
+     "kind": "flow",
+     "title": "清单的按板块阅读顺序",
+     "caption": "先看 README 清单，再沿攻击、防御、评测三条线各取代表工作。",
+     "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='LVLM 安全清单仓库按板块的阅读顺序：从 README 入口进入，依次浏览 Attacks、Defenses、Evaluations 三个综述板块'><rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>仓库入口</text><text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>README 清单</text><line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,70 236,62 244,62' fill='var(--line-1)'/><rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>Attacks</text><text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>综述板块一</text><line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,124 236,116 244,116' fill='var(--line-1)'/><rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>Defenses</text><text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>综述板块二</text><line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,178 236,170 244,170' fill='var(--line-1)'/><rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>Evaluations</text><text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>综述板块三</text></svg>",
+     "alt": "四级流程：仓库 README 清单入口 → Attacks 板块 → Defenses 板块 → Evaluations 板块"
+    },
+    "concepts": [
+     {
+      "name": "LVLM 安全的三分法 (Attacks / Defenses / Evaluations)",
+      "readable": "把大视觉语言模型的安全拆成三块：怎么被攻击、怎么防、怎么评测。看清单时按这三条线各挑几篇代表作，就能覆盖领域全貌。",
+      "analogy": "像医院把安全分成三件事：别人怎么弄伤你（攻击）、你怎么预防和包扎（防御）、怎么体检确认没事（评测）。",
+      "analogyBreaksDown": "医院里攻击者是外部的人，而 LVLM 的「攻击」可能来自模型读到的图像或提示本身；防御与评测又常共用同一批数据与指标，三者边界比医院更模糊、更互相耦合。",
+      "mechanism": "按攻击面、防御手段、评测基准三轴组织文献，使读者先锁定自己关心的一轴，再沿引用找跨轴工作；避免按时间平铺导致的检索迷失。",
+      "visual": "从 README 顶部的目录读起：先看三级标题对应 Attacks / Defenses / Evaluations，再点进每节列表；数据流是「综述章节 → 对应论文链接 → 数据集/基准链接」，清单本身不跑代码。",
+      "prerequisites": [
+       "了解 VLM 基本结构（视觉编码器 + LLM）",
+       "知道对抗样本与对齐的基本概念"
+      ],
+      "selfTest": [
+       "攻击、防御、评测三条线各举一个代表方向。",
+       "为什么 LVLM 安全比纯文本 LLM 安全多一层风险来源？",
+       "拿到清单后你按什么顺序筛出 3 篇必读？"
+      ],
+      "formula": ""
+     }
+    ],
+    "formulas": [],
+    "selfCheck": {
+     "claims": [
+      "该仓库是面向大视觉语言模型安全的策展资源列表（curated list）。",
+      "仓库与同名综述 A Survey of Safety on Large Vision-Language Models: Attacks, Defenses, and Evaluations 对应。",
+      "综述把安全划分为 Attacks、Defenses、Evaluations 三类。"
+     ],
+     "uncertain": [
+      "仓库的具体目录结构、文件名为待核实（摘要只给了一句话描述）。",
+      "收录条目的数量、更新频率与筛选标准为待核实。",
+      "每条资源是否带代码/数据集链接为待核实。"
+     ]
+    },
+    "teaching": {
+     "progressive": [
+      {
+       "level": "一句话",
+       "text": "一份按攻击、防御、评测分类的 LVLM 安全资源清单。"
+      },
+      {
+       "level": "入门",
+       "text": "仓库把大视觉语言模型安全相关的论文、数据集和工具整理成清单，分成攻击、防御、评测三大板块，并与作者自己的综述论文配套，方便按方向检索。"
+      },
+      {
+       "level": "进阶",
+       "text": "它不是方法论文而是策展清单：价值在于把分散在对抗攻击、安全对齐、鲁棒评测中的工作按同一分类法组织起来。读法不是通读，而是先锁定关心的一轴（如多模态越狱评测），再顺链接找代表工作与基准数据集。"
+      },
+      {
+       "level": "专家",
+       "text": "对求职者的实际用法是把它当「领域地图 + 面试素材库」：回答安全问题时说清攻击面（图像扰动、多模态越狱等）、防御层（训练期对齐 vs 推理期过滤）与评测口径（攻击成功率、拒答率、有用性代价）三者的权衡。但清单只给索引，不给实验设置，要复现或比较强度必须回原文。（推断，具体板块标签以仓库实际为准）"
+      }
+     ],
+     "socratic": [
+      {
+       "q": "为什么这个交叉领域需要专门的清单，而不是直接搜论文？",
+       "a": "视觉 + 语言 + 安全三套社区语言各说各话，同一问题换种说法就搜不到；统一分类法能显著降低漏检。"
+      },
+      {
+       "q": "只读清单不读原文，为什么不够？",
+       "a": "清单只有标题与链接，不含实验设置、指标定义与威胁模型；面试问「这个防御在什么威胁模型下有效」时，复述标题会被追问穿。"
+      }
+     ],
+     "mechanism": "LVLM 的风险同时来自视觉输入与语言输出，单一社区的关键词无法覆盖；用攻击、防御、评测三轴做正交切分，任一工作都能被定位到交点（如「针对图像扰动的评测基准」），使检索从关键词匹配升级为分类型定位。",
+     "boundary": "清单不覆盖非视觉模态的安全，也不负责统一指标；当你需要比较两个防御的实际强度时，清单帮不上，必须回原文对齐威胁模型与评测集。",
+     "analogyBoundary": "医院的攻击、防御、评测有明确角色分离，而这里攻击论文常自带防御、评测论文常复用攻击方法，三者会重叠；按单轴阅读可能漏掉跨轴工作。",
+     "misconceptions": [
+      "把它当成教程或代码库，期待能直接跑（它只是链接索引）。",
+      "以为「安全」只是越狱与拒答，忽略视觉侧扰动与投毒。",
+      "把综述的结论当成仓库自测结论（仓库只是整理的清单）。"
+     ],
+     "ownAnalysis": "这类 Awesome 仓库的真实价值取决于维护活跃度与收录标准，而摘要没写这两点（待核实）。对求职者合理的用法是：用它划出「必读集合」的边界，再自己动手补评测复现。与多模态对齐、红队方向结合时重点看评测轴，因为它直接对应面试里「你怎么衡量安全」。（推断）",
+     "officialNotes": [
+      {
+       "position": "核心入口为仓库根目录 README，其中按 Attacks / Defenses / Evaluations 分节列出清单；具体子目录与文件名为待核实。",
+       "source": "https://github.com/XuankunRong/Awesome-LVLM-Safety"
+      },
+      {
+       "position": "仓库自述：收录 LVLM 安全相关资源，与综述 A Survey of Safety on Large Vision-Language Models: Attacks, Defenses, and Evaluations 对应。",
+       "source": "https://github.com/XuankunRong/Awesome-LVLM-Safety"
+      }
+     ],
+     "interviewAnswer": "如果被问怎么系统了解多模态安全，我会先按攻击、防御、评测三条线建地图。Awesome-LVLM-Safety 就是这样一个索引仓库，和它的同名综述配套。我会用它定位代表工作，再回原文核对威胁模型和指标：防御是在训练期对齐还是推理期过滤，评测看攻击成功率还是有用性代价。清单本身只是入口。",
+     "studyPath": {
+      "prerequisites": [
+       "VLM 基础结构",
+       "对抗攻击与对齐的基本概念"
+      ],
+      "nextSteps": [
+       "挑攻击/防御/评测三条线各选代表作精读",
+       "自己复现一个小规模安全评测管线"
+      ]
+     }
+    }
+   }
+  }
+ ]
+}

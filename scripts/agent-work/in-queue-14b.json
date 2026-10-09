@@ -1,0 +1,116 @@
+{
+ "batchId": "queue-14b",
+ "mode": "full",
+ "items": [
+  {
+   "id": "b267ff96b62b124d",
+   "title": "t8y2/dbx - 25 MB lightweight cross-platform database client for 100+ databases, including MySQL, PostgreSQL, SQLite, Redis, MongoDB, DuckDB, SQL Server, and Dameng. Built-in AI, MCP Server, CLI, desktop and Docker. | 轻量级跨平台数据库管理工具，支持 MySQL、PostgreSQL、SQLite、Redis、MongoDB、达梦等 100+ 数据库，提供桌面端、Docker、CLI、内置 AI 助手和",
+   "category": "agent",
+   "channel": "gh_trending",
+   "url": "https://github.com/t8y2/dbx",
+   "sources": [
+    {
+     "url": "https://github.com/t8y2/dbx",
+     "name": "gh_trending"
+    }
+   ],
+   "tags": [
+    "Rust",
+    "trending"
+   ],
+   "kind": "repo",
+   "summary": "25 MB lightweight cross-platform database client for 100+ databases, including MySQL, PostgreSQL, SQLite, Redis, MongoDB, DuckDB, SQL Server, and Dameng. Built-in AI, MCP Server, CLI, desktop and Docker. | 轻量级跨平台数据库管理工具，支持 MySQL、PostgreSQL、SQLite、Redis、MongoDB、达梦等 100+ 数据库，提供桌面端、Docker、CLI、内置 AI 助手和",
+   "needsFetch": false
+  },
+  {
+   "id": "b5d97e0997c4193a",
+   "title": "盒马面经 · 面试题",
+   "category": "coding",
+   "channel": "kamacoder_notes",
+   "url": "https://notes.kamacoder.com/interview/java/freshhema-interview.html",
+   "sources": [
+    {
+     "url": "https://notes.kamacoder.com/interview/java/freshhema-interview.html",
+     "name": "kamacoder_notes"
+    }
+   ],
+   "tags": [
+    "面试题",
+    "面经",
+    "八股",
+    "interview"
+   ],
+   "kind": "interview",
+   "summary": "本文整理了盒马面试中高频的 Java 与并发编程面试题，涵盖面向对象三大特性、多态实现、抽象类与接口区别、线程安全 List（Vector、Collections.synchronizedList、CopyOnWriteArrayList）、ArrayList 线程安全方案、并发三要素（原子性、可见性、有序性）、synchronized 与 Lock 区别、Lock 实现（ReentrantLock、ReentrantReadWriteLock）、自旋锁性质、公平锁与非公平锁、Java 异常机制、反射应用场景以及 MySQL 索引分类等核心考点，帮助求职者系统准备大厂技术面试。",
+   "needsFetch": false
+  },
+  {
+   "id": "b4159e72c6a7bcaf",
+   "title": "最长有效括号（LeetCode 32）· 大厂高频手撕题",
+   "category": "coding",
+   "channel": "codetop",
+   "url": "https://leetcode.cn/problems/longest-valid-parentheses",
+   "sources": [
+    {
+     "url": "https://leetcode.cn/problems/longest-valid-parentheses",
+     "name": "codetop"
+    }
+   ],
+   "tags": [
+    "leetcode",
+    "手撕",
+    "算法题",
+    "高频面试题",
+    "拼多多"
+   ],
+   "kind": "problem",
+   "summary": "32. 最长有效括号 - 给你一个只包含 '(' 和 ')' 的字符串，找出最长有效（格式正确且连续）括号 子串 的长度。 左右括号匹配，即每个左括号都有对应的右括号将其闭合的字符串是格式正确的，比如 \"(()())\"。 示例 1： 输入：s = \"(()\" 输出：2 解释：最长有效括号子串是 \"()\" 示例 2： 输入：s = \")()())\" 输出：4 解释：最长有效括号子串是 \"()()\" 示例 3： 输入：s = \"\" 输出：0 提示： * 0 <= s.length <= 3 * 104 * s[i] 为 '(' 或 ')'",
+   "needsFetch": false
+  },
+  {
+   "id": "a12b4a1a2abd9e3b",
+   "title": "爬楼梯（LeetCode 70）· 大厂高频手撕题",
+   "category": "coding",
+   "channel": "codetop",
+   "url": "https://leetcode.cn/problems/climbing-stairs",
+   "sources": [
+    {
+     "url": "https://leetcode.cn/problems/climbing-stairs",
+     "name": "codetop"
+    }
+   ],
+   "tags": [
+    "leetcode",
+    "手撕",
+    "算法题",
+    "高频面试题",
+    "百度"
+   ],
+   "kind": "problem",
+   "summary": "70. 爬楼梯 - 假设你正在爬楼梯。需要 n 阶你才能到达楼顶。 每次你可以爬 1 或 2 个台阶。你有多少种不同的方法可以爬到楼顶呢？ 示例 1： 输入：n = 2 输出：2 解释：有两种方法可以爬到楼顶。 1. 1 阶 + 1 阶 2. 2 阶 示例 2： 输入：n = 3 输出：3 解释：有三种方法可以爬到楼顶。 1. 1 阶 + 1 阶 + 1 阶 2. 1 阶 + 2 阶 3. 2 阶 + 1 阶 提示： * 1 <= n <= 45",
+   "needsFetch": false
+  },
+  {
+   "id": "2dc995f84b8cef04",
+   "title": "亚信安全C++一面面经 · 面试题",
+   "category": "coding",
+   "channel": "kamacoder_notes",
+   "url": "https://notes.kamacoder.com/interview/cpp/yaxin-security-interview.html",
+   "sources": [
+    {
+     "url": "https://notes.kamacoder.com/interview/cpp/yaxin-security-interview.html",
+     "name": "kamacoder_notes"
+    }
+   ],
+   "tags": [
+    "面试题",
+    "面经",
+    "八股",
+    "interview"
+   ],
+   "kind": "interview",
+   "summary": "本文整理了亚信安全C++开发岗位一面中涉及的高频面试题，涵盖C++核心机制（函数重载、虚函数、构造函数/析构函数）、计算机网络（TCP/UDP区别、粘包解决）、操作系统（进程/线程/协程、内核机制、内存管理、fork函数）以及多线程同步（自旋锁等）。内容聚焦于面试考点，解析了名称修饰、虚函数表、动态绑定、内存隔离、虚拟内存、页面置换算法等关键概念，并提供了对比表格与代码示例，帮助求职者系统准备大厂技术面试。",
+   "needsFetch": false
+  }
+ ]
+}

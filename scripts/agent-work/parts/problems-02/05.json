@@ -1,0 +1,258 @@
+{
+ "id": "b0a9a5de579bcd4a",
+ "tldr": "在层序遍历基础上按层交替方向：偶数层正序、奇数层反转（或双端队列按方向头/尾插入）。",
+ "keyPoints": [
+  "本质是 BFS 层序遍历的变形",
+  "每层先取 size=len(q) 快照，整层一起处理",
+  "第 0 层从左到右，第 1 层从右到左，交替",
+  "最简写法：正常收集后对需要反转的层 reverse",
+  "双端队列可在收集时直接 appendleft，省一次反转"
+ ],
+ "why": "锯齿遍历是二叉树 BFS 的高频变形（字节 189 次）；掌握层序模板后可派生右视图、层平均、最大宽度等一串题。",
+ "difficulty": "medium",
+ "tags": [
+  "leetcode",
+  "binary-tree",
+  "bfs",
+  "level-order",
+  "queue"
+ ],
+ "entities": [
+  "层序遍历",
+  "双端队列",
+  "广度优先搜索",
+  "reverse"
+ ],
+ "diagram": {
+  "kind": "flow",
+  "title": "锯齿层次遍历的方向交替",
+  "caption": "树 [3,9,20,null,null,15,7]：第 1 层正向、第 2 层反向、第 3 层正向。",
+  "alt": "二叉树 3 9 20 15 7 的锯齿层序遍历，输出 3; 20 9; 15 7",
+  "svg": "<svg viewBox='0 0 640 320' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='二叉树锯齿层序遍历'><line x1='320' y1='49' x2='213' y2='83' stroke='var(--line-1)' stroke-width='1.2'/><line x1='320' y1='49' x2='427' y2='83' stroke='var(--line-1)' stroke-width='1.2'/><circle cx='320' cy='30' r='19' fill='none' stroke='var(--accent)' stroke-width='2.2'/><text x='320' y='35' font-size='14' text-anchor='middle' fill='currentColor'>3</text><line x1='427' y1='121' x2='384' y2='155' stroke='var(--line-1)' stroke-width='1.2'/><line x1='427' y1='121' x2='512' y2='155' stroke='var(--line-1)' stroke-width='1.2'/><circle cx='213' cy='102' r='19' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='213' y='107' font-size='14' text-anchor='middle' fill='currentColor'>9</text><circle cx='427' cy='102' r='19' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='427' y='107' font-size='14' text-anchor='middle' fill='currentColor'>20</text><circle cx='384' cy='174' r='19' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='384' y='179' font-size='14' text-anchor='middle' fill='currentColor'>15</text><circle cx='512' cy='174' r='19' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='512' y='179' font-size='14' text-anchor='middle' fill='currentColor'>7</text><text x='16' y='254' font-size='13' fill='currentColor' opacity='0.78'>第 0 层 正向 → [3]</text><text x='16' y='276' font-size='13' fill='currentColor' opacity='0.78'>第 1 层 反向 → [20, 9]</text><text x='16' y='298' font-size='13' fill='currentColor' opacity='0.78'>第 2 层 正向 → [15, 7]</text></svg>"
+ },
+ "concepts": [
+  {
+   "name": "按层 BFS（Level-Order with size snapshot）",
+   "readable": "用队列做广度优先遍历，关键是每轮循环前先记录 len(queue) 作为「本层节点数」，只处理这 size 个节点，保证一轮恰好处理完整的一层。",
+   "analogy": "像按楼层清点人数：先把这一层的人全叫到走廊（同时把他们的孩子登记为下一层），这一层处理完再一起下楼。",
+   "analogyBreaksDown": "如果不用 size 快照，而是写 while queue 边出边入，就会把不同层的节点混在一起。size 必须在进入内层循环前取一次，不能在循环中动态更新。",
+   "mechanism": "队列初始放入根；每轮取 size=len(q)，弹出 size 个节点收集其值、并把左右子入队，于是队列里始终只多出「下一层」，实现天然分层。",
+   "visual": "画一棵树，用横线按深度分层；队列画成一条从右进的管道，标出本层 size 与下一层节点。",
+   "prerequisites": [
+    "队列/双端队列",
+    "二叉树遍历",
+    "BFS"
+   ],
+   "selfTest": [
+    "为什么必须用 size 快照而不能直接 while queue？",
+    "队列峰值与什么有关系？",
+    "若改成 DFS 先序遍历能不能分层？"
+   ],
+   "formula": "T(n) = O(n), \\quad S(n) = O(w)"
+  },
+  {
+   "name": "锯齿方向控制",
+   "readable": "在按层收集的基础上，用一个布尔量记录「本层是否从右到左」；每处理完一层翻转它，从而实现锯齿。",
+   "analogy": "像翻书页：读第一页从左往右，翻面后这一页从右往左读，每翻一次换一次方向。",
+   "analogyBreaksDown": "方向只作用在「结果里的顺序」，不影响 BFS 访问顺序——节点入队次序始终是左到右。若把方向用到入队上，会改变下一层的结构，反而出错。",
+   "mechanism": "两种等价实现：①收集完整层后按方向 reverse；②用双端队列，正向 append、反向 appendleft，边收边定位，省去一次整体反转。",
+   "visual": "在每层结果旁画一个箭头：→ 表示正向、← 表示反向；箭头每层交替，与布尔量翻转同步。",
+   "prerequisites": [
+    "列表反转",
+    "双端队列 deque"
+   ],
+   "selfTest": [
+    "为什么方向只加在收集阶段而不加在入队阶段？",
+    "appendleft 与 reverse 两种写法谁更省？",
+    "若第 0 层就设成反向，结果会变成什么？"
+   ],
+   "formula": "\\mathrm{reverse}(d) = (d \\bmod 2 = 1)"
+  }
+ ],
+ "formulas": [
+  {
+   "id": "f-level-bfs-complexity",
+   "name": "层序遍历复杂度（Level-Order Complexity）",
+   "category": "engineering",
+   "latex": "T(n) = O(n), \\quad S(n) = O(w)",
+   "symbols": [
+    [
+     "n",
+     "节点总数"
+    ],
+    [
+     "w",
+     "树的最大层宽"
+    ],
+    [
+     "S(n)",
+     "额外空间（队列峰值）"
+    ]
+   ],
+   "derivation": [
+    "BFS 每个节点入队、出队各一次，总时间 O(n)。",
+    "队列中任一时刻最多缓存相邻的一到两层节点，峰值等于最大层宽 w。",
+    "完全二叉树 w = n/2，故空间上界可写成 O(n)。"
+   ],
+   "analogy": "像按楼层发通知：每层的人同时等在走廊里，走廊要能容纳最拥挤的那一层。",
+   "pitfalls": [
+    "把空间笼统说成 O(n) 而不提 w，忽略了队列的真实峰值",
+    "忘记每层先取 size=len(q) 快照，导致层级错乱"
+   ],
+   "code": "from collections import deque\n\nclass N:\n    def __init__(s, v, l=None, r=None):\n        s.val, s.left, s.right = v, l, r\n\ndef bfs(root):\n    if not root:\n        return []\n    q, out = deque([root]), []\n    while q:\n        for _ in range(len(q)):   # 本层快照\n            node = q.popleft(); out.append(node.val)\n            if node.left:  q.append(node.left)\n            if node.right: q.append(node.right)\n    return out\n\nprint(bfs(N(1, N(2), N(3))))   # [1, 2, 3]",
+   "sources": [
+    {
+     "title": "二叉树的锯齿形层次遍历（LeetCode 103）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/binary-tree-zigzag-level-order-traversal"
+    }
+   ]
+  }
+ ],
+ "selfCheck": {
+  "claims": [
+   "该题被字节跳动考过 189 次、微软 12 次，共 201 次（摘要原文）。",
+   "难度为中等，最近一次出现于 2026-09-15（摘要原文）。",
+   "root=[3,9,20,null,null,15,7] 的锯齿层序输出为 [[3],[20,9],[15,7]]（示例自验）。"
+  ],
+  "uncertain": [
+   "源摘要只给了频度/公司/难度，未附题面与示例；statement、examples 与解法为按 LeetCode 103 题面补全，已用代码验证。",
+   "示例为自行构造",
+   "摘要未说明「锯齿」的具体定义，本文按 LeetCode 103 的标准定义（第 0 层左→右，逐层交替）展开。"
+  ]
+ },
+ "teaching": {
+  "progressive": [
+   {
+    "level": "一句话",
+    "text": "一层一层遍历，但相邻两层的输出方向交替：这层从左往右，下一层就从右往左。"
+   },
+   {
+    "level": "入门",
+    "text": "先用队列做普通层序遍历：每轮取「本层节点数」，把这些节点处理完并收集值，同时把它们的左右孩子入队。区别只在收集这一步：偶数层正序收集，奇数层反序收集。"
+   },
+   {
+    "level": "进阶",
+    "text": "实现要点有两个：一是每层必须先取 size=len(q) 快照，否则层与层会混；二是方向变量每层翻转一次。最简写法是正常收集后用 reverse() 处理需要反的那层；想更优雅就用双端队列，正向 append、反向 appendleft，直接得到该层顺序。"
+   },
+   {
+    "level": "专家",
+    "text": "这道题是「层序模板 + 一个方向处理」的组合，模板本身还能派生：右视图（每层取最后一个）、层平均、最大层宽（配合完全二叉树编号）。DFS 也能做（带 depth 参数，按 depth 奇偶决定插入方向），但 BFS 更直观。要和 Zigzag 与「螺旋矩阵」区分开，后者是二维网格的螺旋，不是树。"
+   }
+  ],
+  "socratic": [
+   {
+    "q": "如果一轮不定住 size，直接 while q 边出边入会怎样？",
+    "a": "会把子节点和当前层节点混在一起，无法区分层，锯齿的「层」也就无从谈起。"
+   },
+   {
+    "q": "方向为什么要加在收集阶段，而不是子节点入队阶段？",
+    "a": "若改入队顺序，下一层的左右关系会乱，BFS 结构被破坏；方向只影响输出顺序，不应影响遍历结构。"
+   },
+   {
+    "q": "用 reverse 和用 appendleft 有区别吗？",
+    "a": "结果相同。reverse 是层收集完再整体反转一次 O(w)；appendleft 是收集时定位，总价一致但少一次遍历，写法略绕。"
+   }
+  ],
+  "mechanism": "锯齿需求拆成两个独立子问题：『分层』由 BFS + size 快照解决，『每层方向交替』由一个布尔量解决。把两件事解耦是这道题的关键设计选择——如果尝试把方向混进遍历逻辑（例如反向入队），两者纠缠会让结构难维护且易错。层的内部分序不影响后续层的生成，因此方向完全可以后置处理。",
+  "boundary": "只适用于层内需要变序、层间结构不变的需求。若题目要求「之字形打印节点值但父子关系也要变」则不适用。节点数很大时队列峰值可能接近 n（完全二叉树末层），空间不是 O(1)。空树必须返回 [] 而不是 [[]]。",
+  "analogyBoundary": "「翻书页」的类比暗示方向是关于同一页内容翻转的，而这里每层的方向只影响该层节点的输出次序，不改变树的父子结构或后续遍历——类比会让人误以为「反向」会连带影响下一层的生成。",
+  "misconceptions": [
+   "在 while 循环里动态取 len(q)，导致层与层混合。",
+   "方向变量初值写反，使第 0 层就逆序。",
+   "空树返回 [[]]，正确应为 []。",
+   "对整棵结果 res 做反转，而不是对当前层做反转。"
+  ],
+  "ownAnalysis": "这道题的模板价值大于本身。把「BFS + size 快照 + 层后处理」记牢后，右视图、每层最大、每层平均都能直接套。（推断）面试时更可能让你先写普通层序再改造成锯齿，以观察你能否把新需求干净地插进已有框架；因此「分层」与「方向」解耦的讲法会很加分。",
+  "officialNotes": [],
+  "interviewAnswer": "我用 BFS。队列初始化放根，每轮先记下 size=len(q)，弹出这 size 个节点收集值、并把左右孩子入队，这样就分好了层。再维护一个方向布尔量，第 0 层从左到右，每层结束后翻转；需要反向的层把该层结果反转。时间 O(n)，空间 O(w)，w 是最大层宽。空树返回空列表。",
+  "studyPath": {
+   "prerequisites": [
+    "队列/双端队列",
+    "二叉树的层序遍历",
+    "BFS 与递归遍历的差别"
+   ],
+   "nextSteps": [
+    "做 LC199「二叉树的右视图」，每层只取最后一个",
+    "做 LC637「二叉树的层平均值」，层内做聚合",
+    "做 LC107「二叉树的层序遍历 II」，把结果整体倒序对比"
+   ]
+  }
+ },
+ "problem": {
+  "title": "二叉树的锯齿形层次遍历",
+  "number": 103,
+  "difficulty": "medium",
+  "statement": "给定二叉树的根节点 root，返回其节点值的锯齿形层次遍历：先从左到右遍历第 0 层，再从右到左遍历第 1 层，接着又从左到右遍历第 2 层，依此类推，层与层之间方向交替。约束：树中节点数在 [0, 2000] 范围内，-100 <= Node.val <= 100。",
+  "examples": [
+   {
+    "input": "root = [3,9,20,null,null,15,7]",
+    "output": "[[3],[20,9],[15,7]]",
+    "why": "第 1 层反向成 [20,9]",
+    "explanation": "第 1 层反向成 [20,9]"
+   },
+   {
+    "input": "root = [1]",
+    "output": "[[1]]",
+    "why": "只有根节点",
+    "explanation": "只有根节点"
+   },
+   {
+    "input": "root = []",
+    "output": "[]",
+    "why": "空树返回空列表",
+    "explanation": "空树返回空列表"
+   }
+  ],
+  "approach": {
+   "idea": "先做标准层序遍历：用队列，每层先取 size=len(q) 快照，弹出 size 个节点收集值并把左右孩子入队。再引入一个布尔量表示本层方向，第 0 层从左到右，每层结束后翻转；需要反向的层把该层结果反转（或用双端队列按方向头/尾插入）。",
+   "steps": [
+    "空树直接返回 []；队列初始化 deque([root])。",
+    "left_to_right = True。",
+    "while q：先 size = len(q)；level = []。",
+    "循环 size 次：弹出节点，收集其值、并把非空左右孩子入队。",
+    "若当前不是 left_to_right，则 level.reverse()；把 level 加入 res；翻转方向。"
+   ],
+   "whyItWorks": "BFS 用队列保证同一深度的节点严格按层先后处理；每轮只弹出进入本轮时队列里的节点数（size 快照），因此一轮恰好对应一层。收集完这层后按方向决定是否反转，只改变该层的输出次序而不影响节点入队顺序，所以下一层的结构完全正确。归纳可得每层的方向按 0、1、0、1… 交替，恰好满足锯齿要求。",
+   "alternatives": [
+    {
+     "name": "双端队列边收边插",
+     "complexity": "O(n)/O(w)",
+     "when": "正向层用 append、反向层用 appendleft，省掉一次整体 reverse，写法更紧凑。"
+    },
+    {
+     "name": "DFS 带 depth",
+     "complexity": "O(n)/O(h)",
+     "when": "用递归先序遍历，按 depth 奇偶决定 appendleft 还是 append；空间取决于树高 h。"
+    },
+    {
+     "name": "先层序再统一反转某些层",
+     "complexity": "O(n)/O(n)",
+     "when": "两步走：先得到普通层序二维结果，再对下标为奇数的层反转；可读性最好。"
+    }
+   ]
+  },
+  "solution": {
+   "python": "from collections import deque\n\nclass TreeNode:\n    def __init__(self, val=0, left=None, right=None):\n        self.val, self.left, self.right = val, left, right\n\nclass Solution:\n    def zigzagLevelOrder(self, root):\n        if not root:\n            return []\n        res = []\n        q = deque([root])\n        left_to_right = True\n        while q:\n            size = len(q)                 # 本层节点数快照\n            level = []\n            for _ in range(size):\n                node = q.popleft()\n                level.append(node.val)\n                if node.left:\n                    q.append(node.left)\n                if node.right:\n                    q.append(node.right)\n            if not left_to_right:\n                level.reverse()\n            res.append(level)\n            left_to_right = not left_to_right\n        return res\n",
+   "python_alt": "from collections import deque\n\nclass TreeNode:\n    def __init__(self, val=0, left=None, right=None):\n        self.val, self.left, self.right = val, left, right\n\nclass Solution:\n    def zigzagLevelOrder(self, root):\n        if not root:\n            return []\n        res = []\n        q = deque([root])\n        left_to_right = True\n        while q:\n            level = deque()\n            for _ in range(len(q)):\n                node = q.popleft()\n                if left_to_right:      # 正向尾插，反向头插\n                    level.append(node.val)\n                else:\n                    level.appendleft(node.val)\n                if node.left:\n                    q.append(node.left)\n                if node.right:\n                    q.append(node.right)\n            res.append(list(level))\n            left_to_right = not left_to_right\n        return res\n",
+   "notes": "size 快照必须在内层 for 之前取一次。方向布尔量初值 True 对应第 0 层从左到右。孩子入队顺序始终左后再右，方向只作用在收集阶段。双端队列版里 for 直接写 range(len(q))即可，因为不再需要 size 变量。"
+  },
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(w)",
+   "why": "每个节点入队出队各一次故 O(n)；队列峰值等于最大层宽 w，最坏（完全二叉树）为 O(n)。"
+  },
+  "pitfalls": [
+   "在 while 循环里重新计算 len(q)，导致层与层混在一起。",
+   "方向变量初值或翻转位置写错，使第 0 层就逆序。",
+   "空树返回 [[]] 而非 []。",
+   "对整棵 res 反转而不是对需要反的当前层反转。"
+  ],
+  "edgeCases": [
+   "空树 → 返回 []。",
+   "只有根节点 → [[root.val]]。",
+   "退化成链（每层 1 个节点）→ 每层都只有一个值，方向无差别。",
+   "完全二叉树 → 队列峰值接近 n/2，验空间。"
+  ],
+  "interviewTips": "先写普通层序，边写边说「size 快照保证分层」，再补一行「方向变量 + 反转」。主动报 O(n)/O(w) 并用最大层宽解释空间。被追问就提双端队列变体与 DFS 变体。拿不准方向初值就用 [3,9,20,null,null,15,7] 现场推一遍第 1 层应是 [20,9]。"
+ }
+}

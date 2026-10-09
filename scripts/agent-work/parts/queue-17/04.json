@@ -1,0 +1,85 @@
+{
+ "id": "f538a919e3ac60c2",
+ "tldr": "腾讯 FiT 金融大模型算法岗：负责金融领域持续预训练与后训练对齐（奖励机制、训练策略），并推动产品化落地。",
+ "keyPoints": [
+  "负责金融大模型预训练与后训练：持续预训练、强化学习、模型结构优化",
+  "主导后训练对齐算法，设计奖励机制与训练策略",
+  "目标是提升金融场景用户偏好与深度需求满足",
+  "构建大模型驱动的端到端金融智能应用并推动产品化",
+  "工作地深圳，属 FiT 公共线、CDG 事业群"
+ ],
+ "why": "岗位核心正是 post-training 对齐，与用户后训练方向高度重合；持续预训练与 RL 奖励设计是多模态/生成式求职者要补齐的工程链路。",
+ "difficulty": "medium",
+ "tags": ["job", "posttraining", "rl", "continual-pretraining", "llm", "finance"],
+ "entities": ["腾讯", "FiT 公共", "CDG", "持续预训练", "强化学习", "后训练对齐", "奖励机制", "深圳"],
+ "diagram": {
+  "kind": "architecture",
+  "title": "金融大模型岗的技术链路",
+  "caption": "岗位职责串成一条链：领域语料 → 持续预训练 → 后训练对齐（奖励机制）→ 业务评估 → 产品化落地。",
+  "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='金融大模型岗位技术链路：领域语料持续预训练、后训练对齐、评估、产品化'><rect x='56' y='14' width='368' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='34' font-size='13' text-anchor='start' fill='currentColor' font-weight='bold'>1 金融领域语料</text><text x='408' y='34' font-size='13' text-anchor='end' fill='currentColor'>语料与知识</text><line x1='240' y1='44' x2='240' y2='52' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,58 236,50 244,50' fill='var(--line-1)'/><rect x='56' y='58' width='368' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='78' font-size='13' text-anchor='start' fill='currentColor' font-weight='bold'>2 持续预训练 CPT</text><text x='408' y='78' font-size='13' text-anchor='end' fill='currentColor'>结构优化</text><line x1='240' y1='88' x2='240' y2='96' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,102 236,94 244,94' fill='var(--line-1)'/><rect x='56' y='102' width='368' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='122' font-size='13' text-anchor='start' fill='currentColor' font-weight='bold'>3 后训练对齐</text><text x='408' y='122' font-size='13' text-anchor='end' fill='currentColor'>奖励机制·训练策略</text><line x1='240' y1='132' x2='240' y2='140' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,146 236,138 244,138' fill='var(--line-1)'/><rect x='56' y='146' width='368' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='166' font-size='13' text-anchor='start' fill='currentColor' font-weight='bold'>4 金融场景评估</text><text x='408' y='166' font-size='13' text-anchor='end' fill='currentColor'>用户偏好·深度需求</text><line x1='240' y1='176' x2='240' y2='184' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,190 236,182 244,182' fill='var(--line-1)'/><rect x='56' y='190' width='368' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='210' font-size='13' text-anchor='start' fill='currentColor' font-weight='bold'>5 端到端产品化</text><text x='408' y='210' font-size='13' text-anchor='end' fill='currentColor'>金融智能应用</text></svg>",
+  "alt": "五步技术链路：金融领域语料→持续预训练与结构优化→后训练对齐（奖励机制、训练策略）→金融场景评估与偏好满足→端到端产品化落地。"
+ },
+ "concepts": [
+  {
+   "name": "持续预训练（Continual Pre-Training, CPT）",
+   "readable": "在通用大模型基础上，用金融领域的语料再喂一段预训练，让模型补上领域知识与术语，但不改动下游使用方式。",
+   "analogy": "像一位通识很好的毕业生入职金融机构后，先集中读一段行业资料再上岗，专业术语和业务常识就补齐了。",
+   "analogyBreaksDown": "人读书不会遗忘旧技能，但模型持续预训练会发生灾难性遗忘：只喂金融语料可能把通用能力、指令跟随都磨掉，所以必须混入通用数据、控制学习率并做能力回归评测，这一层类比完全体现不出来。",
+   "mechanism": "在已有权重上继续做自监督语言建模，用领域语料注入知识，并通过混合通用语料、低学习率、早停与能力评测来抑制灾难性遗忘。相比从零预训练，成本低得多，是领域落地的通用第一步。",
+   "visual": "画三条损失曲线随训练步数变化：通用能力（不混数据时下滑）、金融能力（上升）、总体（先升后降），标出灾难性遗忘发生的拐点。",
+   "prerequisites": ["自监督语言建模", "Transformer 与预训练流程", "灾难性遗忘概念"],
+   "selfTest": ["持续预训练与 SFT 的目标有何不同？", "不混通用语料会有什么后果？", "为什么 CPT 比重训便宜很多？"],
+   "formula": ""
+  },
+  {
+   "name": "后训练对齐与奖励机制（Post-training Alignment & Reward）",
+   "readable": "预训练让模型会写字，后训练让它按人的偏好说话。做法通常是用人类/模型偏好训练奖励模型，再用强化学习或偏好优化让策略模型最大化奖励，同时不偏离原模型太远。",
+   "analogy": "像新员工先学会干活（预训练），再通过师傅打分和反馈学『怎么干得让人满意』（对齐）；打分标准就是奖励机制。",
+   "analogyBreaksDown": "师傅打分针对具体工作，模型奖励是一个被学习的近似函数，容易被策略钻空子刷分（reward hacking）；且对齐还要用 KL 约束拴住原模型，防止为了高分把通用能力丢掉，这层约束在师徒类比里没有对应。",
+   "mechanism": "用偏好数据训练奖励模型 r，再把策略优化为目标：最大化期望奖励，同时扣掉与参考模型的 KL 惩罚，防止偏离过远与奖励被利用。相比只做 SFT，它能把『深度需求满足』这类难以用监督标签表达的目标纳入优化。",
+   "visual": "画两阶段流程：上行是偏好数据→训练奖励模型；下行是策略模型采样→奖励打分→带 KL 惩罚更新，用箭头回环表示迭代，旁边标注 KL 项像一根拴住策略的皮筋。",
+   "prerequisites": ["SFT 与指令微调", "偏好数据与奖励模型", "KL 散度与策略梯度"],
+   "selfTest": ["奖励机制解决 SFT 的什么局限？", "KL 惩罚项去掉会怎样？", "什么是 reward hacking？"],
+   "formula": "\\max_{\\pi_\\theta} \\mathbb{E}_{x \\sim \\mathcal{D}} \\left[ \\mathbb{E}_{y \\sim \\pi_\\theta} r_\\phi(x, y) - \\beta \\, D_{\\mathrm{KL}}\\!\\left( \\pi_\\theta \\,\\|\\, \\pi_{\\mathrm{ref}} \\right) \\right]"
+  }
+ ],
+ "formulas": [
+  {
+   "id": "f-rlhf-kl-objective",
+   "name": "KL 正则化的后训练对齐目标（KL-Regularized RLHF Objective）",
+   "category": "posttraining",
+   "latex": "\\max_{\\pi_\\theta} \\; \\mathbb{E}_{x \\sim \\mathcal{D}} \\left[ \\mathbb{E}_{y \\sim \\pi_\\theta(\\cdot \\mid x)} r_\\phi(x, y) - \\beta \\, D_{\\mathrm{KL}}\\!\\left( \\pi_\\theta(\\cdot \\mid x) \\,\\|\\, \\pi_{\\mathrm{ref}}(\\cdot \\mid x) \\right) \\right]",
+   "symbols": [["\\pi_\\theta", "待训练的策略模型（即被对齐的金融大模型）"], ["\\pi_{\\mathrm{ref}}", "参考模型，通常是 SFT 后的模型"], ["r_\\phi(x, y)", "奖励模型对指令 x、回答 y 打出的分数"], ["\\mathcal{D}", "指令/偏好数据分布"], ["\\beta", "KL 惩罚系数，越大越不敢偏离参考模型"], ["D_{\\mathrm{KL}}", "KL 散度，衡量策略与参考模型的分布差距"]],
+   "derivation": ["第 1 步：后训练目标是把奖励做高，先写出最大化期望奖励 \\mathbb{E}[r_\\phi] 的朴素目标。", "第 2 步：但只追奖励会让策略跑偏、被奖励模型漏洞利用（reward hacking），需要约束它别离参考模型太远。", "第 3 步：用 KL 散度做约束，乘以系数 \\beta 作为惩罚项加进目标。", "第 4 步：\\beta 越大策略越保守、越贴近 SFT 模型；越小越激进、奖励可能更高但风险更大，这就是后训练里的核心取舍。"],
+   "analogy": "像学生为了拿高分（奖励）而应试，学校同时规定『不许完全改变原有学习风格』（KL 约束）；约束太松就变成刷题机器，太紧又学不到东西。",
+   "pitfalls": ["把奖励模型分数当成真实目标：它只是近似，策略会钻空子刷分", "忽略 \\beta 的取舍，一味调大或调小，导致要么学不动要么跑偏", "以为后训练只做 SFT 就够了，忽略偏好/奖励这一层对『深度需求』的作用"],
+   "code": "import torch\n\ndef align_objective(logp, logp_ref, reward, beta=0.1):\n    # logp / logp_ref: 策略与参考模型对采样回答的 log 概率\n    kl = logp - logp_ref                    # 与参考模型的 KL 近似\n    return (reward - beta * kl).mean()      # 最大化 r - beta*KL\n\n# 训练时取负号做梯度下降：loss = -align_objective(...)\nadv = torch.tensor([1.2, -0.4, 0.7])\nlogp = torch.tensor([-3.0, -5.2, -4.1])\nref = torch.tensor([-3.1, -5.0, -4.3])\nprint(align_objective(logp, ref, adv))",
+   "sources": [{"title": "金融大模型-算法工程师", "url": "http://careers.tencent.com/jobdesc.html?postId=2101507113946886144"}]
+  }
+ ],
+ "selfCheck": {
+  "claims": ["岗位负责金融领域大模型的预训练与后训练，含持续预训练、强化学习、模型结构优化", "负责主导后训练对齐算法，设计奖励机制与训练策略", "目标是提升金融场景下的用户偏好与深度需求满足", "需构建大模型驱动的解决方案并推动技术成果产品化、构建端到端金融智能应用系统", "工作地为深圳，属技术类、FiT 公共、CDG"],
+  "uncertain": ["摘要未给出薪资、招聘名额、学历/年限要求，待核实（均为 null）", "岗位未说明具体技术栈（框架、模型规模、RL 算法），待核实", "后训练目标公式为教科书通用 RLHF 形式，用于解释摘要所称『奖励机制』，非岗位方给出的具体公式", "『FiT 公共』与『CDG』为招聘页标签，具体业务归属待核实"]
+ },
+ "teaching": {
+  "progressive": [
+   {"level": "一句话", "text": "招人把金融大模型训得更懂行、更懂用户，并且做成能用的产品。"},
+   {"level": "入门", "text": "这个岗位做三件事：用金融语料给大模型继续『补课』（持续预训练），教模型按用户偏好回答（后训练对齐、设计奖励机制），再把技术做成金融场景里能落地的产品。"},
+   {"level": "进阶", "text": "职责分三段。第一段是持续预训练：在通用模型上继续用领域语料训练，注入金融知识与术语，难点是抑制灾难性遗忘，通常要混通用数据、控学习率并做能力回归。第二段是后训练对齐：用偏好数据训练奖励模型，再优化策略让期望奖励最大、同时用 KL 惩罚拴住参考模型，目的是满足『用户偏好与深度需求』，这是 JD 里最重的一块。第三段是产品化：把模型能力嵌进金融业务流程，做成端到端系统。"},
+   {"level": "专家", "text": "从方向匹配看，这是一个典型的 post-training 岗：CPT + RLHF/偏好优化 + 产品化，几乎覆盖后训练的完整链路，只把领域换成金融。它区别于纯研究岗的地方在于结尾的『推动技术成果产品化、构建端到端应用』，意味着需要模型能力与业务指标之间的翻译能力。对求职者而言，加分项是既懂对齐算法（奖励建模、KL 取舍、reward hacking 规避）又能讲清金融场景的评估口径；短板通常是领域知识，需要在面试里主动给出补齐路径。"}
+  ],
+  "socratic": [
+   {"q": "为什么这个岗位先做 CPT 而不是直接 SFT？", "a": "SFT 教格式与指令，不注入领域知识；金融术语与业务常识要靠继续预训练补，否则模型答不出专业内容，SFT 也没料可学。"},
+   {"q": "JD 说『设计奖励机制』，为什么不直接用人工标注一个分数就完事？", "a": "人工分数成本高、不可实时扩展，且细粒度偏好难标；用偏好数据训奖励模型可规模化打分，还能把『深度需求满足』这类隐式目标纳入优化。"},
+   {"q": "岗位为什么要写『推动产品化』？这不是工程岗的事吗？", "a": "对齐效果的好坏最终由业务指标衡量，算法必须参与定义评估口径与迭代闭环，否则优化方向会和真实用户需求脱节。"}
+  ],
+  "mechanism": "这个岗位的价值链条是：通用模型先经持续预训练补齐金融领域知识，解决『懂不懂』；再经后训练对齐（奖励机制 + KL 约束的偏好优化）解决『对不对用户胃口』；最后把能力嵌进业务流程做端到端产品，解决『用不用得上』。之所以后训练是核心，是因为领域知识与格式可以靠数据教，但『用户偏好、深度需求满足』很难用监督标签写清楚，只能用奖励信号去逼近，而这正是对齐算法的用武之地，也是 JD 把奖励机制单独列出的原因。",
+  "boundary": "持续预训练在领域语料过窄时会引发灾难性遗忘，必须混通用数据并做回归评测；后训练对齐依赖奖励模型质量，奖励一旦被策略钻空子（reward hacking），分数涨了但真实体验反而差；KL 系数 \\beta 设置不当会导致学不动或跑偏。此外金融场景对事实性与合规要求高，对齐目标不能只看偏好分数，还需人工与规则兜底。",
+  "analogyBoundary": "『毕业生先补课再上岗』很贴切，但人补课不会遗忘旧技能，模型会发生灾难性遗忘；『师傅打分』也低估了奖励模型的脆弱性——它是被学出来的近似函数，会被策略利用来刷分，且对齐额外要用 KL 约束拴住原模型，这两点类比里都没有。",
+  "misconceptions": ["以为金融大模型岗就是做领域 SFT；JD 明确写的是预训练 + 后训练对齐 + 产品化。", "以为对齐只要把奖励分数调高就行；忽略奖励模型只是近似，会被策略钻空子。", "以为『持续预训练』等于把通用模型推倒重训；它是在已有权重上继续训练，代价低得多。"],
+  "ownAnalysis": "（推断）这个 JD 的关键词是『持续预训练 + 强化学习 + 奖励机制』，几乎是标准 RLHF 流水线的岗位化表述，只把领域替换为金融；因此对做多模态/生成式的求职者，它是一个『算法方向可迁移、领域知识需现补』的岗位。需要核实：招聘摘要未给模型规模、具体 RL 算法（PPO/DPO/GRPO）、是否自研基座、团队规模与转正率等关键信息，投递前应到岗位页与内推渠道确认。（推断）金融领域对事实与合规的强要求，可能使奖励设计里规则约束的权重大于纯偏好信号。",
+  "officialNotes": [{"position": "岗位职责：负责金融领域大模型预训练与后训练（持续预训练、强化学习、模型结构优化），主导后训练对齐算法与奖励机制、训练策略设计，聚焦金融核心业务场景构建端到端金融智能应用并推动产品化；工作地深圳，技术类，FiT 公共，CDG", "source": "http://careers.tencent.com/jobdesc.html?postId=2101507113946886144"}],
+  "interviewAnswer": "我在 ICLR 上做过一篇多模态分割的工作，这段经历可以直接对上这个岗位。分割本质上是构建监督信号和评测口径：我处理过多模态数据的对齐、标注噪声和长尾分布，这跟金融领域持续预训练要做的语料清洗、领域知识注入是同一类问题；后训练对齐的核心是设计奖励机制，而我在分割评测里也设计过指标与误差分析来驱动模型迭代，理解『怎么把模糊的目标变成可优化的信号』。工程上我熟悉多模态表示和大规模训练链路，能较快上手金融语料上的 CPT 与偏好对齐。我的短板是金融领域知识，入职后会优先补业务场景与合规要求。",
+  "studyPath": {"prerequisites": ["SFT 与指令微调", "偏好数据与奖励模型", "强化学习基础（策略梯度、KL 约束）"], "nextSteps": ["精读一篇 RLHF/DPO 经典论文并复现对齐训练", "补金融领域语料特点与合规约束", "把多模态分割项目改写成『数据—训练—评测—迭代』的产品化叙事"]}
+ }
+}

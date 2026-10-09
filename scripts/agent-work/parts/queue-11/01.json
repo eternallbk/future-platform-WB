@@ -1,0 +1,74 @@
+{
+ "id": "1c93aad3debbc2b5",
+ "tldr": "让冻结 LLM 用自己的内部表示同时做语料检索与长上下文证据选择，新增不到 50 万参数即大幅提升召回。",
+ "keyPoints": [
+  "从冻结 LLM 的内部表示直接编码 chunk、派生检索 query",
+  "新增可训练参数少于 500K，主干 LLM 完全不变",
+  "21M chunk 维基索引上四种稠密/混合骨干均超检索-重排 SOTA",
+  "HotpotQA 召回 49.1%→73.2%，MuSiQue 8.8%→14.4%",
+  "长上下文生成前先剔干扰：128K 下 NoLiMa 1.0%→24.83%"
+ ],
+ "why": "把「语料检索」与「长上下文推理」统一到同一模型内部机制，是 RAG 与长上下文方向的面试高频考点，也给出省 FLOPs 的工程范式。",
+ "difficulty": "medium",
+ "tags": ["rag","long-context","retrieval","foundation","evidence-selection"],
+ "entities": ["UNREAL","HotpotQA","2WikiMultiHopQA","MuSiQue","NoLiMa","LV-Eval"],
+ "diagram": {
+  "kind": "flow",
+  "title": "UNREAL 统一证据选择流程",
+  "caption": "同一个模型内部机制，既在整库上挑 chunk，又在单条长 prompt 内剔干扰。",
+  "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='UNREAL 四步流程'><rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>冻结 LLM</text><text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>主干不动</text><line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,70 236,62 244,62' fill='var(--line-1)'/><rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>派生 query 与 chunk 编码</text><text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>参数 &lt; 500K</text><line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,124 236,116 244,116' fill='var(--line-1)'/><rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>同一选择机制</text><text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>语料↔长上下文</text><line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,178 236,170 244,170' fill='var(--line-1)'/><rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>生成</text><text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>先剔干扰再解码</text></svg>",
+  "alt": "四步流程：冻结 LLM→派生检索 query 与 chunk 编码→同一证据选择机制跨语料与长上下文→剔除干扰后生成。"
+ },
+ "concepts": [
+  {
+   "name": "Model-Native Evidence Selection（模型原生证据选择）",
+   "readable": "不另训一个检索器，而让 LLM 自己的隐藏状态同时充当检索 query 和文档编码，用一个机制在整库与单条长 prompt 两种尺度上挑证据。",
+   "analogy": "像一个熟练的图书管理员：他脑子里对「我想找什么」和「书架上有什么」用的是同一套理解，不用先请翻译把问题转成另一套检索语言。",
+   "analogyBreaksDown": "管理员能翻书现学，而这里的 chunk 编码是离线固定向量、不随 query 变化；若主干对某领域或语言表示差，共享表示反而可能不如独立训练的检索器。",
+   "mechanism": "复用冻结 LLM 表示省掉跨模型语义鸿沟：query 与 chunk 落在同一语义空间，减少对齐误差；只训极少量投影参数，把对主干的扰动压到最小以保住预训练能力。",
+   "visual": "画同一个坐标系：左侧一个 query 点、右侧若干 chunk 点，同色表示同空间，连线粗细表示 cosine 相似度；对比基线用两个不同颜色坐标系表示跨模型不对齐。",
+   "prerequisites": ["稠密检索与双塔模型","LLM 隐藏状态","RAG 基本流程"],
+   "selfTest": ["为什么 query 与文档共享同一表示空间能降低检索误差？","只训练极少量参数的代价是什么？","长上下文里的证据选择与整库检索在机制上如何统一？"],
+   "formula": "s(q,d)=\\cos(W_q h_q,\\; h_d)"
+  }
+ ],
+ "formulas": [
+  {
+   "id": "f-unreal-internal-retrieval-score",
+   "name": "模型内部检索打分（Model-Internal Retrieval Score）",
+   "category": "foundation",
+   "latex": "s(q,d)=\\cos\\!\\left(W_q\\, h_q,\\; W_d\\, h_d\\right)",
+   "symbols": [["h_q","提问/上下文经冻结 LLM 得到的内部表示"],["h_d","文档 chunk 经同一冻结 LLM 得到的表示"],["W_q,W_d","少量可训练投影（合计 < 500K 参数）"],["s(q,d)","query 与文档的相似度，用于排序取 top-k"]],
+   "derivation": ["第 1 步：动机——把 query 与 chunk 放进同一语义空间，避免跨模型对齐误差。","第 2 步：取冻结 LLM 对 query 与 chunk 的隐藏状态 h_q、h_d。","第 3 步：用极小投影 W_q、W_d 把两者映射到检索子空间。","第 4 步：用 cosine 相似度排序，取 top-k 作为证据。"],
+   "analogy": "用同一把尺子量两个东西才能直接比长短；若两把尺子刻度不同，就得先校准，容易出误差。",
+   "pitfalls": ["误以为要微调主干；实际主干完全冻结，只训极少投影参数","把 chunk 编码当成在线计算；21M chunk 可离线预编码","忽略参数量级——这里是 < 500K，不是全量重训"],
+   "code": "import torch, torch.nn.functional as F\nWq = torch.nn.Linear(4096, 256); Wd = torch.nn.Linear(4096, 256)\nhq = torch.randn(1, 4096); hd = torch.randn(8, 4096)\ns = F.cosine_similarity(Wq(hq), Wd(hd), dim=-1)  # 每行一个 chunk 得分\nprint(s.shape)  # torch.Size([8])",
+   "sources": [{"title": "UNREAL: Unifying Retrieval and Long-Context with a Single Model", "url": "https://huggingface.co/papers/2610.08463"}]
+  }
+ ],
+ "selfCheck": {
+  "claims": ["UNREAL 从冻结 LLM 的内部表示编码 chunk 并派生检索 query","新增可训练参数少于 500K 且不改主干","在 3B token、21M chunk 的维基索引上，四种稠密与混合骨干均超过 SOTA 检索-重排系统","HotpotQA 召回 49.1%→73.2%，2WikiMultiHopQA 31.7%→60.1%，MuSiQue 8.8%→14.4%","128K 上下文 NoLiMa 由 1.0% 升到 24.83%，256K LV-Eval F1 由 49.97% 升到 54.66%","约 32K token 起相比全上下文推理降低 FLOPs 与首 token 时延"],
+  "uncertain": ["公式为按摘要重建的通用形式（cosine 相似度 + 少量投影），原文具体打分形式待核实","四种骨干具体指哪些模型（摘要只写 dense 与 hybrid 两类共四支）待核实","FLOPs 与首 token 时延下降的具体比例摘要未给，待核实"]
+ },
+ "teaching": {
+  "progressive": [
+   {"level": "一句话", "text": "让大模型自己的内部表征既当检索器又当长上下文筛选器。"},
+   {"level": "入门", "text": "长上下文推理和 RAG 都在「挑证据」，只是一个在长 prompt 里挑、一个在整库挑。UNREAL 让冻结 LLM 用它自己的隐藏状态编码 chunk、生成检索 query，用一个统一机制跨越两个尺度，几乎不训练主干。"},
+   {"level": "进阶", "text": "关键设计是表示复用：query 与文档编码来自同一个冻结 LLM，天然落在同一语义空间，省掉跨模型对齐误差；只加 <500K 投影参数，把检索能力外挂而不破坏预训练。结果在 21M chunk 索引上四种骨干都超过检索-重排 SOTA，召回提升显著，且 32K 起比全上下文更省 FLOPs 与首 token 时延。"},
+   {"level": "专家", "text": "与经典双塔检索器相比，UNREAL 把「检索」降级为长上下文证据选择的一个特例：同一内部机制既能在整库上按 chunk 排序，又能在单条 128K prompt 内剔除干扰后再生成（NoLiMa 1.0%→24.83%）。代价是与主干表示强绑定，若主干对某领域无信息则共享空间也无从谈起；收益是参数极少、可插拔、推理更省。"}
+  ],
+  "socratic": [
+   {"q": "为什么要用冻结 LLM 的表示，而不是另外训一个检索器？", "a": "另训检索器会引入跨模型语义鸿沟，query 与文档不在同一空间；复用同一 LLM 表示让两者天然对齐，参数也极少。"},
+   {"q": "只加不到 500K 参数，凭什么超过全量训练的检索-重排系统？", "a": "检索能力主要来自已经很强的预训练表示，小投影只做方向微调，抓的是表示里现成的语义结构，而非从零学。"},
+   {"q": "长上下文任务里为什么要先剔干扰再生成？", "a": "摘要指出证据稀疏场景下干扰会淹没有效信息；先做证据选择既提升准确率，又在 32K 后降低计算量与首 token 时延。"}
+  ],
+  "mechanism": "它把两个看似不同的任务统一为同一件事——在冻结 LLM 的内部表示空间里做相似度选择。之所以必须复用内部表示：跨模型检索要额外对齐，且 query 侧与文档侧的语义漂移会吃掉召回；复用后 query 与 chunk 同空间，投影只需极小参数量即可定向。之所以必须冻结主干：一是保住预训练能力、避免遗忘，二是把可训练量压到千分之一量级，使方案在超大索引上可复现、可替换、成本可控。",
+  "boundary": "当主干 LLM 本身对该领域或语言表示质量差时，共享空间无从对齐，效果会退化；chunk 需离线预编码，索引更新成本随语料规模增长；摘要只在 3B token、21M chunk 维基与部分长上下文基准上验证，跨领域与跨语言泛化待核实。",
+  "analogyBoundary": "图书管理员类比失效处：他能现场推理、翻书学习，而这里 chunk 编码是静态向量、不随 query 变化；且他不受「主干冻结」限制，模型若底层表示不足无法靠翻书补救。",
+  "misconceptions": ["以为要微调 LLM 主干；实际主干冻结，只训极少投影参数。","以为它只是个更好的检索器；它同时统一了长上下文的证据选择。","以为参数少就一定便宜；chunk 离线编码与索引维护仍有成本。"],
+  "ownAnalysis": "把检索与长上下文统一到「模型内部相似度选择」这一抽象，与用 LLM 表示做 embedding 的检索思路一脉相承，但 UNREAL 强调同一机制跨越两个尺度（推断）。NoLiMa 基线 1.0% 异常低，说明该基准对干扰极敏感，24.83% 的提升更像「去掉干扰」的直接收益而非模型能力提升（推断）。值得核实的是 3B token 索引规模下 chunk 预编码的存储与更新开销，摘要未提。",
+  "officialNotes": [{"position": "模型内部证据选择可作为语料检索与证据稀疏长上下文推理的共同基础", "source": "https://huggingface.co/papers/2610.08463"}],
+  "interviewAnswer": "UNREAL 想在同一个模型内部机制里同时解决语料检索和长上下文证据选择。做法是冻结 LLM，用它的内部表示编码 chunk 并生成检索 query，只加不到 50 万可训练参数。在 21M chunk 维基索引上，四种骨干都超过检索-重排 SOTA，HotpotQA 召回从 49.1% 提到 73.2%；用到长上下文时先剔干扰再生成，128K NoLiMa 从 1.0% 提到 24.83%，且 32K 起比全上下文更省算力。",
+  "studyPath": {"prerequisites": ["稠密检索/双塔","RAG 流水线","LLM 隐藏状态与注意力"], "nextSteps": ["对比 DPR/ColBERT 类检索器的表示复用差异","复现 chunk 离线编码与 top-k 选择流程","思考同一机制迁移到多模态检索"]}
+ }
+}

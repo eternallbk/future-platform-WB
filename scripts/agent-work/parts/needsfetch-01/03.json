@@ -1,0 +1,73 @@
+{
+  "id": "d235d4d0dd5acd4b",
+  "tldr": "微软 ThinkingBox 不比回答文本，而按 agent 留在数据库里的终态与副作用判分，并用 pass@20 量一致性。",
+  "keyPoints": [
+    "评判依据是终端后端状态与副作用，不是最终回复",
+    "507 个有状态业务流程，每个任务重复跑 20 次",
+    "121,680 次有效试验里 79,853 次未过可执行检查",
+    "失败中 67.24% 仍干净结束、无最终工具报错",
+    "报告 pass@1、pass@20 与 observed 20/20 三个指标"
+  ],
+  "why": "agent 落地最大的坑是『说做了但没做』；可执行终态校验 + 重复试跑是一致性评测的通用范式，agent/工程方向高频考点。",
+  "difficulty": "medium",
+  "tags": ["agent", "evaluation", "reliability", "benchmark", "tool-use"],
+  "entities": ["ThinkingBox", "Microsoft", "Hugging Face", "OpenEnv", "MCP", "pass@20"],
+  "diagram": {
+    "kind": "flow",
+    "title": "ThinkingBox 判分流程",
+    "caption": "轨迹只是『主张』，数据库状态才是『证据』，重复 20 次才是『可信度』。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='ThinkingBox 终态判分流程'><rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>任务</text><text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>507 个有状态业务流程</text><line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,70 236,62 244,62' fill='var(--line-1)'/><rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>执行</text><text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>隔离 MCP 工具会话跑 agent</text><line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,124 236,116 244,116' fill='var(--line-1)'/><rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>留痕</text><text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>终端后端状态与副作用</text><line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,178 236,170 244,170' fill='var(--line-1)'/><rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>判分</text><text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>可执行检查 × 重复 20 次</text></svg>",
+    "alt": "ThinkingBox 流程：agent 在隔离 MCP 会话执行任务，留下后端状态与副作用，再用可执行检查重复 20 次判分。"
+  },
+  "concepts": [
+    {
+      "name": "Outcome-based Agent Evaluation（基于终态的可执行检查评测）",
+      "readable": "不看 agent 说得对不对，而是跑完之后去数据库里查它到底有没有把该改的字段改成该有的值，用可执行断言判成败。",
+      "analogy": "装修验收不看工头口头说『完工了』，而是拿清单逐个房间开门检查：水电通不通、瓷砖贴没贴，只看现场不留话。",
+      "analogyBreaksDown": "验收清单是人写的、标准明确；agent 任务的『正确终态』要由基准作者形式化成可执行检查，写错检查就会误判，且真实业务里很多『对』并非单一字段能判定。",
+      "mechanism": "把评判从『轨迹文本』移到『终端后端状态与副作用』：任务在隔离 MCP 会话里运行，结束后用可执行检查读取数据库字段/副作用是否满足要求；因为一次成功不代表可靠，同一任务从干净后端重复 20 次。",
+      "visual": "画一个 20×N 的网格，行是任务、列是重复次数；绿格=该次可执行检查通过。逐行看是否全绿(observed 20/20)、是否至少一绿(pass@20)、以及整体绿的比例(pass@1)。",
+      "prerequisites": ["agent / tool-use 基本流程", "MCP 工具调用与状态变更", "沙箱与环境隔离概念"],
+      "selfTest": ["为什么『工具调用无报错』不能证明任务做对了？", "pass@1、pass@20、observed 20/20 各回答什么问题？", "为什么必须每次从干净后端重跑？"],
+      "formula": "\\mathrm{pass@1}=\\frac{1}{N}\\sum_{i=1}^{N}\\frac{s_i}{K}, \\quad \\mathrm{pass@20}=\\frac{1}{N}\\sum_{i=1}^{N}\\mathbb{1}\\!\\left[\\sum_{k=1}^{K}s_{ik}>0\\right]"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-agent-pass-at-k",
+      "name": "智能体一致性指标（pass@1 / pass@20 / observed 20/20）",
+      "category": "agent",
+      "latex": "\\mathrm{pass@1} = \\frac{1}{N}\\sum_{i=1}^{N}\\frac{s_i}{K}, \\quad \\mathrm{pass@20} = \\frac{1}{N}\\sum_{i=1}^{N}\\mathbb{1}\\!\\left[\\sum_{k=1}^{K}s_{ik} > 0\\right], \\quad \\mathrm{obs.20/20} = \\frac{1}{N}\\sum_{i=1}^{N}\\mathbb{1}\\!\\left[\\sum_{k=1}^{K}s_{ik} = K\\right]",
+      "symbols": [["N", "任务总数（本文 507）"], ["K", "每个任务的重复次数（本文 20）"], ["s_{ik}", "任务 i 第 k 次是否通过可执行检查（0/1）"], ["pass@1", "单次尝试的成功率估计"], ["pass@20", "至少一次成功的任务占比（广度）"], ["obs.20/20", "20 次全过的任务占比（可靠性）"]],
+      "derivation": ["第 1 步：把每个任务的 K 次结果记成 0/1 矩阵 s。", "第 2 步：pass@1 对所有格子取均值，回答『通常表现如何』。", "第 3 步：pass@20 逐行取『是否至少一绿』再平均，回答『能不能做到』。", "第 4 步：observed 20/20 逐行要求全绿，回答『能不能每次都对』。"],
+      "analogy": "考试同一个知识点连考 20 遍：pass@1 是平均分，pass@20 是『至少蒙对过一次』，20/20 是『每次都答对』——只有后者才敢上生产。",
+      "pitfalls": ["把 pass@20 当可靠性：它只要一次成功就算过，会高估稳定度。", "用估计器平滑 observed 20/20：本文用的是字面计数，不要平滑。", "忘记每次重置后端：不重置会把上次状态带到下次，指标失效。"],
+      "code": "import numpy as np\n# s[i,k]=1 表示任务 i 第 k 次通过可执行检查\ns = results.astype(int)        # shape [N, K]，K=20\npass_at_1 = s.mean()                      # 平均单次成功率\npass_at_20 = (s.sum(1) > 0).mean()        # 至少一次成功\nobs_20_20 = (s.sum(1) == s.shape[1]).mean()  # 20/20 全过",
+      "sources": [{"title": "The Agent Said It Was Done. The Database Disagreed.", "url": "https://huggingface.co/blog/microsoft/thinkingbox"}]
+    }
+  ],
+  "selfCheck": {
+    "claims": ["ThinkingBox 按终端后端状态与副作用判分，不按回复文本。", "507 个有状态业务流程，每任务重复 20 次。", "common-set ablation 覆盖 121,680 次有效试验、12 个模型。", "79,853 次未通过可执行检查。", "这些失败中 67.24% 仍干净结束且无最终工具错误。", "可执行检查发现错误字段值 77.61%、多余副作用 43.30%、缺失必需副作用 25.36%。", "通过 OpenEnv / Hugging Face 开放。"],
+    "uncertain": ["各模型排名（如 Claude Opus 5.5、GPT-6 Astra 等）出自二手报道，HF 原页表格数值未在抓取片段中完整呈现，待核实。", "『约 80% 失败源于工具处理而非推理』为二手报道说法，待核实。", "507 工作流对真实业务的覆盖度、隔离会话与生产系统的差距，原文未充分说明。"]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "别听 agent 说什么，去看它在数据库里留下了什么。"},
+      {"level": "入门", "text": "ThinkingBox 把评判标准从『回复文本』换成『终端后端状态与副作用』：任务跑完后用可执行检查查数据库字段对不对。因为一次成功不算数，每个任务还从干净后端重复 20 次。"},
+      {"level": "进阶", "text": "它用三个数分开刻画能力与可靠性：pass@1 是单次成功率(通常表现)，pass@20 是至少成功一次的任务占比(广度)，observed 20/20 是 20 次全过的占比(可靠性)。文中 507 个业务流程、12 个模型、121,680 次试验里，近三分之二的失败仍『干净结束、无报错』——说明无报错不等于做对。"},
+      {"level": "专家", "text": "这套评测把 agent 从『生成质量』拉到『状态变更正确性』：只有可执行检查能抓到错误字段值、多余副作用与缺失副作用。它和只看工具调用或最终回答的评测形成互补，代价是必须为任务形式化终态检查并做环境隔离。真实部署前，企业仍需用自己的工作流复现，因为基准的 507 个流程不等于全部业务。"}
+    ],
+    "socratic": [
+      {"q": "为什么『工具调用格式正确、无报错』不能证明任务成功？", "a": "67.24% 的失败就是这样：改了状态但改错值、或漏改/多加副作用，报错通道根本看不到。"},
+      {"q": "为什么每个任务要重复 20 次？", "a": "生产里同一任务要跑上千次，pass@1 高但 20/20 极低，说明能力不等于可靠。"}
+    ],
+    "mechanism": "必须这样设计，是因为 agent 的错误常常发生在『静默成功』里：它能调对工具却写错值，或把工单标成 solved 而要求是 hold。要暴露这类错，只能绕开文本、直接检查终态，并用重复试跑把偶然成功和稳定正确区分开。",
+    "boundary": "依赖基准作者把『正确终态』形式化成可执行检查，检查写错就会误判；也依赖环境隔离与重置，否则状态串味。它衡量的是固定任务的可靠性，不能直接外推到企业自有流程。",
+    "analogyBoundary": "装修验收类比在『正确性是单一字段能判定』处失效：真实业务里很多『对』是模糊的、多目标的，硬编码检查会漏掉隐性要求。",
+    "misconceptions": ["以为无报错就等于成功（大多数失败恰恰是无报错）", "以为 pass@20 高就可靠（它只要一次成功）", "以为该基准可直接预测生产表现（只是固定任务、隔离环境）"],
+    "ownAnalysis": "（推断）ThinkingBox 的价值是把评测重心从『看起来对不对』移到『状态改对没有』，这与我了解的 agent 落地痛点一致；但可执行检查的编写成本与覆盖盲区是它的软肋，且『20 次』这个 K 的选取会显著影响可靠性估计的方差，值得看论文是否做了 K 的敏感性分析。",
+    "officialNotes": [{"position": "ThinkingBox 在 507 个有状态工作流上每任务跑 20 次，按终态与副作用判分；common-set ablation 中 67.24% 的失败仍干净结束、无最终工具错误。", "source": "https://huggingface.co/blog/microsoft/thinkingbox"}],
+    "interviewAnswer": "我会这样讲：agent 评测最容易犯的错是拿回复文本当真。微软的 ThinkingBox 改成看终端状态——任务在隔离 MCP 会话里跑，结束后用可执行检查查数据库字段和副作用。它还指出一次成功不算数，于是每个任务从干净后端重复 20 次，用 pass@1 看通常表现、pass@20 看广度、20/20 看可靠性。结果很刺眼：大量失败仍『干净结束无报错』，说明无报错不等于做对，只有查终态才能发现。",
+    "studyPath": {"prerequisites": ["agent / tool-use 执行流程", "MCP 与状态变更", "沙箱与可复现实验"], "nextSteps": ["跑 OpenEnv 上的 ThinkingBox 任务", "为自己的项目写终态可执行检查", "对比仅看工具调用/文本的评测口径"]}
+  }
+}

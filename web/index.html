@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="midnight" data-accent="blue">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<meta name="description" content="Future · 求职学习工作台 — 面向多模态 / 后训练 / 生成式 / 世界模型方向算法实习的结构化每日情报与学习系统">
+<meta name="theme-color" content="#070a10">
+<!-- 构建指纹。build_site.py 会把这里替换成资源内容哈希（见该脚本的
+     "asset version stamp" 段）。作用有两个：给 assets 的 ?v= 提供版本号，
+     以及让读者/排障能一眼看出「当前页面是哪个构建」—— 这一条是为了让
+     「浏览器缓存了旧 app.js」这种故障从不可见变成可见、可上报。
+     开发时（直接开 web/index.html）这里是 dev，不影响功能。 -->
+<meta name="app-build" content="dev">
+<title>Future · 求职学习工作台</title>
+
+<!-- Inline SVG sprite: every icon is referenced by <use href="#i-...">, so adding
+     an icon is a one-line change here and never touches the rendering logic. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<defs>
+  <symbol id="i-spark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></symbol>
+  <symbol id="i-feed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16M4 12h16M4 19h10"/><circle cx="19" cy="19" r="2"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6"/></symbol>
+  <symbol id="i-sigma" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 5H7l6 7-6 7h10"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 17-5-5 5-5M15 7l5 5-5 5"/></symbol>
+  <symbol id="i-briefcase" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="7.5" width="19" height="12.5" rx="2.2"/><path d="M9 7.5V5.6A1.6 1.6 0 0 1 10.6 4h2.8A1.6 1.6 0 0 1 15 5.6v1.9M2.5 12.5h19"/></symbol>
+  <symbol id="i-route" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="5" r="2.5"/><path d="M6 16.5V11a4 4 0 0 1 4-4h5"/><path d="m13 5 2.5-2.5M13 5l2.5 2.5" transform="translate(3.5 2)"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5h6.5A2.5 2.5 0 0 1 13 7v13a2 2 0 0 0-2-2H4z"/><path d="M20 4.5h-4.5A2.5 2.5 0 0 0 13 7v13a2 2 0 0 1 2-2h5z"/></symbol>
+  <symbol id="i-repo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19H7a2.5 2.5 0 0 1 0-5h10a2.5 2.5 0 0 1 0 5h-2"/><path d="M15 5h2a2.5 2.5 0 0 1 0 5H7a2.5 2.5 0 0 1 0-5h2"/><path d="M12 5v14"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3.6 2.6 5.4 5.9.85-4.3 4.15 1 5.9L12 17.1l-5.2 2.8 1-5.9L3.5 9.85 9.4 9z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12.5 5.2 5.2L20 7"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 7.4V12l3.3 2"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5h18l-7 8.2V20l-4-2v-4.3z"/></symbol>
+  <symbol id="i-palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.8 1.8-1.7 0-1.5-1.3-1.6-1.3-3 0-1 .8-1.8 1.8-1.8H16a5 5 0 0 0 5-5C21 5.9 17 3 12 3Z"/><circle cx="7.6" cy="11" r="1.2" fill="currentColor" stroke="none"/><circle cx="10.4" cy="7.3" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="7.6" r="1.2" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 13.5a3.5 3.5 0 0 0 5 0l3-3a3.54 3.54 0 0 0-5-5l-1 1"/><path d="M13.5 10.5a3.5 3.5 0 0 0-5 0l-3 3a3.54 3.54 0 0 0 5 5l1-1"/></symbol>
+  <symbol id="i-external" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-8.5 8.5"/><path d="M18 14.5V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19V7.5A1.5 1.5 0 0 1 5 6h4.5"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 0 0-13.7-5.3L3 9"/><path d="M3 4v5h5"/><path d="M4 13a8 8 0 0 0 13.7 5.3L21 15"/><path d="M21 20v-5h-5"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v11M7.5 10 12 14.5 16.5 10M4 19.5h16"/></symbol>
+  <symbol id="i-activity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2.5-7 4 14 2.5-7h5"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5z"/><path d="m4.5 12.5 7.5 4.2 7.5-4.2"/><path d="m4.5 16.8 7.5 4.2 7.5-4.2"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.6"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-bulb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 18h5M10.5 21h3"/><path d="M12 3a6 6 0 0 0-3.5 10.9V18h7v-4.1A6 6 0 0 0 12 3Z"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4 2.5 20h19z"/><path d="M12 10v4M12 17.2v.1"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 11v5.4M12 7.8v.1"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="8.5" width="12" height="12" rx="2"/><path d="M15.5 5.5H5.5a2 2 0 0 0-2 2v10"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="i-chevrondown" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4.5 19 12 7 19.5z"/></symbol>
+  <symbol id="i-brain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5.5A3 3 0 0 0 6.2 7 2.8 2.8 0 0 0 5 12.3 3 3 0 0 0 7.5 17.5 2.8 2.8 0 0 0 12 18.6"/><path d="M12 5.5A3 3 0 0 1 17.8 7 2.8 2.8 0 0 1 19 12.3 3 3 0 0 1 16.5 17.5 2.8 2.8 0 0 1 12 18.6"/><path d="M12 5.5v13"/></symbol>
+  <symbol id="i-database" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="7.5" ry="3"/><path d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6"/><path d="M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/></symbol>
+  <symbol id="i-flask" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6L4.8 18a2 2 0 0 0 1.7 3h11a2 2 0 0 0 1.7-3L14 9V3"/><path d="M7.2 14h9.6"/></symbol>
+  <symbol id="i-terminal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="19" height="16" rx="2.4"/><path d="m7 9.5 2.5 2.5L7 14.5M12.5 15h4.5"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V4"/><path d="M4 20h16"/><rect x="7.5" y="12" width="3" height="5" rx="1"/><rect x="13" y="8" width="3" height="9" rx="1"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v6c0 4.4 3 7.9 7 9 4-1.1 7-4.6 7-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-compass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.6" cy="6" r="1.3" fill="currentColor" stroke="none"/><circle cx="4.6" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="4.6" cy="18" r="1.3" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 5h11l-2 4 2 4H5"/></symbol>
+  <symbol id="i-archive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4.5" rx="1.4"/><path d="M4.5 8.5V19a1.5 1.5 0 0 0 1.5 1.5h12a1.5 1.5 0 0 0 1.5-1.5V8.5"/><path d="M10 12.5h4"/></symbol>
+</defs>
+</svg>
+
+<link rel="stylesheet" href="assets/css/theme.css">
+<link rel="stylesheet" href="assets/css/app.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%236ea8fe'/><text x='16' y='23' font-size='19' font-weight='700' text-anchor='middle' fill='%2306121f' font-family='system-ui'>F</text></svg>">
+</head>
+
+<body>
+<a class="skip-link" href="#main">跳到主内容</a>
+
+<div id="app">
+  <!-- ==================== LEFT RAIL ==================== -->
+  <aside class="rail" id="rail" aria-label="主导航">
+    <div class="brand">
+      <div class="brand-mark">F</div>
+      <div class="brand-text">
+        <span class="brand-title">Future</span>
+        <span class="brand-sub">求职学习工作台</span>
+      </div>
+      <button class="icon-btn brand-mini" id="rail-close" aria-label="关闭导航" style="margin-left:auto">
+        <svg><use href="#i-x"/></svg>
+      </button>
+    </div>
+
+    <div class="rail-scroll">
+      <nav class="nav-group" aria-label="总览">
+        <div class="nav-group-title">总览</div>
+        <button class="nav-item" data-route="#/dashboard"><svg class="nav-icon"><use href="#i-home"/></svg><span class="nav-label">今日工作台</span></button>
+        <button class="nav-item" data-route="#/digest"><svg class="nav-icon"><use href="#i-feed"/></svg><span class="nav-label">每日更新流</span><span class="nav-count" id="nav-count-digest">0</span></button>
+        <button class="nav-item" data-route="#/categories"><svg class="nav-icon"><use href="#i-grid"/></svg><span class="nav-label">知识分类</span><span class="nav-count" id="nav-count-cats">0</span></button>
+      </nav>
+
+      <nav class="nav-group" aria-label="知识库">
+        <div class="nav-group-title">知识库</div>
+        <button class="nav-item" data-route="#/knowledge"><svg class="nav-icon"><use href="#i-layers"/></svg><span class="nav-label">知识卡片</span><span class="nav-count" id="nav-count-kb">0</span></button>
+        <button class="nav-item" data-route="#/formulas"><svg class="nav-icon"><use href="#i-sigma"/></svg><span class="nav-label">公式剖析</span><span class="nav-count" id="nav-count-formula">0</span></button>
+        <button class="nav-item" data-route="#/problems"><svg class="nav-icon"><use href="#i-code"/></svg><span class="nav-label">题库定位</span><span class="nav-count" id="nav-count-problems">0</span></button>
+        <button class="nav-item" data-route="#/repos"><svg class="nav-icon"><use href="#i-repo"/></svg><span class="nav-label">仓库与课程</span><span class="nav-count" id="nav-count-repos">0</span></button>
+      </nav>
+
+      <nav class="nav-group" aria-label="求职">
+        <div class="nav-group-title">求职</div>
+        <button class="nav-item" data-route="#/jobs"><svg class="nav-icon"><use href="#i-briefcase"/></svg><span class="nav-label">岗位看板</span><span class="nav-count" id="nav-count-jobs">0</span></button>
+        <button class="nav-item" data-route="#/skills"><svg class="nav-icon"><use href="#i-target"/></svg><span class="nav-label">技能矩阵</span><span class="nav-count" id="nav-count-skills">0</span></button>
+        <button class="nav-item" data-route="#/roadmap"><svg class="nav-icon"><use href="#i-route"/></svg><span class="nav-label">学习路线</span></button>
+      </nav>
+
+      <nav class="nav-group" aria-label="我的">
+        <div class="nav-group-title">我的</div>
+        <button class="nav-item" data-route="#/progress"><svg class="nav-icon"><use href="#i-chart"/></svg><span class="nav-label">进度与统计</span></button>
+        <button class="nav-item" data-route="#/starred"><svg class="nav-icon"><use href="#i-star"/></svg><span class="nav-label">收藏夹</span><span class="nav-count" id="nav-count-star">0</span></button>
+        <button class="nav-item" data-route="#/pipeline"><svg class="nav-icon"><use href="#i-flask"/></svg><span class="nav-label">采集与运行</span><span class="nav-count" id="nav-count-pipeline">0</span></button>
+      </nav>
+
+      <nav class="nav-group" aria-label="分类筛选">
+        <div class="nav-group-title">按分类浏览</div>
+        <div id="rail-cats"></div>
+      </nav>
+    </div>
+
+    <div class="rail-foot">
+      <div class="status-line" id="rail-status">
+        <svg style="width:13px;height:13px" class="muted"><use href="#i-database"/></svg>
+        <span>数据加载中…</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ==================== TOPBAR ==================== -->
+  <header class="topbar">
+    <button class="icon-btn" id="rail-open" aria-label="打开导航" style="display:none">
+      <svg><use href="#i-menu"/></svg>
+    </button>
+
+    <button class="cmd-trigger" id="cmd-trigger" aria-label="打开命令面板与搜索">
+      <svg style="width:14px;height:14px"><use href="#i-search"/></svg>
+      <span>搜索知识、岗位、题目、仓库…</span>
+      <kbd>Ctrl K</kbd>
+    </button>
+
+    <div class="topbar-actions">
+      <!-- The 舒适/紧凑 density switch was removed here: nothing ever read
+           `data-density` (no CSS rule targeted it), so it was a control with no
+           effect. -->
+
+      <button class="btn btn-sm btn-ghost" id="btn-refresh" data-tip="重新读取本地数据层">
+        <svg><use href="#i-refresh"/></svg><span>刷新</span>
+      </button>
+
+      <button class="btn btn-sm btn-ghost btn-icon" id="btn-print" aria-label="打印/导出" data-tip="打印当前视图">
+        <svg><use href="#i-download"/></svg>
+      </button>
+
+      <button class="btn btn-sm btn-ghost btn-icon" id="btn-theme" aria-label="切换主题" data-tip="主题与配色">
+        <svg><use href="#i-palette"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN ==================== -->
+  <main class="main" id="main" tabindex="-1">
+    <div class="main-inner" id="view">
+      <div class="empty">
+        <svg><use href="#i-activity"/></svg>
+        <h4>正在初始化工作台</h4>
+        <p>读取本地数据层（data/ 目录）…</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ==================== OVERLAYS ==================== -->
+<div class="scrim" id="scrim"></div>
+
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" aria-hidden="true">
+  <div class="drawer-head">
+    <div class="grow">
+      <div class="eyebrow" id="drawer-eyebrow">知识详情</div>
+      <h2 id="drawer-title" style="font-size:var(--fs-lg);margin-top:4px">—</h2>
+      <div id="drawer-meta" class="row" style="margin-top:8px;flex-wrap:wrap;gap:6px"></div>
+    </div>
+    <button class="icon-btn" id="drawer-close" aria-label="关闭详情">
+      <svg><use href="#i-x"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body" id="drawer-body"></div>
+  <div class="drawer-foot" id="drawer-foot"></div>
+</aside>
+
+<div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
+
+<div id="palette-root"></div>
+<div id="popover-root"></div>
+
+<noscript>
+  <div style="padding:2rem;max-width:60ch;margin:0 auto">
+    <h1>需要启用 JavaScript</h1>
+    <p>本工作台的界面渲染依赖 JavaScript。数据本身是 data/ 目录下的纯 JSON 文件，可直接阅读。</p>
+  </div>
+</noscript>
+
+<!-- Classic script (not a module) so the workbench also runs straight from
+     file:// without a server. Generated by scripts/build.mjs. -->
+<script src="assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+{
+  "id": "255f1616af944384",
+  "tldr": "把后训练成功轨迹里的「决定性一步」当前瞻信号，用三个无需冷启动 harness 的探针预测 base 的 agentic 后训练潜力。",
+  "keyPoints": [
+    "端到端 pass@K 对 agentic coding 不合适：base 常无法产出合规工具调用",
+    "单步/短程任务绕开了多步工具使用中维持状态这一核心能力",
+    "重放成功轨迹并每步重跑测试，定位由失败翻转为通过的决定性一步",
+    "三个探针：Decisive-Action BPB、Patch MCQ、prefix-conditioned pass@K",
+    "十个模型对上，三探针排序与 SWE-bench Verified pass@1 高度一致"
+  ],
+  "why": "做后训练前先判断 base 值不值得投入是工程决策核心；「用 verifier + 成功轨迹当探针」的思路对 agentic post-training 面试很实用。",
+  "difficulty": "hard",
+  "tags": [
+    "posttraining",
+    "agent",
+    "coding",
+    "evaluation",
+    "scaling"
+  ],
+  "entities": [
+    "SWE-bench Verified",
+    "Decisive-Action BPB",
+    "Patch MCQ",
+    "prefix-conditioned pass@K"
+  ],
+  "diagram": {
+    "kind": "flow",
+    "title": "从 base 预测后训练潜力",
+    "caption": "拿已认证的成功轨迹做前瞻，定位决定性一步，再用三个探针给 base 模型打分排序。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='预测 agentic 后训练潜力的四步流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>成功后训练轨迹（已被测试认证）</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>重放并逐步重跑测试</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>决定性一步（认证动作）</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>三个探针：BPB / MCQ / prefix pass@K</text>\n</svg>",
+    "alt": "四步流程：取成功后训练轨迹、重放并逐步重跑测试、定位决定性一步、用三个探针给 base 模型打分。"
+  },
+  "concepts": [
+    {
+      "name": "Decisive Step / Certified Action（决定性一步 / 认证动作）",
+      "readable": "一条成功轨迹里第一次让仓库测试从不过变过的那一步；其动作在给定前文下被证明能解题。",
+      "analogy": "像排查故障：连续拧了好几颗螺丝都没反应，直到某一颗灯突然亮了——那颗就是决定性动作。",
+      "analogyBreaksDown": "拧螺丝是线性因果，而多步补丁可能相互替代或耦合，同一任务可能有多个都能通过的第 t 步，定位到的只是重放顺序下第一个。",
+      "mechanism": "用已被 verifier 认证的成功轨迹当参照，逐步重放并每次重跑测试，取累积补丁首次由失败翻成通过的位置，把能被测试认可的解抽成给 base 打分的锚点。",
+      "visual": "横轴为步骤的时间线，每个代码变更步下方标测试结果（红失败/绿通过），在第 t 步画竖线高亮该步动作并标 t*。",
+      "prerequisites": [
+        "agentic 代码任务的轨迹结构",
+        "测试驱动验证（verifier）概念"
+      ],
+      "selfTest": [
+        "为何不把整条成功轨迹当锚点？",
+        "决定性一步依赖 verifier 的什么性质？",
+        "非代码变更步如何处理？"
+      ],
+      "formula": "t^{\\star} = \\min\\left\\{ t : \\mathrm{fail}(\\pi_{1:t-1}) \\;\\wedge\\; \\mathrm{pass}(\\pi_{1:t}) \\right\\}"
+    },
+    {
+      "name": "Base-Model Screening from Verifier Traces（用验证轨迹筛查 base 模型）",
+      "readable": "不让 base 真跑完整 agent，只问它「给定前文会不会倾向那个认证动作」以及「会不会支持功能正确的续写」。",
+      "analogy": "招聘时不真让人上一周班，而是给他一个真实项目的关键一步，看他会不会做出和优秀员工一样的选择。",
+      "analogyBreaksDown": "面试看当场反应却漏掉长期协作能力；这些探针只看单点概率或短前缀续写，可能低估会绕路但最终能解的 base。",
+      "mechanism": "把决定性一步当覆盖原则下的锚点，构造三个无需 base 冷启动驱动 harness 的探针：对认证动作算 BPB、在认证与被否决备选间做 MCQ、前缀条件下评 pass@K 并接受任何被测试认可的续写。",
+      "visual": "三个并排小面板：一画认证动作的概率质量条，二画「认证 vs 否定」两选项柱状对比，三画前缀下多条续写中通过测试的比例。",
+      "prerequisites": [
+        "bits-per-byte 与对数似然",
+        "pass@K 采样估计",
+        "似然比较式多选"
+      ],
+      "selfTest": [
+        "探针为何不需要 base 冷启动开 harness？",
+        "三个探针信号侧重分别是什么？",
+        "prefix-conditioned pass@K 的 credit 指什么？"
+      ],
+      "formula": "\\mathrm{BPB}(a \\mid \\mathrm{ctx}) = -\\frac{1}{N_{b}}\\sum_{i=1}^{N} \\log_{2} p_{\\theta}(a_{i} \\mid \\mathrm{ctx}, a_{<i})"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-decisive-step",
+      "name": "决定性一步定位",
+      "category": "agent",
+      "latex": "t^{\\star} = \\min\\left\\{ t : \\mathrm{fail}(\\pi_{1:t-1}) \\;\\wedge\\; \\mathrm{pass}(\\pi_{1:t}) \\right\\}",
+      "symbols": [
+        ["\\pi_{1:t}", "前 t 步累积补丁后的仓库状态"],
+        ["\\mathrm{fail}, \\mathrm{pass}", "测试失败 / 通过"],
+        ["t^{\\star}", "决定性一步的步序号"]
+      ],
+      "derivation": [
+        "第 1 步：用已被认证为成功的后训练轨迹做前瞻信号。",
+        "第 2 步：从头逐步重放轨迹，每步后重跑测试。",
+        "第 3 步：找到累积补丁首次把仓库从失败翻成通过的那步。",
+        "第 4 步：该步即决定性一步，其动作在给定前文下解决任务。"
+      ],
+      "analogy": "像排查一段卡死流程：一步步放行任务，找到「一放行整条流程就通」的那个节点。",
+      "pitfalls": [
+        "把某个中间步测试通过误当成整条轨迹成功",
+        "把非代码变更步也计入累积补丁，定位偏移"
+      ],
+      "code": "def decisive_step(traj, run_tests, apply):\n    for t in range(1, len(traj.steps) + 1):\n        if run_tests(apply(traj.steps[:t])) == \"pass\":\n            return t, traj.steps[t - 1]   # 首步由败转胜\n    return None, None",
+      "sources": [
+        {"title": "Before They Can Solve: Predicting Post-Training Coding-Agent Performance from Base Models", "url": "https://arxiv.org/abs/2610.10478v1"}
+      ]
+    },
+    {
+      "id": "f-decisive-action-bpb",
+      "name": "认证动作的 bits-per-byte",
+      "category": "agent",
+      "latex": "\\mathrm{BPB}(a \\mid \\mathrm{ctx}) = -\\frac{1}{N_{b}}\\sum_{i=1}^{N} \\log_{2} p_{\\theta}(a_{i} \\mid \\mathrm{ctx}, a_{<i})",
+      "symbols": [
+        ["a", "决定性一步对应的认证动作"],
+        ["\\mathrm{ctx}", "该动作之前的前文"],
+        ["N", "该动作的 token 数"],
+        ["N_{b}", "归一化用的字节数"]
+      ],
+      "derivation": [
+        "第 1 步：决定性一步给出一个被 verifier 认证的正确动作。",
+        "第 2 步：用 base 模型在该前文下给这个动作首选概率打分。",
+        "第 3 步：取负对数并按字节归一化成 bits-per-byte。",
+        "第 4 步：BPB 越低说明 base 越倾向该动作，潜力越大。"
+      ],
+      "analogy": "像预测学生能否被教出来：先让他面对标准答案的关键一步，看他本能上有多接近。",
+      "pitfalls": [
+        "用 token 归一化却仍叫 bits per byte",
+        "把前文也算进负对数，稀释了认证动作的概率质量"
+      ],
+      "code": "import torch, math\ndef bpb(model, action, ctx):\n    with torch.no_grad():\n        logits = model(ctx + action)\n        lp = torch.log_softmax(logits[len(ctx):], -1)\n        nll = -lp.gather(-1, action.unsqueeze(-1)).sum()\n    return (nll / math.log(2)) / max(len(\"\".join(action)), 1)",
+      "sources": [
+        {"title": "Before They Can Solve: Predicting Post-Training Coding-Agent Performance from Base Models", "url": "https://arxiv.org/abs/2610.10478v1"}
+      ]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "很多 base 检查点无法可靠产出完成任务所需的合规工具调用",
+      "单步/短程任务把多步交互压成固定提示与单个补丁，绕开了多步维持状态这一核心能力",
+      "作者把成功的后训练 agent 轨迹当作 base 模型潜力的前瞻信号",
+      "决定性一步是累积补丁首次把仓库从失败翻成通过的位置，认证该动作在给定前文下解决任务",
+      "三个探针为 Decisive-Action BPB、Patch MCQ、prefix-conditioned pass@K",
+      "十个公开 base/后训练模型对上，三探针排序与后训练 SWE-bench Verified pass@1 高度一致",
+      "方法只需基准的成功轨迹与其 verifier"
+    ],
+    "uncertain": [
+      "BPB 字节归一化与认证动作切分口径摘要未给，公式为按摘要重建的通用形式，需核对原文",
+      "Patch MCQ 备选构造与 prefix pass@K 采样预算摘要未说明，待核实"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "不用真跑 agent，靠成功轨迹里的关键一步就能预判 base 模型值不值得做后训练。"},
+      {"level": "入门", "text": "想知道一个 base 经昂贵 agentic 后训练后会不会好，直接跑 pass@K 不行——很多 base 连合规工具调用都做不出。这篇改用已成功轨迹里的关键一步，看 base 对这种正确动作的偏好。"},
+      {"level": "进阶", "text": "关键在于把「整条轨迹成功」拆成一个锚点：重放成功轨迹、每步重跑测试，找到累积补丁首次由失败翻通过的决定性一步，其动作被 verifier 认证。再让 base 面对这一步，用三个不需要它冷启动开 harness 的探针——动作 BPB、与否定备选的 MCQ、前缀 pass@K——来打分。"},
+      {"level": "专家", "text": "相比端到端 pass@K，它绕开 base 工具调用失败的瓶颈，直接测是否支持正确行为；相比单步任务，它保留多步状态维持语义。三探针各有侧重：BPB 测概率质量、MCQ 测相对判别、prefix pass@K 测功能正确续写的支持度。十个模型对上与 SWE-bench Verified 排序一致，且只需成功轨迹与 verifier，可迁移到别的 agentic 基准；代价是依赖 verifier 可靠性与已有成功轨迹。"}
+    ],
+    "socratic": [
+      {"q": "为什么不能直接给 base 跑一遍完整 agent 任务？", "a": "很多 base 连合规工具调用都产不出，harness 会被格式错误卡死，测到的其实是格式失败而非能力差异。"},
+      {"q": "为什么挑决定性一步而不是整条轨迹？", "a": "整条轨迹里大量步骤是铺垫，直接看会稀释信号；只取把测试从失败翻成通过的那一步，才得到最小正确行为。"}
+    ],
+    "mechanism": "agentic 后训练昂贵，选错 base 代价大；端到端评测却因 base 不会合规调用工具而失效，单步任务又丢掉多步状态维持。作者把「成功」压缩成一个被 verifier 认证的最小锚点——决定性一步，再设计三个只需读概率、不需 base 驱动 harness 的探针来读它对锚点的支持度，从而在零额外 agent 运行下预测潜力。",
+    "boundary": "当基准缺可靠 verifier、或没有成功后训练轨迹可供前瞻时方法不可用。若关键能力无法由单步动作体现（如需长期规划），决定性一步会低估其重要性；测试误判时锚点也会偏。",
+    "analogyBoundary": "面试类比在「关键一步能代表整体能力」时成立；但真实 agent 能力常体现在「绕路后仍能解」，而探针只读单点概率或短前缀续写，可能把这种更慢但更强的策略判低，类比失效。",
+    "misconceptions": [
+      "以为这是又一个 agentic benchmark，其实它是 base 模型筛查方法。",
+      "以为不需要 verifier——它恰恰依赖 verifier 与已有成功轨迹。"
+    ],
+    "ownAnalysis": "（推断）这套「拿成功轨迹当 lookahead、只读概率」的思路把 agentic 评测成本从跑 rollout 挪到读 likelihood，与 reward model 作 scorer 互补：前者不需训练、后者不需 verifier。可疑处在于决定性一步把多步能力约化成单步偏好，可能奖励局部正确而非会维持状态；三探针与 pass@1 高一致也可能因二者都偏向强 base。摘要未给相关系数与十模型细节，需核对原文。",
+    "officialNotes": [
+      {"position": "成功后训练轨迹可作为 base 潜力的前瞻信号，围绕决定性一步的三个探针与 SWE-bench Verified pass@1 排序高度一致，只需成功轨迹与 verifier", "source": "arxiv: 2610.10478v1"}
+    ],
+    "interviewAnswer": "问题是：怎么在花大钱做 agentic 后训练前判断一个 base 值不值得。端到端 pass@K 不行，因为很多 base 连合规工具调用都做不出，测到的是格式失败；单步任务又把多步状态维持丢了。这篇拿已成功的后训练轨迹当前瞻，重放并每步重跑测试，找到累积补丁首次从失败翻成通过的决定性一步，那个动作被 verifier 认证。再用三个探针评估 base：认证动作的 BPB、与否定备选的 MCQ、前缀条件下的 pass@K。十个模型对上排序和 SWE-bench Verified 一致。",
+    "studyPath": {
+      "prerequisites": ["agentic 代码任务与工具调用", "bits-per-byte 与对数似然", "pass@K 估计"],
+      "nextSteps": ["读原文核对 BPB 归一化与 MCQ 构造", "对比其与 reward model 打分的成本收益", "把探针思想迁到多模态 agent 基准"]
+    }
+  }
+}

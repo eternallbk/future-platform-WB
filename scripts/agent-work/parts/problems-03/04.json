@@ -1,0 +1,245 @@
+{
+ "id": "d17aeca17c9ceb7f",
+ "tldr": "分治两两合并（或最小堆多路归并）把 k 条有序链表并成一条，时间 O(n log k)。",
+ "keyPoints": [
+  "把 k 条升序链表合并为一条升序链表",
+  "总节点数为 n，k 为链表条数",
+  "分治两两合并共 log k 轮",
+  "最小堆每次弹出当前最小头节点"
+ ],
+ "why": "链表 + 归并 + 堆的综合高频题，字节最爱；分治与堆两种写法覆盖『排序与 TopK』赛道核心套路。",
+ "difficulty": "hard",
+ "tags": [
+  "leetcode",
+  "linked-list",
+  "divide-and-conquer",
+  "heap",
+  "hard"
+ ],
+ "entities": [
+  "LeetCode 23",
+  "分治",
+  "最小堆",
+  "归并"
+ ],
+ "diagram": {
+  "kind": "flow",
+  "title": "分治两两合并",
+  "caption": "每轮把相邻两条链表合并，步长翻倍；每个节点每轮只被处理一次，共 log k 轮。",
+  "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='分治两两合并 K 个有序链表流程'><rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>k 条有序链表</text><text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>总节点数为 n</text><line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,70 236,62 244,62' fill='var(--line-1)'/><rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>相邻两两合并</text><text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>lists[i] 与 lists[i+step]</text><line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,124 236,116 244,116' fill='var(--line-1)'/><rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>步长翻倍</text><text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>step *= 2，每轮总量 n</text><line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,178 236,170 244,170' fill='var(--line-1)'/><rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>log k 轮后剩一条</text><text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>O(n log k)</text></svg>",
+  "alt": "流程：k 条有序链表，相邻两两合并成 k/2 条，步长翻倍，log k 轮后只剩一条，复杂度 O(n log k)。"
+ },
+ "concepts": [
+  {
+   "name": "分治两两合并（Divide-and-Conquer Merge）",
+   "readable": "把 k 条链表两两配对合并，得到 k/2 条；重复这个过程直到只剩一条，共 log k 轮。",
+   "analogy": "像淘汰赛：先两两 PK 合并，胜者下一轮再两两 PK，几轮之后就只剩一个总冠军。",
+   "analogyBreaksDown": "淘汰赛每轮选手数减半且每场代价固定；而『合并两条链表』的代价与它们总长成正比，所以复杂度要按每轮总代价 O(n) 乘轮数来算，不能按比赛场数算。",
+   "mechanism": "顺序合并是 O(nk)，因为靠前的节点被反复扫描。改成分治后每个节点每轮只参与一次合并，共 log k 轮，得 O(n log k)；且不需要额外堆空间。",
+   "visual": "一棵二叉树：叶子是 k 条链表，父节点是两个孩子合并的结果，根是最终链表，树高为 log k。",
+   "prerequisites": [
+    "链表",
+    "归并两个有序链表",
+    "递归或迭代"
+   ],
+   "selfTest": [
+    "为什么顺序合并比两两分治慢？",
+    "分治迭代版的空间复杂度是多少？",
+    "为什么每轮的总代价是 O(n)？"
+   ],
+   "formula": ""
+  },
+  {
+   "name": "最小堆多路归并（Min-Heap K-way Merge）",
+   "readable": "把 k 条链表的头节点放进最小堆，每次弹出全局最小的那个，再把它所在链表的下一个节点压回堆。",
+   "analogy": "k 条队伍排成一列，每次只让各队排头中号码最小的那位出列，然后他所在队伍的新排头再进来比。",
+   "analogyBreaksDown": "排队类比假设每队人数不限且比较很便宜；这里每个节点都要入堆出堆一次，堆操作 O(log k)，总代价 O(n log k)，并额外需要 O(k) 的堆空间。",
+   "mechanism": "堆维护 k 个候选头节点，取最小为 O(log k)，共取 n 次，得 O(n log k)。Python 堆元素要加唯一序号，避免值相同时比较 ListNode 报错。",
+   "visual": "一个堆的树形结构，堆顶标红；每弹出一个节点，就从它所属链表把下一个节点补进堆。",
+   "prerequisites": [
+    "堆 / 优先队列",
+    "链表指针操作"
+   ],
+   "selfTest": [
+    "为什么堆元素要带一个索引 i？",
+    "堆版本比 分治版本多花哪部分空间？",
+    "k=1 或含空链表时堆怎么写？"
+   ],
+   "formula": ""
+  }
+ ],
+ "formulas": [
+  {
+   "id": "f-kway-merge-recurrence",
+   "name": "K 路归并分治递推（K-way Merge Divide-and-Conquer Recurrence）",
+   "category": "engineering",
+   "latex": "T(k)=2\\,T\\!\\left(\\tfrac{k}{2}\\right)+O(n)\\ \\Rightarrow\\ T(k)=O(n\\log k)",
+   "symbols": [
+    [
+     "T(k)",
+     "合并 k 条链表（总长 n）所需时间"
+    ],
+    [
+     "n",
+     "所有链表的节点总数"
+    ],
+    [
+     "k",
+     "链表条数"
+    ]
+   ],
+   "derivation": [
+    "分治把 k 条链表分成两组，各约 k/2 条，分别递归合并。",
+    "合并两组结果是遍历两条已归并链表，代价与总长成正比，即 O(n)。",
+    "递推式 T(k)=2T(k/2)+O(n) 展开 log k 层，每层总代价 O(n)。",
+    "故 T(k)=O(n log k)，即每个节点被处理 log k 次；而顺序合并是 O(nk)。"
+   ],
+   "analogy": "锦标赛：每轮所有选手各被处理一次，共 log k 轮，所以每个选手被处理 log k 次。",
+   "pitfalls": [
+    "把复杂度误算成 O(nk)（那是顺序合并的代价）",
+    "堆里直接放 ListNode，Python 比较节点对象时报错",
+    "忘记 dummy 哨兵节点，空链表场景处理出错"
+   ],
+   "code": "def merge_two(a, b):\n    d = ListNode(0); t = d\n    while a and b:\n        if a.val <= b.val:\n            t.next, a = a, a.next\n        else:\n            t.next, b = b, b.next\n        t = t.next\n    t.next = a or b\n    return d.next",
+   "sources": [
+    {
+     "title": "合并K个排序链表（LeetCode 23）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/merge-k-sorted-lists"
+    }
+   ]
+  }
+ ],
+ "selfCheck": {
+  "claims": [
+   "该题被字节 112 次、快手 27 次、拼多多 8 次等考过，共 153 次",
+   "难度为困难",
+   "最近一次出现 2026-08-21",
+   "本题属于链表 / 排序与 TopK 类"
+  ],
+  "uncertain": [
+   "源信息未给题目示例，problem.examples 为自行构造并已用参考实现核对",
+   "考频为采集层统计口径，未逐条核实"
+  ]
+ },
+ "teaching": {
+  "progressive": [
+   {
+    "level": "一句话",
+    "text": "把很多条有序链表两两合并，几轮后并成一条。"
+   },
+   {
+    "level": "入门",
+    "text": "先写一个合并两条有序链表的函数，然后把 k 条链表两两配对合并，重复到只剩一条；复杂度比一条条顺序合并更优。"
+   },
+   {
+    "level": "进阶",
+    "text": "顺序合并每条新结果都被反复扫描，是 O(nk)；两两分治让每个节点每轮只被处理一次，共 log k 轮，得 O(n log k)。另一种思路是用最小堆维护 k 个当前头节点，每次取全局最小。"
+   },
+   {
+    "level": "专家",
+    "text": "分治版时间 O(n log k)、额外空间 O(1)（迭代实现），适合就地合并；堆版同为 O(n log k) 但需要 O(k) 空间，胜在实现直观、便于扩展成『多路归并取前 K 小』等变体。k 很小时两者差别不大，k 很大且内存敏感时倾向分治。"
+   }
+  ],
+  "socratic": [
+   {
+    "q": "如果直接用顺序合并有什么不好？",
+    "a": "越靠前合并出来的节点会被后面多次重复扫描，总代价 O(nk)，当 k 大时明显变慢。"
+   },
+   {
+    "q": "为什么堆里要塞一个索引 i？",
+    "a": "当两个节点值相等时，Python 会比较元组的第二项，若第二项也是 ListNode 就无法比较而报错；加唯一索引即可打破平局。"
+   }
+  ],
+  "mechanism": "难点在于如何避免节点被反复扫描。分治让每个节点每轮只参与一次合并、共 log k 轮；堆则用对数时间的取最小替代线性扫描 k 个头节点，两者都把朴素的 O(nk) 降到 O(n log k)，区别是空间换取的写法简化程度。",
+  "boundary": "若 k 很小（如 2、3）而链表很长，顺序合并与分治差异不大，反而是堆版因额外空间与常数开销未必更快；另外本题假设各链表本身有序，若输入无序需先各自排序。",
+  "analogyBoundary": "『淘汰赛』类比成立的前提是每场比赛代价相同；但合并两条长度不等的链表代价随长度变化，所以不能像比赛场数那样直接数轮数之外的场次，必须回到『每轮总代价 O(n)』来算。",
+  "misconceptions": [
+   "把分治版本复杂度写成 O(nk)",
+   "堆里只放值不放节点，无法顺着 next 前进",
+   "忽略 lists 为空或元素为空链表的情况"
+  ],
+  "ownAnalysis": "（推断）本题是『外部排序多路归并』的链表版；若把链表换成数组或用 k 个游标，思路与归并排序的 merge 段一致，面试时把这两者联系起来能显示出对归并框架的整体把握。",
+  "officialNotes": [],
+  "interviewAnswer": "我给两种写法。第一种分治：写一个合并两条链表的 merge，然后两两配对、步长翻倍，共 log k 轮，时间 O(n log k)、额外空间 O(1)。第二种最小堆：把 k 个表头入堆，每次弹出最小值接到结果尾部，并把该节点的 next 压回堆，元素带索引避免比较报错，时间 O(n log k)、空间 O(k)。",
+  "studyPath": {
+   "prerequisites": [
+    "链表指针操作",
+    "归并两个有序链表",
+    "堆 / 优先队列"
+   ],
+   "nextSteps": [
+    "LeetCode 21 合并两个有序链表",
+    "LeetCode 88 合并两个有序数组",
+    "用堆实现多路归并取前 K 小"
+   ]
+  }
+ },
+ "problem": {
+  "title": "合并 K 个排序链表",
+  "number": 23,
+  "difficulty": "hard",
+  "statement": "给定一个链表数组 lists，其中每个链表都已经按升序排列。请将所有链表合并为一个升序链表并返回合并后的头节点。设所有链表的节点总数为 n、链表条数为 k。",
+  "examples": [
+   {
+    "input": "lists = [[1,4,5],[1,3,4],[2,6]]",
+    "output": "[1,1,2,3,4,4,5,6]",
+    "why": "三条升序链表整体归并成一个升序链表"
+   },
+   {
+    "input": "lists = []",
+    "output": "[]",
+    "why": "没有任何链表，返回空链表"
+   },
+   {
+    "input": "lists = [[]]",
+    "output": "[]",
+    "why": "只有空链表，合并结果仍为空"
+   }
+  ],
+  "approach": {
+   "idea": "核心是复用『合并两个有序链表』。分治做法：把 k 条链表两两配对合并，得到 k/2 条，步长翻倍重复，直到只剩一条，复杂度 O(n log k)。",
+   "steps": [
+    "1. 写 mergeTwo(a, b)：用哨兵节点逐个比较节点值，串成一条有序链表。",
+    "2. 若 lists 为空返回 None；令 step=1。",
+    "3. 当 step<k：对每对 i 与 i+step 执行 lists[i]=mergeTwo(lists[i], lists[i+step])。",
+    "4. step *= 2，重复第 3 步。",
+    "5. 循环结束返回 lists[0]。"
+   ],
+   "whyItWorks": "分治保证每条链表每轮只被合并一次，因此每个节点每轮被处理一次、共参与 log k 轮，总代价 O(n log k)。合并两有序链表的正确性来自：每次取两链表当前头部的较小者接到结果尾部，剩余节点天然有序，哨兵节点避免了对头节点的特判。",
+   "alternatives": [
+    {
+     "name": "最小堆多路归并",
+     "complexity": "O(n log k)/O(k)",
+     "when": "实现直观、便于扩展成流式归并或取前 K 小时首选"
+    },
+    {
+     "name": "顺序逐条合并",
+     "complexity": "O(nk)/O(1)",
+     "when": "k 很小或作为先讲清楚的 baseline；k 大时明显偏慢"
+    }
+   ]
+  },
+  "solution": {
+   "python": "import heapq\n\n\nclass ListNode:\n    def __init__(self, val=0, next=None):\n        self.val = val\n        self.next = next\n\n\ndef merge_two(a, b):\n    dummy = ListNode(0)\n    tail = dummy\n    while a and b:\n        if a.val <= b.val:\n            tail.next, a = a, a.next\n        else:\n            tail.next, b = b, b.next\n        tail = tail.next\n    tail.next = a if a else b\n    return dummy.next\n\n\ndef mergeKLists(lists):\n    if not lists:\n        return None\n    k = len(lists)\n    step = 1\n    while step < k:\n        for i in range(0, k - step, step * 2):\n            lists[i] = merge_two(lists[i], lists[i + step])\n        step *= 2\n    return lists[0]",
+   "python_alt": "import heapq\n\n\ndef mergeKLists(lists):\n    dummy = ListNode(0)\n    tail = dummy\n    heap = []\n    for i, node in enumerate(lists):\n        if node:\n            heapq.heappush(heap, (node.val, i, node))\n    while heap:\n        val, i, node = heapq.heappop(heap)\n        tail.next = node\n        tail = tail.next\n        if node.next:\n            heapq.heappush(heap, (node.next.val, i, node.next))\n    return dummy.next",
+   "notes": "分治用哨兵节点简化合并；步长从 1 倍增，循环内成对合并。堆版三元组 (val, i, node) 中的 i 用于在值相等时避免比较 ListNode 报错。空 lists 与含空链表都需正确处理。"
+  },
+  "complexity": {
+   "time": "O(n log k)",
+   "space": "O(1)",
+   "why": "分治共 log k 轮，每轮遍历全部 n 个节点；迭代实现只用常数个指针变量。堆版时间为 O(n log k)，空间 O(k)。"
+  },
+  "pitfalls": [
+   "复杂度误写成 O(nk)，那是顺序合并的代价",
+   "堆元素只放节点值，无法顺 next 前进",
+   "漏掉 lists 为空或元素为空链表的边界"
+  ],
+  "edgeCases": [
+   "lists 为空数组：返回 None",
+   "lists 含空链表（如 [[]]）：合并结果仍为空",
+   "k=1：不进入循环，直接返回 lists[0]",
+   "所有链表为空但长度为 k：返回 None"
+  ],
+  "interviewTips": "先说清『复用合并两条链表』这个骨架，再讲分治如何把复杂度从 O(nk) 降到 O(n log k)。若面试官追问空间或想听堆解法，可立刻给出最小堆版本，并主动提到加索引避免节点比较报错——这是堆解法的常见扣分点。"
+ }
+}

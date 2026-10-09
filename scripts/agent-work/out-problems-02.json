@@ -1,0 +1,1470 @@
+{
+ "batchId": "problems-02",
+ "entries": [
+  {
+   "id": "562df016aeec7465",
+   "tldr": "枚举 2n-1 个回文中心向两侧扩展，O(n²)；Manacher 用镜像复用已知半径，均摊降到 O(n)。",
+   "keyPoints": [
+    "答案必是某个中心向两侧扩展得到的回文",
+    "中心有 2n-1 个：n 个字符（奇）与 n-1 个间隙（偶）",
+    "中心扩展 O(n²) 时间、O(1) 额外空间，最好写",
+    "Manacher 用镜像半径避免重复扩展，均摊 O(n)",
+    "区间 DP 用 f[i][j] 记是否回文，O(n²) 时间空间"
+   ],
+   "why": "字符串手撕的高频考点，考「对称性复用」这一算法岗核心思想；Manacher 的复杂度分析常用来区分层次。",
+   "difficulty": "medium",
+   "tags": [
+    "leetcode",
+    "string",
+    "palindrome",
+    "two-pointers",
+    "manacher"
+   ],
+   "entities": [
+    "Manacher 算法",
+    "中心扩展",
+    "区间动态规划",
+    "回文串"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "最长回文子串：中心扩展",
+    "caption": "以 s=babad 为例：枚举每个奇数/偶数中心向两侧扩散，最长得到 bab。",
+    "alt": "对字符串 babad 枚举奇偶中心并扩展，记录最长回文 bab 的过程",
+    "svg": "<svg viewBox='0 0 560 270' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='对字符串 babad 做中心扩展的状态表'><text x='8' y='36' font-size='13' font-weight='bold' fill='currentColor'>s</text><rect x='132' y='20' width='42' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='153' y='39' font-size='14' text-anchor='middle' fill='currentColor'>b</text><rect x='178' y='20' width='42' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='199' y='39' font-size='14' text-anchor='middle' fill='currentColor'>a</text><rect x='224' y='20' width='42' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='245' y='39' font-size='14' text-anchor='middle' fill='currentColor'>b</text><rect x='270' y='20' width='42' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='291' y='39' font-size='14' text-anchor='middle' fill='currentColor'>a</text><rect x='316' y='20' width='42' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='337' y='39' font-size='14' text-anchor='middle' fill='currentColor'>d</text><text x='132' y='64' font-size='13' opacity='0.75' fill='currentColor'>下标 0..4，共 2n-1 = 9 个候选中心</text><text x='8' y='98' font-size='13' font-weight='bold' fill='currentColor'>奇中心 i=1</text><rect x='132' y='82' width='42' height='28' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='153' y='101' font-size='14' text-anchor='middle' fill='currentColor'>b</text><rect x='178' y='82' width='42' height='28' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='199' y='101' font-size='14' text-anchor='middle' fill='currentColor'>a</text><rect x='224' y='82' width='42' height='28' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='245' y='101' font-size='14' text-anchor='middle' fill='currentColor'>b</text><rect x='270' y='82' width='42' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='291' y='101' font-size='14' text-anchor='middle' fill='currentColor'>a</text><rect x='316' y='82' width='42' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='337' y='101' font-size='14' text-anchor='middle' fill='currentColor'>d</text><text x='132' y='126' font-size='13' opacity='0.75' fill='currentColor'>s[0]=b 与 s[2]=b 相等 → 扩得 bab</text><text x='8' y='160' font-size='13' font-weight='bold' fill='currentColor'>偶中心(1,2)</text><rect x='132' y='144' width='42' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='153' y='163' font-size='14' text-anchor='middle' fill='currentColor'>b</text><rect x='178' y='144' width='42' height='28' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='199' y='163' font-size='14' text-anchor='middle' fill='currentColor'>a</text><rect x='224' y='144' width='42' height='28' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='245' y='163' font-size='14' text-anchor='middle' fill='currentColor'>b</text><rect x='270' y='144' width='42' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='291' y='163' font-size='14' text-anchor='middle' fill='currentColor'>a</text><rect x='316' y='144' width='42' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='337' y='163' font-size='14' text-anchor='middle' fill='currentColor'>d</text><text x='132' y='188' font-size='13' opacity='0.75' fill='currentColor'>s[1]=a 与 s[2]=b 不等 → 当场失败</text><text x='8' y='222' font-size='13' font-weight='bold' fill='currentColor'>结果</text><rect x='132' y='206' width='42' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='153' y='225' font-size='14' text-anchor='middle' fill='currentColor'>b</text><rect x='178' y='206' width='42' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='199' y='225' font-size='14' text-anchor='middle' fill='currentColor'>a</text><rect x='224' y='206' width='42' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='245' y='225' font-size='14' text-anchor='middle' fill='currentColor'>b</text><text x='132' y='250' font-size='13' opacity='0.75' fill='currentColor'>扫完所有中心，最长回文是 bab（长度 3）</text></svg>"
+   },
+   "concepts": [
+    {
+     "name": "中心扩展（Center Expansion）",
+     "readable": "回文关于中心对称。固定一个中心，左右指针同时向外走，只要两端字符相等就继续，走不动时的长度就是以该中心的最长回文。",
+     "analogy": "像把一张对折的纸慢慢摊开：折痕就是中心，两边每对称一格就多一层。",
+     "analogyBreaksDown": "只有当「回文长度是奇数」时才只有一个中心字符；偶数长度回文的中心落在两个字符之间，是把中心当成一个空档而不是某个字符，这一步最容易漏。",
+     "mechanism": "因为任意回文都关于唯一中心对称，所以枚举全部 2n-1 个中心再各向外扩一次，覆盖了所有可能的回文，不会漏解；每中心扩展最多 n/2 步，合计 O(n²)。",
+     "visual": "画一排字符格子，中心用竖线标出，左右两支箭头每次同时外移一格；蓝色（--accent）格子表示当前已确认对称的部分。",
+     "prerequisites": [
+      "字符串下标与双指针",
+      "回文的对称定义"
+     ],
+     "selfTest": [
+      "长度为 4 的字符串 bbbb 的回文中心是哪一个？",
+      "为什么中心个数是 2n-1 而不是 n？",
+      "中心扩展能找出 bbbbb 的最长回文吗？"
+     ],
+     "formula": ""
+    },
+    {
+     "name": "Manacher 的镜像复用",
+     "readable": "把字符串插入 # 分隔符统一成奇数长度，再记录每个中心的半径。当前若处在某个已知最右回文内部，中心 i 的半径至少等于它镜像点的半径。",
+     "analogy": "像照镜子：镜子（已算过的右半回文）里有的答案，左边的对称位置可以直接抄，只有超出镜子边界的部分才需要自己伸手去试。",
+     "analogyBreaksDown": "镜像给的只是「下界」而不是精确值：它被当前回文的右边界截断（取 min），超出右边界的部分必须暴力扩展，所以 Manacher 不是「不用比较」，而是「不重复比较」。",
+     "mechanism": "维护最右回文中心 c 与右边界 r；i 在界内时 p[i] 从 min(p[2c-i], r-i) 起步，再暴力扩展并更新 c、r。总扩展次数受均摊约束，为 O(n)。",
+     "visual": "把带分隔符的串画成一条链，中心点上方标半径 p[i]；用一个粗框标出当前 [c-r, c+r]，镜像点用虚线箭头指回左侧。",
+     "prerequisites": [
+      "回文对称性",
+      "均摊复杂度分析"
+     ],
+     "selfTest": [
+      "镜像下标是 2c-i 还是 2i-c？",
+      "为什么加分隔符后奇偶回文可以统一处理？",
+      "半径 p[i] 与原始子串长度、起始下标怎么换算？"
+     ],
+     "formula": "p[i] \\ge \\min(p[2c-i],\\, r-i)"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-palindrome-dp",
+     "name": "回文区间 DP 转移（Palindrome DP）",
+     "category": "engineering",
+     "latex": "f[i][j] = [\\,s_i = s_j\\,] \\;\\wedge\\; \\bigl(j - i < 2 \\;\\vee\\; f[i+1][j-1]\\bigr)",
+     "symbols": [
+      [
+       "f[i][j]",
+       "子串 s[i..j] 是否为回文"
+      ],
+      [
+       "s_i",
+       "第 i 个字符"
+      ],
+      [
+       "\\wedge",
+       "逻辑与"
+      ],
+      [
+       "\\vee",
+       "逻辑或"
+      ]
+     ],
+     "derivation": [
+      "状态：用两个端点 i、j 描述「子串 s[i..j] 是否回文」这一布尔量。",
+      "转移：两端字符相同才可能是回文，且去掉两端后 s[i+1..j-1] 也必须回文。",
+      "边界：长度不足 2（j-i<2）时去掉两端为空串或单字符，恒为回文。",
+      "顺序：按区间长度从小到大递推，保证算 f[i][j] 时 f[i+1][j-1] 已算出。"
+     ],
+     "analogy": "像剥洋葱：外层两瓣一样，才轮到判断里面那一层是否回文。",
+     "pitfalls": [
+      "忘了 j-i<2 短路，直接访问 f[i+1][j-1] 会取到非法区间",
+      "按 i、j 双重循环的自然顺序递推会引用还没算的 f[i+1][j-1]"
+     ],
+     "code": "s = \"babad\"\nn = len(s)\nf = [[False] * n for _ in range(n)]\nbest = (0, 0)\nfor L in range(1, n + 1):\n    for i in range(n - L + 1):\n        j = i + L - 1\n        ok = s[i] == s[j] and (L < 3 or f[i + 1][j - 1])\n        f[i][j] = ok\n        if ok:\n            best = (i, j)\nprint(s[best[0]:best[1] + 1])   # bab",
+     "sources": [
+      {
+       "title": "5.最长回文子串 · 题解",
+       "url": "https://programmercarl.com/algo/other/0005-longest-palindromic-substring.html"
+      }
+     ]
+    },
+    {
+     "id": "f-manacher-radius",
+     "name": "Manacher 半径下界（Manacher Radius）",
+     "category": "engineering",
+     "latex": "p[i] \\;\\ge\\; \\min\\bigl(p[2c - i],\\; r - i\\bigr)",
+     "symbols": [
+      [
+       "p[i]",
+       "以 i 为中心的回文半径（分隔符串中）"
+      ],
+      [
+       "c",
+       "当前能到达最右的回文中心"
+      ],
+      [
+       "r",
+       "该回文的最右边界"
+      ],
+      [
+       "2c-i",
+       "i 关于中心 c 的镜像位置"
+      ]
+     ],
+     "derivation": [
+      "先插入分隔符，把奇偶回文统一成奇数长度的串。",
+      "维护当前最右回文 [c-r, c+r]，r 为最右边界。",
+      "若 i 落在界内（i<r），其镜像 2c-i 的半径可被复用，但受右边界限制，取两者较小值作下界。",
+      "在保底半径上继续暴力向外扩展，并更新 c、r；每字符扩展均摊 O(1)，总计 O(n)。"
+     ],
+     "analogy": "像照镜子：右边没照过的部分要自己伸出去试，左边照过的可直接抄镜子里对面的答案。",
+     "pitfalls": [
+      "镜像下标写成 2i-c（正确是 2c-i）",
+      "漏掉 r-i 上限裁剪，越过右边界错误扩大半径",
+      "半径换算回原串下标 ((c-p)//2) 写错"
+     ],
+     "code": "def manacher(s):\n    t = \"#\" + \"#\".join(s) + \"#\"\n    n = len(t); p = [0] * n\n    c = r = 0\n    for i in range(n):\n        if i < r:\n            p[i] = min(r - i, p[2 * c - i])\n        while i - p[i] - 1 >= 0 and i + p[i] + 1 < n and t[i - p[i] - 1] == t[i + p[i] + 1]:\n            p[i] += 1\n        if i + p[i] > r:\n            c, r = i, i + p[i]\n    return max(p)\nprint(manacher(\"babad\"))   # 3",
+     "sources": [
+      {
+       "title": "5.最长回文子串 · 题解",
+       "url": "https://programmercarl.com/algo/other/0005-longest-palindromic-substring.html"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "本题可用动态规划、双指针（中心扩散）与 Manacher 三种方法求解（摘要原文）。",
+     "题目涉及区间判断、中心扩散与回文对称性的利用（摘要原文）。",
+     "给定字符串 babad 的最长回文子串是 bab（示例自验，长度 3）。"
+    ],
+    "uncertain": [
+     "示例为自行构造（LeetCode 5 官方示例 s=babad→bab、s=cbbd→bb），源摘要未附示例，已用代码逐一验证。",
+     "示例为自行构造",
+     "两道示例的具体输入数字为按题面题意构造的最小用例，非摘要原文。"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "从一个点往两边看，对称得最远的就是最长回文。"
+     },
+     {
+      "level": "入门",
+      "text": "回文关于中心对称。枚举每个可能的中心向两侧同时扩散，记录扩得最长的那个。因为奇数回文中心在一个字符上、偶数回文中心在两个字符之间，一共 2n-1 个中心。"
+     },
+     {
+      "level": "进阶",
+      "text": "中心扩展实现只要 2n-1 个中心各扫一遍，写起来最短，时间 O(n²)。要更快就上 Manacher：插分隔符统一奇偶，再维护最右回文，用镜像半径给每个中心一个起点，避免重复比较，均摊 O(n)。"
+     },
+     {
+      "level": "专家",
+      "text": "三者取舍很清楚：DP 直观但 O(n²) 空间；中心扩展 O(1) 空间、常数小，面试首选；Manacher O(n) 但要维护 c、r 与镜像，容易写错边界，只在面试官明确追问最优解时展开。三者的正确性都建立在「任一回文关于唯一中心对称」上。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "如果只枚举 n 个字符做中心，会漏掉什么？",
+      "a": "漏掉偶数长度回文，比如 cbbd 的 bb，它的中心落在两个 b 之间，不属于任何单字符中心。"
+     },
+     {
+      "q": "Manacher 里为什么要取 min(p[2c-i], r-i)？",
+      "a": "镜像半径是上界参考，但当前回文只延伸到 r，超出 r 的部分左边没有对称保证，必须留给暴力扩展验证。"
+     },
+     {
+      "q": "为什么中心扩展是 O(n²) 而不是 O(n)？",
+      "a": "每个中心最坏扩散 n/2 步，共约 2n 个中心，乘积是 O(n²)；bbbb…b 全相同就是这种最坏输入。"
+     }
+    ],
+    "mechanism": "回文具有中心对称性，因此「找出所有回文」可归约为「枚举所有中心再向两侧核对」。中心扩展把每个中心的最长回文独立求出，互不依赖，所以正确性直接来自对称定义；Manacher 的额外设计是为了消除不同中心之间的重复比较——用一个已知最右回文把后续中心分成「在界内可复用镜像」与「在界外需重新扩展」两类，从而把总扩展次数压到线性。",
+    "boundary": "中心扩展适合 n 中等（几千）的场景；n 到十万级且要求线性时才需要 Manacher。Manacher 只回答案长或下标，不直接给出「所有回文」；要判重或统计出现次数需另做扩展。若字符集很大，DP 的状态空间仍然 O(n²)，并不会因为字符不同而变好。",
+    "analogyBoundary": "「摊开对折的纸」会让偶数长度回文显得别扭——对折的折痕默认落在格子边界上，而偶数回文的中心恰好落在两个字符中间，类比里没有对应位置。真正实现时必须显式写两类中心，不能只靠「折痕在字符上」。",
+    "misconceptions": [
+     "只枚举单字符中心，漏掉 bbbb 这类偶数长度回文。",
+     "把答案当成「最长回文子序列」——子串必须连续，子序列不连续，两题不同。",
+     "认为 Manacher 不用逐字符比较——它只是不做重复比较，边界外仍要扩展。"
+    ],
+    "ownAnalysis": "这道题的价值在于「同一问题三种解法」的对比：DP 展示区间转移、中心扩展展示对称性直接利用、Manacher 展示用额外状态换取线性。面试里先把中心扩展写稳，再用一句话点出 Manacher 的镜像思路，通常已足够；把 Manacher 完整写对反而是高风险动作。（推断）LeetCode Hot 100 把它作为字符串代表题，是因为它的「双指针 + 边界」几乎覆盖了字符串题的所有易错点。",
+    "officialNotes": [
+     {
+      "position": "题目可用动态规划、双指针与 Manacher 算法实现，涉及区间判断、中心扩散与回文对称性利用。",
+      "source": "https://programmercarl.com/algo/other/0005-longest-palindromic-substring.html"
+     }
+    ],
+    "interviewAnswer": "我先用中心扩展：枚举 2n-1 个中心，每个向两侧扩散，取最长。它 O(n²) 时间、O(1) 空间，实现短且不容易错。如果要求线性，我会说 Manacher：先插分隔符统一奇偶，维护当前最右回文，用镜像半径 min(p[2c-i], r-i) 作为每个中心的扩展起点，再暴力扩，均摊 O(n)。写代码时我特别注意偶数中心要单独枚举，否则会漏掉 bb。",
+    "studyPath": {
+     "prerequisites": [
+      "字符串与下标",
+      "双指针基础",
+      "动态规划区间转移概念"
+     ],
+     "nextSteps": [
+      "做「回文子串数量」（LC647），同一套中心扩展直接改造",
+      "做「分割回文串」（LC131），把回文判断与回溯结合",
+      "手写一遍 Manacher 并解释为什么是均摊 O(n)"
+     ]
+    }
+   },
+   "problem": {
+    "title": "最长回文子串",
+    "number": 5,
+    "difficulty": "medium",
+    "statement": "给定一个字符串 s，找到 s 中最长的回文子串。回文是正读反读都相同的字符串，要求子串在原串中必须连续。返回任意一个最长回文子串即可。约束：1 <= s.length <= 1000，s 仅由数字和英文字母组成。",
+    "examples": [
+     {
+      "input": "s = \"babad\"",
+      "output": "\"bab\"",
+      "why": "aba 也合法，长度同为 3",
+      "explanation": "aba 也合法，长度同为 3"
+     },
+     {
+      "input": "s = \"cbbd\"",
+      "output": "\"bb\"",
+      "why": "偶数长度回文，中心在两个 b 之间",
+      "explanation": "偶数长度回文，中心在两个 b 之间"
+     },
+     {
+      "input": "s = \"a\"",
+      "output": "\"a\"",
+      "why": "单字符本身就是回文",
+      "explanation": "单字符本身就是回文"
+     }
+    ],
+    "approach": {
+     "idea": "任何回文都关于某个唯一中心对称。枚举全部 2n-1 个中心（n 个字符 + n-1 个间隙），每个中心用左右指针同时向外扩散，遇到不相等或越界即停；扩散过程中最长的那段就是答案。",
+     "steps": [
+      "左右指针 l、r 从某个中心出发（奇中心取 (i,i)，偶中心取 (i,i+1)）。",
+      "while l>=0 and r<n and s[l]==s[r]：l 左移、r 右移。",
+      "循环结束后 s[l+1..r-1] 就是以该中心的最长回文，用它的长度更新全局最优。",
+      "对全部 2n-1 个中心重复步骤 2-3。",
+      "返回记录下的最长子串。"
+     ],
+     "whyItWorks": "若 s[l..r] 是回文，则它关于中点对称，中点必是某个枚举到的中心，且从该中心向外扩散必然能覆盖整个 s[l..r]。反过来，扩散只在两端相等时前进，所以每次停下得到的都是合法回文。枚举全部中心 + 每中心取最长，故不会漏掉最优解。",
+     "alternatives": [
+      {
+       "name": "Manacher 算法",
+       "complexity": "O(n)/O(n)",
+       "when": "n 很大（十万级）且必须线性时。实现要插分隔符并维护最右回文与镜像半径。"
+      },
+      {
+       "name": "区间动态规划",
+       "complexity": "O(n²)/O(n²)",
+       "when": "需要顺带知道所有子串是否回文时（如求回文子串总数），DP 表可直接复用。"
+      },
+      {
+       "name": "暴力枚举所有子串",
+       "complexity": "O(n³)/O(1)",
+       "when": "只在 n 极小或作为对照 baseline；枚举 O(n²) 个子串每个判回文 O(n)。"
+      }
+     ]
+    },
+    "solution": {
+     "python": "class Solution:\n    def longestPalindrome(self, s: str) -> str:\n        if not s:\n            return \"\"\n        start, end = 0, 0\n\n        def expand(l, r):\n            while l >= 0 and r < len(s) and s[l] == s[r]:\n                l -= 1\n                r += 1\n            return l + 1, r - 1        # 收敛到合法回文边界\n\n        for i in range(len(s)):\n            l1, r1 = expand(i, i)      # 奇数长度中心\n            if r1 - l1 > end - start:\n                start, end = l1, r1\n            l2, r2 = expand(i, i + 1)  # 偶数长度中心\n            if r2 - l2 > end - start:\n                start, end = l2, r2\n        return s[start:end + 1]\n",
+     "python_alt": "# Manacher：插入分隔符，统一奇偶回文，均摊 O(n)\nclass Solution:\n    def longestPalindrome(self, s: str) -> str:\n        t = \"#\" + \"#\".join(s) + \"#\"\n        n = len(t)\n        p = [0] * n\n        c = r = 0\n        best_len = best_c = 0\n        for i in range(n):\n            if i < r:\n                p[i] = min(r - i, p[2 * c - i])\n            while (i - p[i] - 1 >= 0 and i + p[i] + 1 < n\n                   and t[i - p[i] - 1] == t[i + p[i] + 1]):\n                p[i] += 1\n            if i + p[i] > r:\n                c, r = i, i + p[i]\n            if p[i] > best_len:\n                best_len, best_c = p[i], i\n        start = (best_c - best_len) // 2\n        return s[start:start + best_len]\n",
+     "notes": "expand 返回的是收敛后的合法边界（l+1, r-1），不要直接用循环退出时的 l、r。偶数中心 (i, i+1) 必须单独枚举，否则 cbbd 会漏掉 bb。长度比较用 r-l 而非 r-l+1，只要一致即可。"
+    },
+    "complexity": {
+     "time": "O(n²)",
+     "space": "O(1)",
+     "why": "共 2n-1 个中心，每个中心最坏扩散 n/2 步，乘积 O(n²)；只用常数个指针，不计返回串。"
+    },
+    "pitfalls": [
+     "只枚举单字符中心，漏掉偶数长度回文（如 cbbd 的 bb）。",
+     "expand 里把返回写成 (l, r) 而不是 (l+1, r-1)，边界整体错一格。",
+     "用 r-l 与 r-l+1 判断长度时两处不统一，导致最优解被覆盖。",
+     "空串没特判，expand 里访问 s[0] 越界。"
+    ],
+    "edgeCases": [
+     "s 为空 → 返回空串。",
+     "s 长度 1 → 返回它自己。",
+     "全部字符相同（bbbb）→ 整个串都是回文，偶数中心必被覆盖。",
+     "无长度≥2 的回文（abcd）→ 返回任意单字符。"
+    ],
+    "interviewTips": "先写中心扩展（面试官通常就认这个），边写边说「奇偶两类中心」。写完主动报复杂度 O(n²)/O(1)。若被追问最优，再口述 Manacher 的镜像下界，并强调「取 min 是为了不越过右边界」。别一上来写 DP，空间大且不划算。"
+   }
+  },
+  {
+   "id": "74b546c8e2d25647",
+   "tldr": "旋转数组里二分：每轮至少一半有序，先判哪半有序，再看 target 是否落在其值域内来收缩边界。",
+   "keyPoints": [
+    "数组是两段各自升序拼接，切口只有一个",
+    "每轮 nums[lo..mid] 与 nums[mid..hi] 恰有一段有序",
+    "用 nums[lo] <= nums[mid] 判断左半是否有序",
+    "再据 target 是否落在有序段值域内决定收缩方向",
+    "含重复元素（LC81）时相等处要退避一格"
+   ],
+   "why": "字节/微软高频手撕，考的是二分的边界控制与不变量；能否把「重复元素退化」讲清是区分度所在。",
+   "difficulty": "medium",
+   "tags": [
+    "leetcode",
+    "binary-search",
+    "array",
+    "rotate",
+    "edge-cases"
+   ],
+   "entities": [
+    "二分查找",
+    "旋转排序数组",
+    "闭区间二分"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "旋转数组二分：指针收缩",
+    "caption": "nums=[4,5,6,7,0,1,2] 找 0：每轮判断哪半有序，把 target 锁进有序段。",
+    "alt": "在旋转数组 4 5 6 7 0 1 2 中二分查找 0，展示 lo mid hi 三点收缩到下标 4",
+    "svg": "<svg viewBox='0 0 540 208' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='旋转数组二分查找的指针收缩过程'><text x='8' y='36' font-size='13' font-weight='bold' fill='currentColor'>第 1 轮</text><rect x='96' y='20' width='40' height='28' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='116' y='39' font-size='14' text-anchor='middle' fill='currentColor'>4</text><rect x='140' y='20' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='160' y='39' font-size='14' text-anchor='middle' fill='currentColor'>5</text><rect x='184' y='20' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='204' y='39' font-size='14' text-anchor='middle' fill='currentColor'>6</text><rect x='228' y='20' width='40' height='28' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='248' y='39' font-size='14' text-anchor='middle' fill='currentColor'>7</text><rect x='272' y='20' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='292' y='39' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='316' y='20' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='336' y='39' font-size='14' text-anchor='middle' fill='currentColor'>1</text><rect x='360' y='20' width='40' height='28' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='380' y='39' font-size='14' text-anchor='middle' fill='currentColor'>2</text><text x='96' y='64' font-size='13' opacity='0.75' fill='currentColor'>lo0 mid3 hi6；nums[0]=4≤7 → 左半有序 [4..7]</text><text x='8' y='98' font-size='13' font-weight='bold' fill='currentColor'>第 2 轮</text><rect x='96' y='82' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='116' y='101' font-size='14' text-anchor='middle' fill='currentColor'>4</text><rect x='140' y='82' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='160' y='101' font-size='14' text-anchor='middle' fill='currentColor'>5</text><rect x='184' y='82' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='204' y='101' font-size='14' text-anchor='middle' fill='currentColor'>6</text><rect x='228' y='82' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='248' y='101' font-size='14' text-anchor='middle' fill='currentColor'>7</text><rect x='272' y='82' width='40' height='28' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='292' y='101' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='316' y='82' width='40' height='28' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='336' y='101' font-size='14' text-anchor='middle' fill='currentColor'>1</text><rect x='360' y='82' width='40' height='28' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='380' y='101' font-size='14' text-anchor='middle' fill='currentColor'>2</text><text x='96' y='126' font-size='13' opacity='0.75' fill='currentColor'>target=0 不在 [4,7) → lo4；nums[4]=0≤1 → 左半 [0,1] 有序</text><text x='8' y='160' font-size='13' font-weight='bold' fill='currentColor'>命中</text><rect x='96' y='144' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='116' y='163' font-size='14' text-anchor='middle' fill='currentColor'>4</text><rect x='140' y='144' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='160' y='163' font-size='14' text-anchor='middle' fill='currentColor'>5</text><rect x='184' y='144' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='204' y='163' font-size='14' text-anchor='middle' fill='currentColor'>6</text><rect x='228' y='144' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='248' y='163' font-size='14' text-anchor='middle' fill='currentColor'>7</text><rect x='272' y='144' width='40' height='28' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='292' y='163' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='316' y='144' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='336' y='163' font-size='14' text-anchor='middle' fill='currentColor'>1</text><rect x='360' y='144' width='40' height='28' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='380' y='163' font-size='14' text-anchor='middle' fill='currentColor'>2</text><text x='96' y='188' font-size='13' opacity='0.75' fill='currentColor'>lo=mid=hi=4，nums[4]=0，返回下标 4</text></svg>"
+   },
+   "concepts": [
+    {
+     "name": "旋转数组的两段单调性",
+     "readable": "把一个升序数组在某处切断再交换两段，得到的数组由两个升序段拼成，中间只有一个「掉落点」（前一段的最小值比后一段的最大值还大）。",
+     "analogy": "像把一摞按序排好的牌从中间抽出来放到顶上：整摞看起来乱了，但任意连续一截要么全涨要么全跌。",
+     "analogyBreaksDown": "「只有一个掉落点」只在无重复时严格成立；有重复元素时可能出现 nums[lo]==nums[mid]==nums[hi]，此时无法判断哪半有序，必须退化成线性退避。",
+     "mechanism": "取中点 mid 后，nums[lo..mid] 与 nums[mid..hi] 中必有一段是纯升序（切口只穿越其中一段）。据此把 target 归类到「落在有序段值域内」或「在另一段」，从而每轮砍掉一半。",
+     "visual": "把数组画成一条先升后跳的折线，切口用红色竖线标出；二分区间用方框框住并随每轮缩小。",
+     "prerequisites": [
+      "二分查找",
+      "数组单调性"
+     ],
+     "selfTest": [
+      "[4,5,6,7,0,1,2] 的掉落点在哪两个下标之间？",
+      "为什么每轮至少有一半一定有序？",
+      "有重复元素时 nums[lo]==nums[mid] 能说明什么？"
+     ],
+     "formula": "nums[l] \\le nums[m] \\Rightarrow nums[l..m]\\ \\mathrm{sorted}"
+    },
+    {
+     "name": "二分的循环不变量",
+     "readable": "在 while lo<=hi 的闭区间写法里，不变量是「目标若存在，必落在 [lo, hi] 内」。每次比较 mid 后，用不变量决定把哪半边安全地排除。",
+     "analogy": "像查字典：每次从中缝翻开，确定目标在前半还是后半，把另一半直接合上不再看。",
+     "analogyBreaksDown": "不变量依赖「区间每次真的在缩小」。如果把边界更新写成 lo=mid 而不是 mid±1，区间可能原地不动，循环永不退出——这是二分死循环的经典来源。",
+     "mechanism": "闭区间 [lo,hi] 的循环条件是 lo<=hi；收缩时用 mid-1 / mid+1 保证新区间严格更小，从而保证 O(log n) 轮内收敛。",
+     "visual": "画一条数轴，lo、hi 两个箭头从两端向内夹，mid 落在中间；每轮把一侧箭头跳到 mid±1。",
+     "prerequisites": [
+      "while 与边界更新的对应关系",
+      "整数除法下取整"
+     ],
+     "selfTest": [
+      "闭区间写法为什么用 lo<=hi 而不是 lo<hi？",
+      "若把 hi=mid-1 改成 hi=mid 会发生什么？",
+      "mid 为什么推荐写 lo+(hi-lo)//2？"
+     ],
+     "formula": "T(n) = T(\\lfloor n/2 \\rfloor) + O(1) = O(\\log n)"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-bsearch-recurrence",
+     "name": "二分查找递归式（Binary Search Recurrence）",
+     "category": "engineering",
+     "latex": "T(n) = T\\bigl(\\lfloor n/2 \\rfloor\\bigr) + O(1) = O(\\log n)",
+     "symbols": [
+      [
+       "T(n)",
+       "规模 n 的查找耗时"
+      ],
+      [
+       "\\lfloor n/2 \\rfloor",
+       "每轮砍半后的规模"
+      ],
+      [
+       "O(1)",
+       "每轮只做常数次比较"
+      ]
+     ],
+     "derivation": [
+      "每次比较 mid 后，待查区间缩小到左半或右半之一，规模至多 ⌊n/2⌋。",
+      "每层额外代价只有常数次比较，即 O(1)。",
+      "递归深度是 n 反复二分到 1 的次数，约 ⌊log2 n⌋+1。",
+      "展开求和 1+log n，得到 T(n)=O(log n)。"
+     ],
+     "analogy": "像查纸质电话簿：每次从中间翻开，一翻就扔掉一半人名。",
+     "pitfalls": [
+      "区间写成左闭右开却仍用 lo<=hi，漏查最后一个元素",
+      "mid 用 (lo+hi)//2，在定长整型语言里可能溢出",
+      "更新边界写成 lo=mid 导致区间不收缩、死循环"
+     ],
+     "code": "def bsearch(nums, target):\n    lo, hi = 0, len(nums) - 1\n    while lo <= hi:\n        mid = lo + (hi - lo) // 2\n        if nums[mid] == target:\n            return mid\n        if nums[mid] < target:\n            lo = mid + 1\n        else:\n            hi = mid - 1\n    return -1\nprint(bsearch([1, 3, 5, 7], 5))   # 2",
+     "sources": [
+      {
+       "title": "搜索旋转排序数组（LeetCode 33）· 大厂高频手撕题",
+       "url": "https://leetcode.cn/problems/search-in-rotated-sorted-array"
+      }
+     ]
+    },
+    {
+     "id": "f-rotated-ordered-half",
+     "name": "有序半区判定（Ordered Half Test）",
+     "category": "engineering",
+     "latex": "nums[l] \\le nums[m] \\;\\Rightarrow\\; nums[l..m]\\ \\mathrm{sorted}",
+     "symbols": [
+      [
+       "nums[l]",
+       "区间左端点值"
+      ],
+      [
+       "nums[m]",
+       "中点值"
+      ],
+      [
+       "nums[l..m]",
+       "左半段（含中点）"
+      ]
+     ],
+     "derivation": [
+      "旋转只在一个切口处发生，因此数组由两段升序拼接。",
+      "若左端点 ≤ 中点，说明切口不在左半段内部，左半段 [l,m] 整体单调不减。",
+      "否则切口必落在左半段，此时右半段 [m,r] 单调不减。",
+      "据有序段的值域判断 target 是否落在其中，从而决定收缩方向。"
+     ],
+     "analogy": "一段被剪断再接上的尺子：看两头刻度就能立刻判断哪一截还是连续递增的。",
+     "pitfalls": [
+      "用 nums[l] < nums[m] 而非 ≤，当 l==m 时判错",
+      "判断 target 落点用 <= 还是 < 写错，把 nums[m] 重复算进去",
+      "含重复元素时三者相等无法判断，需 lo++/hi--（LC81）"
+     ],
+     "code": "def ordered_left(nums, l, m):\n    return nums[l] <= nums[m]   # True: [l,m] 单调不减\nprint(ordered_left([4, 5, 6, 7, 0, 1, 2], 0, 3))   # True",
+     "sources": [
+      {
+       "title": "搜索旋转排序数组（LeetCode 33）· 大厂高频手撕题",
+       "url": "https://leetcode.cn/problems/search-in-rotated-sorted-array"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "该题被字节跳动考过 161 次、快手 21 次、阿里巴巴 18 次等，共 247 次（摘要原文）。",
+     "难度为中等，最近一次出现于 2026-10-07（摘要原文）。",
+     "给定 nums=[4,5,6,7,0,1,2] 找 0 返回下标 4（示例自验）。"
+    ],
+    "uncertain": [
+     "源摘要只给了频度/公司/难度，未附题面与示例；statement、examples 与解法为按 LeetCode 33 题面补全，已用代码验证。",
+     "示例为自行构造"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "数组被转了一下，但总能二分，因为一半一定还是有序的。"
+     },
+     {
+      "level": "入门",
+      "text": "数组由两段升序拼成。取中点后，看左端点与中点的大小，就能判断左半段是否有序；知道哪半有序后，再看目标值在不在那半的值域里，决定往哪半走。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键是用 nums[lo] <= nums[mid] 判定左半有序（注意是 <=）。有序段确定后，用闭区间值域 nums[lo] <= target < nums[mid]（或 nums[mid] < target <= nums[hi]）判断目标是否在内，从而安全砍掉另一半。每轮区间严格缩小，O(log n)。"
+     },
+     {
+      "level": "专家",
+      "text": "和普通二分唯一的差别是「伸缩方向由值域判断而非直接比较」。有重复元素（LC81）时 nums[lo]==nums[mid]==nums[hi] 会让有序判定失效，只能 lo++/hi-- 把这两端退掉，最坏退化到 O(n)。这与「查找最小值」（LC153/154）是同一套旋转结构的两个问法。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么每轮至少一半一定有序？",
+      "a": "旋转只有一个切口，切口最多穿过 lo..mid 与 mid..hi 中的一段，另一段必然完整且升序。"
+     },
+     {
+      "q": "判定左半有序为什么必须用 <= 而不是 <？",
+      "a": "当区间只剩一个元素时 lo==mid，nums[lo]==nums[mid]，用 < 会判成无序，进而走错分支。"
+     },
+     {
+      "q": "有了重复元素为什么不能照搬？",
+      "a": "当 nums[lo]==nums[mid]==nums[hi] 时，左右都可能有序也可能无序，无法二分，只能退避一格，最坏 O(n)。"
+     }
+    ],
+    "mechanism": "旋转数组的「两段升序」结构保证：任取中点，它的左右两半里必有一半不含切口。二分的作用不是直接比较大小，而是先用端点单调性定位这「有序的一半」，再用有序段的值域判断目标是否落在其中，从而把无解的一半整段排除。整个设计与普通二分同构，只是把「比大小」替换成「先判有序再比值域」。",
+    "boundary": "仅适用于「一个」旋转点的升序数组；多段旋转或不满足两段单调的数据（如随机数组）不适用。有重复元素时最坏退化为 O(n)，若面试要求严格 O(log n) 必须假定元素互异。数组空或长度 1 需要单独兜底。",
+    "analogyBoundary": "「剪断再接的尺子」会让人以为只要看两端就能定位切口——实际二分里我们从不直接知道切口位置，而是靠 mid 与端点的关系间接推断哪半没被切到。类比也没有体现「必须在有序半的值域内才能排除另一半」这一步逻辑。",
+    "misconceptions": [
+     "用 nums[mid] > nums[lo] 判有序，区间只剩一个元素时判错。",
+     "只比较 target 与 nums[mid] 的大小，忘了它可能落在另一段而方向相反。",
+     "以为有重复元素也能保持 O(log n)。"
+    ],
+    "ownAnalysis": "这道题几乎是「二分不变量」的教科书案例。真正容易错的不是思路，而是三类边界：有序判定用 <=、值域判断的开闭区间、以及 lo/hi 更新是否让区间收缩。（推断）面试官常先让你写 LC33，再追问 LC81 重复元素与 LC153 找最小值，本质都是同一套旋转结构；把这三题串起来讲会非常加分。",
+    "officialNotes": [],
+    "interviewAnswer": "我先说明数组是两段升序。每轮取 mid，如果 nums[lo]<=nums[mid]，说明左半有序，此时若 target 落在 [nums[lo], nums[mid]) 就收缩右边界，否则收缩左边界；否则右半有序，镜像处理。循环用闭区间 lo<=hi。时间和空间是 O(log n) 和 O(1)。如果元素可能重复，我会补一句 LC81 时相等要退避，最坏 O(n)。",
+    "studyPath": {
+     "prerequisites": [
+      "闭区间二分写法",
+      "数组单调性",
+      "while 循环不变量"
+     ],
+     "nextSteps": [
+      "做 LC153/154「寻找旋转排序数组中的最小值」，练习找切口",
+      "做 LC81「搜索旋转排序数组 II」，体会重复元素导致的最坏退化",
+      "把 LC33 与普通二分并排写一遍，总结「判有序再比值域」的模板"
+     ]
+    }
+   },
+   "problem": {
+    "title": "搜索旋转排序数组",
+    "number": 33,
+    "difficulty": "medium",
+    "statement": "整数数组 nums 原本按升序排列，且元素互不相同，后在某个未知下标处被旋转（例如 [0,1,2,4,5,6,7] 旋转成 [4,5,6,7,0,1,2]）。给定旋转后的 nums 和目标值 target，若存在返回其下标，否则返回 -1。要求时间复杂度 O(log n)。约束：1 <= nums.length <= 5000。",
+    "examples": [
+     {
+      "input": "nums = [4,5,6,7,0,1,2], target = 0",
+      "output": "4",
+      "why": "0 位于右段的开头",
+      "explanation": "0 位于右段的开头"
+     },
+     {
+      "input": "nums = [4,5,6,7,0,1,2], target = 3",
+      "output": "-1",
+      "why": "3 不在数组中",
+      "explanation": "3 不在数组中"
+     },
+     {
+      "input": "nums = [1], target = 0",
+      "output": "-1",
+      "why": "单元素且不匹配",
+      "explanation": "单元素且不匹配"
+     }
+    ],
+    "approach": {
+     "idea": "旋转数组由两段升序拼接。取中点 mid 后，左半段与右半段中必有一段整体有序。先用端点判断哪半有序，再看 target 是否落在该有序段的值域内：在则收缩到该段，不在则去另一段。每轮排除一半，保持 O(log n)。",
+     "steps": [
+      "置 lo=0、hi=len(nums)-1，用闭区间 while lo<=hi。",
+      "mid=(lo+hi)//2；若 nums[mid]==target 直接返回 mid。",
+      "若 nums[lo] <= nums[mid]（左半有序）：target 在 [nums[lo], nums[mid]) 内则 hi=mid-1，否则 lo=mid+1。",
+      "否则右半有序：target 在 (nums[mid], nums[hi]] 内则 lo=mid+1，否则 hi=mid-1。",
+      "循环结束仍未命中则返回 -1。"
+     ],
+     "whyItWorks": "因为切口只有一个，nums[lo..mid] 与 nums[mid..hi] 里必有一段不含切口、完整升序。在该有序段内可安全用值域比较：target 落在其值域则必在其中（否则在另一段），据此排除掉一定无解的半段。每次区间严格变小，故最多 log n 轮收敛；过程中若某轮命中即返回，正确性由「区间始终包含 target」这一不变量保证。",
+     "alternatives": [
+      {
+       "name": "先找旋转点再普通二分",
+       "complexity": "O(log n)/O(1)",
+       "when": "思路更直观：先二分找最小值下标（切口），再在 target 所在的那段做一次标准二分。"
+      },
+      {
+       "name": "线性扫描",
+       "complexity": "O(n)/O(1)",
+       "when": "只作 baseline；面试要求 O(log n) 时不可用。"
+      },
+      {
+       "name": "允许重复元素（LC81）",
+       "complexity": "最坏 O(n)/O(1)",
+       "when": "nums 含重复值时，nums[lo]==nums[mid]==nums[hi] 处需 lo++/hi-- 退避，最坏退化线性。"
+      }
+     ]
+    },
+    "solution": {
+     "python": "class Solution:\n    def search(self, nums, target):\n        lo, hi = 0, len(nums) - 1\n        while lo <= hi:\n            mid = (lo + hi) // 2\n            if nums[mid] == target:\n                return mid\n            if nums[lo] <= nums[mid]:          # 左半 [lo, mid] 有序\n                if nums[lo] <= target < nums[mid]:\n                    hi = mid - 1\n                else:\n                    lo = mid + 1\n            else:                              # 右半 [mid, hi] 有序\n                if nums[mid] < target <= nums[hi]:\n                    lo = mid + 1\n                else:\n                    hi = mid - 1\n        return -1\n",
+     "python_alt": "# 先二分找旋转点（最小值下标），再在正确的有序段里普通二分\nclass Solution:\n    def search(self, nums, target):\n        lo, hi = 0, len(nums) - 1\n        while lo < hi:                    # 找最小值下标\n            mid = (lo + hi) // 2\n            if nums[mid] > nums[hi]:\n                lo = mid + 1\n            else:\n                hi = mid\n        pivot = lo\n        lo, hi = (pivot, len(nums) - 1) if target <= nums[-1] else (0, pivot - 1)\n        while lo <= hi:\n            mid = (lo + hi) // 2\n            if nums[mid] == target:\n                return mid\n            if nums[mid] < target:\n                lo = mid + 1\n            else:\n                hi = mid - 1\n        return -1\n",
+     "notes": "用闭区间写法（while lo<=hi 配 mid±1）。判定左半有序必须用 <=，否则区间只剩 1 个元素时判错。值域判断要排除 nums[mid] 本身，避免与开头命中判断重复。第二解用 target<=nums[-1] 选择所在段，注意 target 可能小于段内最小值，二分自然返回 -1。"
+    },
+    "complexity": {
+     "time": "O(log n)",
+     "space": "O(1)",
+     "why": "每轮把查找区间缩小一半，最多 log₂n 轮；只用常数个下标变量。"
+    },
+    "pitfalls": [
+     "有序判定写成 nums[lo] < nums[mid]，当 lo==mid 时判成无序走错分支。",
+     "值域判断漏掉或写错开闭（应排除 nums[mid]），导致 mid 被重复计算或漏掉边界元素。",
+     "边界更新写成 lo=mid / hi=mid 而非 mid±1，区间不收缩造成死循环。",
+     "旋转 0 次（已完全有序）时未特判——其实不用特判，代码自然成立，但很多人手动补错。"
+    ],
+    "edgeCases": [
+     "数组只有一个元素。",
+     "旋转 0 次，数组完全升序。",
+     "target 比最小值还小或比最大值还大 → 返回 -1。",
+     "[3,1] 这类长度为 2 的旋转。"
+    ],
+    "interviewTips": "先说结构（两段升序），再写「判有序半区 + 比值域」两步，边写边报 lo/mid/hi。主动提「用 <= 判有序」和「闭区间 mid±1」，这两点是面试官最常盯的。写完补一句：若元素可重复（LC81）需退避、最坏 O(n)，显示你知道边界。"
+   }
+  },
+  {
+   "id": "814e895b8d210660",
+   "tldr": "遍历网格遇 '1' 就计数并 DFS/BFS 把整座岛标记掉，保证每座岛只数一次；O(mn)。",
+   "keyPoints": [
+    "岛屿 = 上下左右四连通的 '1' 连通块",
+    "遇 '1' 计数 +1，随即把整岛标为已访问",
+    "DFS 可原地把 '1' 改 '0'，省 visited 数组",
+    "BFS 用队列避免极深递归爆栈",
+    "并查集把相邻陆地合并，最后数不同根个数"
+   ],
+   "why": "网格连通块是最经典的 DFS/BFS 模板，字节/华为高频；它同时是并查集、洪水填充、图论入门的底座。",
+   "difficulty": "medium",
+   "tags": [
+    "leetcode",
+    "dfs",
+    "bfs",
+    "union-find",
+    "grid",
+    "graph"
+   ],
+   "entities": [
+    "深度优先搜索",
+    "广度优先搜索",
+    "并查集",
+    "洪水填充"
+   ],
+   "diagram": {
+    "kind": "matrix",
+    "title": "岛屿数量：网格扩散",
+    "caption": "遇 '1' 触发一次漫水遍历，把整座岛淹掉；标记顺序 1→7 覆盖三座岛。",
+    "alt": "在 4x5 网格上按 1 到 7 的顺序扩展三座岛屿的示意，答案为 3",
+    "svg": "<svg viewBox='0 0 560 302' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='网格漫水遍历标记三座岛屿'><rect x='20' y='30' width='52' height='52' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='46' y='61' font-size='14' text-anchor='middle' fill='currentColor'>1</text><rect x='72' y='30' width='52' height='52' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='98' y='61' font-size='14' text-anchor='middle' fill='currentColor'>2</text><rect x='124' y='30' width='52' height='52' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.1'/><text x='150' y='61' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='176' y='30' width='52' height='52' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.1'/><text x='202' y='61' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='228' y='30' width='52' height='52' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.1'/><text x='254' y='61' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='20' y='82' width='52' height='52' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='46' y='113' font-size='14' text-anchor='middle' fill='currentColor'>3</text><rect x='72' y='82' width='52' height='52' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='98' y='113' font-size='14' text-anchor='middle' fill='currentColor'>4</text><rect x='124' y='82' width='52' height='52' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.1'/><text x='150' y='113' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='176' y='82' width='52' height='52' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.1'/><text x='202' y='113' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='228' y='82' width='52' height='52' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.1'/><text x='254' y='113' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='20' y='134' width='52' height='52' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.1'/><text x='46' y='165' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='72' y='134' width='52' height='52' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.1'/><text x='98' y='165' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='124' y='134' width='52' height='52' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='150' y='165' font-size='14' text-anchor='middle' fill='currentColor'>5</text><rect x='176' y='134' width='52' height='52' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.1'/><text x='202' y='165' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='228' y='134' width='52' height='52' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.1'/><text x='254' y='165' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='20' y='186' width='52' height='52' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.1'/><text x='46' y='217' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='72' y='186' width='52' height='52' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.1'/><text x='98' y='217' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='124' y='186' width='52' height='52' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.1'/><text x='150' y='217' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='176' y='186' width='52' height='52' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='202' y='217' font-size='14' text-anchor='middle' fill='currentColor'>6</text><rect x='228' y='186' width='52' height='52' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='254' y='217' font-size='14' text-anchor='middle' fill='currentColor'>7</text><text x='16' y='254' font-size='13' fill='currentColor' opacity='0.78'>① 遇 &#39;1&#39; 计数 +1，DFS 淹掉整岛（1→4）</text><text x='16' y='276' font-size='13' fill='currentColor' opacity='0.78'>② 再遇 &#39;1&#39; 又是新岛（5）……三座岛 → 答案 3</text></svg>"
+   },
+   "concepts": [
+    {
+     "name": "洪水填充（Flood Fill / 连通块遍历）",
+     "readable": "从一块陆地出发，沿上下左右不断蔓延，把与之相连的所有陆地都染成同一色（或标记为已访问），一个连通块对应一次完整的漫水。",
+     "analogy": "像往一张方格纸上滴一滴墨水，它会顺着相邻的格子渗开，渗不到的格子就是别的岛。",
+     "analogyBreaksDown": "四连通与八连通结果不同：本题是上下左右四连通，斜对角相连不算同一座岛。把八连通当成四连通会少算岛屿数。",
+     "mechanism": "遍历每个格子，首次遇到未访问的陆地就启动一次漫水；漫水期间所有可达陆地被标记，之后遍历再遇到它们时直接跳过。这样每座岛恰好被计数一次。",
+     "visual": "在方格图上，起点用实心点，扩散过程用波浪箭头指向四个邻居；已访问格子画成灰色（--line-1）。",
+     "prerequisites": [
+      "二维数组与下标",
+      "递归或队列",
+      "连通性定义"
+     ],
+     "selfTest": [
+      "为什么斜对角相连不算同一座岛？",
+      "如果网格很大，递归 DFS 会有什么风险？",
+      "如何只统计「四面环水的岛」而不是所有岛（LC1020 思路）？"
+     ],
+     "formula": "N_{\\mathrm{islands}} = \\#\\{\\text{connected land components}\\}"
+    },
+    {
+     "name": "并查集数连通块（Union-Find）",
+     "readable": "给每个陆地格子建一个集合，相邻的陆地就 union 合并；全部合并完后，统计有多少个不同的根，就等于有多少座岛。",
+     "analogy": "像每个岛先各插一面自己的小旗，相邻的岛把旗换成同一面；最后数场上有几种颜色的旗。",
+     "analogyBreaksDown": "并查集必须只处理「右、下」两个方向（或先判再 union）以避免同一条边被合并两次；重复合并不会改变结果但会浪费，且末计数时对每个陆地都要 find 一次而不是直接数 parent。",
+     "mechanism": "用「按秩合并 + 路径压缩」把单次 find 均摊压到几乎 O(1)；相比 DFS/BFS 不需要递归栈，适合网格很大或需要动态加边（如 LC305）的场景。",
+     "visual": "每个陆地格子上方标它当前的根 id；相邻格用虚线连起来表示 union；根用特殊颜色圈出。",
+     "prerequisites": [
+      "集合与等价关系",
+      "树与路径压缩"
+     ],
+     "selfTest": [
+      "为什么并查集也要只往两个方向合并？",
+      "路径压缩和按秩合并分别解决什么问题？",
+      "什么时候并查集比 DFS 更合适？"
+     ],
+     "formula": "N_{\\mathrm{islands}} = \\bigl|\\{\\, \\mathrm{find}(x) : x \\in \\mathrm{Land} \\,\\}\\bigr|"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-unionfind-islands",
+     "name": "并查集连通块计数（Connected Components）",
+     "category": "engineering",
+     "latex": "N_{\\mathrm{islands}} = \\bigl|\\{\\, \\mathrm{find}(x) : x \\in \\mathrm{Land} \\,\\}\\bigr|",
+     "symbols": [
+      [
+       "\\mathrm{Land}",
+       "所有值为 '1' 的格子集合"
+      ],
+      [
+       "\\mathrm{find}(x)",
+       "格子 x 所在连通块的根"
+      ],
+      [
+       "|\\cdot|",
+       "集合的势（不同根的个数）"
+      ]
+     ],
+     "derivation": [
+      "把每个陆地格子看成一个集合，初始每个 '1' 各自成岛。",
+      "对每个陆地格子，只与右、下相邻的陆地 union，把同岛格子合并。",
+      "路径压缩 + 按秩合并后 find 均摊近似 O(1)。",
+      "最终岛屿数 = 所有陆地格子中不同根的数量。"
+     ],
+     "analogy": "像给每座岛发旗，相邻的岛把旗换成同一面；最后数场上有几种旗色就是几座岛。",
+     "pitfalls": [
+      "直接数 parent[i]==i 的格子，但未做路径压缩时根不一定是自己，应先 find",
+      "把水域 '0' 也建成集合，末计数时被算进去",
+      "四个方向都 union，虽不改结果但重复合并、编号易乱"
+     ],
+     "code": "def find(p, x):\n    while p[x] != x:\n        p[x] = p[p[x]]; x = p[x]\n    return x\n\ndef union(p, rk, a, b):\n    ra, rb = find(p, a), find(p, b)\n    if ra == rb:\n        return False\n    if rk[ra] < rk[rb]:\n        ra, rb = rb, ra\n    p[rb] = ra\n    if rk[ra] == rk[rb]:\n        rk[ra] += 1\n    return True\n\nprint(union([0, 1, 2], [0, 0, 0], 0, 1))   # True",
+     "sources": [
+      {
+       "title": "200. 岛屿数量 · 题解",
+       "url": "https://programmercarl.com/algo/other/0200-number-of-islands-dfs.html"
+      }
+     ]
+    },
+    {
+     "id": "f-unionfind-amortized",
+     "name": "并查集均摊复杂度（Inverse Ackermann）",
+     "category": "engineering",
+     "latex": "T_{\\mathrm{find}} = O\\bigl(\\alpha(n)\\bigr)",
+     "symbols": [
+      [
+       "n",
+       "元素个数"
+      ],
+      [
+       "\\alpha(n)",
+       "反阿克曼函数，增长极慢"
+      ]
+     ],
+     "derivation": [
+      "用「按秩合并」保证树高不超过 O(log n)。",
+      "再加「路径压缩」把查询过的路径摊平，使后续查询更快。",
+      "两者叠加后，单次 find 的均摊代价降为反阿克曼函数 α(n)。",
+      "α(n) 在实际规模（n<10^600）下不超过 5，可视为常数。"
+     ],
+     "analogy": "像公司层层上报：路径压缩把中间层直接接到总裁，下次问同一个人一步到位。",
+     "pitfalls": [
+      "把 O(α(n)) 说成严格 O(1)：它只是均摊而非最坏单次",
+      "只提路径压缩、不提按秩合并，最坏会退化成一条链"
+     ],
+     "code": "def find(p, x):\n    while p[x] != x:\n        p[x] = p[p[x]]\n        x = p[x]\n    return x\np = [0, 0, 1]\nprint(find(p, 2), find(p, 1))   # 压缩后根为 0",
+     "sources": [
+      {
+       "title": "200. 岛屿数量 · 题解",
+       "url": "https://programmercarl.com/algo/other/0200-number-of-islands-bfs.html"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "本题通过深度优先搜索遍历陆地并标记访问节点，统计未访问陆地数量（摘要原文）。",
+     "题目要求计算二维网格中的岛屿数量（摘要原文）。",
+     "给定 4x5 网格 [11000/11000/00100/00011] 的答案是 3（示例自验）。"
+    ],
+    "uncertain": [
+     "源摘要只描述了 DFS 基本思路，未给示例；grid 示例按 LeetCode 200 题面构造，已用代码验证结果为 3。",
+     "示例为自行构造"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "每找到一块新陆地就数一座岛，然后把它连着的陆地全都淹掉。"
+     },
+     {
+      "level": "入门",
+      "text": "从左到右、从上到下扫描网格。遇到没访问过的 '1'，岛屿数加一，然后从它出发做一次 DFS/BFS，把上下左右能到的 '1' 全标记为已访问。这样同一座岛不会被数第二次。"
+     },
+     {
+      "level": "进阶",
+      "text": "DFS 递归写法最短：进入时把当前格置 '0'，再递归四个邻居。要小心两个坑：一是网格很大时递归会爆栈，改用显式栈或 BFS；二是 BFS 要在入队时就把格子置 '0'，否则同一格会被多次入队。复杂度 O(mn)。"
+     },
+     {
+      "level": "专家",
+      "text": "同一问题有三种武器：DFS（最短）、BFS（不爆栈）、并查集（可动态加边、适合 LC305 的在线版本）。并查集要用路径压缩 + 按秩合并，末计数统计不同根。它们的共同本质是「找出所有四连通分量」，差别只在遍历/合并的实现与适用场景。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么遇到 '1' 后要立刻把整岛淹掉，而不是直接继续扫描？",
+      "a": "否则同一座岛的其他格子会被再次计数，答案偏大；标记保证每座岛只贡献一次。"
+     },
+     {
+      "q": "递归 DFS 在这题有什么风险？",
+      "a": "最坏情况 300x300 全是陆地，递归深度可达 9 万，Python 默认递归上限约 1000，会报 RecursionError。"
+     },
+     {
+      "q": "BFS 里为什么入队时就要置 '0'？",
+      "a": "若出队时才置，同一格可能被多个邻居重复入队，队列膨胀甚至答案/效率出错。"
+     }
+    ],
+    "mechanism": "「数岛屿」等价于「数四连通分量」。遍历时每个分量只需被触发一次：首次遇到未访问陆地即计数并启动一次漫水，把该分量的所有格子标掉，此后扫描跳过它们。这一「首次触发 + 全量标记」的组合保证每个分量恰好计数一次，无需额外 visited 表（用原地改写就能代替）。",
+    "boundary": "四连通定义下斜对角不算连通；若题目改成八连通需补四个对角方向。网格用字符 '1'/'0' 存储时要按字符比较，不能当整数。DFS 在超大网格有爆栈风险；并查集虽稳但代码更长、常数更大。",
+    "analogyBoundary": "「滴墨水」的类比会让人以为岛的形状是圆形扩散，实际 DFS/BFS 只沿四方向单步格移动，遇到水域就停；路径依赖——不同的起点不会改变连通性，但会改变标记顺序。类比也无法体现「斜对角不相连」这条硬规则。",
+    "misconceptions": [
+     "把 '1'（字符）当成整数 1 比较，或反过来，导致对不上。",
+     "BFS 出队时才标记，造成同一格重复入队。",
+     "只数第一次出现的 '1'，不标记整岛，答案偏大。"
+    ],
+    "ownAnalysis": "这题是「模板题」，真正拉开差距的是追问：网格极大怎么办（改迭代/BFS）、要动态加陆地（并查集，LC305）、要数封闭岛屿（LC1254/1020，先淹没边界）。（推断）面试官常从这道题延伸到「最大岛屿面积」（LC695），只需把计数改成累加面积。把 200 写成可复用的「遍历分量」骨架，后面几题都能套。",
+    "officialNotes": [
+     {
+      "position": "本题通过深度优先搜索遍历陆地并标记访问节点，统计未访问陆地数量。",
+      "source": "https://programmercarl.com/algo/other/0200-number-of-islands-dfs.html"
+     },
+     {
+      "position": "亦可用广度优先搜索做同样的遍历。",
+      "source": "https://programmercarl.com/algo/other/0200-number-of-islands-bfs.html"
+     }
+    ],
+    "interviewAnswer": "我扫描整个网格，遇到值为 '1' 的格子就说明发现新岛，计数加一，然后从它 DFS，把上下左右相连的 '1' 全部置为 '0' 表示已访问。这样每座岛只被数一次。时间 O(mn)（每格最多访问一次），空间 O(mn)（递归栈最坏）。如果担心栈深度，我会换成 BFS 或显式栈；如果要动态加陆地，就用并查集。",
+    "studyPath": {
+     "prerequisites": [
+      "二维数组遍历",
+      "递归/队列",
+      "连通性概念"
+     ],
+     "nextSteps": [
+      "做「岛屿的最大面积」（LC695），把计数改为累加面积",
+      "做「封闭岛屿的数量」（LC1254），先淹没边界再计数",
+      "做「被围绕的区域」（LC130），体会「从边界反向漫水」的技巧"
+     ]
+    }
+   },
+   "problem": {
+    "title": "岛屿数量",
+    "number": 200,
+    "difficulty": "medium",
+    "statement": "给你一个由字符 '1'（陆地）和 '0'（水）组成的二维网格 grid。岛屿由上下左右四个方向相邻的陆地相连而成，四周被水包围。假设网格四条边外全是水，返回网格中岛屿的数量。约束：1 <= m, n <= 300，grid[i][j] 为 '0' 或 '1'。",
+    "examples": [
+     {
+      "input": "grid = [[\"1\",\"1\",\"0\",\"0\",\"0\"],[\"1\",\"1\",\"0\",\"0\",\"0\"],[\"0\",\"0\",\"1\",\"0\",\"0\"],[\"0\",\"0\",\"0\",\"1\",\"1\"]]",
+      "output": "3",
+      "why": "左上一个 2x2 岛 + 中部一个 + 右下两个连成一个",
+      "explanation": "左上一个 2x2 岛 + 中部一个 + 右下两个连成一个"
+     },
+     {
+      "input": "grid = [[\"0\"]]",
+      "output": "0",
+      "why": "只有水，没有岛",
+      "explanation": "只有水，没有岛"
+     },
+     {
+      "input": "grid = [[\"1\"]]",
+      "output": "1",
+      "why": "单个陆地就是一座岛",
+      "explanation": "单个陆地就是一座岛"
+     }
+    ],
+    "approach": {
+     "idea": "岛屿就是网格里的四连通分量。从左到右、从上到下扫描每个格子，首次遇到未访问的 '1' 就让答案加一，并从该格出发做一次 DFS/BFS，把与之相连的所有 '1' 原地改成 '0'（等价于「淹掉整座岛」）。这样每座岛只在它的第一个格子处被计数一次。",
+     "steps": [
+      "特判空网格，返回 0。",
+      "双重循环遍历每个格子 (i, j)。",
+      "若 grid[i][j] == '1'：count += 1，然后启动 dfs(i, j)。",
+      "dfs 中：越界或当前格不是 '1' 则返回；否则置 '0' 并递归上下左右四个邻居。",
+      "遍历结束返回 count。"
+     ],
+     "whyItWorks": "每个连通分量（岛）内部的格子能通过四方向互相到达，因此从分量中任一格启动漫水，都会且只会覆盖该分量全部格子。漫水把它们置 '0' 后，外层扫描不会再触发同一分量，故每次触发恰好对应一座新岛，计数不重不漏。",
+     "alternatives": [
+      {
+       "name": "广度优先搜索 BFS",
+       "complexity": "O(mn)/O(mn)",
+       "when": "网格很大、担心递归爆栈时；用队列逐层扩散，入队即标记。"
+      },
+      {
+       "name": "并查集 Union-Find",
+       "complexity": "O(mn·α)/O(mn)",
+       "when": "需要动态加入陆地、或要求在线查询连通块（如 LC305）；遍历时只向右、下合并。"
+      },
+      {
+       "name": "递归 DFS + sys.setrecursionlimit",
+       "complexity": "O(mn)/O(mn)",
+       "when": "代码最简，但要把递归上限调高；生产环境不推荐依赖它。"
+      }
+     ]
+    },
+    "solution": {
+     "python": "class Solution:\n    def numIslands(self, grid) -> int:\n        if not grid or not grid[0]:\n            return 0\n        m, n = len(grid), len(grid[0])\n\n        def dfs(i, j):\n            if i < 0 or i >= m or j < 0 or j >= n or grid[i][j] != \"1\":\n                return\n            grid[i][j] = \"0\"          # 原地标记，省 visited 数组\n            dfs(i + 1, j)\n            dfs(i - 1, j)\n            dfs(i, j + 1)\n            dfs(i, j - 1)\n\n        count = 0\n        for i in range(m):\n            for j in range(n):\n                if grid[i][j] == \"1\":\n                    count += 1\n                    dfs(i, j)\n        return count\n",
+     "python_alt": "from collections import deque\n\nclass Solution:\n    def numIslands(self, grid) -> int:\n        if not grid or not grid[0]:\n            return 0\n        m, n = len(grid), len(grid[0])\n        count = 0\n        for i in range(m):\n            for j in range(n):\n                if grid[i][j] != \"1\":\n                    continue\n                count += 1\n                grid[i][j] = \"0\"          # 入队即标记\n                q = deque([(i, j)])\n                while q:\n                    x, y = q.popleft()\n                    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):\n                        nx, ny = x + dx, y + dy\n                        if 0 <= nx < m and 0 <= ny < n and grid[nx][ny] == \"1\":\n                            grid[nx][ny] = \"0\"\n                            q.append((nx, ny))\n        return count\n",
+     "notes": "原地把 '1' 改 '0' 代替 visited，注意这会修改输入（面试可先说明）。dfs 的越界与字符判断要写在最前面，否则会递归进水域。BFS 必须在入队时置 '0'，只有出队时置会导致同一格重复入队。"
+    },
+    "complexity": {
+     "time": "O(m·n)",
+     "space": "O(m·n)",
+     "why": "每个格子最多被访问一次，故时间 O(mn)（n 为格数）；空间来自递归栈或队列，最坏全陆地时 O(mn)。"
+    },
+    "pitfalls": [
+     "用 grid[i][j] != 1 比较整数，而输入是字符 '1'，永远不匹配。",
+     "BFS 在出队时才把格子置 '0'，导致同一格被多个邻居重复入队。",
+     "递归 DFS 在大网格上爆栈（Python 默认递归上限约 1000）。",
+     "并查集方案里把水域也建集合，末计数误算进水格。"
+    ],
+    "edgeCases": [
+     "空网格或空行 → 返回 0。",
+     "全为 '0' → 返回 0。",
+     "全为 '1' → 返回 1。",
+     "单格网格 → 返回 0 或 1。"
+    ],
+    "interviewTips": "先声明四连通，再写「扫描 + 淹岛」骨架。主动说「原地改 0 代替 visited」。写完立刻补复杂度 O(mn)/O(mn) 并说明最坏情况是全陆地。被追问大数据量就切换到 BFS，被追问动态加陆地就切并查集——把三条路都提一句最稳。"
+   }
+  },
+  {
+   "id": "99eea52bfd97b716",
+   "tldr": "回溯枚举排列：每层从没用过的数里挑一个放进路径，选满 n 个就收集，再撤销选择回溯。",
+   "keyPoints": [
+    "结果共 n! 个，回溯是自然的枚举方式",
+    "used 数组或原地交换保证每层每数只用一次",
+    "path 长度等于 n 时记录结果",
+    "回溯三步：做选择 → 递归 → 撤销选择",
+    "记录结果要 path[:] 深拷贝，否则被后续污染"
+   ],
+   "why": "全排列是回溯模板题，字节/华为高频；它和子集、组合、分割共用一套模板，掌握后能横扫一大类手撕。",
+   "difficulty": "medium",
+   "tags": [
+    "leetcode",
+    "backtracking",
+    "recursion",
+    "permutation",
+    "dfs"
+   ],
+   "entities": [
+    "回溯",
+    "used 数组",
+    "递归树",
+    "交换法"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "全排列的递归树",
+    "caption": "以 nums=[1,2,3] 为例，每层选一个没用过的数往下走，叶子是 6 条完整排列。",
+    "alt": "数字 1 2 3 的全排列递归树，六个叶子分别对应 123 132 213 231 312 321",
+    "svg": "<svg viewBox='0 0 680 340' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='全排列 1 2 3 的递归树，叶子共六个'><line x1='340' y1='50' x2='170' y2='80' stroke='var(--line-1)' stroke-width='1.2'/><line x1='340' y1='50' x2='340' y2='80' stroke='var(--line-1)' stroke-width='1.2'/><line x1='170' y1='120' x2='97' y2='150' stroke='var(--line-1)' stroke-width='1.2'/><line x1='170' y1='120' x2='194' y2='150' stroke='var(--line-1)' stroke-width='1.2'/><line x1='340' y1='120' x2='291' y2='150' stroke='var(--line-1)' stroke-width='1.2'/><line x1='340' y1='120' x2='389' y2='150' stroke='var(--line-1)' stroke-width='1.2'/><line x1='510' y1='120' x2='486' y2='150' stroke='var(--line-1)' stroke-width='1.2'/><line x1='510' y1='120' x2='583' y2='150' stroke='var(--line-1)' stroke-width='1.2'/><line x1='97' y1='190' x2='97' y2='220' stroke='var(--line-1)' stroke-width='1.2'/><line x1='194' y1='190' x2='194' y2='220' stroke='var(--line-1)' stroke-width='1.2'/><line x1='291' y1='190' x2='291' y2='220' stroke='var(--line-1)' stroke-width='1.2'/><line x1='389' y1='190' x2='389' y2='220' stroke='var(--line-1)' stroke-width='1.2'/><line x1='486' y1='190' x2='486' y2='220' stroke='var(--line-1)' stroke-width='1.2'/><line x1='583' y1='190' x2='583' y2='220' stroke='var(--line-1)' stroke-width='1.2'/><circle cx='340' cy='30' r='20' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='340' y='35' font-size='13' text-anchor='middle' fill='currentColor'>起</text><circle cx='170' cy='100' r='20' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='170' y='105' font-size='13' text-anchor='middle' fill='currentColor'>1</text><circle cx='340' cy='100' r='20' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='340' y='105' font-size='13' text-anchor='middle' fill='currentColor'>2</text><circle cx='510' cy='100' r='20' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='510' y='105' font-size='13' text-anchor='middle' fill='currentColor'>3</text><circle cx='97' cy='170' r='20' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='97' y='175' font-size='13' text-anchor='middle' fill='currentColor'>1,2</text><circle cx='194' cy='170' r='20' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='194' y='175' font-size='13' text-anchor='middle' fill='currentColor'>1,3</text><circle cx='291' cy='170' r='20' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='291' y='175' font-size='13' text-anchor='middle' fill='currentColor'>2,1</text><circle cx='389' cy='170' r='20' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='389' y='175' font-size='13' text-anchor='middle' fill='currentColor'>2,3</text><circle cx='486' cy='170' r='20' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='486' y='175' font-size='13' text-anchor='middle' fill='currentColor'>3,1</text><circle cx='583' cy='170' r='20' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='583' y='175' font-size='13' text-anchor='middle' fill='currentColor'>3,2</text><circle cx='97' cy='240' r='20' fill='none' stroke='var(--accent)' stroke-width='2.2'/><text x='97' y='245' font-size='13' text-anchor='middle' fill='currentColor'>123</text><circle cx='194' cy='240' r='20' fill='none' stroke='var(--accent)' stroke-width='2.2'/><text x='194' y='245' font-size='13' text-anchor='middle' fill='currentColor'>132</text><circle cx='291' cy='240' r='20' fill='none' stroke='var(--accent)' stroke-width='2.2'/><text x='291' y='245' font-size='13' text-anchor='middle' fill='currentColor'>213</text><circle cx='389' cy='240' r='20' fill='none' stroke='var(--accent)' stroke-width='2.2'/><text x='389' y='245' font-size='13' text-anchor='middle' fill='currentColor'>231</text><circle cx='486' cy='240' r='20' fill='none' stroke='var(--accent)' stroke-width='2.2'/><text x='486' y='245' font-size='13' text-anchor='middle' fill='currentColor'>312</text><circle cx='583' cy='240' r='20' fill='none' stroke='var(--accent)' stroke-width='2.2'/><text x='583' y='245' font-size='13' text-anchor='middle' fill='currentColor'>321</text><text x='16' y='318' font-size='13' fill='currentColor' opacity='0.78'>叶子共 3! = 6 个，每个叶子就是一条完整排列</text></svg>"
+   },
+   "concepts": [
+    {
+     "name": "回溯（Backtracking）",
+     "readable": "把求解过程看成一棵「在每一步做选择」的树。沿着一条选择路径深搜到底，得到或得不到解后，退回上一步撤销这个选择，再试下一个分支。",
+     "analogy": "像走迷宫：沿一条岔路走到底发现是死路，就退回上一个岔口换另一条路，而不是从头再来。",
+     "analogyBreaksDown": "回溯不是「碰运气」，它要有明确的「结束条件（到底了）」和「撤销动作」。若忘记撤销（used 不复位、交换不还原），后续分支会带着上一次的状态，结果既错又难查。",
+     "mechanism": "用路径 path 记录当前选择，用 used 记录哪些元素已用；进入一层就做选择、递归，返回后立即撤销，使状态在兄弟分支间彼此独立。",
+     "visual": "画一棵树：根是空路径，每条边是「选了一个数」；用高亮标出当前正在走的路径，回溯时高亮退回上一层。",
+     "prerequisites": [
+      "递归与递归基",
+      "数组的增删",
+      "深度优先搜索"
+     ],
+     "selfTest": [
+      "为什么每次从递归返回后要撤销选择？",
+      "如果不做 path.pop() 会发生什么？",
+      "排列问题为什么不需要排序去重（与 LC47 的区别）？"
+     ],
+     "formula": ""
+    },
+    {
+     "name": "排列数与 n! 的规模",
+     "readable": "n 个互异元素的全排列个数是 n!。回溯树的叶子数就是答案个数，所以任何枚举排列的算法都至少要 O(n·n!) 的时间。",
+     "analogy": "像 n 个人排队：第一个人有 n 个位置可选，选定后第二个人剩 n-1 个，方案数就是 n×(n-1)×…×1。",
+     "analogyBreaksDown": "n! 增长极快：n=10 时约 362 万，n=13 已超 60 亿。所以这类题的实际限制往往由数据规模决定，而不是算法常数——n 稍大就不能用枚举。",
+     "mechanism": "回溯每层用 for 循环挑未用元素，组合数的乘积正好是 n!，因此枚举本身无法突破这个规模；优化方向只能是剪枝或换问题（如求第 k 个排列）。",
+     "visual": "把结果数量画成柱状图：横轴 n=1..8，纵轴 n!，指数上升；标出 n=10 的量级。",
+     "prerequisites": [
+      "阶乘",
+      "乘法原理"
+     ],
+     "selfTest": [
+      "为什么答案有 n! 个？",
+      "n=10 的全排列大约多少个？",
+      "求「第 k 个排列」为什么能不用枚举？"
+     ],
+     "formula": "P(n, n) = n! = \\prod_{k=1}^{n} k"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-permutation-count",
+     "name": "排列数（Number of Permutations）",
+     "category": "engineering",
+     "latex": "P(n, n) = n! = \\prod_{k=1}^{n} k",
+     "symbols": [
+      [
+       "n",
+       "元素个数"
+      ],
+      [
+       "P(n,n)",
+       "n 个元素取 n 个的排列数"
+      ],
+      [
+       "\\prod",
+       "连乘"
+      ]
+     ],
+     "derivation": [
+      "第一位有 n 种选择。",
+      "选定第一位后，第二位剩 n-1 种。",
+      "依次递推，到第 n 位只剩 1 种。",
+      "由乘法原理，总方案数 = n×(n-1)×…×1 = n!。"
+     ],
+     "analogy": "排队照相：第一个人的站位随便挑，后面的人可选位置越来越少，方案数是 5×4×3×2×1。",
+     "pitfalls": [
+      "把排列数 n! 与组合数 C(n,k)=n!/(k!(n-k)!) 混为一谈",
+      "算总复杂度时漏乘「每个结果拷贝一次」的 O(n)"
+     ],
+     "code": "import math\n\ndef perm_count(n):\n    return math.factorial(n)\n\nprint(perm_count(3))   # 6\nprint(perm_count(4))   # 24",
+     "sources": [
+      {
+       "title": "46.全排列 · 题解",
+       "url": "https://programmercarl.com/algo/backtracking/0046-permutations.html"
+      }
+     ]
+    },
+    {
+     "id": "f-permutation-complexity",
+     "name": "回溯枚举复杂度（Backtracking Complexity）",
+     "category": "engineering",
+     "latex": "T(n) = O\\bigl(n \\cdot n!\\bigr)",
+     "symbols": [
+      [
+       "n!",
+       "叶子数（结果个数）"
+      ],
+      [
+       "n",
+       "每个结果拷贝路径的代价"
+      ],
+      [
+       "T(n)",
+       "总时间"
+      ]
+     ],
+     "derivation": [
+      "递归树的叶子对应每个完整排列，共 n! 个。",
+      "每个叶子要把长度 n 的 path 拷贝进结果，代价 O(n)。",
+      "非叶子节点的展开总代价不超过叶子的常数倍。",
+      "因此总时间上界为 O(n·n!)。"
+     ],
+     "analogy": "像给 n! 个人各复印一份 n 页的材料，总工作量自然是份数乘页数。",
+     "pitfalls": [
+      "只算 n! 忘了每份结果还要 O(n) 拷贝，结果少一个因子 n",
+      "把空间 O(n)（递归栈+path）误写成 O(n!)（那只算输出本身）"
+     ],
+     "code": "import math\nn = 4\nleaves = math.factorial(n)   # 24\nwork = leaves * n            # 96\nprint(leaves, work)",
+     "sources": [
+      {
+       "title": "46.全排列 · 题解",
+       "url": "https://programmercarl.com/algo/backtracking/0046-permutations.html"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "全排列可用回溯算法求解，使用 used 数组标记已选元素（摘要原文）。",
+     "算法递归遍历所有可能的排列（摘要原文）。",
+     "nums=[1,2,3] 的全部排列为 [[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]（示例自验，共 6 个）。"
+    ],
+    "uncertain": [
+     "源摘要只描述回溯+used 数组，未给示例；nums=[1,2,3] 示例按 LeetCode 46 题面构造，已用代码验证 6 个结果。",
+     "示例为自行构造"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "从没用过的数里一个一个选，选满一组就记下来，再退回去换下一个。"
+     },
+     {
+      "level": "入门",
+      "text": "用 path 记录当前选中的数、used 记录哪些数已经用过。每层遍历所有数，跳过用过的，选一个没用的加进 path，递归下一层；返回后把它弹出并复位 used。当 path 长度等于 n 时，把 path 的一份拷贝加入答案。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键在于「状态在兄弟分支间互不影响」：选择 → 递归 → 撤销三步必须配对。记录结果一定要 path[:] 深拷贝，否则所有结果都会指向同一个被清空的列表。时间 O(n·n!)，空间 O(n)（递归栈与 path），输出本身占 O(n·n!)。"
+     },
+     {
+      "level": "专家",
+      "text": "除了 used 数组，还能用「原地交换」省掉 used：把当前位置与后面每个位置交换，递归后再换回来。两种写法等价，但交换法在原数组上改，要注意恢复。若元素可能重复（LC47），需先排序再在「同层」跳过相邻重复值，否则会出面重复排列。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么每次递归返回后一定要撤销选择？",
+      "a": "否则这个选择会残留到兄弟分支，导致后续排列多一个数或少一个数，结果错误。"
+     },
+     {
+      "q": "把 res.append(path) 写成 path 而不是 path[:] 会怎样？",
+      "a": "所有答案会共享同一个列表；后续回溯把它清空后，res 里全是空列表。"
+     },
+     {
+      "q": "如果数组里有重复数字，为什么要额外去重？",
+      "a": "相同数字互换位置会生成重复排列；需排序后在同层跳过重复，保证每种排列只出现一次。"
+     }
+    ],
+    "mechanism": "排列要求「每个元素恰好用一次、顺序不同即不同解」，这正是回溯的天然场景：每一层代表排列的一个位置，在其上选择一个尚未使用的元素。递归深度等于 n，到达深度 n（path 满）即得到一个解。回溯的撤销保证了「深度优先探索一条路径」，而 for 循环遍历所有候选则保证了「枚举所有分支」，两者结合正好生成全部 n! 种顺序。",
+    "boundary": "元素互异时用 used 即可；有重复元素时必须配合排序 + 同层去重（LC47），否则会重复。n 稍大（>10）时结果数爆炸，枚举不可行，需改用「求第 k 个排列」（LC60，康托展开/逐位确定）这类不枚举全部解的方法。",
+    "analogyBoundary": "「走迷宫」的类比只体现「试错 + 退格」，但它暗示每次只选「一条岔路」；而排列的回溯在每一层要 for 循环尝试多个候选（多个岔路），类比里没有体现「同一层的兄弟分支要逐个试完」这一点，也没有体现「撤销是为了不影响兄弟」。",
+    "misconceptions": [
+     "res.append(path) 忘了深拷贝，结果全被后续回溯污染。",
+     "忘记复位 used[i]（或忘记换回交换），后续分支状态错乱。",
+     "把结果数与复杂度都写成 n!，漏掉每份结果拷贝的 O(n) 因子。"
+    ],
+    "ownAnalysis": "全排列是回溯的「Hello World」，把它写对的关键不在思路而在两个细节：深拷贝与撤销。这两个细节在子集、组合、分割、N 皇后里全都复用。（推断）面试常把 46 和 47（含重复）连问，考察你是否知道要排序 + 同层去重；再往上是 60（第 k 个排列），考察能否从「枚举」跳到「构造」。",
+    "officialNotes": [
+     {
+      "position": "全排列通过回溯算法求解，使用 used 数组标记已选择元素，递归遍历所有可能排列。",
+      "source": "https://programmercarl.com/algo/backtracking/0046-permutations.html"
+     }
+    ],
+    "interviewAnswer": "我用回溯。path 存当前排列，used 标记用过的元素。每层从没用过的数里挑一个，放进 path 后递归下一层；返回时 pop 并复位 used，这样兄弟分支互不影响。path 长度到 n 时把 path[:] 深拷贝进结果。时间 O(n·n!)，空间 O(n)。如果数组有重复元素，我会先排序并在同层跳过重复值去重。",
+    "studyPath": {
+     "prerequisites": [
+      "递归",
+      "深度优先搜索",
+      "数组增删与拷贝语义"
+     ],
+     "nextSteps": [
+      "做 LC47「全排列 II」，体会排序 + 同层去重",
+      "做 LC78「子集」/ LC77「组合」，对比「排列 vs 组合」在回溯里的差别",
+      "做 LC60「排列序列」，学习不枚举全部解的构造法"
+     ]
+    }
+   },
+   "problem": {
+    "title": "全排列",
+    "number": 46,
+    "difficulty": "medium",
+    "statement": "给定一个不含重复数字的整数数组 nums，返回其所有可能的全排列，可以按任意顺序返回答案。约束：1 <= nums.length <= 6，-10 <= nums[i] <= 10，nums 中所有整数互不相同。",
+    "examples": [
+     {
+      "input": "nums = [1,2,3]",
+      "output": "[[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]",
+      "why": "3! = 6 个排列",
+      "explanation": "3! = 6 个排列"
+     },
+     {
+      "input": "nums = [0,1]",
+      "output": "[[0,1],[1,0]]",
+      "why": "2! = 2 个排列，顺序可任意",
+      "explanation": "2! = 2 个排列，顺序可任意"
+     },
+     {
+      "input": "nums = [1]",
+      "output": "[[1]]",
+      "why": "单元素只有一种排列",
+      "explanation": "单元素只有一种排列"
+     }
+    ],
+    "approach": {
+     "idea": "把生成排列看成在递归树上做选择：第 0 位从所有数里挑一个，第 1 位从剩下的数里再挑一个……用 used 记录用过的数，path 记录当前构造的排列。走满 n 位就得到一个解；回溯时撤销选择，换一个候选继续。",
+     "steps": [
+      "初始化 res=[]、path=[]、used=[False]*n。",
+      "若 len(path)==n：把 path[:] 加入 res 后返回。",
+      "遍历 i 从 0 到 n-1：若 used[i] 则跳过。",
+      "做选择：used[i]=True、path.append(nums[i])，递归下一层。",
+      "撤销选择：path.pop()、used[i]=False，继续循环下一个候选。"
+     ],
+     "whyItWorks": "每一层递归确定排列的一个位置，并保证所选元素此前未被使用（used 约束），因此到第 n 层得到的 path 正好是 n 个互异元素的一种顺序。反向地，任意一个排列都能按其顺序在树上唯一地走出一条路径被生成。由于每层枚举了所有合法候选，解集恰好等于全部 n! 个排列，不重不漏。",
+     "alternatives": [
+      {
+       "name": "原地交换法",
+       "complexity": "O(n·n!)/O(n)",
+       "when": "想省掉 used 数组时：把当前位置与后面每个位置交换后递归，返回再换回。"
+      },
+      {
+       "name": "itertools.permutations",
+       "complexity": "O(n·n!)/O(n)",
+       "when": "工程里直接调用标准库；面试要手写原理时不推荐。"
+      },
+      {
+       "name": "含重复元素（LC47）",
+       "complexity": "O(n·n!)/O(n)",
+       "when": "nums 有重复值时需先排序，并在同层跳过相邻重复，避免重复排列。"
+      }
+     ]
+    },
+    "solution": {
+     "python": "class Solution:\n    def permute(self, nums):\n        res, path = [], []\n        used = [False] * len(nums)\n\n        def backtrack():\n            if len(path) == len(nums):\n                res.append(path[:])        # 深拷贝\n                return\n            for i in range(len(nums)):\n                if used[i]:\n                    continue\n                used[i] = True\n                path.append(nums[i])\n                backtrack()\n                path.pop()                 # 撤销\n                used[i] = False\n\n        backtrack()\n        return res\n",
+     "python_alt": "# 原地交换法：不用 used，直接在原数组上换位\nclass Solution:\n    def permute(self, nums):\n        res = []\n        n = len(nums)\n\n        def dfs(start):\n            if start == n:\n                res.append(nums[:])\n                return\n            for i in range(start, n):\n                nums[start], nums[i] = nums[i], nums[start]\n                dfs(start + 1)\n                nums[start], nums[i] = nums[i], nums[start]  # 恢复\n\n        dfs(0)\n        return res\n",
+     "notes": "used 方案可读性更好且不修改输入语义；交换法省内存但要在递归后换回。两个方案都必须用 path[:] / nums[:] 拷贝，否则结果被后续回溯污染。n 保证互异，所以不需要去重逻辑。"
+    },
+    "complexity": {
+     "time": "O(n · n!)",
+     "space": "O(n)",
+     "why": "共 n! 个结果，每个结果拷贝长度 n 的路径，故 O(n·n!)；额外空间只有 path 与 used，深度 n。"
+    },
+    "pitfalls": [
+     "res.append(path) 未深拷贝，最终所有结果都指向被清空的同一个列表。",
+     "忘记撤销 used[i]（或交换法忘记换回），使后续分支状态错乱。",
+     "used 初始化长度写成 len(nums)-1，末位永远可用。",
+     "交换法里只交换没有换回，破坏原数组导致结果缺失。"
+    ],
+    "edgeCases": [
+     "n = 1 → 返回 [[nums[0]]]。",
+     "含负数或 0 → 逻辑不变，只是数值不同。",
+     "空数组（题面保证 n>=1）→ 若允许，返回 [[]]。",
+     "含重复元素（需 LC47 处理）→ 本题不出现，但会被追问。"
+    ],
+    "interviewTips": "先说「回溯模板：选择-递归-撤销」，再写代码。边写边强调深拷贝与撤销两个坑。写完报复杂度 O(n·n!)/O(n)，并主动解释 O(n!) 之外为什么要乘 n（每份结果要拷贝）。顺势提一句交换法作为变体，以及 LC47 的去重思路，能显示厚度。"
+   }
+  },
+  {
+   "id": "b0a9a5de579bcd4a",
+   "tldr": "在层序遍历基础上按层交替方向：偶数层正序、奇数层反转（或双端队列按方向头/尾插入）。",
+   "keyPoints": [
+    "本质是 BFS 层序遍历的变形",
+    "每层先取 size=len(q) 快照，整层一起处理",
+    "第 0 层从左到右，第 1 层从右到左，交替",
+    "最简写法：正常收集后对需要反转的层 reverse",
+    "双端队列可在收集时直接 appendleft，省一次反转"
+   ],
+   "why": "锯齿遍历是二叉树 BFS 的高频变形（字节 189 次）；掌握层序模板后可派生右视图、层平均、最大宽度等一串题。",
+   "difficulty": "medium",
+   "tags": [
+    "leetcode",
+    "binary-tree",
+    "bfs",
+    "level-order",
+    "queue"
+   ],
+   "entities": [
+    "层序遍历",
+    "双端队列",
+    "广度优先搜索",
+    "reverse"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "锯齿层次遍历的方向交替",
+    "caption": "树 [3,9,20,null,null,15,7]：第 1 层正向、第 2 层反向、第 3 层正向。",
+    "alt": "二叉树 3 9 20 15 7 的锯齿层序遍历，输出 3; 20 9; 15 7",
+    "svg": "<svg viewBox='0 0 640 320' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='二叉树锯齿层序遍历'><line x1='320' y1='49' x2='213' y2='83' stroke='var(--line-1)' stroke-width='1.2'/><line x1='320' y1='49' x2='427' y2='83' stroke='var(--line-1)' stroke-width='1.2'/><circle cx='320' cy='30' r='19' fill='none' stroke='var(--accent)' stroke-width='2.2'/><text x='320' y='35' font-size='14' text-anchor='middle' fill='currentColor'>3</text><line x1='427' y1='121' x2='384' y2='155' stroke='var(--line-1)' stroke-width='1.2'/><line x1='427' y1='121' x2='512' y2='155' stroke='var(--line-1)' stroke-width='1.2'/><circle cx='213' cy='102' r='19' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='213' y='107' font-size='14' text-anchor='middle' fill='currentColor'>9</text><circle cx='427' cy='102' r='19' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='427' y='107' font-size='14' text-anchor='middle' fill='currentColor'>20</text><circle cx='384' cy='174' r='19' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='384' y='179' font-size='14' text-anchor='middle' fill='currentColor'>15</text><circle cx='512' cy='174' r='19' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='512' y='179' font-size='14' text-anchor='middle' fill='currentColor'>7</text><text x='16' y='254' font-size='13' fill='currentColor' opacity='0.78'>第 0 层 正向 → [3]</text><text x='16' y='276' font-size='13' fill='currentColor' opacity='0.78'>第 1 层 反向 → [20, 9]</text><text x='16' y='298' font-size='13' fill='currentColor' opacity='0.78'>第 2 层 正向 → [15, 7]</text></svg>"
+   },
+   "concepts": [
+    {
+     "name": "按层 BFS（Level-Order with size snapshot）",
+     "readable": "用队列做广度优先遍历，关键是每轮循环前先记录 len(queue) 作为「本层节点数」，只处理这 size 个节点，保证一轮恰好处理完整的一层。",
+     "analogy": "像按楼层清点人数：先把这一层的人全叫到走廊（同时把他们的孩子登记为下一层），这一层处理完再一起下楼。",
+     "analogyBreaksDown": "如果不用 size 快照，而是写 while queue 边出边入，就会把不同层的节点混在一起。size 必须在进入内层循环前取一次，不能在循环中动态更新。",
+     "mechanism": "队列初始放入根；每轮取 size=len(q)，弹出 size 个节点收集其值、并把左右子入队，于是队列里始终只多出「下一层」，实现天然分层。",
+     "visual": "画一棵树，用横线按深度分层；队列画成一条从右进的管道，标出本层 size 与下一层节点。",
+     "prerequisites": [
+      "队列/双端队列",
+      "二叉树遍历",
+      "BFS"
+     ],
+     "selfTest": [
+      "为什么必须用 size 快照而不能直接 while queue？",
+      "队列峰值与什么有关系？",
+      "若改成 DFS 先序遍历能不能分层？"
+     ],
+     "formula": "T(n) = O(n), \\quad S(n) = O(w)"
+    },
+    {
+     "name": "锯齿方向控制",
+     "readable": "在按层收集的基础上，用一个布尔量记录「本层是否从右到左」；每处理完一层翻转它，从而实现锯齿。",
+     "analogy": "像翻书页：读第一页从左往右，翻面后这一页从右往左读，每翻一次换一次方向。",
+     "analogyBreaksDown": "方向只作用在「结果里的顺序」，不影响 BFS 访问顺序——节点入队次序始终是左到右。若把方向用到入队上，会改变下一层的结构，反而出错。",
+     "mechanism": "两种等价实现：①收集完整层后按方向 reverse；②用双端队列，正向 append、反向 appendleft，边收边定位，省去一次整体反转。",
+     "visual": "在每层结果旁画一个箭头：→ 表示正向、← 表示反向；箭头每层交替，与布尔量翻转同步。",
+     "prerequisites": [
+      "列表反转",
+      "双端队列 deque"
+     ],
+     "selfTest": [
+      "为什么方向只加在收集阶段而不加在入队阶段？",
+      "appendleft 与 reverse 两种写法谁更省？",
+      "若第 0 层就设成反向，结果会变成什么？"
+     ],
+     "formula": "\\mathrm{reverse}(d) = (d \\bmod 2 = 1)"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-level-bfs-complexity",
+     "name": "层序遍历复杂度（Level-Order Complexity）",
+     "category": "engineering",
+     "latex": "T(n) = O(n), \\quad S(n) = O(w)",
+     "symbols": [
+      [
+       "n",
+       "节点总数"
+      ],
+      [
+       "w",
+       "树的最大层宽"
+      ],
+      [
+       "S(n)",
+       "额外空间（队列峰值）"
+      ]
+     ],
+     "derivation": [
+      "BFS 每个节点入队、出队各一次，总时间 O(n)。",
+      "队列中任一时刻最多缓存相邻的一到两层节点，峰值等于最大层宽 w。",
+      "完全二叉树 w = n/2，故空间上界可写成 O(n)。"
+     ],
+     "analogy": "像按楼层发通知：每层的人同时等在走廊里，走廊要能容纳最拥挤的那一层。",
+     "pitfalls": [
+      "把空间笼统说成 O(n) 而不提 w，忽略了队列的真实峰值",
+      "忘记每层先取 size=len(q) 快照，导致层级错乱"
+     ],
+     "code": "from collections import deque\n\nclass N:\n    def __init__(s, v, l=None, r=None):\n        s.val, s.left, s.right = v, l, r\n\ndef bfs(root):\n    if not root:\n        return []\n    q, out = deque([root]), []\n    while q:\n        for _ in range(len(q)):   # 本层快照\n            node = q.popleft(); out.append(node.val)\n            if node.left:  q.append(node.left)\n            if node.right: q.append(node.right)\n    return out\n\nprint(bfs(N(1, N(2), N(3))))   # [1, 2, 3]",
+     "sources": [
+      {
+       "title": "二叉树的锯齿形层次遍历（LeetCode 103）· 大厂高频手撕题",
+       "url": "https://leetcode.cn/problems/binary-tree-zigzag-level-order-traversal"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "该题被字节跳动考过 189 次、微软 12 次，共 201 次（摘要原文）。",
+     "难度为中等，最近一次出现于 2026-09-15（摘要原文）。",
+     "root=[3,9,20,null,null,15,7] 的锯齿层序输出为 [[3],[20,9],[15,7]]（示例自验）。"
+    ],
+    "uncertain": [
+     "源摘要只给了频度/公司/难度，未附题面与示例；statement、examples 与解法为按 LeetCode 103 题面补全，已用代码验证。",
+     "示例为自行构造",
+     "摘要未说明「锯齿」的具体定义，本文按 LeetCode 103 的标准定义（第 0 层左→右，逐层交替）展开。"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "一层一层遍历，但相邻两层的输出方向交替：这层从左往右，下一层就从右往左。"
+     },
+     {
+      "level": "入门",
+      "text": "先用队列做普通层序遍历：每轮取「本层节点数」，把这些节点处理完并收集值，同时把它们的左右孩子入队。区别只在收集这一步：偶数层正序收集，奇数层反序收集。"
+     },
+     {
+      "level": "进阶",
+      "text": "实现要点有两个：一是每层必须先取 size=len(q) 快照，否则层与层会混；二是方向变量每层翻转一次。最简写法是正常收集后用 reverse() 处理需要反的那层；想更优雅就用双端队列，正向 append、反向 appendleft，直接得到该层顺序。"
+     },
+     {
+      "level": "专家",
+      "text": "这道题是「层序模板 + 一个方向处理」的组合，模板本身还能派生：右视图（每层取最后一个）、层平均、最大层宽（配合完全二叉树编号）。DFS 也能做（带 depth 参数，按 depth 奇偶决定插入方向），但 BFS 更直观。要和 Zigzag 与「螺旋矩阵」区分开，后者是二维网格的螺旋，不是树。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "如果一轮不定住 size，直接 while q 边出边入会怎样？",
+      "a": "会把子节点和当前层节点混在一起，无法区分层，锯齿的「层」也就无从谈起。"
+     },
+     {
+      "q": "方向为什么要加在收集阶段，而不是子节点入队阶段？",
+      "a": "若改入队顺序，下一层的左右关系会乱，BFS 结构被破坏；方向只影响输出顺序，不应影响遍历结构。"
+     },
+     {
+      "q": "用 reverse 和用 appendleft 有区别吗？",
+      "a": "结果相同。reverse 是层收集完再整体反转一次 O(w)；appendleft 是收集时定位，总价一致但少一次遍历，写法略绕。"
+     }
+    ],
+    "mechanism": "锯齿需求拆成两个独立子问题：『分层』由 BFS + size 快照解决，『每层方向交替』由一个布尔量解决。把两件事解耦是这道题的关键设计选择——如果尝试把方向混进遍历逻辑（例如反向入队），两者纠缠会让结构难维护且易错。层的内部分序不影响后续层的生成，因此方向完全可以后置处理。",
+    "boundary": "只适用于层内需要变序、层间结构不变的需求。若题目要求「之字形打印节点值但父子关系也要变」则不适用。节点数很大时队列峰值可能接近 n（完全二叉树末层），空间不是 O(1)。空树必须返回 [] 而不是 [[]]。",
+    "analogyBoundary": "「翻书页」的类比暗示方向是关于同一页内容翻转的，而这里每层的方向只影响该层节点的输出次序，不改变树的父子结构或后续遍历——类比会让人误以为「反向」会连带影响下一层的生成。",
+    "misconceptions": [
+     "在 while 循环里动态取 len(q)，导致层与层混合。",
+     "方向变量初值写反，使第 0 层就逆序。",
+     "空树返回 [[]]，正确应为 []。",
+     "对整棵结果 res 做反转，而不是对当前层做反转。"
+    ],
+    "ownAnalysis": "这道题的模板价值大于本身。把「BFS + size 快照 + 层后处理」记牢后，右视图、每层最大、每层平均都能直接套。（推断）面试时更可能让你先写普通层序再改造成锯齿，以观察你能否把新需求干净地插进已有框架；因此「分层」与「方向」解耦的讲法会很加分。",
+    "officialNotes": [],
+    "interviewAnswer": "我用 BFS。队列初始化放根，每轮先记下 size=len(q)，弹出这 size 个节点收集值、并把左右孩子入队，这样就分好了层。再维护一个方向布尔量，第 0 层从左到右，每层结束后翻转；需要反向的层把该层结果反转。时间 O(n)，空间 O(w)，w 是最大层宽。空树返回空列表。",
+    "studyPath": {
+     "prerequisites": [
+      "队列/双端队列",
+      "二叉树的层序遍历",
+      "BFS 与递归遍历的差别"
+     ],
+     "nextSteps": [
+      "做 LC199「二叉树的右视图」，每层只取最后一个",
+      "做 LC637「二叉树的层平均值」，层内做聚合",
+      "做 LC107「二叉树的层序遍历 II」，把结果整体倒序对比"
+     ]
+    }
+   },
+   "problem": {
+    "title": "二叉树的锯齿形层次遍历",
+    "number": 103,
+    "difficulty": "medium",
+    "statement": "给定二叉树的根节点 root，返回其节点值的锯齿形层次遍历：先从左到右遍历第 0 层，再从右到左遍历第 1 层，接着又从左到右遍历第 2 层，依此类推，层与层之间方向交替。约束：树中节点数在 [0, 2000] 范围内，-100 <= Node.val <= 100。",
+    "examples": [
+     {
+      "input": "root = [3,9,20,null,null,15,7]",
+      "output": "[[3],[20,9],[15,7]]",
+      "why": "第 1 层反向成 [20,9]",
+      "explanation": "第 1 层反向成 [20,9]"
+     },
+     {
+      "input": "root = [1]",
+      "output": "[[1]]",
+      "why": "只有根节点",
+      "explanation": "只有根节点"
+     },
+     {
+      "input": "root = []",
+      "output": "[]",
+      "why": "空树返回空列表",
+      "explanation": "空树返回空列表"
+     }
+    ],
+    "approach": {
+     "idea": "先做标准层序遍历：用队列，每层先取 size=len(q) 快照，弹出 size 个节点收集值并把左右孩子入队。再引入一个布尔量表示本层方向，第 0 层从左到右，每层结束后翻转；需要反向的层把该层结果反转（或用双端队列按方向头/尾插入）。",
+     "steps": [
+      "空树直接返回 []；队列初始化 deque([root])。",
+      "left_to_right = True。",
+      "while q：先 size = len(q)；level = []。",
+      "循环 size 次：弹出节点，收集其值、并把非空左右孩子入队。",
+      "若当前不是 left_to_right，则 level.reverse()；把 level 加入 res；翻转方向。"
+     ],
+     "whyItWorks": "BFS 用队列保证同一深度的节点严格按层先后处理；每轮只弹出进入本轮时队列里的节点数（size 快照），因此一轮恰好对应一层。收集完这层后按方向决定是否反转，只改变该层的输出次序而不影响节点入队顺序，所以下一层的结构完全正确。归纳可得每层的方向按 0、1、0、1… 交替，恰好满足锯齿要求。",
+     "alternatives": [
+      {
+       "name": "双端队列边收边插",
+       "complexity": "O(n)/O(w)",
+       "when": "正向层用 append、反向层用 appendleft，省掉一次整体 reverse，写法更紧凑。"
+      },
+      {
+       "name": "DFS 带 depth",
+       "complexity": "O(n)/O(h)",
+       "when": "用递归先序遍历，按 depth 奇偶决定 appendleft 还是 append；空间取决于树高 h。"
+      },
+      {
+       "name": "先层序再统一反转某些层",
+       "complexity": "O(n)/O(n)",
+       "when": "两步走：先得到普通层序二维结果，再对下标为奇数的层反转；可读性最好。"
+      }
+     ]
+    },
+    "solution": {
+     "python": "from collections import deque\n\nclass TreeNode:\n    def __init__(self, val=0, left=None, right=None):\n        self.val, self.left, self.right = val, left, right\n\nclass Solution:\n    def zigzagLevelOrder(self, root):\n        if not root:\n            return []\n        res = []\n        q = deque([root])\n        left_to_right = True\n        while q:\n            size = len(q)                 # 本层节点数快照\n            level = []\n            for _ in range(size):\n                node = q.popleft()\n                level.append(node.val)\n                if node.left:\n                    q.append(node.left)\n                if node.right:\n                    q.append(node.right)\n            if not left_to_right:\n                level.reverse()\n            res.append(level)\n            left_to_right = not left_to_right\n        return res\n",
+     "python_alt": "from collections import deque\n\nclass TreeNode:\n    def __init__(self, val=0, left=None, right=None):\n        self.val, self.left, self.right = val, left, right\n\nclass Solution:\n    def zigzagLevelOrder(self, root):\n        if not root:\n            return []\n        res = []\n        q = deque([root])\n        left_to_right = True\n        while q:\n            level = deque()\n            for _ in range(len(q)):\n                node = q.popleft()\n                if left_to_right:      # 正向尾插，反向头插\n                    level.append(node.val)\n                else:\n                    level.appendleft(node.val)\n                if node.left:\n                    q.append(node.left)\n                if node.right:\n                    q.append(node.right)\n            res.append(list(level))\n            left_to_right = not left_to_right\n        return res\n",
+     "notes": "size 快照必须在内层 for 之前取一次。方向布尔量初值 True 对应第 0 层从左到右。孩子入队顺序始终左后再右，方向只作用在收集阶段。双端队列版里 for 直接写 range(len(q))即可，因为不再需要 size 变量。"
+    },
+    "complexity": {
+     "time": "O(n)",
+     "space": "O(w)",
+     "why": "每个节点入队出队各一次故 O(n)；队列峰值等于最大层宽 w，最坏（完全二叉树）为 O(n)。"
+    },
+    "pitfalls": [
+     "在 while 循环里重新计算 len(q)，导致层与层混在一起。",
+     "方向变量初值或翻转位置写错，使第 0 层就逆序。",
+     "空树返回 [[]] 而非 []。",
+     "对整棵 res 反转而不是对需要反的当前层反转。"
+    ],
+    "edgeCases": [
+     "空树 → 返回 []。",
+     "只有根节点 → [[root.val]]。",
+     "退化成链（每层 1 个节点）→ 每层都只有一个值，方向无差别。",
+     "完全二叉树 → 队列峰值接近 n/2，验空间。"
+    ],
+    "interviewTips": "先写普通层序，边写边说「size 快照保证分层」，再补一行「方向变量 + 反转」。主动报 O(n)/O(w) 并用最大层宽解释空间。被追问就提双端队列变体与 DFS 变体。拿不准方向初值就用 [3,9,20,null,null,15,7] 现场推一遍第 1 层应是 [20,9]。"
+   }
+  }
+ ],
+ "skipped": []
+}

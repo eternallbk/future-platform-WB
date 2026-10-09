@@ -1,0 +1,11 @@
+{
+ "date": "2026-10-09",
+ "startedAt": "2026-10-09T18:11:00+08:00",
+ "finishedAt": "2026-10-09T18:56:30+08:00",
+ "status": "ok",
+ "enrichedCount": 102,
+ "formulaCount": 146,
+ "newJobs": 0,
+ "notes": "deep-read subagents: 22 batches (needsFetch 3 + problemBank 14 + queue 84 + backfill 4); 102 entries applied, 3 off-direction skips (WiFi-CSI sensing / IRB social-bot human study / dbx database GUI). enrichment 491->588, formulas 620->766. build_problem_bank re-run after the deep read.",
+ "errors": []
+}

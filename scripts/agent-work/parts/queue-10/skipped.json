@@ -1,0 +1,9 @@
+{
+  "skipped": [
+    {
+      "id": "4eb0635c11167ab9",
+      "reason": "off-direction",
+      "evidence": "摘要主体是一项社会科学实验研究：'controlled, IRB-approved, five-day experiment with participants interacting on a social media platform infiltrated by RL-trained bots spreading disinformation'，并在 'cybersecurity settings including Covert Social Influence Operations (CSIOs)' 语境下比较 'humans, AI models, and hybrid Human-AI ensembles in detecting adaptive bots'。其核心是用 13 个假设、6 个 bot 检测器做人类行为与检测率的人因/网络安全研究（人口学、社会网络位置、集体智慧机制），并非多模态 / post-training / 生成式 / 世界模型方向的算法方法论文，与算法实习求职方向无关。"
+    }
+  ]
+}

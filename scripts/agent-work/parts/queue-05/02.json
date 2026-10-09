@@ -1,0 +1,157 @@
+{
+  "id": "2399d927c5394cb9",
+  "tldr": "在冻结音视频扩散骨干上，把流式因果适配器与现成少步适配器并行训练、推理时直接相加，得到实时少步音视频生成。",
+  "keyPoints": [
+    "实时交互生成需两个能力：分块自回归注意力（可流式）与少步采样（每块便宜）",
+    "常规做法是链式蒸馏：先因果化再少步（或反向），后一目标会破坏前一能力",
+    "借助模型合并思想，在冻结骨干上并行分别获得两种能力",
+    "预测并验证两个适配器的权重更新方向近似正交，无需显式正交约束",
+    "推理时直接相加，无联合训练；480×832 下约 26 fps，可连续生成 30 秒"
+  ],
+  "why": "音视频联合生成与「多能力合并而不互相干扰」是生成式方向热点；正交更新的直接和思路可迁移到多任务微调与适配器合并，面试常被追问。",
+  "difficulty": "hard",
+  "tags": ["generative", "diffusion", "adapter", "streaming", "model-merging", "audio-video"],
+  "entities": [
+    "block-autoregressive attention",
+    "causal adapter",
+    "few-step adapter",
+    "parallel adapter composition",
+    "direct sum",
+    "packed audio-video backbone"
+  ],
+  "diagram": {
+    "kind": "architecture",
+    "title": "并行适配器组合架构",
+    "caption": "冻结骨干上并行训练因果与少步两个适配器，权重更新近似正交，故推理时直接相加即可。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='音视频并行适配器组合架构'>\n<rect x='56' y='12' width='368' height='34' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='34' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>冻结音视频扩散骨干</text>\n<text x='408' y='34' font-size='13' text-anchor='end' fill='currentColor'>参数不再更新</text>\n<line x1='240' y1='46' x2='240' y2='58' stroke='var(--line-1)' stroke-width='1.6'/>\n<line x1='144' y1='58' x2='336' y2='58' stroke='var(--line-1)' stroke-width='1.6'/>\n<line x1='144' y1='58' x2='144' y2='70' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='144,78 140,70 148,70' fill='var(--line-1)'/>\n<line x1='336' y1='58' x2='336' y2='70' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='336,78 332,70 340,70' fill='var(--line-1)'/>\n<rect x='56' y='78' width='176' height='44' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='98' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>因果适配器</text>\n<text x='72' y='114' font-size='13' text-anchor='start' fill='currentColor'>对冻结骨干训练，带来流式</text>\n<rect x='248' y='78' width='176' height='44' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='264' y='98' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>少步适配器</text>\n<text x='264' y='114' font-size='13' text-anchor='start' fill='currentColor'>现成的少步采样能力</text>\n<line x1='144' y1='122' x2='144' y2='132' stroke='var(--line-1)' stroke-width='1.6'/>\n<line x1='336' y1='122' x2='336' y2='132' stroke='var(--line-1)' stroke-width='1.6'/>\n<line x1='144' y1='132' x2='336' y2='132' stroke='var(--line-1)' stroke-width='1.6'/>\n<line x1='240' y1='132' x2='240' y2='142' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,150 236,142 244,142' fill='var(--line-1)'/>\n<rect x='56' y='150' width='368' height='36' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='172' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>直接相加（ΔW 近似正交）</text>\n<text x='408' y='172' font-size='13' text-anchor='end' fill='currentColor'>无需联合训练</text>\n<line x1='240' y1='186' x2='240' y2='196' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,204 236,196 244,196' fill='var(--line-1)'/>\n<rect x='56' y='204' width='368' height='30' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='224' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>实时流式少步音视频 ≈26 fps</text>\n</svg>",
+    "alt": "冻结骨干向下分出因果适配器与少步适配器两条并行支路，两者直接相加后输出实时流式少步音视频。"
+  },
+  "concepts": [
+    {
+      "name": "Parallel Adapter Composition（并行适配器组合）",
+      "readable": "把「会流式」和「少步快」两个能力分别训成两个适配器，训练时互不干扰，推理时把两个适配器的权重加在一起，一次前向同时具备两种能力。",
+      "analogy": "像给同一辆车分别加装「能倒车入库」和「能省油」两个选装件，装完两者互不影响，一起用即可。",
+      "analogyBreaksDown": "选装件之间物理独立，而这里两个适配器作用在同一批权重上，只有当它们的更新方向近似正交时相加才不会互相抵消，否则直接和会把两个能力一起弄坏。",
+      "mechanism": "在冻结骨干上，一个适配器针对因果/流式目标训练，另一个直接用现成的少步适配器；因为二者编辑的是不同的功能轴，更新方向近乎正交，故按 direct sum 相加即可，省去链式微调中后一目标覆盖前一能力的问题。",
+      "visual": "画两个高维向量箭头（ΔW_causal 与 ΔW_fs）从同一起点出发，夹角接近 90°；把两箭头首尾相加得到合成的 ΔW，长度接近两者之和、方向不互相抵消。",
+      "prerequisites": ["扩散模型与采样步数概念", "适配器/LoRA 微调", "向量内积与正交性"],
+      "selfTest": ["为什么链式蒸馏会「后面覆盖前面」？", "两个适配器能直接相加的前提是什么？", "正交是训练时强加的还是事后观测到的？"],
+      "formula": "W_{\\mathrm{comp}}=W_{0}+\\alpha\\,\\Delta W_{\\mathrm{causal}}+\\beta\\,\\Delta W_{\\mathrm{fs}}"
+    },
+    {
+      "name": "Block-Autoregressive Streaming Attention（分块自回归流式注意力）",
+      "readable": "把整段音视频切成块，每块只因果地看之前的块，于是不用等整段生成完就能先输出已完成的块，实现流式。",
+      "analogy": "像直播字幕：不用等整场讲完，讲一句就出几句，后面的内容只依赖前面出现过的。",
+      "analogyBreaksDown": "直播字幕的因果是天然按时间排的，而扩散生成每一块内部仍是并行的双向去噪，只有块与块之间是因果的，「流式」指的块级而非帧级因果。",
+      "mechanism": "把双向教师蒸馏为块级因果注意力，使第 k 块生成时只条件于前 k-1 块，从而可以边生成边输出；它与少步采样是两个正交能力，各自对应注意力掩码与采样步数两个不同轴。",
+      "visual": "画一个下三角块状注意力掩码矩阵：横纵轴为块编号，块内为实心（可双向），块间只允许看左上区域，右上半区被遮住。",
+      "prerequisites": ["自回归生成与 KV cache", "注意力掩码", "扩散采样流程"],
+      "selfTest": ["块内为什么要保留双向注意力？", "流式能力对应哪个张量/掩码改变？", "为什么流式与少步是正交能力？"],
+      "formula": "\\mathrm{Attn}(Q_{k},K_{\\le k},V_{\\le k})=\\mathrm{softmax}\\!\\left(\\frac{Q_{k}K_{\\le k}^{\\top}}{\\sqrt{d}}\\right)V_{\\le k}"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-parallel-adapter-direct-sum",
+      "name": "并行适配器直接组合（Parallel Adapter Direct Sum）",
+      "category": "generative",
+      "latex": "W_{\\mathrm{comp}}=W_{0}+\\alpha\\,\\Delta W_{\\mathrm{causal}}+\\beta\\,\\Delta W_{\\mathrm{fs}},\\quad \\langle \\Delta W_{\\mathrm{causal}},\\Delta W_{\\mathrm{fs}}\\rangle\\approx 0",
+      "symbols": [
+        ["W_{0}", "冻结的音视频扩散骨干权重"],
+        ["\\Delta W_{\\mathrm{causal}}", "因果（流式）适配器的权重更新"],
+        ["\\Delta W_{\\mathrm{fs}}", "少步采样适配器的权重更新"],
+        ["\\alpha,\\beta", "两个适配器的缩放系数"],
+        ["\\langle\\cdot,\\cdot\\rangle", "权重更新的内积，衡量是否互相干扰"]
+      ],
+      "derivation": [
+        "第 1 步：链式蒸馏里后一目标微调前一阶段权重，可能覆盖已有能力。",
+        "第 2 步：若两能力对应不同的功能轴，则各自的权重更新方向近似正交。",
+        "第 3 步：正交更新相加时几乎不互相抵消，可视为 direct sum 直接求和。",
+        "第 4 步：推理时把两个适配器加到冻结骨干上，即同时得到流式与少步能力。"
+      ],
+      "analogy": "像两个互不干扰的旋钮：一个管方向、一个管速度，各自拧动不改变对方的效果，故可以叠加。",
+      "pitfalls": [
+        "误以为正交是训练时用约束强加的——摘要强调它是被观测验证的",
+        "忽略缩放系数 α、β，直接相加可能量级失配",
+        "把 direct sum 当成任意两适配器都可相加，忽略「不同功能轴」这一前提"
+      ],
+      "code": "import torch\nW0 = torch.randn(64, 64)\ndW_causal = torch.randn(64, 64) * 0.01\ndW_fs = torch.randn(64, 64) * 0.01\nalpha, beta = 1.0, 1.0\nW_comp = W0 + alpha * dW_causal + beta * dW_fs\ncos = (dW_causal * dW_fs).sum() / (\n    dW_causal.norm() * dW_fs.norm())\nprint(float(cos))  # 近似 0 表示近乎正交",
+      "sources": [
+        {"title": "Real-Time Joint Audio-Video Generation by Parallel Adapter Composition", "url": "https://arxiv.org/abs/2610.10343v1"}
+      ]
+    },
+    {
+      "id": "f-orthogonal-update-cosine",
+      "name": "权重更新正交性度量（Orthogonality of Weight Updates）",
+      "category": "generative",
+      "latex": "\\cos\\theta=\\frac{\\langle \\Delta W_{A},\\Delta W_{B}\\rangle_{F}}{\\lVert \\Delta W_{A}\\rVert_{F}\\,\\lVert \\Delta W_{B}\\rVert_{F}}\\approx 0",
+      "symbols": [
+        ["\\Delta W_{A}", "适配器 A 的权重更新矩阵"],
+        ["\\Delta W_{B}", "适配器 B 的权重更新矩阵"],
+        ["\\langle\\cdot,\\cdot\\rangle_{F}", "Frobenius 内积"],
+        ["\\lVert\\cdot\\rVert_{F}", "Frobenius 范数"],
+        ["\\cos\\theta", "两个更新方向的余弦相似度"]
+      ],
+      "derivation": [
+        "第 1 步：判断两更新是否互相干扰，等价于看它们的夹角。",
+        "第 2 步：用 Frobenius 内积与范数定义向量夹角的余弦。",
+        "第 3 步：余弦接近 0 说明方向近似正交，相加不抵消。",
+        "第 4 步：无需在训练中加正交约束，只需事后验证。"
+      ],
+      "analogy": "像两条互相垂直的力，合力的效果就是两份效果之和，不会因为方向相反而抵消。",
+      "pitfalls": [
+        "用逐元素内积代替 Frobenius 内积，维度对不上",
+        "只算余弦不作规模检验，忽略范数量级差异",
+        "把「近似正交」当成精确正交，忽略残差干扰"
+      ],
+      "code": "import torch\ndef cos_sim(A, B):\n    return (A * B).sum() / (A.norm() + 1e-8) / (B.norm() + 1e-8)\n\nA = torch.randn(128, 128)\nB = torch.randn(128, 128)\nB = B - (A * B).sum() / (A * A).sum() * A  # 去掉 A 分量\nprint(float(cos_sim(A, B)))  # 约 0",
+      "sources": [
+        {"title": "Real-Time Joint Audio-Video Generation by Parallel Adapter Composition", "url": "https://arxiv.org/abs/2610.10343v1"}
+      ]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "实时交互生成需要块自回归注意力（可流式）与少步采样（每块便宜）两种能力",
+      "常规流式视频做法是链式蒸馏：双向教师→因果学生→少步，或反向；后一目标可能撤销前一能力",
+      "方法在打包音视频骨干上让两种能力并行获得：因果适配器对冻结骨干训练，少步适配器直接取现成",
+      "作者预测并验证两个适配器的权重更新方向近似正交，且训练中无显式正交约束",
+      "正交更新可直接相加（direct sum），推理时两适配器简单相加，无需联合训练",
+      "最终系统实时生成联合音视频，480×832 下约 26 fps（未量化），可持续 30 秒且画质稳定"
+    ],
+    "uncertain": [
+      "因果适配器与少步适配器的具体结构、注入位置、参数量摘要未给，待核实",
+      "正交性是逐层验证还是整体验证、余弦的具体数值摘要未给，待核实",
+      "「画质追平双向教师」「多数指标匹配或超过链式基线」的具体指标与数值摘要未给，待核实"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "把「会流式」和「跑得快」两个能力分开训，用的时候加在一起，互不打架。"},
+      {"level": "入门", "text": "实时音视频生成要同时会流式（边生成边播）和少步（每块便宜）。传统办法是一段段蒸馏，后一段会把前一段的能力弄坏。这篇把两个能力分别做成适配器，在冻结骨干上并行训练，因为更新方向近似垂直，推理时直接相加即可，得到一个约 26 fps 的实时流式系统。"},
+      {"level": "进阶", "text": "关键观察是：流式对应注意力掩码这一功能轴，少步对应采样步数这一功能轴，二者编辑的参数方向近乎正交，所以可以在冻结骨干上各自训练而不需要联合训练，也不会互相覆盖。作者不是强行加正交约束，而是先预测再验证。推理时按 direct sum 相加即可，画质能追平双向教师。"},
+      {"level": "专家", "text": "与链式蒸馏相比，它把「能力获取」从串行改为并行，避免了灾难性遗忘式的相互覆盖；与一般模型合并相比，它利用的是「不同功能轴→权重正交」这一结构性先验，因此可以不做联合微调。边界是：一旦两个适配器作用在同一功能轴或正交性不成立，直接相加就会互相抵消。对求职者，这是「多能力合并/多任务微调」的一个干净案例。"}
+    ],
+    "socratic": [
+      {"q": "为什么链式蒸馏会丢掉已有能力？", "a": "后一阶段直接微调前一阶段产出的权重，优化目标只关心新能力，会把上一层学到的功能方向改掉，形成覆盖。"},
+      {"q": "为什么不加正交约束直接联合训练两个适配器？", "a": "联合训练需同时优化两目标且要调权重，成本高且可能互相牵制；而实证表明两者自然近似正交，分开训再相加更简单。"}
+    ],
+    "mechanism": "问题的本质是两个能力若走串行微调会互相覆盖。作者的选择是解耦：把每个能力绑定到骨干上一条不同的功能轴，用冻结骨干保证公共底座不变，各自只更新一条低维适配器。因为不同轴上的梯度方向近乎正交，两个更新相加近似为不干扰的叠加，于是不用联合训练也能同时获得两种能力，把「多能力共存」降为一次向量相加。",
+    "boundary": "当两个能力实际共享同一功能轴（例如都主要改注意力温度），更新不再正交，直接相加会互相抵消；训练数据分布差异过大时正交性也可能不成立。此外流式的块大小、少步的步数都由各自适配器限制，超出其训练范围效果会退化。",
+    "analogyBoundary": "旋钮类比假设两个能力完全独立；实际上它们共享同一骨干的前向路径，只是更新方向近似垂直，仍存在小的非正交残差，长序列或极端采样步数下这部分残差可能累积显现。",
+    "misconceptions": [
+      "以为加了显式正交正则——摘要明确说训练中无正交约束。",
+      "把直接相加当成混合两个模型的输出——这里是权重级 direct sum。",
+      "认为推理仍需跑两遍模型——两个适配器合成后仍是一次前向。"
+    ],
+    "ownAnalysis": "这篇把「模型合并」的先验用得很漂亮：不是先合并再验证，而是先论证两能力位于不同功能轴、预测更新正交，再实证验证（推断这与很多 LoRA 合并可加性成立的机理一致）。可疑处：摘要说「近似正交」，但未给余弦数值或逐层统计，若某些层不满足，直接相加的稳健性存疑（待核实）；此外画质「追平双向教师」缺少具体指标。",
+    "officialNotes": [
+      {"position": "在打包音视频骨干上，流式与少步两能力可并行获得；两适配器权重更新近似正交、无需显式正交约束，推理直接相加，得到约 26 fps、可持续 30 秒的实时流式音视频", "source": "arxiv: 2610.10343v1"}
+    ],
+    "interviewAnswer": "实时音视频生成要两个能力：块自回归的流式注意力，和少步采样。传统做法是串行蒸馏，先因果化再少步，问题是后一步会把前一步的能力破坏掉。这篇借模型合并的思路，把两个能力做成两个适配器，在冻结骨干上并行训练，理由是它们编辑的是不同功能轴，权重更新方向近乎正交，所以推理时直接相加就行，不用联合训练。结果是一个约 26 fps 的实时流式系统，画质能追平双向教师。我会强调两个词：功能轴解耦、正交可加。",
+    "studyPath": {
+      "prerequisites": ["扩散模型与少步蒸馏（如 consistency/distill 采样）", "自回归注意力和 KV cache", "LoRA/适配器与模型合并"],
+      "nextSteps": ["读原文，核对正交性的验证方式与数值", "对比链式蒸馏基线的具体指标", "在自己的多任务微调里试「分轴训练 + 权重相加」"]
+    }
+  }
+}

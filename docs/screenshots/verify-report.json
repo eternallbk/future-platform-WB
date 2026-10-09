@@ -1,0 +1,124 @@
+{
+  "generatedAt": "2026-10-08T10:57:38.472Z",
+  "chrome": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "port": 8791,
+  "routes": [
+    {
+      "route": "dashboard",
+      "errors": 0,
+      "domBytes": 57557,
+      "blocks": 12,
+      "stillLoading": false,
+      "loadFailed": false,
+      "hasView": true
+    },
+    {
+      "route": "digest",
+      "errors": 0,
+      "domBytes": 819096,
+      "blocks": 308,
+      "stillLoading": false,
+      "loadFailed": false,
+      "hasView": true
+    },
+    {
+      "route": "categories",
+      "errors": 0,
+      "domBytes": 48159,
+      "blocks": 17,
+      "stillLoading": false,
+      "loadFailed": false,
+      "hasView": true
+    },
+    {
+      "route": "knowledge",
+      "errors": 0,
+      "domBytes": 179460,
+      "blocks": 60,
+      "stillLoading": false,
+      "loadFailed": false,
+      "hasView": true
+    },
+    {
+      "route": "formulas",
+      "errors": 0,
+      "domBytes": 3487621,
+      "blocks": 620,
+      "stillLoading": false,
+      "loadFailed": false,
+      "hasView": true
+    },
+    {
+      "route": "problems",
+      "errors": 0,
+      "domBytes": 86131,
+      "blocks": 25,
+      "stillLoading": false,
+      "loadFailed": false,
+      "hasView": true
+    },
+    {
+      "route": "repos",
+      "errors": 0,
+      "domBytes": 46299,
+      "blocks": 16,
+      "stillLoading": false,
+      "loadFailed": false,
+      "hasView": true
+    },
+    {
+      "route": "jobs",
+      "errors": 0,
+      "domBytes": 68605,
+      "blocks": 29,
+      "stillLoading": false,
+      "loadFailed": false,
+      "hasView": true
+    },
+    {
+      "route": "skills",
+      "errors": 0,
+      "domBytes": 121682,
+      "blocks": 32,
+      "stillLoading": false,
+      "loadFailed": false,
+      "hasView": true
+    },
+    {
+      "route": "roadmap",
+      "errors": 0,
+      "domBytes": 53726,
+      "blocks": 10,
+      "stillLoading": false,
+      "loadFailed": false,
+      "hasView": true
+    },
+    {
+      "route": "progress",
+      "errors": 0,
+      "domBytes": 46383,
+      "blocks": 9,
+      "stillLoading": false,
+      "loadFailed": false,
+      "hasView": true
+    },
+    {
+      "route": "starred",
+      "errors": 0,
+      "domBytes": 23080,
+      "blocks": 1,
+      "stillLoading": false,
+      "loadFailed": false,
+      "hasView": true
+    },
+    {
+      "route": "pipeline",
+      "errors": 0,
+      "domBytes": 105799,
+      "blocks": 11,
+      "stillLoading": false,
+      "loadFailed": false,
+      "hasView": true
+    }
+  ]
+}

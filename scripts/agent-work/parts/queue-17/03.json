@@ -1,0 +1,84 @@
+{
+ "id": "bfa2262c9d9e3dec",
+ "tldr": "索引失效指优化器没用上本可用的索引：函数/计算、前导通配、不等于、OR 跨列、隐式类型转换、违反最左前缀都会导致。",
+ "keyPoints": [
+  "在索引列上用函数或做计算会让索引失效",
+  "以通配符开头的模糊匹配（LIKE '%x'）无法用索引",
+  "使用不等于操作符通常走不了索引",
+  "OR 连接不同索引列、隐式类型转换会导致失效",
+  "违反联合索引最左前缀原则即无法使用该索引"
+ ],
+ "why": "数据库八股偏后端、与算法岗相关性中等；但多模态检索的特征库/向量库索引原理相通，理解选择性对召回与排序也有迁移价值。",
+ "difficulty": "medium",
+ "tags": ["database", "index", "sql", "b-plus-tree", "interview"],
+ "entities": ["B+ 树索引", "联合索引", "最左前缀", "查询优化器", "全表扫描", "隐式类型转换", "LIKE", "OR"],
+ "diagram": {
+  "kind": "architecture",
+  "title": "B+ 树索引的查询下推路径",
+  "caption": "查询从根逐层比较键值下推到叶子：能定位到起点才能走索引，否则优化器只能全表扫描。",
+  "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='B+ 树索引查询：从根节点逐层比较键值下推到叶子，叶子间用链表相连'><rect x='190' y='16' width='100' height='30' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='240' y='36' font-size='13' text-anchor='middle' fill='currentColor' font-weight='bold'>根 20|40</text><rect x='96' y='76' width='110' height='30' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='151' y='96' font-size='13' text-anchor='middle' fill='currentColor'>内部 10|20</text><rect x='274' y='76' width='110' height='30' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='329' y='96' font-size='13' text-anchor='middle' fill='currentColor'>内部 40|60</text><rect x='20' y='150' width='105' height='30' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='72' y='170' font-size='13' text-anchor='middle' fill='currentColor'>叶 5|10|15</text><rect x='135' y='150' width='105' height='30' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='187' y='170' font-size='13' text-anchor='middle' fill='currentColor'>叶 20|30</text><rect x='250' y='150' width='105' height='30' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='302' y='170' font-size='13' text-anchor='middle' fill='currentColor'>叶 40|50</text><rect x='365' y='150' width='100' height='30' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='415' y='170' font-size='13' text-anchor='middle' fill='currentColor'>叶 60|70</text><line x1='215' y1='46' x2='160' y2='72' stroke='var(--line-1)' stroke-width='1.3'/><line x1='265' y1='46' x2='320' y2='72' stroke='var(--line-1)' stroke-width='1.3'/><line x1='120' y1='106' x2='80' y2='146' stroke='var(--line-1)' stroke-width='1.3'/><line x1='175' y1='106' x2='185' y2='146' stroke='var(--line-1)' stroke-width='1.3'/><line x1='300' y1='106' x2='292' y2='146' stroke='var(--line-1)' stroke-width='1.3'/><line x1='355' y1='106' x2='405' y2='146' stroke='var(--line-1)' stroke-width='1.3'/><line x1='125' y1='186' x2='131' y2='186' stroke='var(--line-1)' stroke-width='1.3' stroke-dasharray='4 3'/><line x1='240' y1='186' x2='246' y2='186' stroke='var(--line-1)' stroke-width='1.3' stroke-dasharray='4 3'/><line x1='355' y1='186' x2='361' y2='186' stroke='var(--line-1)' stroke-width='1.3' stroke-dasharray='4 3'/><text x='16' y='212' font-size='13' text-anchor='start' fill='currentColor'>查 30：根→内部(10|20)→叶(20|30)，代价 O(log n)</text><text x='16' y='232' font-size='13' text-anchor='start' fill='currentColor'>叶子间虚线相连，便于范围扫描。</text></svg>",
+  "alt": "B+ 树索引结构：根节点键值 20、40，下分内部节点，再到叶子节点，叶子之间用虚线链表相连；一次等值查询沿一条路径下推到目标叶子。"
+ },
+ "concepts": [
+  {
+   "name": "最左前缀原则（Leftmost Prefix Rule）",
+   "readable": "联合索引 (a, b, c) 按 a、b、c 的顺序排好序。查询条件必须从最左列 a 开始连续匹配，才能用上这个索引；只给 b、c 而缺 a，索引就没法定位。",
+   "analogy": "像电话簿按『姓、名』两级排序；你能凭『姓』或『姓+名』快速翻到，但只给『名』就无从下手，只能整本翻。",
+   "analogyBreaksDown": "电话簿的排序完全固定、没有跳表；而 B+ 树叶子之间有链表、还能做范围扫描与覆盖索引，因此 (a,b,c) 在只用到 a 的范围查询、或索引覆盖时仍有价值，并非「缺 a 就完全没用」这么绝对。",
+   "mechanism": "联合索引是把多列拼成一个复合键按字典序存放。B+ 树的定位依赖前缀比较，没有最左列就无法确定从哪里开始下推，只能全表扫描。范围条件会截断后续列：a=? AND b>? AND c=? 时 c 无法再用索引定位。",
+   "visual": "画一条按字典序排列的键序列 (a,b,c)，用括号圈出 a=? 能圈定的连续区间，再画出 b>? 把区间打断、c 落进断裂区间的示意。",
+   "prerequisites": ["B+ 树基本结构", "SQL 查询与 WHERE 子句", "索引的组成列概念"],
+   "selfTest": ["联合索引 (a,b,c) 对 WHERE b=1 能用吗？", "为什么 a=? AND b>? AND c=? 里 c 用不上索引？", "只查 a 列能命中 (a,b,c) 索引吗？"],
+   "formula": "\\mathrm{usable}(I_{abc}, Q) \\iff \\mathrm{cols}(Q) \\supseteq \\{a, b, \\dots\\} \\text{ as a leading prefix}"
+  },
+  {
+   "name": "索引选择性与优化器的代价判断（Selectivity & Cost-Based Choice）",
+   "readable": "选择性＝某列不同值的个数除以总行数。选择性越高（越接近 1），索引过滤掉的行越多、越划算；若查询要取回大量行，走索引反而比全表扫描慢，优化器就会放弃索引。",
+   "analogy": "像用目录找书：要找「姓王的作者」几本，翻目录很快；要找「书页里有『的』字的书」，几乎每本都有，翻目录还不如逐本翻。",
+   "analogyBreaksDown": "图书目录按一种固定维度（作者）编排，而数据库优化器还要考虑回表成本、索引是否覆盖、统计信息是否过期；选择性差只是「不值得走索引」的一个因素，优化器权衡的是总代价而非单一比率。",
+   "mechanism": "优化器基于统计信息估算各执行计划的代价。当过滤后剩余行占总行比例很高，回表取数据的随机 I/O 会超过顺序扫描整表的代价；当列区分度低（如性别只有两种值）时，索引无法有效缩小范围。因此索引存在≠会被使用。",
+   "visual": "画横轴为「过滤后剩余行占比」，纵轴为「预计代价」；全表扫描是一条水平线，索引代价随占比上升的斜线，两线交点即优化器的选择阈值。",
+   "prerequisites": ["索引的存储与回表", "优化器与执行计划概念", "EXPLAIN 输出阅读"],
+   "selfTest": ["为什么高选择性列更适合建索引？", "取回全表 80% 的行时走索引一定更快吗？", "统计信息过期为什么会改变执行计划？"],
+   "formula": "\\mathrm{selectivity}(c) = \\frac{n_{\\mathrm{distinct}}(c)}{N}"
+  }
+ ],
+ "formulas": [
+  {
+   "id": "f-index-selectivity",
+   "name": "列选择性（Index Selectivity）",
+   "category": "engineering",
+   "latex": "\\mathrm{selectivity}(c) = \\frac{n_{\\mathrm{distinct}}(c)}{N}",
+   "symbols": [["c", "某一列"], ["n_{\\mathrm{distinct}}(c)", "列 c 上不同取值的个数"], ["N", "表的总行数"], ["\\mathrm{selectivity}(c)", "选择性，取值 0 到 1，越接近 1 区分度越高"]],
+   "derivation": ["第 1 步：衡量一列能否把行「切小」，看它有多少种取值能用来分组。", "第 2 步：不同取值越多，单次等值查询命中的行越少，索引过滤越有效。", "第 3 步：用不同取值数除以总行数，归一化得到选择性。", "第 4 步：选择性低（如只有两种取值）时索引几无区分能力，优化器倾向全表扫描，于是索引「失效」。"],
+   "analogy": "像用筛子分沙子：孔径（不同取值）越细，能筛得更细；孔径只有两档，就几乎分不出什么，筛子等于没用。",
+   "pitfalls": ["把「有索引」等同于「会用索引」：最终由优化器按代价决定", "忽略统计信息过期会让选择性估算失准、执行计划抖动", "忘记回表成本：即使选择性高，若需回表大量随机 I/O，也可能不如全表扫描"],
+   "code": "def selectivity(n_distinct, n_total):\n    # 选择性越接近 1，索引区分度越高，越值得走索引\n    return n_distinct / n_total if n_total else 0.0\n\nprint(selectivity(1_000_000, 1_000_000))  # 1.0  主键/唯一列，最佳\nprint(selectivity(2, 1_000_000))           # 0.000002  性别列，几乎无区分度\nprint(selectivity(500, 1_000_000))         # 0.0005  区分度低，优化器可能放弃索引",
+   "sources": [{"title": "索引失效的场景有哪些 · 八股", "url": "https://notes.kamacoder.com/base/index-failure-scenarios.html"}]
+  }
+ ],
+ "selfCheck": {
+  "claims": ["索引失效指查询优化器未使用本应生效的索引、导致性能下降", "在索引列上使用函数或计算会导致失效", "以通配符开头的模糊匹配会导致失效", "使用不等于操作符会导致失效", "OR 连接不同索引列会导致失效", "隐式类型转换会导致失效", "违反联合索引最左前缀原则会导致失效", "优化器可能因结果集比例高或列区分度低而选择全表扫描"],
+  "uncertain": ["摘要未给出各场景的具体 SQL 与执行计划对照，待核实", "选择性公式为教科书通用定义，用于解释摘要所称『列区分度低』，非原文给出的公式", "优化器的实际代价阈值随数据库实现与版本而异，具体数值待核实", "本条属于数据库八股，与算法岗（多模态/后训练/生成式/世界模型）相关性中等"]
+ },
+ "teaching": {
+  "progressive": [
+   {"level": "一句话", "text": "索引失效就是：明明建了索引，查询却没有用它，还是慢慢扫全表。"},
+   {"level": "入门", "text": "数据库给某些列建了索引，本意是加快查询。但如果写法不对，比如在索引列上套了函数、用 LIKE '%x' 开头匹配、或者联合索引没从最左列用起，B+ 树就没法定位，优化器只好全表扫描，这就是索引失效。"},
+   {"level": "进阶", "text": "B+ 树索引靠键值的有序性做二分下推，所以任何破坏『有序可比』的写法都会失效：对索引列做函数或计算，键值就不再是原始顺序值；前导通配让前缀不确定；不等于要扫描多个不连续区间；隐式类型转换等于给列偷偷套了函数；联合索引则必须从最左列开始连续匹配。另一类失效不是写法的错，而是优化器算过账，觉得走索引回表比全表扫更贵——结果集占比高或列区分度低时就会这样。"},
+   {"level": "专家", "text": "把失效分成两类最有条理：一是『索引不可用』，属于写法或类型问题，如函数、前导通配、不等于、OR 跨列、隐式转换、违反最左前缀；二是『索引不被选』，属于代价问题，优化器基于统计信息估算行数与回表成本后主动放弃。前者可以通过改写 SQL 或建合适索引修复，后者要靠提高选择性、让索引覆盖查询、或及时更新统计信息。要特别记住：联合索引范围条件会截断后续列，且索引存在不等于会被使用。"}
+  ],
+  "socratic": [
+   {"q": "为什么对索引列套一个函数，索引就用不上了？", "a": "B+ 树按列原始值有序存放，函数改变了比较对象，索引里没有函数结果的顺序，无法二分定位，只能逐行算。"},
+   {"q": "既然有索引，为什么不干脆强制走索引？", "a": "当要取回的行占比很高时，逐行走索引再加回表的随机 I/O 比顺序扫全表更贵，强制走可能更慢，所以交给优化器按代价判断。"}
+  ],
+  "mechanism": "索引的价值来自 B+ 树的有序性：只有查询条件能表达成对键的有序区间，才能从根一路下推到叶子、把扫描范围缩小到 O(log n)。因此凡是让「比较的键」不再是索引列原始值（函数、计算、隐式类型转换）、让前缀无法确定（前导通配）、或让条件落到多个不连续区间（不等于、OR 跨列）的写法，都会破坏这种有序定位。此外即使索引可用，优化器还要权衡回表与扫描代价，结果集大或列区分度低时仍会放弃，这就是「有索引也没用」的第二种来源。",
+  "boundary": "最左前缀原则会因范围条件而截断后续列；不等于、OR、前导通配在部分数据库的新版本或特定优化（如索引跳跃扫描）下可能被重新利用，不能用绝对语气。覆盖索引可绕开回表、让某些看似失效的场景重新走索引。统计信息过期或数据分布倾斜时，优化器的选择可能与直觉相反。",
+  "analogyBoundary": "「电话簿按姓排序」很好懂，但电话簿没有跳表也没有范围扫描。B+ 树的叶子有链表、还能只读索引不回表，所以 (a,b,c) 在只用到 a 的范围查询或覆盖查询时仍有价值，并非「缺最左列就完全没用」这么绝对。",
+  "misconceptions": ["以为建了索引就一定走索引；是否使用由优化器按代价决定。", "以为联合索引任意列都能单独用；必须从最左列开始连续匹配。", "把索引失效全归因于写法；结果集占比高、列区分度低也会让优化器主动放弃索引。"],
+  "ownAnalysis": "（推断）索引失效的两种成因其实对应「表达力」与「经济性」：前者是查询无法被翻译成有序区间，后者是翻译成了但不划算。这套思维可以迁移到多模态检索——向量索引（如 HNSW/IVF）同样有「用不用得上」的问题：过滤条件下推、召回率与延迟的取舍，和在 B+ 树上权衡走索引还是全表扫描结构相似。需要核实：摘要未给具体 SQL 与 EXPLAIN 对照，若要写进八股答案应另外核对原文示例。",
+  "officialNotes": [{"position": "索引失效指查询优化器未使用本应生效的索引、导致性能急剧下降；典型场景包括索引列上用函数或计算、前导通配模糊匹配、不等于操作符、OR 连接不同索引列、隐式类型转换、违反联合索引最左前缀原则，以及优化器因结果集比例高或列区分度低而选择全表扫描", "source": "https://notes.kamacoder.com/base/index-failure-scenarios.html"}],
+  "interviewAnswer": "索引失效我会先给定义：优化器没用上本可用的索引，性能掉到接近全表扫描。然后分两类讲。第一类索引不可用，是写法问题：在索引列上用函数或计算、LIKE 以 % 开头、用不等于、OR 连接不同索引列、隐式类型转换，还有联合索引违反最左前缀。第二类是不被选中，是代价问题：优化器估出结果集占比很高、或列区分度太低时，觉得回表比全表扫更贵，就主动放弃索引。修复手段包括改写 SQL 去掉函数与前导通配、按最左前缀给列、用覆盖索引避免回表，以及更新统计信息。",
+  "studyPath": {"prerequisites": ["B+ 树索引结构", "SQL 与 WHERE 条件", "EXPLAIN / 执行计划阅读"], "nextSteps": ["在本地库建联合索引，用 EXPLAIN 对照各类失效写法", "练习用覆盖索引与最左前缀改写慢查询", "了解 HNSW/IVF 等向量索引的过滤与召回权衡"]}
+ }
+}

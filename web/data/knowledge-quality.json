@@ -1,0 +1,479 @@
+{
+ "generatedAt": "2026-10-03T03:19:17+08:00",
+ "total": 641,
+ "byKind": {
+  "paper": 206,
+  "problem": 159,
+  "repo": 128,
+  "notes": 82,
+  "interview": 35,
+  "job": 30,
+  "news": 1
+ },
+ "kindZh": {
+  "problem": "手撕/笔试题",
+  "repo": "开源仓库",
+  "paper": "论文",
+  "notes": "知识点/八股",
+  "interview": "面经",
+  "job": "岗位",
+  "news": "资讯"
+ },
+ "kindShare": {
+  "paper": 32.1,
+  "problem": 24.8,
+  "repo": 20.0,
+  "notes": 12.8,
+  "interview": 5.5,
+  "job": 4.7,
+  "news": 0.2
+ },
+ "byCategory": {
+  "coding": 178,
+  "agent": 75,
+  "exam": 74,
+  "posttraining": 65,
+  "multimodal": 65,
+  "worldmodel": 44,
+  "generative": 42,
+  "engineering": 35,
+  "rl": 27,
+  "job": 26,
+  "foundation": 7,
+  "course": 3
+ },
+ "materiality": {
+  "mean": 0.44,
+  "p25": 0.305,
+  "p50": 0.415,
+  "p75": 0.618,
+  "shareBelow035": 40.2
+ },
+ "newsShare": 0.2,
+ "lowSignalShare": 40.2,
+ "lowSignalShareFeed": 16.5,
+ "lowSignalShareRef": 30.1,
+ "referenceShare": 38.5,
+ "offDirectionShare": 1.2,
+ "directions": {
+  "engineering": {
+   "total": 35,
+   "knowledge": 35,
+   "news": 0,
+   "deepRead": 8
+  },
+  "agent": {
+   "total": 75,
+   "knowledge": 75,
+   "news": 0,
+   "deepRead": 8
+  },
+  "worldmodel": {
+   "total": 44,
+   "knowledge": 43,
+   "news": 1,
+   "deepRead": 18
+  },
+  "posttraining": {
+   "total": 65,
+   "knowledge": 65,
+   "news": 0,
+   "deepRead": 15
+  },
+  "generative": {
+   "total": 42,
+   "knowledge": 42,
+   "news": 0,
+   "deepRead": 10
+  },
+  "multimodal": {
+   "total": 65,
+   "knowledge": 65,
+   "news": 0,
+   "deepRead": 15
+  },
+  "foundation": {
+   "total": 7,
+   "knowledge": 7,
+   "news": 0,
+   "deepRead": 5
+  },
+  "rl": {
+   "total": 27,
+   "knowledge": 27,
+   "news": 0,
+   "deepRead": 12
+  },
+  "course": {
+   "total": 3,
+   "knowledge": 3,
+   "news": 0,
+   "deepRead": 1
+  }
+ },
+ "career": {
+  "interview": 35,
+  "problem": 159,
+  "notes": 82,
+  "job": 26,
+  "offDirection": 8
+ },
+ "channelQuality": [
+  {
+   "channel": "codetop",
+   "total": 40,
+   "news": 0,
+   "lowSignal": 40,
+   "newsShare": 0.0,
+   "lowSignalShare": 100.0
+  },
+  {
+   "channel": "xiaolincoding",
+   "total": 40,
+   "news": 0,
+   "lowSignal": 40,
+   "newsShare": 0.0,
+   "lowSignalShare": 100.0
+  },
+  {
+   "channel": "programmercarl",
+   "total": 100,
+   "news": 0,
+   "lowSignal": 91,
+   "newsShare": 0.0,
+   "lowSignalShare": 91.0
+  },
+  {
+   "channel": "jobs_tencent",
+   "total": 29,
+   "news": 0,
+   "lowSignal": 21,
+   "newsShare": 0.0,
+   "lowSignalShare": 72.4
+  },
+  {
+   "channel": "nowcoder",
+   "total": 16,
+   "news": 0,
+   "lowSignal": 11,
+   "newsShare": 0.0,
+   "lowSignalShare": 68.8
+  },
+  {
+   "channel": "kamacoder_notes",
+   "total": 50,
+   "news": 0,
+   "lowSignal": 20,
+   "newsShare": 0.0,
+   "lowSignalShare": 40.0
+  },
+  {
+   "channel": "gh_trending",
+   "total": 9,
+   "news": 0,
+   "lowSignal": 3,
+   "newsShare": 0.0,
+   "lowSignalShare": 33.3
+  },
+  {
+   "channel": "github",
+   "total": 111,
+   "news": 0,
+   "lowSignal": 25,
+   "newsShare": 0.0,
+   "lowSignalShare": 22.5
+  },
+  {
+   "channel": "hn",
+   "total": 6,
+   "news": 0,
+   "lowSignal": 1,
+   "newsShare": 0.0,
+   "lowSignalShare": 16.7
+  },
+  {
+   "channel": "leiphone",
+   "total": 12,
+   "news": 1,
+   "lowSignal": 1,
+   "newsShare": 8.3,
+   "lowSignalShare": 8.3
+  }
+ ],
+ "newsSamples": [
+  {
+   "id": "b339885dc7c6a89b",
+   "title": "越大越强，不再是 LLM 的专利：PixVerse R2 攻克实时世界模型 Scaling 难题",
+   "channel": "leiphone",
+   "materiality": 0.542
+  }
+ ],
+ "lowSignalSamples": [
+  {
+   "id": "632cbffe1c07cead",
+   "title": "关于贪心算法，你该了解这些！ · 题解",
+   "kind": "problem",
+   "channel": "programmercarl",
+   "materiality": 0.305,
+   "ref": true
+  },
+  {
+   "id": "982e42ed0308cc45",
+   "title": "寻找两个正序数组的中位数（LeetCode 4）· 大厂高频手撕题",
+   "kind": "problem",
+   "channel": "codetop",
+   "materiality": 0.207,
+   "ref": true
+  },
+  {
+   "id": "b1ec1c952e10d88c",
+   "title": "youngyangyang04/kamacoder-solutions · 算法题解/知识库",
+   "kind": "problem",
+   "channel": "gh_algokb",
+   "materiality": 0.309,
+   "ref": true
+  },
+  {
+   "id": "007ad8c64ae1db3f",
+   "title": "afatcoder/LeetcodeTop · 算法题解/知识库",
+   "kind": "problem",
+   "channel": "gh_algokb",
+   "materiality": 0.331,
+   "ref": true
+  },
+  {
+   "id": "8cfadace34fdffa0",
+   "title": "字符串相加（LeetCode 415）· 大厂高频手撕题",
+   "kind": "problem",
+   "channel": "codetop",
+   "materiality": 0.207,
+   "ref": true
+  },
+  {
+   "id": "820e5d46ff3a9ca9",
+   "title": "删除链表的倒数第N个节点（LeetCode 19）· 大厂高频手撕题",
+   "kind": "problem",
+   "channel": "codetop",
+   "materiality": 0.225,
+   "ref": true
+  },
+  {
+   "id": "b97b68705b319659",
+   "title": "最短路算法总结篇 · 题解",
+   "kind": "problem",
+   "channel": "programmercarl",
+   "materiality": 0.298,
+   "ref": true
+  },
+  {
+   "id": "2949117dd7b99c87",
+   "title": "101. 对称二叉树 · 题解",
+   "kind": "problem",
+   "channel": "programmercarl",
+   "materiality": 0.305,
+   "ref": true
+  },
+  {
+   "id": "b698779cddfb23f6",
+   "title": "二叉树理论基础篇 · 题解",
+   "kind": "problem",
+   "channel": "programmercarl",
+   "materiality": 0.305,
+   "ref": true
+  },
+  {
+   "id": "0ffb30a5b21b3644",
+   "title": "738.单调递增的数字 · 题解",
+   "kind": "problem",
+   "channel": "programmercarl",
+   "materiality": 0.343,
+   "ref": true
+  },
+  {
+   "id": "0b65a0ada160ee24",
+   "title": "贪心算法总结篇 · 题解",
+   "kind": "problem",
+   "channel": "programmercarl",
+   "materiality": 0.343,
+   "ref": true
+  },
+  {
+   "id": "12d38ab2de159621",
+   "title": "贪心算法：根据身高重建队列（续集） · 题解",
+   "kind": "problem",
+   "channel": "programmercarl",
+   "materiality": 0.343,
+   "ref": true
+  },
+  {
+   "id": "0aa055aeb4b56aec",
+   "title": "数组理论基础 · 题解",
+   "kind": "problem",
+   "channel": "programmercarl",
+   "materiality": 0.305,
+   "ref": true
+  },
+  {
+   "id": "b7168d9e50be9233",
+   "title": "236. 二叉树的最近公共祖先 · 题解",
+   "kind": "problem",
+   "channel": "programmercarl",
+   "materiality": 0.343,
+   "ref": true
+  },
+  {
+   "id": "afc7c5af7a9cc53c",
+   "title": "450.删除二叉搜索树中的节点 · 题解",
+   "kind": "problem",
+   "channel": "programmercarl",
+   "materiality": 0.335,
+   "ref": true
+  },
+  {
+   "id": "e244f0da7d618008",
+   "title": "45.跳跃游戏 II · 题解",
+   "kind": "problem",
+   "channel": "programmercarl",
+   "materiality": 0.343,
+   "ref": true
+  },
+  {
+   "id": "89645cb705df8f83",
+   "title": "59.螺旋矩阵II · 题解",
+   "kind": "problem",
+   "channel": "programmercarl",
+   "materiality": 0.335,
+   "ref": true
+  },
+  {
+   "id": "571ab7baf53f15ce",
+   "title": "111.二叉树的最小深度 · 题解",
+   "kind": "problem",
+   "channel": "programmercarl",
+   "materiality": 0.305,
+   "ref": true
+  },
+  {
+   "id": "85d402a5f121ea87",
+   "title": "二叉树：总结篇！（需要掌握的二叉树技能都在这里了） · 题解",
+   "kind": "problem",
+   "channel": "programmercarl",
+   "materiality": 0.305,
+   "ref": true
+  },
+  {
+   "id": "9a37c90d98898124",
+   "title": "二叉树的统一迭代法 · 题解",
+   "kind": "problem",
+   "channel": "programmercarl",
+   "materiality": 0.343,
+   "ref": true
+  },
+  {
+   "id": "e1c4574e2a161f1e",
+   "title": "226.翻转二叉树 · 题解",
+   "kind": "problem",
+   "channel": "programmercarl",
+   "materiality": 0.343,
+   "ref": true
+  },
+  {
+   "id": "fb7740f50adb5fcb",
+   "title": "513.找树左下角的值 · 题解",
+   "kind": "problem",
+   "channel": "programmercarl",
+   "materiality": 0.305,
+   "ref": true
+  },
+  {
+   "id": "0cd45c8121a79035",
+   "title": "二叉树的迭代遍历 · 题解",
+   "kind": "problem",
+   "channel": "programmercarl",
+   "materiality": 0.343,
+   "ref": true
+  },
+  {
+   "id": "1b3f072ac11c0d03",
+   "title": "第18题. 四数之和 · 题解",
+   "kind": "problem",
+   "channel": "programmercarl",
+   "materiality": 0.305,
+   "ref": true
+  },
+  {
+   "id": "ae9b3bd5f0c0ec14",
+   "title": "合并两个有序数组（LeetCode 88）· 大厂高频手撕题",
+   "kind": "problem",
+   "channel": "codetop",
+   "materiality": 0.207,
+   "ref": true
+  }
+ ],
+ "offDirectionSamples": [
+  {
+   "id": "8e61ce4cc811ff16",
+   "kind": "notes",
+   "channel": "xiaolincoding",
+   "directionFit": 0.246,
+   "materiality": 0.138,
+   "title": "4.10 四次挥手中收到乱序的 FIN 包会如何处理？ · 八股"
+  },
+  {
+   "id": "2e2105d0483475d6",
+   "kind": "notes",
+   "channel": "xiaolincoding",
+   "directionFit": 0.246,
+   "materiality": 0.138,
+   "title": "4.2 malloc 是如何分配内存的？ · 八股"
+  },
+  {
+   "id": "ed6f32ac1b96d0a3",
+   "kind": "notes",
+   "channel": "xiaolincoding",
+   "directionFit": 0.246,
+   "materiality": 0.138,
+   "title": "4.3 内存满了，会发生什么？ · 八股"
+  },
+  {
+   "id": "7614e4d18135ac18",
+   "kind": "notes",
+   "channel": "xiaolincoding",
+   "directionFit": 0.246,
+   "materiality": 0.138,
+   "title": "4.8 SYN 报文什么情况下会被丢弃？ · 八股"
+  },
+  {
+   "id": "c466b9f1fcebb9f4",
+   "kind": "notes",
+   "channel": "xiaolincoding",
+   "directionFit": 0.246,
+   "materiality": 0.138,
+   "title": "4.20 服务端没有 listen，客户端发起连接建立，会发生什么？ · 八股"
+  },
+  {
+   "id": "0f5d44128f31a0c4",
+   "kind": "notes",
+   "channel": "xiaolincoding",
+   "directionFit": 0.246,
+   "materiality": 0.138,
+   "title": "8.1 键盘敲入 A 字母时，操作系统期间发生了什么？ · 八股"
+  },
+  {
+   "id": "3e09e187aecacb9f",
+   "kind": "notes",
+   "channel": "xiaolincoding",
+   "directionFit": 0.246,
+   "materiality": 0.138,
+   "title": "9.3 高性能网络模式：Reactor 和 Proactor · 八股"
+  },
+  {
+   "id": "cf0d46e2ce652f16",
+   "kind": "notes",
+   "channel": "xiaolincoding",
+   "directionFit": 0.246,
+   "materiality": 0.138,
+   "title": "9.2 I/O 多路复用：select/poll/epoll · 八股"
+  }
+ ]
+}

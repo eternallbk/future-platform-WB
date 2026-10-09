@@ -1,0 +1,3246 @@
+{
+  "date": "2026-10-01",
+  "generatedBy": "daily-agent",
+  "root": "D:\\pythonProject\\DS-daily",
+  "selection": {
+    "basis": "web/data/deep-read-plan.json 的 queue（scripts/plan_deep_read.py --all 生成：质量闸门 + 每类 2-10 条配额）",
+    "readFrom": "web/data/deep-read-plan.json",
+    "queueSize": 13,
+    "fullQueueSize": 103,
+    "scopeTool": "scripts/scope_deep_read.py --total 13（全量计划备份到 web/data/deep-read-plan.full.json）",
+    "categories": [
+      "agent",
+      "coding",
+      "course",
+      "engineering",
+      "foundation",
+      "generative",
+      "job",
+      "multimodal",
+      "paper",
+      "posttraining",
+      "rl",
+      "trend",
+      "worldmodel"
+    ],
+    "channels": [
+      "arxiv",
+      "github",
+      "hf_papers",
+      "leiphone",
+      "s2"
+    ],
+    "corpusSize": 536,
+    "alreadyEnriched": 19,
+    "note": "全量队列 103 条一次跑完既不现实也不便人工核对，故用仓库自带 scoping 工具取「每类 1 条」的代表性子集；严格按收窄后的 queue 执行，未另挑条目。"
+  },
+  "enrichment": [
+    {
+      "id": "2f84c181617f7429",
+      "tldr": "提出 OST 概念架构：用合成情绪信号调温与剪枝注意力，证明该门控排序不变，改不了最受关注的 token。",
+      "keyPoints": [
+        "提出 OST 概念软件架构，为 LLM 上下文管理设计",
+        "后台「潜意识」子代理生成合成肾上腺素与多巴胺指标",
+        "指标转成逆温度项与剪枝阈值，乘在注意力权重上",
+        "证明并实测该门控是排序不变的（rank-invariant）",
+        "在受控合成显著性检索任务上探测其行为"
+      ],
+      "why": "对注意力干预有直接参考：温度缩放与阈值剪枝都改不了 argmax，做长上下文检索或 Agent 记忆筛选时可避开这类无效干预；与多模态、RL 主线弱相关。",
+      "difficulty": "medium",
+      "tags": [
+        "attention",
+        "context-management",
+        "affective-computing",
+        "llm-architecture",
+        "rank-invariance"
+      ],
+      "entities": [
+        "One Signal Theory",
+        "synthetic adrenaline",
+        "synthetic dopamine",
+        "inverse temperature",
+        "working memory context",
+        "subconscious sub-agent"
+      ],
+      "diagram": {
+        "kind": "flow",
+        "title": "OST 门控流程",
+        "caption": "潜意识子代理产出合成情绪指标，经乘性变换作用到工作记忆上下文的注意力分布上。",
+        "svg": "<svg viewBox='0 0 960 400' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='OST 门控流程：情绪指标转成逆温度与剪枝阈值，乘性作用于注意力分布。'><g fill='none' stroke='var(--line-1)' stroke-width='1.5'><rect x='30' y='60' width='170' height='80' rx='10'/><rect x='30' y='240' width='170' height='80' rx='10'/><rect x='275' y='150' width='180' height='80' rx='10'/><rect x='530' y='60' width='170' height='80' rx='10'/><rect x='530' y='240' width='170' height='80' rx='10'/><rect x='775' y='150' width='155' height='80' rx='10'/><path d='M200 100 L262 172'/><path d='M200 280 L262 208'/><path d='M455 175 L517 115'/><path d='M455 205 L517 265'/><path d='M700 100 C735 100 745 150 762 172'/><path d='M700 280 C735 280 745 230 762 208'/></g><g fill='var(--line-1)' font-size='17'><text x='115' y='92' text-anchor='middle'>潜意识子代理</text><text x='115' y='116' text-anchor='middle'>产出低维情绪指标</text><text x='115' y='272' text-anchor='middle'>合成肾上腺素</text><text x='115' y='296' text-anchor='middle'>合成多巴胺</text><text x='365' y='182' text-anchor='middle'>乘性修饰子</text><text x='365' y='206' text-anchor='middle'>逆温度与剪枝阈值</text><text x='615' y='92' text-anchor='middle'>按逆温度缩放 logits</text><text x='615' y='116' text-anchor='middle'>softmax 重新归一化</text><text x='615' y='272' text-anchor='middle'>低于阈值的位置</text><text x='615' y='296' text-anchor='middle'>权重剪枝并补归一</text><text x='852' y='182' text-anchor='middle'>工作记忆上下文的</text><text x='852' y='206' text-anchor='middle'>注意力分布</text></g><g fill='var(--accent)' font-size='16'><text x='330' y='352' text-anchor='middle'>三者都是保序变换：argmax 不变</text><text x='330' y='378' text-anchor='middle'>因此无法纠正注意力误导向</text></g></svg>",
+        "spec": {
+          "type": "flow",
+          "nodes": [
+            {
+              "label": "潜意识子代理",
+              "detail": "后台子代理产出低维合成情绪指标"
+            },
+            {
+              "label": "合成肾上腺素 / 多巴胺",
+              "detail": "论文命名的两个合成情绪指数"
+            },
+            {
+              "label": "乘性修饰子",
+              "detail": "一个逆温度项 + 一个剪枝阈值"
+            },
+            {
+              "label": "注意力分布",
+              "detail": "作用于工作记忆上下文的注意力权重"
+            },
+            {
+              "label": "排序不变",
+              "detail": "温度缩放、阈值化、重归一化都是保序变换"
+            }
+          ],
+          "edges": [
+            {
+              "from": "潜意识子代理",
+              "to": "合成肾上腺素 / 多巴胺",
+              "label": "产出"
+            },
+            {
+              "from": "合成肾上腺素 / 多巴胺",
+              "to": "乘性修饰子",
+              "label": "转换"
+            },
+            {
+              "from": "乘性修饰子",
+              "to": "注意力分布",
+              "label": "乘性作用"
+            },
+            {
+              "from": "注意力分布",
+              "to": "排序不变",
+              "label": "推论"
+            }
+          ]
+        },
+        "alt": "流程图：潜意识子代理产出合成肾上腺素与多巴胺，转换为逆温度与剪枝阈值，乘性作用于工作记忆上下文的注意力分布，并得出 argmax 不变的结论。"
+      },
+      "concepts": [
+        {
+          "name": "温度缩放的注意力锐化",
+          "readable": "先把注意力分数除以温度再归一化：温度小，分布更尖，高分行拿走更多份额；温度大，分布更平。它只改变份额大小，不改变谁排第一。",
+          "analogy": "像给考试成绩做开方或平方的曲线调整：所有人的分数都被压缩或拉开，排名顺序一个都没变。",
+          "analogyBreaksDown": "考试调分只改总分展示，而注意力缩放要经过 softmax 后再归一化，份额是此消彼长的；而且这里的温度来自「情绪信号」而非固定常数。",
+          "mechanism": "注意力 logits 除以温度系数后做 softmax，再用阈值把低权重位置截断并重新归一化。因为温度缩放与阈值截断都是逐元素单调映射，元素间的相对次序被完整保留。",
+          "visual": "横轴为 token 位置，竖直柱表示注意力权重；动画演示温度 0.5 与 2.0 两帧下柱子高度变化，但柱子的高低排序与顶端标记的冠军柱始终不变。",
+          "prerequisites": [
+            "softmax 的定义与数值稳定性",
+            "单调函数的保序性质",
+            "注意力机制中 logits 与权重的区别"
+          ],
+          "selfTest": [
+            "把温度从 1 降到 0.5，注意力权重的 argmax 会变吗？为什么？",
+            "温度趋于 0 和趋于无穷时，注意力分布分别退化成什么形状？",
+            "若同时做温度缩放与阈值剪枝，被剪掉的会不会是最初的 argmax 位置？"
+          ],
+          "formula": "\\alpha_i = \\frac{\\exp(z_i / T)}{\\sum_j \\exp(z_j / T)}"
+        },
+        {
+          "name": "保序变换与排序不变性",
+          "readable": "只要对每个分数单独施加同一个单调递增函数，谁大谁小就不变。温度缩放、阈值化、重归一化各自都满足这一点，所以合成情绪信号改变不了最受关注的 token。",
+          "analogy": "像把一列身高数据从厘米换成英寸：数值全变了，谁最高依旧是谁。",
+          "analogyBreaksDown": "保序只保证单次单模态的排序不变；一旦阈值剪枝把某些位置直接清零，参与竞争的元素集合就变了，此时「不变」需要重新论证，论文正是靠重归一化的单调性补上这一步。",
+          "mechanism": "设 s 为单调递增映射，则对任意 i、j 有 z_i ≤ z_j 当且仅当 s(z_i) ≤ s(z_j)；softmax 的输出次序与输入次序一致，阈值化与重归一化同样保序，于是整条门控链的 argmax 与门控前相同。",
+          "visual": "一列竖条表示注意力分数，对全部竖条叠加同一条单调伸缩曲线；用虚线标出最高柱，观察它在变形前后位置不动。",
+          "prerequisites": [
+            "单调函数的定义",
+            "softmax 的保序性",
+            "argmax 的概念"
+          ],
+          "selfTest": [
+            "举一个非单调变换的例子，说明它为什么能改变 argmax。",
+            "阈值剪枝是否属于逐元素单调变换？它对排序不变性的证明有什么影响？",
+            "若要把注意力真正「导向」别处，至少需要什么类型的操作？"
+          ],
+          "formula": "\\operatorname*{arg\\,max}_i \\; s(z_i) = \\operatorname*{arg\\,max}_i \\; z_i \\quad (s \\text{ 单调递增})"
+        }
+      ],
+      "formulas": [
+        {
+          "id": "f-ost-rank-invariant-gating",
+          "name": "OST 门控的保序性与排序不变性",
+          "category": "foundation",
+          "glyph": "β",
+          "tags": [
+            "attention",
+            "softmax",
+            "rank-invariance"
+          ],
+          "latex": "\\alpha_i = \\frac{\\exp(\\beta z_i)}{\\sum_j \\exp(\\beta z_j)}, \\qquad \\beta > 0 \\;\\Longrightarrow\\; \\operatorname*{arg\\,max}_i \\alpha_i = \\operatorname*{arg\\,max}_i z_i",
+          "html": "<code>α_i = exp(β·z_i) / Σ_j exp(β·z_j)，且 β &gt; 0 时 argmax_i α_i = argmax_i z_i</code>",
+          "symbols": [
+            [
+              "z_i",
+              "第 i 个位置的注意力 logit（门控前的原始分数）"
+            ],
+            [
+              "β",
+              "逆温度系数，由合成情绪指标转换而来（β = 1/T）"
+            ],
+            [
+              "α_i",
+              "门控后第 i 个位置归一化得到的注意力权重"
+            ],
+            [
+              "argmax",
+              "取得最大值的下标，即最受关注的那个 token"
+            ]
+          ],
+          "derivation": [
+            "设 β > 0，映射 u ↦ exp(βu) 在实数域上严格单调递增，故 z_i ≥ z_j ⇔ exp(βz_i) ≥ exp(βz_j)。",
+            "softmax 对每个元素施加同一个严格递增函数 exp(·) 后除以同一个正数配分函数 Z = Σ_j exp(βz_j)，不改变元素间的相对大小。",
+            "OST 剩余步骤（阈值剪枝、重归一化）同样是逐元素单调映射与除以正常数的组合，保持保序性。",
+            "因此整条门控链复合后仍保序，α 的最大值下标与 z 的最大值下标相同。"
+          ],
+          "analogy": "像同一批人按身高排队后统一换单位：数字变大变小，队首那个人不会换。",
+          "pitfalls": [
+            "β 必须为正：若允许 β < 0，exp(βu) 变成单调递减，会把排序完全颠倒。",
+            "保序不等于分布不变：份额（权重数值）会被显著改变，只是次序不变。",
+            "阈值剪枝会改变参与竞争的元素集合，论证其排序不变性时必须算上随后的重归一化步骤。",
+            "该结论只针对「哪个 token 排第一」；它不排除门控改变权重数值从而影响下游层聚合结果的可能性。"
+          ],
+          "code": "import numpy as np\n\n\ndef ost_gate(z, beta, prune_threshold=0.0):\n    \"\"\"OST 门控：逆温度缩放 -> softmax -> 阈值剪枝 -> 重归一化。\"\"\"\n    z = np.asarray(z, dtype=float)\n    assert beta > 0, '逆温度必须为正，否则排序会被颠倒'\n    e = np.exp(beta * z - beta * z.max())\n    alpha = e / e.sum()\n    kept = alpha >= prune_threshold\n    if not kept.any():\n        kept = np.zeros_like(alpha, dtype=bool)\n        kept[int(alpha.argmax())] = True\n    alpha = np.where(kept, alpha, 0.0)\n    return alpha / alpha.sum()\n\n\nz = np.array([0.2, 3.1, -1.4, 2.0, 0.7])\nfor beta in (0.25, 1.0, 4.0):\n    a = ost_gate(z, beta, prune_threshold=0.02)\n    print(f'beta={beta:>5}  argmax={a.argmax()}  argmax(z)={z.argmax()}  weights={np.round(a, 4)}')",
+          "sources": [
+            {
+              "title": "One Signal Theory - A Conceptual Architecture for Context Management in Large Language Models via Synthetic Affective Signal Modulation of Attention (DOI)",
+              "url": "https://doi.org/10.5281/zenodo.23068062"
+            },
+            {
+              "title": "One Signal Theory - A Conceptual Architecture for Context Management in Large Language Models via Synthetic Affective Signal Modulation of Attention (DOI, 关联记录)",
+              "url": "https://doi.org/10.5281/zenodo.23068063"
+            }
+          ]
+        }
+      ],
+      "selfCheck": {
+        "claims": [
+          "论文题为 One Signal Theory - A Conceptual Architecture for Context Management in Large Language Models via Synthetic Affective Signal Modulation of Attention。",
+          "OST 是一个概念性的软件架构，面向 LLM 的上下文管理。",
+          "架构中有一个后台「潜意识」子代理，产出低维合成情绪指标，命名为 synthetic adrenaline 与 synthetic dopamine。",
+          "这些指标被转换成乘性修饰子：一个逆温度项和一个剪枝阈值，施加在「工作记忆」上下文的注意力权重分布上。",
+          "论文给出该架构的数学形式，并在受控的合成显著性检索任务上探测其行为。",
+          "论文证明并经实验无例外地确认：该门控机制是排序不变的，无法改变哪个单一 token 获得最多注意力。",
+          "论文写作动机包括：扩大上下文窗口并不保证模型关注正确信息，已有实证工作显示相关内容位于长上下文中部时性能系统性退化。"
+        ],
+        "uncertain": [
+          "采集摘要在中途被截断，合成显著性检索任务的具体数值结果与结论未能读取，需人工核实原文。",
+          "摘要未交代所用基座模型、上下文长度与评判指标，无法判断该探测的可迁移性。",
+          "逆温度项与剪枝阈值由合成情绪指标到具体数值的映射函数细节，摘要仅给出「乘法修饰子」的笼统描述。",
+          "该架构是否包含能真正改变 argmax 的组件（例如查询/键的重写或位置重加权），摘要未提及。",
+          "论文标注为 peerReviewed 且发表于 Zenodo，其评审状态与版本关系需人工核实。"
+        ]
+      }
+    },
+    {
+      "id": "ce4c4e04726b1248",
+      "tldr": "VLM 对比多类 OCR/YOLO11 识别七段数字：Gemini 逐位 98.10%、整串 93.85%，远距更稳。",
+      "keyPoints": [
+        "任务：数码表七段数字识别，VLM 对比传统 OCR。",
+        "基线有 Tesseract、EasyOCR、PaddleOCR 等 OCR。",
+        "YOLO11 既作 OCR 基线，也用于裁剪 LCD 屏。",
+        "Gemini 最优：PDR 98.10%、FSR 93.85%。",
+        "变距离下 VLM 稳定；YOLO11 远距离难检小数字。"
+      ],
+      "why": "对多模态求职者：可复用的 VLM 对传统 OCR 评测范式（裁剪前置、逐位与整串双指标、变距离鲁棒性），可作边缘读数项目；与后训练/RL/世界模型主线弱相关。",
+      "difficulty": "medium",
+      "tags": [
+        "vlm",
+        "ocr",
+        "digit-recognition",
+        "seven-segment",
+        "edge-deployment",
+        "benchmark"
+      ],
+      "entities": [
+        "Gemini",
+        "YOLO11",
+        "Tesseract OCR",
+        "EasyOCR",
+        "PaddleOCR",
+        "KerasOCR"
+      ],
+      "diagram": {
+        "kind": "flow",
+        "title": "VLM 对 OCR 的数码表读数流程",
+        "caption": "从数码表照片到逐位/整串双指标评估的对比流程，YOLO11 既作可选裁剪器也是基线之一。",
+        "svg": "<svg viewBox=\"0 0 960 400\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"VLM 与 OCR 数码表读数对比流程\"><text x=\"480\" y=\"44\" text-anchor=\"middle\" font-size=\"18\" fill=\"currentColor\">数码表七段数字识别：VLM 与 OCR 对比流程</text><rect x=\"30\" y=\"150\" width=\"152\" height=\"96\" rx=\"10\" fill=\"none\" stroke=\"var(--line-1)\"/><text x=\"106\" y=\"190\" text-anchor=\"middle\" font-size=\"15\" fill=\"currentColor\">图像采集</text><text x=\"106\" y=\"216\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">七段显示照片</text><rect x=\"214\" y=\"150\" width=\"152\" height=\"96\" rx=\"10\" fill=\"none\" stroke=\"var(--line-1)\"/><text x=\"290\" y=\"190\" text-anchor=\"middle\" font-size=\"15\" fill=\"currentColor\">LCD 裁剪</text><text x=\"290\" y=\"216\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">YOLO11 可选</text><rect x=\"398\" y=\"150\" width=\"152\" height=\"96\" rx=\"10\" fill=\"none\" stroke=\"var(--accent)\"/><text x=\"474\" y=\"190\" text-anchor=\"middle\" font-size=\"15\" fill=\"currentColor\">识别器</text><text x=\"474\" y=\"216\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">VLM 与多种 OCR</text><rect x=\"582\" y=\"150\" width=\"152\" height=\"96\" rx=\"10\" fill=\"none\" stroke=\"var(--line-1)\"/><text x=\"658\" y=\"190\" text-anchor=\"middle\" font-size=\"15\" fill=\"currentColor\">指标评估</text><text x=\"658\" y=\"216\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">PDR 与 FSR</text><rect x=\"766\" y=\"150\" width=\"152\" height=\"96\" rx=\"10\" fill=\"none\" stroke=\"var(--line-1)\"/><text x=\"842\" y=\"190\" text-anchor=\"middle\" font-size=\"15\" fill=\"currentColor\">距离对比</text><text x=\"842\" y=\"216\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">VLM 更稳</text><line x1=\"182\" y1=\"198\" x2=\"204\" y2=\"198\" stroke=\"var(--line-1)\"/><polygon points=\"204,192 214,198 204,204\" fill=\"var(--line-1)\"/><line x1=\"366\" y1=\"198\" x2=\"388\" y2=\"198\" stroke=\"var(--line-1)\"/><polygon points=\"388,192 398,198 388,204\" fill=\"var(--line-1)\"/><line x1=\"550\" y1=\"198\" x2=\"572\" y2=\"198\" stroke=\"var(--line-1)\"/><polygon points=\"572,192 582,198 572,204\" fill=\"var(--line-1)\"/><line x1=\"734\" y1=\"198\" x2=\"756\" y2=\"198\" stroke=\"var(--line-1)\"/><polygon points=\"756,192 766,198 756,204\" fill=\"var(--line-1)\"/><path d=\"M106,246 V290 H474 V246\" fill=\"none\" stroke=\"var(--line-1)\"/><polygon points=\"468,258 474,246 480,258\" fill=\"var(--line-1)\"/><text x=\"290\" y=\"284\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">不裁剪：照片直接送入识别器</text><text x=\"480\" y=\"352\" text-anchor=\"middle\" font-size=\"14\" fill=\"var(--accent)\">Gemini 最优：PDR 98.10%、FSR 93.85%；YOLO11 远距离因小数字难检而降级</text></svg>",
+        "spec": {
+          "type": "flow",
+          "nodes": [
+            {
+              "label": "图像采集",
+              "detail": "数码测量设备七段显示的照片"
+            },
+            {
+              "label": "LCD 裁剪",
+              "detail": "可选用 YOLO11 裁出屏幕区域"
+            },
+            {
+              "label": "识别器",
+              "detail": "VLM（Gemini 等）与 Tesseract/EasyOCR/PaddleOCR/KerasOCR/YOLO11"
+            },
+            {
+              "label": "指标评估",
+              "detail": "逐位识别准确率 PDR 与整串读数准确率 FSR"
+            },
+            {
+              "label": "距离对比",
+              "detail": "不同拍摄距离下重测鲁棒性"
+            }
+          ],
+          "edges": [
+            {
+              "from": "图像采集",
+              "to": "LCD 裁剪",
+              "label": "先裁屏"
+            },
+            {
+              "from": "LCD 裁剪",
+              "to": "识别器",
+              "label": "裁剪后输入"
+            },
+            {
+              "from": "图像采集",
+              "to": "识别器",
+              "label": "不裁剪直接识别"
+            },
+            {
+              "from": "识别器",
+              "to": "指标评估",
+              "label": "与真值逐位比对"
+            },
+            {
+              "from": "指标评估",
+              "to": "距离对比",
+              "label": "变距离重测"
+            }
+          ]
+        },
+        "alt": "五步流程：图像采集、可选 YOLO11 裁剪 LCD、VLM 与多种 OCR 识别、按 PDR/FSR 评估、再在不同距离下对比。"
+      },
+      "concepts": [
+        {
+          "name": "VLM 直接读数码表",
+          "readable": "让能同时看图与文字的视觉语言模型直接读数码表屏幕照片并输出读数，再与 Tesseract 等传统 OCR、YOLO11 检测方案比准确率。本文中 Gemini 最好：逐位 98.10%、整串 93.85%。",
+          "analogy": "像请一个识字又懂上下文的人看照片念数字，而不是用只会切字形模板的老式扫描仪。",
+          "analogyBreaksDown": "人看仪表会结合量程、单位与小数点位置推断，而摘要只给出识别准确率，没有证据表明 VLM 真做了这类物理理解；闭源模型还可能见过类似图片。",
+          "mechanism": "图像（可先用 YOLO11 裁出 LCD 区域）送入 VLM，模型以自回归方式生成读数文本；传统路线先做字符分割或检测，再逐字模板匹配或小模型分类。评估用逐位准确率 PDR 与整串正确率 FSR，并在不同拍摄距离下重复。",
+          "visual": "画一条从左到右的横条：照片 → [YOLO11 裁 LCD]（虚线支路：不裁）→ 识别器（Gemini / Tesseract / EasyOCR / PaddleOCR / KerasOCR / YOLO11）→ 输出读数 → 与真值逐位比对，每位标绿勾或红叉，底部汇总 PDR 与 FSR。",
+          "prerequisites": [
+            "多模态模型/VLM 的基本调用方式",
+            "七段数码管显示与小数的书写约定",
+            "目标检测（YOLO11）与 OCR 的基本概念",
+            "逐位准确率与整串正确率两个指标的含义"
+          ],
+          "selfTest": [
+            "为什么同一模型的 FSR 一般不会高于 PDR？",
+            "先用 YOLO11 裁出 LCD 屏，可能带来哪两类不同的收益或损失？",
+            "仅凭摘要，能否判断 VLM 的优势来自物理理解而非图像先验？为什么？"
+          ],
+          "formula": ""
+        },
+        {
+          "name": "检测-裁剪-识别流水线",
+          "readable": "把任务拆成先定位屏幕、再读数字两级：YOLO11 负责在整张照片里框出 LCD 区域并裁掉背景，识别器只处理裁剪后的小图；论文同时报告带裁剪与不带裁剪两种设置。",
+          "analogy": "像先拿剪刀把报纸上那一小块表格剪下来，再拿放大镜看，而不是对着整版报纸找数字。",
+          "analogyBreaksDown": "裁剪不是免费的：框错或框漏会直接抹掉读数，远距离下小数点这类小目标最容易被检测漏掉，而端到端 VLM 反而可能保留全局信息。",
+          "mechanism": "检测器对输入图像回归 LCD 屏边框，按边框裁剪并（可能）缩放到识别器输入尺寸，识别结果与真值比对。是否裁剪构成一个消融维度，用于分离检测误差与识别误差。",
+          "visual": "并排两列：左列完整照片→裁出小图→读数；右列完整照片直接→读数。两列下方各挂一条随距离变化的准确率折线，观察裁剪版在远距离是否掉得更快。",
+          "prerequisites": [
+            "目标检测的边框回归与 IoU 概念",
+            "图像裁剪与缩放对输入分辨率的影响",
+            "消融实验（ablation）的基本思路"
+          ],
+          "selfTest": [
+            "带裁剪与不带裁剪两种设置分别把误差归因到哪一环？",
+            "为什么远距离拍摄时裁剪环节可能成为瓶颈？",
+            "如果裁剪框偏了一点，PDR 与 FSR 哪个先崩？"
+          ],
+          "formula": ""
+        },
+        {
+          "name": "PDR 与 FSR 双指标",
+          "readable": "PDR 是逐位识别准确率，按每位数字是否读对再平均；FSR 是整串读数准确率，只有整条读数完全正确才算对。前者衡量单字能力，后者衡量这条读数能不能直接使用。",
+          "analogy": "像默写电话号码：PDR 是逐位算对的百分比，FSR 是整串号码一字不差写对的百分比。",
+          "analogyBreaksDown": "默写时位数由人自己决定，而仪表读数要先确定位数：小数点、前导零和前导符号算不算一位，会直接改变分母，摘要未说明这套约定。",
+          "mechanism": "对第 i 张图，比较预测读数与真值读数得到正确位数 c_i 与真实位数 L_i；PDR 取 c_i/L_i 的均值，FSR 取指示函数 1[c_i=L_i] 的均值。变距离实验在各距离子集上分别统计。",
+          "visual": "上方一行真值 1 2 . 3 4，下方一行预测 1 2 . 3 5，逐位画竖线比对；右边两个进度条：PDR 条按比例填充，FSR 条要么全满要么全空，直观显示 FSR 更严格。",
+          "prerequisites": [
+            "准确率与平均的基本计算",
+            "指示函数（条件成立取 1）的含义",
+            "标准误与标准差在多次重复实验中的区别"
+          ],
+          "selfTest": [
+            "五位数读数只错一位时，该图的 PDR 与 FSR 各是多少？",
+            "两个模型 PDR 相同，FSR 可能差很多吗？举一个位数分布不同造成的例子。",
+            "只报告全部测试样本的平均指标，会掩盖哪一类风险？"
+          ],
+          "formula": "\\mathrm{PDR}=\\frac{1}{N}\\sum_{i=1}^{N}\\frac{c_i}{L_i},\\qquad \\mathrm{FSR}=\\frac{1}{N}\\sum_{i=1}^{N}\\mathbb{1}\\!\\left[c_i=L_i\\right]"
+        }
+      ],
+      "formulas": [
+        {
+          "id": "f-pdr-fsr-metrics",
+          "name": "逐位准确率 PDR 与整串读数准确率 FSR",
+          "category": "multimodal",
+          "glyph": "Σ",
+          "tags": [
+            "multimodal",
+            "evaluation",
+            "ocr",
+            "metric"
+          ],
+          "latex": "\\mathrm{PDR}=\\frac{1}{N}\\sum_{i=1}^{N}\\frac{c_i}{L_i},\\qquad \\mathrm{FSR}=\\frac{1}{N}\\sum_{i=1}^{N}\\mathbb{1}\\!\\left[c_i=L_i\\right]",
+          "html": "<code>PDR = mean(c_i / L_i) ; FSR = mean(c_i == L_i)</code>",
+          "symbols": [
+            [
+              "N",
+              "参与评测的表图数量"
+            ],
+            [
+              "L_i",
+              "第 i 张图的真值读数位数（分母）"
+            ],
+            [
+              "c_i",
+              "第 i 张图中被读对的位数"
+            ],
+            [
+              "c_i/L_i",
+              "第 i 张图的逐位正确率"
+            ],
+            [
+              "\\mathbb{1}[·]",
+              "指示函数，括号内条件成立取 1，否则取 0"
+            ],
+            [
+              "PDR",
+              "逐位识别准确率，本文 Gemini 为 98.10%"
+            ],
+            [
+              "FSR",
+              "整串读数准确率，本文 Gemini 为 93.85%"
+            ]
+          ],
+          "derivation": [
+            "每张数码表图有 L_i 位数字，识别器输出一条完整读数。",
+            "把预测读数与真值读数按位对齐，统计读对的位数 c_i。",
+            "PDR 先在单图上算比例 c_i/L_i，再对 N 张图求平均，衡量单字识别能力。",
+            "FSR 只在整条读数全对（c_i=L_i）时计 1，再求平均，衡量读数能否直接使用。",
+            "由于 FSR 的条件更严格，同一模型的 FSR 恒不高于 PDR。"
+          ],
+          "analogy": "像默写电话号码：PDR 是逐位算对的百分比，FSR 是整串号码一字不差写对的百分比；一位写错，逐位分数只掉一点，整串分数直接归零。",
+          "pitfalls": [
+            "PDR 与 FSR 不能相互替代：PDR 高不代表读数可直接使用，错一位整条即作废。",
+            "逐位对齐依赖位数约定，小数点、前导零是否计入会影响分母 L_i。",
+            "摘要中 98.10% (?=0.36%) 与 93.85% (?=1.29%) 的偏差符号在采集文本里显示为问号，是标准差还是标准误需核对原文。",
+            "只在全部距离上取平均会掩盖远距离性能下降，应按距离分层报告。"
+          ],
+          "code": "def pdr_fsr(preds, gts):\n    # preds / gts：等长的读数字符串列表，例如 ['12.34', '12.35']\n    assert all(len(p) == len(g) for p, g in zip(preds, gts))\n    n = len(gts)\n    pdr = sum(sum(pc == gc for pc, gc in zip(p, g)) / len(g)\n              for p, g in zip(preds, gts)) / n\n    fsr = sum(p == g for p, g in zip(preds, gts)) / n\n    return pdr, fsr\n\npdr, fsr = pdr_fsr(['12.34', '12.3S'], ['12.34', '12.35'])\nprint('PDR=%.4f, FSR=%.4f' % (pdr, fsr))  # PDR=0.9000, FSR=0.5000",
+          "sources": [
+            {
+              "title": "Leveraging vision language models for digit recognition on digital measuring devices: a comparative analysis",
+              "url": "https://doi.org/10.11591/eei.v15i5.11769"
+            }
+          ]
+        }
+      ],
+      "selfCheck": {
+        "claims": [
+          "该文研究数码测量设备七段数码管的数字识别，并把若干 VLM 与其他基线 OCR 方法进行比较。",
+          "基线方法包括 Tesseract OCR、EasyOCR、PaddleOCR、KerasOCR 与 YOLO11，且可选择是否用 YOLO11 裁剪 LCD 屏。",
+          "Gemini 模型表现最好，平均逐位识别准确率 PDR 为 98.10%，整串读数准确率 FSR 为 93.85%。",
+          "在距离变化评测中 VLM 结果保持较高且稳定的准确率；YOLO11 在较远距离因难以检测小的十进制位数而性能下降；传统 OCR 结果不一致。",
+          "作者认为该结果表明 VLM 在边缘设备上做自动七段数字识别具有进一步开发与部署的前景。"
+        ],
+        "uncertain": [
+          "摘要中 98.10% (?=0.36%) 与 93.85% (?=1.29%) 的偏差符号在采集文本中显示为问号，无法确认是标准差还是标准误，需核对原文。",
+          "摘要未说明具体比较了哪些 VLM 型号、是否做微调、测试集规模与拍摄条件，结论的泛化范围无法判断。",
+          "边缘设备部署目前只是作者的展望，摘要未给出端侧延迟、显存占用或功耗数据。",
+          "YOLO11 在本文中既作为 OCR 基线又作为 LCD 裁剪器，两种角色如何区分需查原文确认。"
+        ]
+      }
+    },
+    {
+      "id": "9ca183eb8171af98",
+      "tldr": "ROBOCOACH：用动作条件世界模型当「教练」，从想象失败里挑出该补示教的子任务与该更新的专家，150 条示教把成功率大幅推高。",
+      "keyPoints": [
+        "长程操作可复用技能拼装，端到端示教改进成本高",
+        "RIDI 在 COACHWORLD 中执行专家并定位首个失败子任务",
+        "聚合失败记录后决定补哪些示教、更新哪些专家适配器",
+        "150 条示教：Franka 13.3→75.0%，AgileX 40.0→83.8%",
+        "想象成功率与实机成功率相关 rho=0.840（22 组任务-策略对）"
+      ],
+      "why": "对世界模型与 Agent 方向求职者，它示范了「把想象失败当监督信号」的闭环：世界模型不只做预测或评估，还充当决定教什么、训哪里的调度器，可迁移到数据选择与后训练配方设计。",
+      "difficulty": "hard",
+      "tags": [
+        "world-model",
+        "robot-manipulation",
+        "skill-composition",
+        "self-improvement",
+        "data-selection",
+        "agent"
+      ],
+      "entities": [
+        "ROBOCOACH",
+        "COACHWORLD",
+        "RIDI",
+        "progress judge",
+        "Franka",
+        "AgileX"
+      ],
+      "diagram": {
+        "kind": "flow",
+        "title": "RIDI 教练闭环",
+        "caption": "在共享世界模型里想象执行、诊断首个失败子任务，再把失败聚合成示教采集与专家更新决策。",
+        "svg": "<svg viewBox=\"0 0 640 270\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"sans-serif\">\n  <defs>\n    <marker id=\"ar\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"7\" markerHeight=\"7\" orient=\"auto\">\n      <path d=\"M0 0 L10 5 L0 10 z\" fill=\"currentColor\"/>\n    </marker>\n  </defs>\n  <g stroke=\"currentColor\" stroke-width=\"1.5\" fill=\"none\" marker-end=\"url(#ar)\">\n    <path d=\"M156 96 L206 96\"/>\n    <path d=\"M336 96 L386 96\"/>\n    <path d=\"M518 126 L518 176\"/>\n    <path d=\"M438 202 L186 202\"/>\n    <path d=\"M96 186 L96 130\"/>\n  </g>\n  <g font-size=\"13\" fill=\"currentColor\">\n    <text x=\"174\" y=\"88\">执行专家</text>\n    <text x=\"352\" y=\"88\">记失败</text>\n    <text x=\"526\" y=\"156\">聚合</text>\n    <text x=\"288\" y=\"194\">更新专家适配器</text>\n    <text x=\"102\" y=\"162\">补示教</text>\n  </g>\n  <g font-size=\"14\" fill=\"currentColor\" text-anchor=\"middle\">\n    <rect x=\"24\" y=\"66\" width=\"132\" height=\"60\" rx=\"8\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"/>\n    <text x=\"90\" y=\"92\">Route</text>\n    <text x=\"90\" y=\"112\" font-size=\"13\">分解并路由子任务</text>\n    <rect x=\"206\" y=\"66\" width=\"130\" height=\"60\" rx=\"8\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"/>\n    <text x=\"271\" y=\"92\">Imagine</text>\n    <text x=\"271\" y=\"112\" font-size=\"13\">在 COACHWORLD 想象</text>\n    <rect x=\"386\" y=\"66\" width=\"132\" height=\"60\" rx=\"8\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"/>\n    <text x=\"452\" y=\"92\">Diagnose</text>\n    <text x=\"452\" y=\"112\" font-size=\"13\">定位首个失败子任务</text>\n    <rect x=\"386\" y=\"176\" width=\"132\" height=\"60\" rx=\"8\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"/>\n    <text x=\"452\" y=\"202\">Improve</text>\n    <text x=\"452\" y=\"222\" font-size=\"13\">定向补数据与更新</text>\n  </g>\n</svg>",
+        "spec": {
+          "type": "flow",
+          "nodes": [
+            {
+              "label": "Route",
+              "detail": "把长程任务分解成可复用技能子任务"
+            },
+            {
+              "label": "Imagine",
+              "detail": "技能专家在共享动作条件世界模型 COACHWORLD 中展开执行"
+            },
+            {
+              "label": "Diagnose",
+              "detail": "进度判定器（progress judge）记录第一个失败子任务"
+            },
+            {
+              "label": "Improve",
+              "detail": "聚合失败记录，选采集哪些子任务示教、更新哪些专家适配器"
+            }
+          ],
+          "edges": [
+            {
+              "from": "Route",
+              "to": "Imagine",
+              "label": "执行技能专家"
+            },
+            {
+              "from": "Imagine",
+              "to": "Diagnose",
+              "label": "判定是否完成"
+            },
+            {
+              "from": "Diagnose",
+              "to": "Improve",
+              "label": "聚合失败记录"
+            },
+            {
+              "from": "Improve",
+              "to": "Route",
+              "label": "更新专家适配器"
+            },
+            {
+              "from": "Improve",
+              "to": "Route",
+              "label": "补采子任务示教"
+            }
+          ]
+        },
+        "alt": "四阶段流程图：Route 分解子任务 → Imagine 在世界模型里执行 → Diagnose 找出首个失败子任务 → Improve 定向补示教并更新专家，随后回到执行形成闭环。"
+      },
+      "concepts": [
+        {
+          "name": "世界模型当主动教练（active coach）",
+          "readable": "世界模型不只用来看未来，而是先用想象把技能跑一遍，找出哪个子任务会失败，再决定花预算去补哪段示教、更新哪个专家，让数据花在真正卡住的地方。",
+          "analogy": "像球队教练不下场踢球，而是看录像找出哪一次传球开始失误，然后只安排针对这个环节的训练，而不是把整场比赛再踢十遍。",
+          "analogyBreaksDown": "录像回放是真实发生过的比赛，而这里的世界模型本身有预测误差，教练看的是可能不准的想象画面；想象里失败的地方在现实中未必失败，反之亦然。",
+          "mechanism": "技能专家在动作条件世界模型中展开长程执行，进度判定器标出第一个未完成的子任务；把这些记录按子任务聚合后，决定采集哪些子任务的示教、更新哪些专家适配器。",
+          "visual": "任务 -> [技能1 通过][技能2 通过][技能3 失败] -> 只对技能3 采示教并更新其适配器 -> 重跑任务",
+          "prerequisites": [
+            "动作条件世界模型可做长程展开",
+            "长程任务可分解为可复用子任务技能",
+            "能判断子任务是否完成（进度判定器）"
+          ],
+          "selfTest": [
+            "为什么先想象执行再采集示教，而不是直接多采端到端示教？",
+            "进度判定器记录「第一个失败子任务」相比记录最终成败多提供了什么信息？",
+            "若世界模型预测与真实执行相关性很低，这套循环会怎样退化？"
+          ],
+          "formula": ""
+        },
+        {
+          "name": "想象-实机相关性作为模型可信度指标",
+          "readable": "它拿同一批任务策略对，分别在想象里和真机上跑成功率，再算两者的相关系数，用来判断这个世界模型能不能当可靠教练。数值越接近一，越说明想象的失败值得被当成真失败来用。",
+          "analogy": "像驾校模拟器和真车路考的成绩做对照：如果模拟器里挂科的人路考也挂，模拟器就能用来提前筛人。",
+          "analogyBreaksDown": "相关系数只说明排名一致，不保证数值一致；模拟器可能把所有难度都放大，排名对但绝对通过率差很多。",
+          "mechanism": "对同一组任务-策略对分别测想象成功率与部署成功率，计算秩相关系数，作为世界模型决策可信度的证据；文中报告 22 对上的 rho = 0.840。",
+          "visual": "任务-策略对 (22 个)：想象成功率 vs 实机成功率 -> 散点近似单调 -> rho = 0.840",
+          "prerequisites": [
+            "同一批任务-策略对可同时获取想象与实机成功率",
+            "假设单调相关的秩相关度量"
+          ],
+          "selfTest": [
+            "rho = 0.840 说明了什么，又不说明什么？",
+            "为什么用秩相关而不是直接比较绝对成功率？",
+            "22 个任务-策略对的样本量对结论强度有什么限制？"
+          ],
+          "formula": ""
+        },
+        {
+          "name": "子任务粒度的定向数据采集",
+          "readable": "把「模型不行」细化到「第几个子任务不行」，于是新增的 150 条示教只投向失败子任务，而不是均匀撒在所有子任务上，用同样预算换到更高成功率。",
+          "analogy": "像复习考试只补错题本上的题型，而不是把整本书重抄一遍，时间一样但提分更快。",
+          "analogyBreaksDown": "错题会变，补完一个子任务后瓶颈会转移到别处，这种定向策略需要反复重跑闭环，而不是一次补完就结束。",
+          "mechanism": "失败记录按子任务聚合后形成优先级，示教采集与专家适配器更新都只作用于被选中的子任务；对比实验在相同数据预算与更新日程下比较。",
+          "visual": "均匀采集：所有子任务平均分配 -> 弱；定向采集：预算集中到失败子任务 -> 强（同预算对比）",
+          "prerequisites": [
+            "技能专家可用适配器分别更新",
+            "存在可控的数据预算与更新日程做对照"
+          ],
+          "selfTest": [
+            "在相同数据预算下，定向采集为什么可能优于均匀采集？",
+            "如果失败集中在多个子任务，预算应如何分配？",
+            "迁移到留存组合只有 35.0% 说明定向策略还缺什么？"
+          ],
+          "formula": ""
+        }
+      ],
+      "formulas": [
+        {
+          "id": "f-coach-first-failure",
+          "name": "首个失败子任务定位",
+          "category": "worldmodel",
+          "glyph": "k*",
+          "tags": [
+            "world-model",
+            "diagnosis",
+            "skill-composition"
+          ],
+          "latex": "k^{*} = \\min \\{\\, k \\in \\{1,\\dots,K\\} : J_{k} = 0 \\,\\}",
+          "html": "<code>k* = min{ k in 1..K : J_k = 0 }</code>",
+          "symbols": [
+            [
+              "K",
+              "任务分解后的子任务个数"
+            ],
+            [
+              "J_k",
+              "第 k 个子任务被进度判定器判为完成（1）或未完成（0）"
+            ],
+            [
+              "k*",
+              "第一个未完成子任务的序号，即诊断结果"
+            ]
+          ],
+          "derivation": [
+            "把长程任务分解为 K 个可复用技能子任务，按执行顺序编号 1..K。",
+            "在世界模型中展开执行，进度判定器对每个子任务给出 J_k ∈ {0,1}。",
+            "取第一个 J_k = 0 的序号作为 k*，即失败起点；若全部为 1 则无失败，返回空。"
+          ],
+          "analogy": "像检查流水线上第一台亮红灯的机器，后面的问题多半是它引起的，先修它而不是全线停机。",
+          "pitfalls": [
+            "世界模型的判定误差会让 k* 偏移，需用想象与实机的相关性作为可信度证据。",
+            "定义需要约定 J_k 全为 1（无失败）时 k* 的取值，否则聚合统计会出现空值。",
+            "若任务不是严格顺序执行，取「第一个」失败的语义会不稳定。"
+          ],
+          "code": "def first_failure(J):\n    for k, j in enumerate(J, start=1):\n        if j == 0:\n            return k\n    return None\n\nJ = [1, 1, 0, 0]\nprint(first_failure(J))\n",
+          "sources": [
+            {
+              "title": "RoboCoach: World Models as Active Coaches for Compositional Robot Skills",
+              "url": "https://huggingface.co/papers/2609.39685"
+            }
+          ]
+        },
+        {
+          "id": "f-coach-failure-aggregation",
+          "name": "失败记录聚合与子任务优先级",
+          "category": "worldmodel",
+          "glyph": "c_k",
+          "tags": [
+            "data-selection",
+            "self-improvement",
+            "diagnosis"
+          ],
+          "latex": "c_{k} = \\sum_{i=1}^{N} \\mathbf{1}\\!\\left[\\, k^{*}_{i} = k \\,\\right]",
+          "html": "<code>c_k = sum_i 1[ k*_i == k ]</code>",
+          "symbols": [
+            [
+              "N",
+              "被记录的任务尝试次数"
+            ],
+            [
+              "k*_i",
+              "第 i 次尝试诊断出的首个失败子任务序号"
+            ],
+            [
+              "c_k",
+              "第 k 个子任务被判为失败起点的次数，作为示教采集与专家更新的优先级"
+            ]
+          ],
+          "derivation": [
+            "对每次想象执行记录诊断结果 k*_i。",
+            "对全部 N 次尝试按子任务做计数，得到 c_k。",
+            "按 c_k 排序，决定哪些子任务需要补采示教、哪些专家适配器需要更新。"
+          ],
+          "analogy": "像把一堆病假条按科室分类，哪个科室条子最多就先给哪个科室加人手。",
+          "pitfalls": [
+            "只统计首个失败会低估排在后面的子任务，其真实短板可能被掩盖。",
+            "不同子任务出现频率不同，绝对计数 c_k 需要按出现频次归一化后再比较。",
+            "计数随模型更新而变化，需反复重跑闭环而不是一次性统计。"
+          ],
+          "code": "from collections import Counter\n\nrecords = [2, 2, 3, 2, 1, 3]\nc = Counter(records)\nfor k in sorted(c):\n    print('subtask', k, 'failures', c[k])\n",
+          "sources": [
+            {
+              "title": "RoboCoach: World Models as Active Coaches for Compositional Robot Skills",
+              "url": "https://arxiv.org/abs/2609.39685"
+            }
+          ]
+        }
+      ],
+      "selfCheck": {
+        "claims": [
+          "标题为 RoboCoach: World Models as Active Coaches for Compositional Robot Skills。",
+          "框架用想象出的失败来指导示教请求与专家更新。",
+          "RIDI 循环由 Route-Imagine-Diagnose-Improve 四步组成。",
+          "COACHWORLD 被描述为共享的动作条件世界模型，技能专家在其内执行。",
+          "用进度判定器记录第一个未完成的子任务，聚合记录后决定采集哪些子任务示教、更新哪些专家适配器。",
+          "在 22 个任务-策略对上，想象成功率与部署成功率相关系数 rho = 0.840。",
+          "额外 150 条子任务示教后，Franka 成功率由 13.3% 升到 75.0%，AgileX 由 40.0% 升到 83.8%。",
+          "迁移到四个留存组合平均成功率 35.0%，均匀采集示教更新的共享策略基线为 0%。",
+          "摘要称在两个仿真套件与两个真机平台上做了评估。"
+        ],
+        "uncertain": [
+          "两个仿真套件的具体名称未在摘要中给出。",
+          "摘要正文提到项目页 https://robocoach-ai.github.io/，但该 URL 不在本条 sources 数组中，本文件未作为来源使用。",
+          "数据字段 codeAvailable 为 true，但摘要未说明代码具体发布位置与许可。",
+          "摘要未给出基线的具体构成（除共享策略基线）、示教质量与更新日程的细节。",
+          "聚合记录换算为示教预算的具体策略（阈值或排序规则）摘要未展开。"
+        ]
+      }
+    },
+    {
+      "id": "0cba51532f6021bd",
+      "tldr": "RATIO 用全精度模型定位量化模型的过度思考 token 并施加专属惩罚，CoT 最长缩短 51.3%。",
+      "keyPoints": [
+        "PTQ 用在推理模型上不仅损害推理表现，还会加剧过度思考、拉长推理链。",
+        "已有的轻量推理策略依赖预定义过度思考标记，跨量化模型的适应性有限。",
+        "RATIO 的 QRBA 通过全精度与量化模型的差异识别过度思考 token。",
+        "TSPD 借助全精度引导推导 token 专属惩罚，无需额外训练。",
+        "相对量化基线，精度最多 +9.8 点，CoT 最长减少 51.3%。"
+      ],
+      "why": "面向推理效率与部署方向：量化叠加推理时 token 级干预，是后训练岗位常见的精度—成本权衡题；免训练标定与 CoT 压缩思路可直接迁移到自己的推理加速实验。",
+      "difficulty": "medium",
+      "tags": [
+        "quantization",
+        "ptq",
+        "reasoning",
+        "chain-of-thought",
+        "inference-optimization",
+        "overthinking"
+      ],
+      "entities": [
+        "RATIO",
+        "QRBA",
+        "TSPD",
+        "PTQ",
+        "CoT"
+      ],
+      "diagram": {
+        "kind": "flow",
+        "title": "RATIO 的 token 级惩罚流程",
+        "caption": "RATIO 先用全精度模型与量化模型的差异定位过度思考 token，再为每个 token 定出专属惩罚并作用于推理，得到更短 CoT 与更高精度。",
+        "svg": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 960 420' role='img' aria-label='RATIO 流程示意图' font-family='sans-serif'><rect x='6' y='6' width='948' height='408' rx='16' fill='none' stroke='var(--line-1)'/><text x='30' y='50' font-size='20' fill='var(--fg-1)'>RATIO：量化推理模型的 token 级优化</text><rect x='20' y='130' width='160' height='110' rx='12' fill='none' stroke='var(--line-1)'/><text x='32' y='162' font-size='15' fill='var(--fg-1)'>全精度 vs 量化</text><text x='32' y='190' font-size='13' fill='var(--fg-1)'>同一轨迹对比</text><text x='32' y='212' font-size='13' fill='var(--fg-1)'>全精度与量化差异</text><rect x='210' y='130' width='160' height='110' rx='12' fill='none' stroke='var(--line-1)'/><text x='222' y='162' font-size='15' fill='var(--fg-1)'>QRBA</text><text x='222' y='190' font-size='13' fill='var(--fg-1)'>定位模型专属</text><text x='222' y='212' font-size='13' fill='var(--fg-1)'>过度思考 token</text><rect x='400' y='130' width='160' height='110' rx='12' fill='none' stroke='var(--line-1)'/><text x='412' y='162' font-size='15' fill='var(--fg-1)'>TSPD</text><text x='412' y='190' font-size='13' fill='var(--fg-1)'>以全精度为引导</text><text x='412' y='212' font-size='13' fill='var(--fg-1)'>定 token 专属惩罚</text><rect x='590' y='130' width='160' height='110' rx='12' fill='none' stroke='var(--line-1)'/><text x='602' y='162' font-size='15' fill='var(--fg-1)'>推理时施加惩罚</text><text x='602' y='190' font-size='13' fill='var(--fg-1)'>压低过度思考</text><text x='602' y='212' font-size='13' fill='var(--fg-1)'>token 的被选概率</text><rect x='780' y='130' width='160' height='110' rx='12' fill='none' stroke='var(--accent)'/><text x='792' y='162' font-size='15' fill='var(--accent)'>结果：CoT 更短</text><text x='792' y='190' font-size='13' fill='var(--fg-1)'>CoT 最长缩短 51.3%</text><text x='792' y='212' font-size='13' fill='var(--fg-1)'>精度最多 +9.8 点</text><line x1='182' y1='185' x2='202' y2='185' stroke='var(--accent)' stroke-width='2'/><polygon points='202,180 210,185 202,190' fill='var(--accent)'/><line x1='372' y1='185' x2='392' y2='185' stroke='var(--accent)' stroke-width='2'/><polygon points='392,180 400,185 392,190' fill='var(--accent)'/><line x1='562' y1='185' x2='582' y2='185' stroke='var(--accent)' stroke-width='2'/><polygon points='582,180 590,185 582,190' fill='var(--accent)'/><line x1='752' y1='185' x2='772' y2='185' stroke='var(--accent)' stroke-width='2'/><polygon points='772,180 780,185 772,190' fill='var(--accent)'/><text x='30' y='304' font-size='14' fill='var(--fg-1)'>流程：逐 token 对比全精度与量化输出 → QRBA 定位过度思考 token → TSPD 定专属惩罚 → 推理时施加 → CoT 缩短、精度提升</text><text x='30' y='340' font-size='14' fill='var(--fg-1)'>全程不更新参数，惩罚强度逐 token 不同</text></svg>",
+        "spec": {
+          "type": "flow",
+          "nodes": [
+            {
+              "label": "全精度 vs 量化",
+              "detail": "在同一轨迹上比较两个模型的行为差异"
+            },
+            {
+              "label": "QRBA",
+              "detail": "通过差异定位模型专属的过度思考 token"
+            },
+            {
+              "label": "TSPD",
+              "detail": "以全精度为引导推导 token 专属惩罚，无需额外训练"
+            },
+            {
+              "label": "推理时施加惩罚",
+              "detail": "压低过度思考 token 被选中的概率"
+            },
+            {
+              "label": "结果",
+              "detail": "CoT 最长缩短 51.3%，精度最多提升 9.8 点"
+            }
+          ],
+          "edges": [
+            {
+              "from": "全精度 vs 量化",
+              "to": "QRBA",
+              "label": "分布差异序列"
+            },
+            {
+              "from": "QRBA",
+              "to": "TSPD",
+              "label": "过度思考 token 位置"
+            },
+            {
+              "from": "TSPD",
+              "to": "推理时施加惩罚",
+              "label": "token 专属惩罚强度"
+            },
+            {
+              "from": "推理时施加惩罚",
+              "to": "结果",
+              "label": "更短 CoT、更高精度"
+            }
+          ]
+        },
+        "alt": "RATIO 流程：全精度与量化模型逐 token 对比 → QRBA 定位过度思考 token → TSPD 以全精度引导定出 token 专属惩罚 → 推理时施加惩罚 → CoT 缩短且精度提升"
+      },
+      "concepts": [
+        {
+          "name": "后训练量化与推理模型的过度思考",
+          "readable": "把训练好的模型权重压到低精度能省显存和算力，但用在推理模型上，答案不只会变差，模型还会更啰嗦：推理链变长，多花的算力把省下的又吃掉。",
+          "analogy": "像把资料缩印省钱：纸省了，字却糊了，读的人只好在同一段反复确认，最后耗掉的时间比不缩印还多。",
+          "analogyBreaksDown": "复印件再糊也不会主动多写内容；量化是改变了模型的输出分布，让它真的多生成冗余推理步，属于生成行为的变化而非被动读不清。",
+          "mechanism": "权重与激活的量化误差累积，使部分 token 上的分布发生偏移，本来一步可定的中间结论被反复推敲，于是 CoT 变长、精度与效率同时受损。",
+          "visual": "上下两条等宽横条对比：上条为全精度模型的 CoT 长度，下条为量化模型且明显更长，末端分别标注精度水平。",
+          "prerequisites": [
+            "Transformer 自回归解码",
+            "logits 与 softmax 的基本概念",
+            "权重量化与反量化（scale、zero-point）"
+          ],
+          "selfTest": [
+            "为什么 PTQ 用在推理模型上可能出现省了显存却没省时间的情况？",
+            "过度思考在模型输出上对应哪个可观测指标的变化？",
+            "量化误差大致通过什么途径影响到推理链长度？"
+          ],
+          "formula": ""
+        },
+        {
+          "name": "过度思考 token 与 token 级惩罚",
+          "readable": "并非整条推理链都有问题，只有少数位置在诱发冗余推敲。找出这些位置，给每个位置一个力度合适的惩罚，压低它被选中的概率，推理链就会变短。",
+          "analogy": "堵车往往不是整条路的问题，而是几个固定路口互相让行：与其全城限速，不如只在那几个路口装红绿灯，并按拥堵程度调节时长。",
+          "analogyBreaksDown": "红绿灯时长可以长期固定，而过度思考 token 随模型、量化配置与输入变化，需要按模型重新标定，一套参数不能通用。",
+          "mechanism": "QRBA 对比全精度与量化模型的行为差异，定位诱发冗余推理的 token；TSPD 以全精度输出为引导求出该 token 的专属惩罚强度，在解码时从该位置打分中扣除，降低其被选中的概率。",
+          "visual": "一行 token 方格：多数为浅色，3 至 4 个深色格标为过度思考 token，每个深色格上方竖着一条长度不同的惩罚条。",
+          "prerequisites": [
+            "自回归解码与 logits 干预",
+            "KL 散度等分布差异度量",
+            "贪心解码与采样解码的区别"
+          ],
+          "selfTest": [
+            "为什么采用逐 token 惩罚，而不是统一限制最大生成长度？",
+            "为什么惩罚强度必须随 token 不同而变化？",
+            "惩罚施加在 logits 上会改变解码过程中的什么？"
+          ],
+          "formula": "\\tilde{z}_t = z_t - \\lambda_t"
+        },
+        {
+          "name": "全精度引导的免训练惩罚标定（QRBA + TSPD）",
+          "readable": "惩罚强度不靠训练去学，而是把全精度模型当参考答案：量化模型在哪些位置偏离了它，就惩罚哪里，偏离越大罚得越重。",
+          "analogy": "老师对着标准答案批改：学生哪一步和标准答案分叉，就在那一步标注，不必重新编一套教材，只需要一份标准答案。",
+          "analogyBreaksDown": "标准答案是现成的，而全精度模型的引导信号要真的跑一遍才有；若部署端只能加载量化权重，这一参照可能拿不到，需要退化为预先标定好的惩罚表。",
+          "mechanism": "QRBA 在同一条轨迹上统计全精度与量化模型的分布差异序列，作为过度思考的判别信号；TSPD 直接把这些差异映射为 token 专属惩罚，全程不更新任何参数，因此无需额外训练。",
+          "visual": "左列全精度模型输出、右列量化模型输出，两者用差值箭头连到中间一张惩罚表，表中每个 token 对应一个数值。",
+          "prerequisites": [
+            "PTQ 与全精度模型的对照评测",
+            "分布差异（KL）计算",
+            "推理时干预，例如 logits processor"
+          ],
+          "selfTest": [
+            "TSPD 为什么能不加训练就得到惩罚强度？",
+            "这套方法对全精度模型的可得性有什么依赖？",
+            "摘要指出预定义过度思考标记的做法有什么局限？"
+          ],
+          "formula": ""
+        }
+      ],
+      "formulas": [
+        {
+          "id": "f-ratio-token-penalty",
+          "name": "Token 专属惩罚对打分（logits）的修正",
+          "category": "posttraining",
+          "glyph": "λ",
+          "tags": [
+            "quantization",
+            "reasoning",
+            "inference"
+          ],
+          "latex": "\\tilde{z}_t = z_t - \\lambda_t, \\quad \\lambda_t = \\mathrm{TSPD}\\big(\\Delta_t(f, q)\\big)",
+          "html": "<code>tilde_z[t] = z[t] - lambda[t]</code>",
+          "symbols": [
+            [
+              "z_t",
+              "量化模型在位置 t 的原始打分（logits）"
+            ],
+            [
+              "λ_t",
+              "该 token 的专属惩罚强度"
+            ],
+            [
+              "Δ_t(f, q)",
+              "全精度模型 f 与量化模型 q 在该 token 上的行为差异，由 QRBA 测得"
+            ],
+            [
+              "tilde z_t",
+              "施加惩罚后的打分，供解码使用"
+            ]
+          ],
+          "derivation": [
+            "让全精度模型 f 与量化模型 q 跑同一段推理，得到逐步的行为差异序列 Δ_t（QRBA）。",
+            "差异显著偏大的位置被判为量化诱发的过度思考 token。",
+            "以全精度输出为引导，为每个这样的 token 求出一个专属惩罚强度 λ_t（TSPD），过程中不更新任何参数。",
+            "解码时从该位置的打分中减去 λ_t，压低过度思考 token 被选中的概率。",
+            "效果：相对量化基线，CoT 长度最多减少 51.3%，精度最多提升 9.8 点。"
+          ],
+          "analogy": "像给每个容易跑题的步骤单独设一个提醒力度：先照着标准答案找出分叉处，再按分叉大小决定提醒多用力，而不是整段推理一律打断。",
+          "pitfalls": [
+            "惩罚过强会连同必要的推理步一起压掉，反而降低精度。",
+            "λ_t 依赖全精度模型提供的引导信号，部署时未必能同时加载全精度权重。",
+            "换模型、换量化位宽或换配置都需要重新标定，惩罚不具备通用性。",
+            "本公式是按采集摘要口径的示意重建，原文的具体惩罚形式与施加位置需查原文核实。"
+          ],
+          "code": "import torch\nimport torch.nn.functional as F\n\n\ndef ratio_penalty(logits_f, logits_q, scale=1.0):\n    # logits_f / logits_q: [T, V]，全精度与量化模型在同一条轨迹上的打分\n    # 1) QRBA：逐步比较两个模型的输出分布，得到行为差异序列\n    log_p_f = F.log_softmax(logits_f, dim=-1)\n    log_p_q = F.log_softmax(logits_q, dim=-1)\n    p_f = log_p_f.exp()\n    delta = (p_f * (log_p_f - log_p_q)).sum(-1)   # [T] 每步的分布差异\n    # 2) 差异明显偏大的位置判为过度思考 token\n    flag = delta > delta.mean()\n    # 3) TSPD：按差异大小给出 token 专属惩罚，不更新任何参数\n    lam = torch.where(flag, scale * delta, torch.zeros_like(delta))\n    # 4) 解码前，从该位置被选中 token 的打分中减去惩罚\n    chosen = logits_q.argmax(-1)\n    adjusted = logits_q.clone()\n    adjusted[torch.arange(adjusted.size(0)), chosen] -= lam\n    return adjusted, lam\n\n\nlogits_f = torch.randn(8, 100)\nlogits_q = logits_f + 0.3 * torch.randn(8, 100)\nadjusted, lam = ratio_penalty(logits_f, logits_q)\nprint(lam.round(decimals=3))\n",
+          "sources": [
+            {
+              "title": "RATIO: Reasoning Analysis and Token-level Inference Optimization for Quantized Reasoning Models（arXiv:2609.39801v1）",
+              "url": "https://arxiv.org/abs/2609.39801v1"
+            }
+          ]
+        }
+      ],
+      "selfCheck": {
+        "claims": [
+          "论文提出 RATIO 框架，用于识别量化推理模型专属的过度思考 token 并为其分配定制惩罚。",
+          "RATIO 包含 QRBA，通过分析全精度模型与量化模型之间的差异来识别过度思考 token。",
+          "RATIO 包含 TSPD，借助全精度引导推导 token 专属惩罚且不需要额外训练。",
+          "摘要称后训练量化会损害推理模型的表现并加剧过度思考，使推理轨迹变长。",
+          "摘要称已有轻量推理策略依赖预定义过度思考标记，跨量化模型的适应性受限。",
+          "实验报告相对量化基线精度最多提升 9.8 点，CoT 长度最多减少 51.3%。",
+          "摘要称代码将发布于 https://github.com/steven-bao1/RATIO 。"
+        ],
+        "uncertain": [
+          "采集摘要未给出惩罚的具体数学形式与施加对象，条目中的公式是按摘要口径的示意重建，非原文公式。",
+          "9.8 点与 51.3% 所对应的评测基准、模型规模与量化位宽在摘要中未说明。",
+          "摘要只说「优于现有 token 级干预」，未列出具体对比方法与完整实验设置。",
+          "formulas 里的 Python 片段为示意实现，不是论文官方代码。",
+          "量化导致过度思考的机理描述（误差累积使分布偏移）属通用解释，原文未必如此表述。"
+        ]
+      }
+    },
+    {
+      "id": "2e1f908ff2f8f54c",
+      "tldr": "用3571个模型的公开数据库做早期实证：EU AI Act通用模型义务生效后，通用模型组结构化披露提升8.7个百分点，且集中在训练算力一项；未检出开放权重、参数规模或披露算力的同步变化。采集摘要有限（结尾截断）。",
+      "keyPoints": [
+        "数据源为每日更新的公开数据库，共 3571 个机器学习模型",
+        "主分析对比 604 个语言类通用模型与 401 个窄任务模型",
+        "观察窗口约为 2024-08-02 至 2026-07-21",
+        "七项披露指数：参数、算力、数据、时长、硬件、代码、获取",
+        "通用模型组结构化披露 +8.7 个百分点，集中于训练算力"
+      ],
+      "why": "与多模态／后训练／RL／Agent技术主线弱相关，属AI治理与合规方向：可迁移点是「用公开模型元数据构建披露指数并做准实验估计」的做法。对做模型卡、数据与算力披露、开源发布策略的求职者可作为谈资。",
+      "difficulty": "medium",
+      "tags": [
+        "ai-governance",
+        "regulation",
+        "disclosure",
+        "empirical-study",
+        "foundation-model",
+        "openness"
+      ],
+      "entities": [
+        "EU AI Act",
+        "general-purpose AI models",
+        "Structured Disclosure Index",
+        "training compute",
+        "open-weight release"
+      ],
+      "diagram": {
+        "kind": "flow",
+        "title": "EU AI Act披露效应估计流程",
+        "caption": "从3571个模型的公开数据库，到通用模型组与窄任务组的对比，再到七项披露指数与固定效应估计。",
+        "svg": "<svg viewBox=\"0 0 960 400\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"sans-serif\">\n  <rect x=\"0\" y=\"0\" width=\"960\" height=\"400\" fill=\"none\"/>\n  <g stroke=\"var(--line-1)\" fill=\"none\">\n    <path d=\"M190 95 H250\"/>\n    <path d=\"M190 290 H250\"/>\n    <path d=\"M430 95 H490\"/>\n    <path d=\"M430 290 H490\"/>\n    <path d=\"M660 190 H720\"/>\n  </g>\n  <g fill=\"var(--fg-1)\" font-size=\"14\">\n    <text x=\"205\" y=\"88\">筛选</text>\n    <text x=\"205\" y=\"283\">筛选</text>\n  </g>\n  <rect x=\"20\" y=\"120\" width=\"170\" height=\"150\" rx=\"10\" stroke=\"var(--line-1)\" fill=\"none\"/>\n  <text x=\"105\" y=\"175\" font-size=\"15\" fill=\"var(--fg-1)\" text-anchor=\"middle\">公开模型数据库</text>\n  <text x=\"105\" y=\"200\" font-size=\"14\" fill=\"var(--fg-1)\" text-anchor=\"middle\">3571个模型</text>\n  <text x=\"105\" y=\"225\" font-size=\"14\" fill=\"var(--fg-1)\" text-anchor=\"middle\">每日更新</text>\n  <rect x=\"250\" y=\"40\" width=\"180\" height=\"110\" rx=\"10\" stroke=\"var(--accent)\" fill=\"none\"/>\n  <text x=\"340\" y=\"80\" font-size=\"15\" fill=\"var(--fg-1)\" text-anchor=\"middle\">通用模型组</text>\n  <text x=\"340\" y=\"105\" font-size=\"14\" fill=\"var(--fg-1)\" text-anchor=\"middle\">604个语言类模型</text>\n  <text x=\"340\" y=\"130\" font-size=\"14\" fill=\"var(--fg-1)\" text-anchor=\"middle\">满足透明GPAI代理</text>\n  <rect x=\"250\" y=\"235\" width=\"180\" height=\"110\" rx=\"10\" stroke=\"var(--line-1)\" fill=\"none\"/>\n  <text x=\"340\" y=\"275\" font-size=\"15\" fill=\"var(--fg-1)\" text-anchor=\"middle\">窄任务模型组</text>\n  <text x=\"340\" y=\"300\" font-size=\"14\" fill=\"var(--fg-1)\" text-anchor=\"middle\">401个模型</text>\n  <text x=\"340\" y=\"325\" font-size=\"14\" fill=\"var(--fg-1)\" text-anchor=\"middle\">2024-08-02至2026-07-21</text>\n  <rect x=\"490\" y=\"120\" width=\"170\" height=\"150\" rx=\"10\" stroke=\"var(--line-1)\" fill=\"none\"/>\n  <text x=\"575\" y=\"155\" font-size=\"15\" fill=\"var(--fg-1)\" text-anchor=\"middle\">结构化披露指数</text>\n  <text x=\"575\" y=\"180\" font-size=\"13\" fill=\"var(--fg-1)\" text-anchor=\"middle\">参数量 / 训练算力</text>\n  <text x=\"575\" y=\"200\" font-size=\"13\" fill=\"var(--fg-1)\" text-anchor=\"middle\">数据规模 / 训练时长</text>\n  <text x=\"575\" y=\"220\" font-size=\"13\" fill=\"var(--fg-1)\" text-anchor=\"middle\">训练硬件 / 训练代码</text>\n  <text x=\"575\" y=\"240\" font-size=\"13\" fill=\"var(--fg-1)\" text-anchor=\"middle\">模型获取状态</text>\n  <rect x=\"720\" y=\"100\" width=\"220\" height=\"180\" rx=\"10\" stroke=\"var(--accent)\" fill=\"none\"/>\n  <text x=\"830\" y=\"140\" font-size=\"15\" fill=\"var(--fg-1)\" text-anchor=\"middle\">机构与月份固定效应</text>\n  <text x=\"830\" y=\"170\" font-size=\"15\" fill=\"var(--accent)\" text-anchor=\"middle\">+8.7个百分点</text>\n  <text x=\"830\" y=\"195\" font-size=\"13\" fill=\"var(--fg-1)\" text-anchor=\"middle\">集中在训练算力披露</text>\n  <text x=\"830\" y=\"220\" font-size=\"13\" fill=\"var(--fg-1)\" text-anchor=\"middle\">开放权重 / 参数规模</text>\n  <text x=\"830\" y=\"240\" font-size=\"13\" fill=\"var(--fg-1)\" text-anchor=\"middle\">未检出变化</text>\n</svg>",
+        "spec": {
+          "type": "flow",
+          "nodes": [
+            {
+              "label": "公开模型数据库",
+              "detail": "3571个机器学习模型，每日更新"
+            },
+            {
+              "label": "通用模型组",
+              "detail": "604个满足透明GPAI代理的语言模型"
+            },
+            {
+              "label": "窄任务模型组",
+              "detail": "401个模型，约两年窗口内发布"
+            },
+            {
+              "label": "结构化披露指数",
+              "detail": "参数量、训练算力、数据规模、训练时长、硬件、训练代码、模型获取共七项"
+            },
+            {
+              "label": "固定效应估计",
+              "detail": "通用模型组结构化披露+8.7个百分点，集中于训练算力"
+            }
+          ],
+          "edges": [
+            {
+              "from": "公开模型数据库",
+              "to": "通用模型组",
+              "label": "按透明GPAI代理筛选"
+            },
+            {
+              "from": "公开模型数据库",
+              "to": "窄任务模型组",
+              "label": "按窄任务筛选"
+            },
+            {
+              "from": "通用模型组",
+              "to": "结构化披露指数",
+              "label": "逐模型编码七项"
+            },
+            {
+              "from": "窄任务模型组",
+              "to": "结构化披露指数",
+              "label": "同一指数编码"
+            },
+            {
+              "from": "结构化披露指数",
+              "to": "固定效应估计",
+              "label": "机构与日历月固定效应回归"
+            }
+          ]
+        },
+        "alt": "流程图：3571个模型的公开数据库筛出604个通用模型与401个窄任务模型，两组都编码七项结构化披露指数，经机构与日历月固定效应估计得到通用组披露提升8.7个百分点，集中于训练算力。"
+      },
+      "concepts": [
+        {
+          "name": "结构化披露指数",
+          "readable": "把模型公开信息拆成七项可核查的字段——参数量、训练算力、训练数据规模、训练时长、训练硬件、训练代码是否公开、模型获取方式，逐项判断公开来源里有没有写，最后汇总成一个披露程度的分数，用来比较不同模型在透明度上的差别。",
+          "analogy": "像体检表：不判断身体好不好，只逐项打勾看有没有测过身高、血压、血糖，最后数一共勾了几项。",
+          "analogyBreaksDown": "体检项目有客观标准值，而披露指数只衡量「有没有写出来」，写出来不等于写得准，也不等于合规；分数的提高可能来自文档习惯变化而非模型开发实践变化。",
+          "mechanism": "为每个模型编码七个二元字段，加总为披露分；再以通用模型组与窄任务模型组做对比，用机构与日历月固定效应吸收时间趋势与机构差异，估计义务生效期的组间披露差。",
+          "visual": "七格复选框横向排列，每格标注一个字段名，右侧一个分数条随勾选数增长；两行分别代表通用模型组与窄任务模型组，两条分数条长度差即披露差异。",
+          "prerequisites": [
+            "面板数据与固定效应回归的基本概念",
+            "通用目的AI模型与窄任务模型的区分"
+          ],
+          "selfTest": [
+            "结构化披露指数包含哪七项字段？",
+            "为什么指数提高不能直接推出模型开发实践改变？",
+            "机构固定效应与日历月固定效应各自在吸收什么变异？"
+          ],
+          "formula": "D_i = \\sum_{k=1}^{7} \\mathbb{1}[\\text{第}k\\text{项字段在公开来源中可查}]"
+        },
+        {
+          "name": "处理效应与固定效应估计",
+          "readable": "在观察性数据里估计政策效果的标准做法：把结果变量对「是否属于受约束的通用模型组」和「是否在义务生效之后」的交互项回归，同时放进机构与日历月的固定效应，吸收掉机构之间固有差异和共同的时间趋势，剩下的交互项系数就是估计出的政策关联效应。",
+          "analogy": "比较同一批学生在同一场考试前后的成绩变化，把班级差异和试卷难度都扣掉，只看政策影响的净增量。",
+          "analogyBreaksDown": "固定效应只能吸收不随时间变化的机构特征和共同时间冲击；若义务生效期同时发生其他影响披露的事件（如同期其他法规、行业自律），估计值会把它们一并算进去。",
+          "mechanism": "以结构化披露分为因变量，纳入「通用模型组×生效后」交互项、机构固定效应、日历月固定效应；更换控制变量设定做稳健性检验，观察系数大小与显著性如何变化。",
+          "visual": "一张两线时间序列图：横轴为日历月，纵轴为平均披露分，通用组曲线在2024年8月附近上折，窄任务组曲线较平，阴影区标注义务生效期。",
+          "prerequisites": [
+            "双重差分／交互项回归",
+            "固定效应与聚类标准误"
+          ],
+          "selfTest": [
+            "交互项系数在本文中如何解读？",
+            "为什么换成国家与机构类别控制后估计值会变小？",
+            "该设计能否直接给出因果结论？"
+          ],
+          "formula": "D_{it} = \\alpha + \\beta\\,(G_i \\times Post_t) + \\mu_i + \\lambda_t + \\varepsilon_{it}"
+        }
+      ],
+      "formulas": [
+        {
+          "id": "f-fe-disclosure-did",
+          "name": "双层固定效应双重差分（结构化披露率）",
+          "category": "engineering",
+          "glyph": "β",
+          "tags": [
+            "policy-evaluation",
+            "panel-data",
+            "did"
+          ],
+          "latex": "D_{it} = \\beta\\,(G_i \\times P_t) + \\alpha_i + \\gamma_t + \\varepsilon_{it}",
+          "html": "<code>D_it = β·(G_i × P_t) + α_i + γ_t + ε_it</code>",
+          "symbols": [
+            [
+              "D_{it}",
+              "模型 i 在月份 t 的结构化披露指数"
+            ],
+            [
+              "G_i",
+              "通用模型代理组指示，0 或 1"
+            ],
+            [
+              "P_t",
+              "义务生效后时期指示，0 或 1"
+            ],
+            [
+              "\\beta",
+              "双重差分系数，论文估计为 8.7 个百分点"
+            ],
+            [
+              "\\alpha_i",
+              "组织固定效应，吸收提供方固有差异"
+            ],
+            [
+              "\\gamma_t",
+              "日历月固定效应，吸收共同时间冲击"
+            ],
+            [
+              "\\varepsilon_{it}",
+              "残差项"
+            ]
+          ],
+          "derivation": [
+            "对每条模型-月份观测编码七项披露指标，求和或取均值得到被解释变量 D 的取值。",
+            "构造两个 0/1 指示：G 表示是否属于通用模型代理组，P 表示是否处于义务生效之后的时期。",
+            "交互项 G×P 刻画通用模型组在生效后、相对于窄任务组的额外披露变化。",
+            "加入组织固定效应与日历月固定效应，分别吸收不随时间变化的提供方差异和所有模型共同经历的时间趋势。",
+            "对面板做最小二乘估计得到 β，再用国家与组织类别控制替换组织固定效应做稳健性检验。"
+          ],
+          "analogy": "像两个班换教材：只看重点班涨分说明不了问题，要看重点班涨幅减去普通班涨幅才是教材的净效果；固定效应相当于先把两班原本的水平差异和当次考试的难度差扣掉。",
+          "pitfalls": [
+            "处理组由自定的透明通用模型代理标准划分，不等于法条定义，可能误分类。",
+            "摘要在此处截断，事后观测数量有限，平行趋势假设难以充分检验。",
+            "把组织固定效应换为国家与组织类别控制后，估计变小且与零不可区分，说明结论对设定敏感。",
+            "披露变多只说明文档更完整，不等于模型开发实践或安全性改变。"
+          ],
+          "code": "import numpy as np\n\nrng = np.random.default_rng(0)\nn_org, n_month = 120, 24\nrows = []\nfor i in range(n_org):\n    gpai = i % 2                        # 1 = 通用模型代理组\n    org_fe = rng.normal(0, 0.4)\n    for t in range(n_month):\n        post = 1 if t >= 12 else 0      # 义务生效前后\n        y = 0.30 + org_fe + 0.05 * t + 0.087 * gpai * post + rng.normal(0, 0.3)\n        rows.append((i, t, gpai, post, y))\n\ndata = np.array(rows)\ny, G, P = data[:, 4], data[:, 2], data[:, 3]\nD_org = np.eye(n_org)[data[:, 0].astype(int)]\nD_month = np.eye(n_month)[data[:, 1].astype(int)]\nX = np.column_stack([G * P, D_org[:, 1:], D_month[:, 1:]])\n\nbeta, *_ = np.linalg.lstsq(X, y, rcond=None)\nprint('DID 估计（百分点）:', round(beta[0] * 100, 2))  # 约 8.7",
+          "sources": [
+            {
+              "title": "Regulating the Frontier: Model-Level Evidence from the EU AI Act",
+              "url": "https://doi.org/10.17613/8rga5-9wc04"
+            }
+          ]
+        }
+      ],
+      "selfCheck": {
+        "claims": [
+          "该条是发表在PhilPapers、经同行评审的英文文章，标题为Regulating the Frontier: Model-Level Evidence from the EU AI Act",
+          "文章对EU AI Act面向通用目的AI模型提供者的透明义务做了早期、模型层面的实证评估",
+          "分析基于一个每日更新、含3571个机器学习模型的公开数据库",
+          "主分析比较604个满足透明通用目的AI代理的语言类模型与401个窄任务模型",
+          "观察窗口约为两年，从2024年8月2日到2026年7月21日",
+          "七项结构化披露指数记录参数量、训练算力、训练数据规模、训练时间、训练硬件、训练代码状态、模型获取状态",
+          "机构与日历月固定效应估计给出通用模型组结构化披露提高8.7个百分点",
+          "该变化集中在训练算力报告上",
+          "换成国家与机构类别控制后，估计值变小且与0统计上不可区分",
+          "未检出开放权重发布、模型参数规模或已披露训练算力的对应变化",
+          "该条只有一个来源URL：https://doi.org/10.17613/8rga5-9wc04"
+        ],
+        "uncertain": [
+          "summary在「Only two post-application observati…」处被截断，文章结论的后半段与样本量限制无法核实",
+          "各变量的编码细则、数据来源数据库名称、统计模型的具体设定在摘要中未给出",
+          "8.7个百分点是否被作者表述为因果效应，摘要中只能看到「associate」，需查原文确认",
+          "样本窗口与发布时间（2026-12-31）是否表示该文为预印本或特定期次，摘要未交代",
+          "摘要提到若干within-provider设定下估计仍为正，具体有哪些设定未列出"
+        ]
+      }
+    },
+    {
+      "id": "63e2ea5d702c742c",
+      "tldr": "综述 CFD 的量子求解路线：QLSA、哈密顿量模拟、QLBM 与 QPINN 变分，量子优势高度依赖问题本身。",
+      "keyPoints": [
+        "综述文章，41 页 14 图 2 表，arXiv 2609.39962v1",
+        "全量子路线：QLSA（HHL 到 QSVT）、哈密顿量模拟、QLBM",
+        "混合路线含量子物理信息神经网络 QPINN 与幅度编码变分 PDE 求解器",
+        "讨论张量网络表示，把 CFD 离散化与量子态、算子、线路对应到 TP-VQA",
+        "结论：潜在量子优势受条件数、表示复杂度、态制备与测量约束支配"
+      ],
+      "why": "与多模态/后训练/世界模型/RL/Agent 主线弱相关；可迁移的只有评估习惯：判断一个加速或表示方案是否成立，先查问题条件（条件数、低秩性、读出成本）。",
+      "difficulty": "hard",
+      "tags": [
+        "quantum-computing",
+        "cfd",
+        "pde-solver",
+        "qsvt",
+        "tensor-network",
+        "review"
+      ],
+      "entities": [
+        "HHL",
+        "QSVT",
+        "QLBM",
+        "QPINN",
+        "TP-VQA",
+        "CFD"
+      ],
+      "diagram": {
+        "kind": "flow",
+        "title": "量子 CFD 求解流水线",
+        "caption": "综述给出的量子 CFD 路线：先用张量网络低秩表示，再制备量子态并求解，最后由测量与经典后处理收尾。",
+        "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 800 340\" role=\"img\" aria-label=\"量子 CFD 求解流水线\">\n  <rect x=\"0\" y=\"0\" width=\"800\" height=\"340\" fill=\"none\"/>\n  <g fill=\"none\" stroke=\"var(--line-1)\" stroke-width=\"2\">\n    <rect x=\"25\" y=\"80\" width=\"160\" height=\"110\" rx=\"12\"/>\n    <rect x=\"215\" y=\"80\" width=\"160\" height=\"110\" rx=\"12\"/>\n    <rect x=\"405\" y=\"80\" width=\"160\" height=\"110\" rx=\"12\"/>\n    <rect x=\"595\" y=\"80\" width=\"160\" height=\"110\" rx=\"12\"/>\n    <rect x=\"25\" y=\"225\" width=\"730\" height=\"85\" rx=\"12\" stroke-dasharray=\"6 5\"/>\n  </g>\n  <g fill=\"var(--fg-1)\" font-size=\"15\" font-family=\"sans-serif\" text-anchor=\"middle\">\n    <text x=\"105\" y=\"110\">张量网络编码</text>\n    <text x=\"295\" y=\"110\">量子态制备</text>\n    <text x=\"485\" y=\"110\">量子求解器</text>\n    <text x=\"675\" y=\"110\">测量与后处理</text>\n  </g>\n  <g fill=\"currentColor\" font-size=\"13\" font-family=\"sans-serif\" text-anchor=\"middle\">\n    <text x=\"105\" y=\"140\">低秩 CFD 场与算子</text>\n    <text x=\"105\" y=\"162\">键维控制精度</text>\n    <text x=\"295\" y=\"140\">幅度编码右端项</text>\n    <text x=\"295\" y=\"162\">态制备是瓶颈</text>\n    <text x=\"485\" y=\"140\">HHL/QSVT、模拟</text>\n    <text x=\"485\" y=\"162\">QLBM、QPINN 变分</text>\n    <text x=\"675\" y=\"140\">读出受限</text>\n    <text x=\"675\" y=\"162\">经典流场复现</text>\n  </g>\n  <g stroke=\"currentColor\" stroke-width=\"2\" fill=\"none\">\n    <path d=\"M189 135 L205 135\"/>\n    <path d=\"M207 135 L199 131\"/>\n    <path d=\"M207 135 L199 139\"/>\n    <path d=\"M379 135 L395 135\"/>\n    <path d=\"M397 135 L389 131\"/>\n    <path d=\"M397 135 L389 139\"/>\n    <path d=\"M569 135 L585 135\"/>\n    <path d=\"M587 135 L579 131\"/>\n    <path d=\"M587 135 L579 139\"/>\n  </g>\n  <g font-family=\"sans-serif\" text-anchor=\"middle\">\n    <text x=\"390\" y=\"258\" font-size=\"14\" fill=\"var(--accent)\">量子优势并非普遍存在</text>\n    <text x=\"390\" y=\"286\" font-size=\"14\" fill=\"var(--fg-1)\">受条件数、表示复杂度、态制备与测量约束支配</text>\n  </g>\n</svg>",
+        "spec": {
+          "type": "flow",
+          "nodes": [
+            {
+              "label": "张量网络编码",
+              "detail": "把 CFD 场、微分算子与几何信息写成低秩张量网络"
+            },
+            {
+              "label": "量子态制备",
+              "detail": "把右端项幅度编码成量子态，是主要开销之一"
+            },
+            {
+              "label": "量子求解器",
+              "detail": "QLSA（HHL 到 QSVT）、哈密顿量模拟、QLBM 或 QPINN 变分"
+            },
+            {
+              "label": "测量与后处理",
+              "detail": "测量约束限制定量读出，之后交回经典后处理"
+            }
+          ],
+          "edges": [
+            {
+              "from": "张量网络编码",
+              "to": "量子态制备",
+              "label": "低秩表示"
+            },
+            {
+              "from": "量子态制备",
+              "to": "量子求解器",
+              "label": "编码态"
+            },
+            {
+              "from": "量子求解器",
+              "to": "测量与后处理",
+              "label": "求解态"
+            }
+          ]
+        },
+        "alt": "自左向右四个方框：张量网络编码、量子态制备、量子求解器、测量与后处理，底部虚线框标注量子优势受条件数、表示复杂度、态制备与测量约束支配。"
+      },
+      "concepts": [
+        {
+          "name": "量子线性系统算法（HHL 与 QSVT）",
+          "readable": "把解线性方程组 A x = b 变成对量子态做相位估计与受控旋转：先制备右端项，再写进特征值倒数，测量成功后得到与解成正比的量子态。开销随条件数二次增长，且要求 A 稀疏、右端项态可高效制备。",
+          "analogy": "像一支合唱团一次唱出所有音高：量子态同时携带全部特征方向的权重，不用逐个迭代；但散场后你只能采样听几句，且必须先知道整支合唱团的音准范围。",
+          "analogyBreaksDown": "合唱类比对不上读出环节：量子测量每次只给一个采样结果，重建完整流场要大量重复测量，而经典求解器一次性给出整个解向量。",
+          "mechanism": "把 b 制备成量子态，用相位估计把 A 的特征值写进 ancilla，再用受控旋转实现 1/λ，随后逆相位估计；测量 ancilla 成功后主寄存器近似正比于 A^{-1} b。",
+          "visual": "横向流水线：制备右端项 → 相位估计（标注特征值）→ 受控旋转（写 1/λ）→ 逆相位估计 → 测量 ancilla，分出成功与失败两条支路。",
+          "prerequisites": [
+            "线性代数：特征值分解与条件数",
+            "量子门、量子态与受控操作",
+            "相位估计与后选择测量"
+          ],
+          "selfTest": [
+            "为什么 HHL 的复杂度对条件数 κ 是二次依赖，这会如何影响 CFD 网格细化？",
+            "HHL 输出的量子态与经典解向量 x 之间差了什么归一化因子？",
+            "若 A 是稠密的、无法高效做哈密顿量模拟，为什么不能直接套用 HHL？"
+          ],
+          "formula": "\\mathcal{O}(\\kappa^2 \\log N / \\varepsilon)"
+        },
+        {
+          "name": "CFD 场的张量网络低秩编码",
+          "readable": "如果 CFD 的场量、微分算子和几何信息能被写成分解后秩很低的张量，就能用少量参数表示它们，翻译成量子态、算子和线路，交给张量可编程变分量子算法（TP-VQA）求解。低秩是这套路线能否跑通的前提。",
+          "analogy": "像把一张大照片压成几块小拼图：图案本身有结构时，少量拼块就能还原大致画面；纯噪声图片则怎么压都压不动。",
+          "analogyBreaksDown": "拼图压缩靠的是图案结构，张量网络的低秩截断会直接丢信息；一旦流场出现强激波或湍流小尺度结构，秩迅速升高，压缩前提就失效了。",
+          "mechanism": "把离散化的场量与差分算子写成张量网络收缩形式，用键维控制精度与线路深度，再映射为参数化量子线路，构成 TP-VQA。",
+          "visual": "一张张量网络缩略图：场量节点与算子节点用细线相连，旁边标注键维 d，并配一条截断误差随 d 增大而下降的曲线。",
+          "prerequisites": [
+            "张量分解：SVD、Tucker、矩阵乘积态",
+            "PDE 有限差分或有限元离散",
+            "变分量子算法与参数化线路"
+          ],
+          "selfTest": [
+            "为什么低秩可表示性是量子 CFD 可行性的前提之一？",
+            "键维增大时，求解精度与量子线路资源分别怎么变？",
+            "哪类流场特征会让张量网络编码失效？"
+          ],
+          "formula": ""
+        },
+        {
+          "name": "量子-经典混合 PDE 求解器（QPINN 与幅度编码变分）",
+          "readable": "混合路线不要求容错量子计算机：把 PDE 残差、边界与初值条件写成损失，用带参数的量子线路当函数逼近器，靠经典优化器反复调参把残差压小；另一类是幅度编码变分求解器，把解直接编码进量子态幅度再变分优化。",
+          "analogy": "像用一排可调旋钮的模拟电路去拟合一条曲线：不追求一步解析求解，而是反复试错把偏差拧小。",
+          "analogyBreaksDown": "旋钮式拟合给不出求解精度保证，也没有 HHL 那样的复杂度陈述；含噪设备上梯度要多次测量估计，训练开销可能超过经典 PINN。",
+          "mechanism": "构造含 PDE 残差、边界条件、初值项的损失函数，线路参数由经典优化器更新；幅度编码变分求解器则把解编码进量子态幅度，直接最小化变分能量。",
+          "visual": "一个闭环：参数化量子线路 → 多次测量估计残差/损失 → 经典优化器更新参数 → 回到线路；旁注噪声水平与测量次数。",
+          "prerequisites": [
+            "PINN 的自动微分与损失构造",
+            "参数化量子线路与梯度估计",
+            "含噪中等规模量子设备的限制"
+          ],
+          "selfTest": [
+            "QPINN 与经典 PINN 的差别只在函数逼近器换成了量子线路吗？",
+            "为什么含噪设备上的梯度估计会放大测量开销？",
+            "幅度编码变分求解器把什么对象编码进量子态？"
+          ],
+          "formula": ""
+        }
+      ],
+      "formulas": [
+        {
+          "id": "f-hhl-complexity",
+          "name": "HHL 量子线性求解器的复杂度标度",
+          "category": "engineering",
+          "glyph": "κ",
+          "tags": [
+            "quantum-computing",
+            "linear-system",
+            "complexity"
+          ],
+          "latex": "\\mathcal{O}\\!\\left(\\frac{\\kappa^2 \\log N}{\\varepsilon}\\right)",
+          "html": "<code>O(κ² · log N / ε)</code>",
+          "symbols": [
+            [
+              "A",
+              "N×N 稀疏非奇异矩阵，来自 CFD 的 PDE 离散化"
+            ],
+            [
+              "b",
+              "右端项，其归一化量子态需可高效制备"
+            ],
+            [
+              "x",
+              "待求解向量，满足 A x = b"
+            ],
+            [
+              "N",
+              "线性系统的维度"
+            ],
+            [
+              "κ",
+              "A 的条件数，是复杂度的主导因子"
+            ],
+            [
+              "ε",
+              "目标精度"
+            ]
+          ],
+          "derivation": [
+            "把 CFD 离散化后的 PDE 写成线性系统 A x = b，并要求 A 稀疏、可高效做哈密顿量模拟。",
+            "把 b 归一化并制备成量子态，这一步的态制备开销在复杂度中被单独列出。",
+            "对该态做相位估计得到 A 的特征值，再用受控旋转把特征值倒数写进 ancilla 的幅度。",
+            "逆相位估计后测量 ancilla，成功后主寄存器近似正比于 A^{-1} b，读出即近似解。",
+            "整体按 O(κ² log N / ε) 计：对 N 是对数级加速，但被 κ 的二次项与 1/ε 压制。"
+          ],
+          "analogy": "像用一把会自动按特征值调音的音叉解方程：调好音之后一次覆盖所有特征方向，但你必须先摸清这把音叉的音准范围（条件数）。",
+          "pitfalls": [
+            "κ 很大时二次依赖会吃掉 log N 的收益，网格越细条件数通常越差。",
+            "稠密或无法稀疏访问的 A 不能直接套用这条复杂度。",
+            "态制备与读出常需后选择或幅度放大，实际开销容易被忽略。",
+            "输出是量子态幅度，只能采样估计，无法像经典求解器那样直接拿到完整解向量。",
+            "该标度只属于 HHL 一类 QLSA，不能推广到 QSVT、QLBM 或变分法等其他框架。"
+          ],
+          "code": "import numpy as np\n\n\ndef hhl_query_cost(N: int, kappa: float, eps: float) -> float:\n    # HHL 复杂度量级：O(kappa^2 * log N / eps)\n    return (kappa ** 2) * np.log2(N) / eps\n\n\nN, eps = 512, 1e-2\nfor kappa in (10.0, 100.0, 1000.0):\n    print(kappa, round(hhl_query_cost(N, kappa, eps), 1))\n\n# 网格越细，离散拉普拉斯算子条件数越大\nfor n in (32, 64, 128):\n    main = 2.0 * np.ones(n)\n    off = -1.0 * np.ones(n - 1)\n    A = np.diag(main) + np.diag(off, 1) + np.diag(off, -1)\n    print(n, round(float(np.linalg.cond(A)), 1))\n",
+          "sources": [
+            {
+              "title": "Quantum Algorithms for Computational Fluid Dynamics (arXiv:2609.39962v1)",
+              "url": "https://arxiv.org/abs/2609.39962v1"
+            }
+          ]
+        },
+        {
+          "id": "f-qsvt-block-encoding",
+          "name": "量子奇异值变换：用多项式作用于被块编码的矩阵",
+          "category": "foundation",
+          "glyph": "P",
+          "tags": [
+            "quantum-computing",
+            "qsvt",
+            "block-encoding"
+          ],
+          "latex": "U_{\\phi} = \\sum_{\\ell} \\phi_{\\ell}\\, U^{\\ell}",
+          "html": "<code>U_φ = Σ_ℓ φ_ℓ · U^ℓ</code>",
+          "symbols": [
+            [
+              "U",
+              "块编码算子，其定义子空间上携带待变换矩阵的奇异值"
+            ],
+            [
+              "φ_ℓ",
+              "可调相位序列，决定最终被实现的多项式"
+            ],
+            [
+              "P",
+              "目标多项式，作用于矩阵的奇异值"
+            ],
+            [
+              "σ_i",
+              "被编码矩阵的奇异值"
+            ]
+          ],
+          "derivation": [
+            "若矩阵被块编码进酉算子 U，则 U 在定义子空间上的作用相当于奇异值的旋转。",
+            "交替施加 U 与 U† 并按相位序列加权，得到形式为相位加权幂次和 U_φ。",
+            "U_φ 在定义子空间上的作用正是把每个奇异值映射为同一多项式在该点的取值。",
+            "于是求逆、滤波等操作都等价于挑选合适的多项式，而线路长度由多项式次数决定。"
+          ],
+          "analogy": "像一台可编程滤镜给矩阵的每个奇异值单独调亮度：把旋钮写成一组相位参数，就能指定该压的压、该反的反。",
+          "pitfalls": [
+            "只能实现多项式，非多项式函数必须分段近似，次数随之膨胀。",
+            "相位序列与多项式的奇偶性、实部虚部强耦合，算错会静默得到另一个多项式。",
+            "块编码线路本身常被当作给定，其制备代价可能才是主导开销。",
+            "这里只给出通用形式，本条摘要并未给出该综述所用的具体多项式或复杂度界。"
+          ],
+          "code": "import torch\n\n\ndef qsvt_polynomial(sigma: torch.Tensor, phis: torch.Tensor) -> torch.Tensor:\n    # Chebyshev 递推：T0=1, T1=sigma, T(k+1)=2*sigma*Tk - T(k-1)\n    t_prev, t_cur = torch.ones_like(sigma), sigma.clone()\n    out = phis[0] * t_prev + phis[1] * t_cur\n    for k in range(2, len(phis)):\n        t_prev, t_cur = t_cur, 2 * sigma * t_cur - t_prev\n        out = out + phis[k] * t_cur\n    return out\n\n\nsigma = torch.linspace(-1, 1, 9, dtype=torch.float64)\nphis = torch.zeros(5, dtype=torch.float64)\nphis[0], phis[2] = 1.0, -1.0\napprox = qsvt_polynomial(sigma, phis)\nexact = 1 - (2 * sigma ** 2 - 1)\nprint(torch.allclose(approx, exact))\n",
+          "sources": [
+            {
+              "title": "Quantum Algorithms for Computational Fluid Dynamics (arXiv:2609.39962v1)",
+              "url": "https://arxiv.org/abs/2609.39962v1"
+            }
+          ]
+        }
+      ],
+      "selfCheck": {
+        "claims": [
+          "该条是一篇综述文章，标注为 41 页、14 图、2 表，来源 arXiv:2609.39962v1，标签 quant-ph。",
+          "综述覆盖全量子路线，包括量子线性系统算法（从 HHL 到 QSVT）、哈密顿量模拟与量子格子玻尔兹曼方法。",
+          "综述强调混合量子-经典路线，包括量子物理信息神经网络与幅度编码变分 PDE 求解器。",
+          "综述聚焦与当前含噪处理器及未来容错架构都兼容的硬件无关算法。",
+          "综述讨论了张量网络表示，认为它可把 CFD 离散化与量子态、算子、线路衔接，并导向张量可编程变分量子算法。",
+          "综述考察的基准问题包括 Poisson、反应、扩散与非线性模型方程。",
+          "综述的结论是潜在量子优势高度依赖具体问题，由条件数、表示复杂度、态制备与测量约束支配。"
+        ],
+        "uncertain": [
+          "本条摘要未给出任何具体复杂度数值或加速倍率；HHL 的 O(κ² log N / ε) 属于通用背景，本文是否采用同一记号与前提需回原文核对。",
+          "摘要未说明各框架在基准问题上的对比结果或优劣排序，无法判断作者更推荐哪条路线。",
+          "该条 codeAvailable 标记为 true，但摘要正文未提到代码仓库，代码位置需人工核实。",
+          "本条与多模态、后训练、生成式、世界模型、RL、Agent 主线无直接关系，why 中的可迁移性判断属于我的推断。",
+          "综述自称硬件无关，但摘要未说明是否给出任何在真实量子设备上的实验验证。"
+        ]
+      }
+    },
+    {
+      "id": "77e544498b6fdcba",
+      "tldr": "FAHOC分层RL联合学习治疗策略选项与疾病/干预分解子策略，加合作感知掩码；5万患者QALY提升0.669。",
+      "keyPoints": [
+        "患者偏好是疗效主要决定因素，却缺失于现有计算治疗规划模型。",
+        "FAHOC 是分层 RL 框架：高层学治疗策略 option，低层学分解式策略。",
+        "分解式子策略把联合动作空间拆成疾病与干预子分量，并施加合作感知掩码。",
+        "形式化保证：合作患者最优期望健康结果更高，且分解 Q 函数近似误差有界。",
+        "五家医院约5万高血压合并2型糖尿病患者数据；95.9%正确识别合作患者。"
+      ],
+      "why": "对 RL / Agent 求职者：分层 option 与因子化动作空间可迁移到长时程工具调用 Agent；多模态、生成式、世界模型方向相关性弱。",
+      "difficulty": "medium",
+      "tags": [
+        "hierarchical-rl",
+        "preference-modeling",
+        "option-critic",
+        "action-masking",
+        "healthcare",
+        "factored-actions"
+      ],
+      "entities": [
+        "FAHOC",
+        "hierarchical reinforcement learning",
+        "option-critic",
+        "cooperation-aware action masking",
+        "type 2 diabetes mellitus",
+        "hypertension"
+      ],
+      "diagram": {
+        "kind": "architecture",
+        "title": "FAHOC 分层决策流程",
+        "caption": "高层选治疗策略选项，低层在合作感知掩码约束下按疾病与干预分解地选动作，终止信号交还高层。",
+        "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 960 400\" role=\"img\" aria-label=\"FAHOC 分层决策流程图\"><g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><rect x=\"20\" y=\"120\" width=\"150\" height=\"80\" rx=\"8\" stroke=\"var(--line-1)\"/><rect x=\"192\" y=\"120\" width=\"168\" height=\"80\" rx=\"8\" stroke=\"var(--accent)\" stroke-width=\"2\"/><rect x=\"382\" y=\"120\" width=\"210\" height=\"80\" rx=\"8\" stroke=\"var(--line-1)\"/><rect x=\"614\" y=\"120\" width=\"150\" height=\"80\" rx=\"8\" stroke=\"var(--line-1)\"/><rect x=\"786\" y=\"120\" width=\"154\" height=\"80\" rx=\"8\" stroke=\"var(--line-1)\"/><line x1=\"170\" y1=\"160\" x2=\"182\" y2=\"160\"/><polygon points=\"182,155 192,160 182,165\" fill=\"currentColor\" stroke=\"none\"/><line x1=\"360\" y1=\"160\" x2=\"372\" y2=\"160\"/><polygon points=\"372,155 382,160 372,165\" fill=\"currentColor\" stroke=\"none\"/><line x1=\"592\" y1=\"160\" x2=\"604\" y2=\"160\"/><polygon points=\"604,155 614,160 604,165\" fill=\"currentColor\" stroke=\"none\"/><line x1=\"764\" y1=\"160\" x2=\"776\" y2=\"160\"/><polygon points=\"776,155 786,160 776,165\" fill=\"currentColor\" stroke=\"none\"/><path d=\"M861 120 L861 66 L276 66 L276 104\"/><polygon points=\"270,104 282,104 276,116\" fill=\"currentColor\" stroke=\"none\"/></g><g fill=\"currentColor\" text-anchor=\"middle\"><text x=\"95\" y=\"155\" font-size=\"15\">患者状态</text><text x=\"95\" y=\"178\" font-size=\"13\">共病与偏好</text><text x=\"276\" y=\"148\" font-size=\"15\" fill=\"var(--accent)\">高层选项</text><text x=\"276\" y=\"170\" font-size=\"13\">选治疗策略 option</text><text x=\"487\" y=\"148\" font-size=\"15\">分解式子策略</text><text x=\"487\" y=\"170\" font-size=\"13\">疾病 / 干预子分量</text><text x=\"689\" y=\"148\" font-size=\"15\">合作感知掩码</text><text x=\"689\" y=\"170\" font-size=\"13\">过滤不可行动作</text><text x=\"863\" y=\"148\" font-size=\"15\">环境反馈</text><text x=\"863\" y=\"170\" font-size=\"13\">健康结果与偏好</text><text x=\"568\" y=\"56\" font-size=\"13\">option 终止后交还高层，重新选策略</text></g></svg>",
+        "spec": {
+          "type": "flow",
+          "nodes": [
+            {
+              "label": "患者状态",
+              "detail": "共病状态与患者偏好"
+            },
+            {
+              "label": "高层选项",
+              "detail": "学习对应治疗策略的 option"
+            },
+            {
+              "label": "分解式子策略",
+              "detail": "intra-option 策略拆成疾病与干预子分量"
+            },
+            {
+              "label": "合作感知掩码",
+              "detail": "按偏好与合作度约束可行动作"
+            },
+            {
+              "label": "环境反馈",
+              "detail": "健康结果与偏好满足情况"
+            }
+          ],
+          "edges": [
+            {
+              "from": "患者状态",
+              "to": "高层选项",
+              "label": "选择策略"
+            },
+            {
+              "from": "高层选项",
+              "to": "分解式子策略",
+              "label": "下发选项"
+            },
+            {
+              "from": "分解式子策略",
+              "to": "合作感知掩码",
+              "label": "候选动作"
+            },
+            {
+              "from": "合作感知掩码",
+              "to": "环境反馈",
+              "label": "执行动作"
+            },
+            {
+              "from": "环境反馈",
+              "to": "高层选项",
+              "label": "option 终止后重新选择"
+            }
+          ]
+        },
+        "alt": "横向流程图：患者状态到高层选项，到分解式子策略，到合作感知掩码，到环境反馈，再由 option 终止信号返回高层重新选择策略。"
+      },
+      "concepts": [
+        {
+          "name": "分层选项与时间抽象",
+          "readable": "把长期治疗拆成两层：上层先挑一个持续一段时间的治疗策略，下层在这个策略内逐步选具体用药或干预。这样每次决策不用从零考虑所有动作，探索更有结构，功劳也能分到对的层级。",
+          "analogy": "像出国旅行：先定这三天待在哪个城市（高层策略），再决定每天具体去哪几个景点（低层动作）；不会每走一步都重新决定去哪个国家。",
+          "analogyBreaksDown": "旅行中高层策略可以随时任性地换，而治疗策略一旦启动就要考虑身体反应延迟与疗程连续性，换策略本身有代价；旅行类比里没有这种不可逆的生理成本。",
+          "mechanism": "高层策略在状态上选择 option，option 内部用 intra-option 策略持续输出动作，直到终止函数判定该 option 结束再交还高层；两层各有价值估计，从而在长时程上做时间抽象与分层信用分配。",
+          "visual": "画一棵两层树：根节点写「治疗策略 option」，下面挂若干子节点写「具体干预动作」，右侧用一条带箭头的回环线标注「终止后回到根节点重选」。",
+          "prerequisites": [
+            "马尔可夫决策过程基础",
+            "策略梯度与价值函数",
+            "option / 半马尔可夫决策过程概念"
+          ],
+          "selfTest": [
+            "高层 option 与低层动作在时间尺度上有什么本质差别？",
+            "终止函数学得不好会导致什么后果？",
+            "为什么分层能改善长时程任务的信用分配？"
+          ],
+          "formula": "\\nabla_\\theta J=\\mathbb{E}\\Big[\\nabla_\\theta\\log\\pi_\\omega(a\\mid s)\\,Q_\\Omega(s,\\omega)\\Big]"
+        },
+        {
+          "name": "因子化动作空间与掩码",
+          "readable": "把一个大动作空间拆成几块小空间，比如按疾病拆、按干预类型拆，各自打分再组合；同时用一个掩码把不符合患者偏好或临床上不可行的动作直接屏蔽掉。",
+          "analogy": "像点外卖：先分「主食 / 饮料 / 小菜」三栏各挑一样，而不是在几千个套餐里硬选；如果有过敏原，带该食材的选项直接被灰掉点不了。",
+          "analogyBreaksDown": "点外卖各栏之间基本独立，而疾病与干预子动作在临床上会互相影响（一种药改变另一种药的效果），类比忽略了这种跨因子的耦合。",
+          "mechanism": "联合 Q 函数被近似为各因子分量之和或组合，每个分量只在自己的子动作空间上取值；合作感知掩码在取动作前把不满足偏好的动作概率置零并重归一化，从而在优化中硬性满足偏好约束。",
+          "visual": "画三列并行的小方格阵列，分别标注疾病 A、疾病 B、干预类型，每列各选一格后再汇入一个写着「组合动作」的方框；方框入口处画一道闸门写「掩码」。",
+          "prerequisites": [
+            "因子化 MDP 与可加 Q 分解",
+            "动作掩码 / 合法动作约束",
+            "约束优化与可行性"
+          ],
+          "selfTest": [
+            "因子化 Q 分解的误差上界依赖什么假设？",
+            "掩码把动作概率置零后为什么必须重归一化？",
+            "掩码与在奖励里加偏好惩罚有什么本质区别？"
+          ],
+          "formula": "Q(s,a)\\approx\\sum_{k=1}^{K}Q_k(s,a_k),\\quad \\pi(a\\mid s)=\\frac{m(s,a)\\,\\tilde\\pi(a\\mid s)}{\\sum_{a\\prime}m(s,a\\prime)\\,\\tilde\\pi(a\\prime\\mid s)}"
+        },
+        {
+          "name": "偏好约束下的策略优化",
+          "readable": "把患者坚持建议的意愿与能力写进决策的可行动作集里，使策略从一开始就不会推荐患者不会执行的治疗，从而让可达到的期望疗效与合作程度挂钩。",
+          "analogy": "像教练制定训练计划：明知学员每周只能练两次，就不会安排每天两小时的方案；按可行强度排的计划，实际成绩反而更好。",
+          "analogyBreaksDown": "健身计划不达标只是成绩差，医疗里不依从可能直接导致病情恶化甚至不可逆，所以约束是硬性的而非软性偏好，代价不对称。",
+          "mechanism": "在分层策略优化中把偏好作为可行域约束而非奖励项，动作必须落在合作患者可执行集合内；由此可证明合作患者的最优期望健康结果不低于非合作患者，且分解近似带来的误差有界。",
+          "visual": "画一条曲线：横轴写「合作程度」，纵轴写「最优期望健康结果」，曲线单调上升；下方用阴影带标出「不可行动作区域」，被一道竖直虚线隔开。",
+          "prerequisites": [
+            "约束马尔可夫决策过程",
+            "策略改进定理",
+            "偏好与效用建模基础"
+          ],
+          "selfTest": [
+            "为什么合作患者的最优期望结果更高是「保证」而非经验观察？",
+            "把偏好当约束与当奖励项分别会带来什么风险？",
+            "偏好估计错误时框架会怎样失效？"
+          ],
+          "formula": "V^\\ast_{\\text{coop}}(s)\\ge V^\\ast_{\\text{non}}(s)\\quad\\text{s.t.}\\ a\\in\\mathcal{A}_{\\text{pref}}(s)"
+        }
+      ],
+      "formulas": [
+        {
+          "id": "f-option-critic-update",
+          "name": "option-critic 的 intra-option 策略梯度",
+          "category": "rl",
+          "glyph": "∇",
+          "tags": [
+            "hierarchical-rl",
+            "option-critic",
+            "policy-gradient"
+          ],
+          "latex": "\\frac{\\partial J}{\\partial\\theta}=\\mathbb{E}_{s,\\omega,a}\\Big[\\frac{\\partial\\log\\pi_{\\theta}(a\\mid s,\\omega)}{\\partial\\theta}\\,Q_{\\Omega}(s,\\omega,a)\\Big]",
+          "html": "<code>grad = log pi_theta(a|s,omega) * Q_Omega(s,omega,a)</code>",
+          "symbols": [
+            [
+              "J",
+              "期望回报目标"
+            ],
+            [
+              "\\theta",
+              "intra-option 策略参数"
+            ],
+            [
+              "\\omega",
+              "当前高层 option（治疗策略）"
+            ],
+            [
+              "a",
+              "低层动作，可因子化为 a_k"
+            ],
+            [
+              "Q_{\\Omega}",
+              "option 价值函数"
+            ],
+            [
+              "\\pi_{\\theta}",
+              "option 内策略"
+            ]
+          ],
+          "derivation": [
+            "把策略梯度定理从「单层动作」推广到「以 option 为条件的动作」，似然项写成 log π_θ(a|s,ω)。",
+            "用 option 价值 Q_Ω(s,ω,a) 取代普通动作价值，评价的是在 option 内部执行该动作的长期收益。",
+            "实际训练时用采样的单步估计替代期望，并对 Q_Ω 使用自举目标以降低方差。",
+            "FAHOC 进一步把 π_θ(a|s,ω) 分解为疾病与干预子策略的乘积，使每个因子只在自己的子动作空间上更新。"
+          ],
+          "analogy": "像球队里主教练定战术（option）、球员执行具体跑位（intra-option 动作）：每个跑位的价值要用它在整套战术里的贡献来衡量，而不是单独看这一次跑位漂不漂亮。",
+          "pitfalls": [
+            "误用普通 Q(s,a) 代替 option 价值，会丢掉跨时间尺度的信用分配。",
+            "把终止函数梯度漏掉，option 会永不切换或频繁抖动。",
+            "对 log 概率与优势项的量纲不做归一，梯度尺度会随分层而爆炸。"
+          ],
+          "code": "import torch\nimport torch.nn as nn\n\n\nclass IntraOptionPolicy(nn.Module):\n    def __init__(self, state_dim, n_options, n_actions):\n        super().__init__()\n        self.n_options = n_options\n        self.head = nn.Linear(state_dim, n_options * n_actions)\n        self.n_actions = n_actions\n\n    def forward(self, state):\n        logits = self.head(state).view(-1, self.n_options, self.n_actions)\n        return torch.distributions.Categorical(logits=logits)\n\n\ndef intra_option_loss(dist, option, action, option_value, mask=None):\n    logits = dist.logits\n    if mask is not None:\n        # mask 为 0 的动作概率置零后重新归一化\n        logits = logits.masked_fill(mask == 0, float('-inf'))\n    dist = torch.distributions.Categorical(logits=logits)\n    logp = dist.log_prob(action)\n    return -(logp * option_value.detach()).mean()",
+          "sources": [
+            {
+              "title": "arXiv:2609.39911v1 Patient-Centered Treatment Planning for Chronic Multimorbidity",
+              "url": "https://arxiv.org/abs/2609.39911v1"
+            }
+          ]
+        },
+        {
+          "id": "f-pref-constrained-return",
+          "name": "偏好约束下的回报与最优性保证",
+          "category": "rl",
+          "glyph": "V",
+          "tags": [
+            "constrained-rl",
+            "preference",
+            "healthcare"
+          ],
+          "latex": "V^{\\ast}_{\\text{coop}}(s)=\\max_{\\pi}\\ \\mathbb{E}_{\\pi}\\Big[\\sum_{t=0}^{\\infty}\\gamma^{t}r_{t}\\Big]\\ \\ \\text{s.t.}\\ \\ a_{t}\\in\\mathcal{A}_{\\text{pref}}(s_{t})",
+          "html": "<code>V_coop*(s) = max_pi E[sum gamma^t r_t] s.t. a_t in A_pref(s_t)</code>",
+          "symbols": [
+            [
+              "V^{\\ast}_{\\text{coop}}",
+              "合作患者可达到的最优期望健康结果"
+            ],
+            [
+              "\\gamma",
+              "折扣因子"
+            ],
+            [
+              "r_t",
+              "当期健康收益"
+            ],
+            [
+              "\\mathcal{A}_{\\text{pref}}(s)",
+              "状态 s 下符合患者偏好的可行动作集"
+            ],
+            [
+              "\\pi",
+              "分层策略（高层 option + 低层因子化策略）"
+            ]
+          ],
+          "derivation": [
+            "把患者偏好表述为状态相关的可行动作集 A_pref(s)，而不是奖励中的惩罚项。",
+            "合作患者的可行集包含非合作患者的可行集，因此其可行策略集合更大。",
+            "在更大的可行集上取最大，目标值不会下降——这给出 V*_coop ≥ V*_non 的单调性保证。",
+            "因子化把联合 Q 近似为各子分量之和，其近似误差由各分量的估计误差共同界定，因此误差有界。"
+          ],
+          "analogy": "像两个求职者投简历：一个人可以投所有岗位，另一个只能投本地岗位；可投范围更大的人，最优 offer 至少不会更差。",
+          "pitfalls": [
+            "若把偏好当软惩罚，策略仍可能选到不可执行动作，保证失效。",
+            "可行集若随时间漂移而估计滞后，约束会不满足。",
+            "因子化 Q 的误差上界只在分解假设成立时有效，跨因子强耦合会破坏它。"
+          ],
+          "code": "import numpy as np\n\n\ndef masked_softmax(logits, mask):\n    logits = np.asarray(logits, dtype=float)\n    mask = np.asarray(mask, dtype=float)\n    z = np.where(mask > 0, logits, -np.inf)\n    z = z - np.max(z)\n    e = np.exp(z) * (mask > 0)\n    total = e.sum()\n    if total <= 0:\n        raise ValueError('可行动作集为空，偏好约束不可满足')\n    return e / total\n\n\ndef preference_feasible(state_pref, need_coop):\n    # state_pref: 每个动作要求的合作度; need_coop: 患者实际合作度\n    return (state_pref <= need_coop).astype(float)\n\n\nif __name__ == '__main__':\n    logits = [1.0, 2.0, 0.5]\n    mask = preference_feasible([0.2, 0.9, 0.4], 0.5)\n    print(mask, masked_softmax(logits, mask))",
+          "sources": [
+            {
+              "title": "arXiv:2609.39911v1 Patient-Centered Treatment Planning for Chronic Multimorbidity",
+              "url": "https://arxiv.org/abs/2609.39911v1"
+            }
+          ]
+        }
+      ],
+      "selfCheck": {
+        "claims": [
+          "摘要称患者偏好指患者坚持临床建议的意愿与能力，是疗效的主要决定因素，但在现有计算治疗规划模型中结构性缺失。",
+          "摘要提出 FAHOC，一个分层强化学习框架，联合学习对应治疗策略的高层 option 与分解式 intra-option 策略。",
+          "分解把联合动作空间拆成疾病专用与干预专用子分量，并施加合作感知动作掩码。",
+          "摘要称框架给出形式化保证：合作患者的最优期望健康结果高于非合作患者，且因子化 Q 函数近似误差可证有界。",
+          "评测使用美国东南部五家医院约 5 万名高血压合并 2 型糖尿病患者的纵向数据。",
+          "摘要报告 FAHOC 的 QALY 期望改善为 0.669，而观察到的临床实践为 -0.133。",
+          "摘要报告在留出测试中 95.9% 正确识别合作患者，且从未违反患者偏好。",
+          "该条来自 arXiv，venue 写着 39 pages, including appendices，codeAvailable 为 false。"
+        ],
+        "uncertain": [
+          "合作感知动作掩码的具体实现（掩码规则来源、是否学习得到）摘要未说明。",
+          "0.669 与 -0.133 的计算口径、对照时间段与统计显著性摘要未交代，需回原文核实。",
+          "95.9% 对应的是准确率还是敏感度/特异度，摘要表述为 correctly identifies，存在歧义。",
+          "两条形式化保证的证明细节与所需假设（如偏好稳定、可行集非空）只可能在正文与附录中。",
+          "该框架似为回顾性数据上的离线评估，摘要未提及任何前瞻性临床试验或实际部署。",
+          "摘要称 39 页含附录，但未提及代码或数据是否公开，复现难度未知。",
+          "摘要未给出与其它 HRL 或约束 RL 基线在医学任务上的横向对比细节。"
+        ]
+      }
+    },
+    {
+      "id": "324ee823fef4dbb4",
+      "tldr": "CASE：用 Agentic 后训练让紧凑视觉语言模型自主搜寻纵向医学证据，超越 GPT-5.4。",
+      "keyPoints": [
+        "CASE 是角色化的临床证据搜寻 Agent，配套工具调用框架与后训练流程。",
+        "基准含 4,739 名参与者、50,401 道 ICD-10 派生题",
+        "每题绑定患者专属环境，含临床上下文与基线/随访多序列 MRI。",
+        "先用 14,734 条前沿模型交互轨迹做 SFT，再做 agentic 强化学习。",
+        "比 GPT-5.4 高逾 16%、比 Claude Opus 4.8 高 10%。"
+      ],
+      "why": "对 Agent 与后训练求职者直接相关：展示工具调用 harness、SFT→Agentic RL→自蒸馏链路与纵向多模态基准设计。",
+      "difficulty": "hard",
+      "tags": [
+        "agent",
+        "vision-language",
+        "post-training",
+        "rl",
+        "medical-reasoning",
+        "benchmark"
+      ],
+      "entities": [
+        "CASE",
+        "UK Biobank",
+        "Qwen3-VL-8B",
+        "GPT-5.4",
+        "Claude Opus 4.8"
+      ],
+      "diagram": {
+        "kind": "flow",
+        "title": "CASE 证据搜寻与后训练流程",
+        "caption": "从 UK Biobank 派生题目并搭建患者环境，再经 SFT 与 agentic RL，最后与 GPT-5.4、Claude Opus 4.8 对比。",
+        "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1000 430\" role=\"img\" aria-label=\"CASE 流程图：纵向基准到患者环境，再到 SFT 与 agentic RL，最后进入评估\"><text x=\"500\" y=\"46\" text-anchor=\"middle\" font-size=\"18\" fill=\"var(--fg-1)\">CASE：从纵向基准到证据搜寻策略</text><text x=\"500\" y=\"76\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">UK Biobank 派生题目 → 患者环境检索 → SFT → Agentic RL → 对比评估</text><rect x=\"20\" y=\"130\" width=\"168\" height=\"150\" rx=\"10\" fill=\"none\" stroke=\"var(--line-1)\" stroke-width=\"2\"/><text x=\"104\" y=\"168\" text-anchor=\"middle\" font-size=\"15\" fill=\"var(--fg-1)\">纵向基准</text><text x=\"104\" y=\"200\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">UK Biobank</text><text x=\"104\" y=\"224\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">4,739 人</text><text x=\"104\" y=\"248\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">50,401 题</text><rect x=\"218\" y=\"130\" width=\"168\" height=\"150\" rx=\"10\" fill=\"none\" stroke=\"var(--line-1)\" stroke-width=\"2\"/><text x=\"302\" y=\"168\" text-anchor=\"middle\" font-size=\"15\" fill=\"var(--fg-1)\">患者环境</text><text x=\"302\" y=\"200\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">临床上下文</text><text x=\"302\" y=\"224\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">基线 + 随访</text><text x=\"302\" y=\"248\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">多序列 MRI</text><rect x=\"416\" y=\"130\" width=\"168\" height=\"150\" rx=\"10\" fill=\"none\" stroke=\"var(--line-1)\" stroke-width=\"2\"/><text x=\"500\" y=\"168\" text-anchor=\"middle\" font-size=\"15\" fill=\"var(--fg-1)\">SFT 迁移</text><text x=\"500\" y=\"200\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">14,734 条</text><text x=\"500\" y=\"224\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">前沿模型交互</text><text x=\"500\" y=\"248\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">轨迹</text><rect x=\"614\" y=\"130\" width=\"168\" height=\"150\" rx=\"10\" fill=\"none\" stroke=\"var(--line-1)\" stroke-width=\"2\"/><text x=\"698\" y=\"168\" text-anchor=\"middle\" font-size=\"15\" fill=\"var(--fg-1)\">Agentic RL</text><text x=\"698\" y=\"200\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">在自身环境</text><text x=\"698\" y=\"224\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">交互上强化</text><rect x=\"812\" y=\"130\" width=\"168\" height=\"150\" rx=\"10\" fill=\"none\" stroke=\"var(--line-1)\" stroke-width=\"2\"/><text x=\"896\" y=\"168\" text-anchor=\"middle\" font-size=\"15\" fill=\"var(--fg-1)\">评估</text><text x=\"896\" y=\"200\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">自蒸馏 + rubric</text><text x=\"896\" y=\"224\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">超越 GPT-5.4</text><line x1=\"190\" y1=\"205\" x2=\"212\" y2=\"205\" stroke=\"var(--accent)\" stroke-width=\"2\"/><path d=\"M218,205 L208,200 L208,210 Z\" fill=\"var(--accent)\"/><line x1=\"388\" y1=\"205\" x2=\"410\" y2=\"205\" stroke=\"var(--accent)\" stroke-width=\"2\"/><path d=\"M416,205 L406,200 L406,210 Z\" fill=\"var(--accent)\"/><line x1=\"586\" y1=\"205\" x2=\"608\" y2=\"205\" stroke=\"var(--accent)\" stroke-width=\"2\"/><path d=\"M614,205 L604,200 L604,210 Z\" fill=\"var(--accent)\"/><line x1=\"784\" y1=\"205\" x2=\"806\" y2=\"205\" stroke=\"var(--accent)\" stroke-width=\"2\"/><path d=\"M812,205 L802,200 L802,210 Z\" fill=\"var(--accent)\"/><text x=\"203\" y=\"196\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--accent)\">1</text><text x=\"401\" y=\"196\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--accent)\">2</text><text x=\"599\" y=\"196\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--accent)\">3</text><text x=\"797\" y=\"196\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--accent)\">4</text><text x=\"500\" y=\"340\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">① 逐题实例化　② 证据搜寻任务　③ 策略初始化　④ 匹配条件评估</text><text x=\"500\" y=\"382\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">依据采集摘要整理，具体算法与奖励设计摘要未公开</text></svg>",
+        "spec": {
+          "type": "flow",
+          "nodes": [
+            {
+              "label": "纵向基准",
+              "detail": "UK Biobank：4,739 人、50,401 道 ICD-10 派生题"
+            },
+            {
+              "label": "患者环境",
+              "detail": "临床上下文与基线/随访多序列 MRI"
+            },
+            {
+              "label": "SFT 迁移",
+              "detail": "14,734 条前沿模型交互轨迹"
+            },
+            {
+              "label": "Agentic RL",
+              "detail": "在学习者自身环境交互上做强化学习"
+            },
+            {
+              "label": "评估",
+              "detail": "on-policy 自蒸馏 + rubric 反馈，对比 GPT-5.4 与 Claude Opus 4.8"
+            }
+          ],
+          "edges": [
+            {
+              "from": "纵向基准",
+              "to": "患者环境",
+              "label": "逐题实例化"
+            },
+            {
+              "from": "患者环境",
+              "to": "SFT 迁移",
+              "label": "证据搜寻任务"
+            },
+            {
+              "from": "SFT 迁移",
+              "to": "Agentic RL",
+              "label": "策略初始化"
+            },
+            {
+              "from": "Agentic RL",
+              "to": "评估",
+              "label": "匹配条件评估"
+            }
+          ]
+        },
+        "alt": "流程图：纵向基准 → 患者环境 → SFT 迁移 → Agentic RL → 评估，五段串联"
+      },
+      "concepts": [
+        {
+          "name": "证据搜寻型评测（given evidence 对 gathered evidence）",
+          "readable": "常规医学基准先把证据挑好再让模型答题；这条改成把患者的完整病历与多次影像交给模型，由它自己决定看哪次随访、哪个器官、哪种模态、哪些切片。",
+          "analogy": "旧考法是老师替你翻到参考书某一页再出题；新考法是只给你图书馆钥匙，连该查哪本书都要自己判断。",
+          "analogyBreaksDown": "图书馆有唯一正确的索引与书目，而医学证据没有唯一正确的检索路径，同一结论可以由不同访次和模态组合支撑，所以不能像查目录那样比对轨迹对错。",
+          "mechanism": "每题实例化为一个患者环境，包含临床上下文与基线、随访的多序列 MRI；Agent 通过工具在访次、器官、模态、切片四个层次上自主检索与比较，评测目标是可迁移的搜寻策略，而不只是给定证据下的问答准确率。",
+          "visual": "左列给定证据基准：证据 → 问题 → 答案 的一字长蛇；右列证据搜寻基准：以问题为根的检索树，第一层访次、第二层器官、第三层模态、第四层切片，只有部分叶子能拼出答案。",
+          "prerequisites": [
+            "多模态大模型基础",
+            "工具调用与 Agent 循环",
+            "MRI 多序列等影像模态概念"
+          ],
+          "selfTest": [
+            "给定证据基准与证据搜寻基准在模型输入上的关键差别是什么？",
+            "本例中 Agent 需要在哪些维度上自主做选择？",
+            "为什么只报告最终答案准确率，无法说明模型是否学会了选证据？"
+          ],
+          "formula": ""
+        },
+        {
+          "name": "Agentic 后训练三段式：SFT → Agentic RL → on-policy 自蒸馏",
+          "readable": "先从前沿模型的 14,734 条交互轨迹里学会怎么找证据，再让模型在自己的环境交互上用强化学习改进，最后用带特权信息的 on-policy 自蒸馏和 rubric 反馈打磨证据到结论的推理。",
+          "analogy": "像培养住院医师：先跟台看上级医生怎么做，再自己独立管病人并按结果被评价，最后上级只在你自己写下的诊疗思路上逐句点评。",
+          "analogyBreaksDown": "上级点评可以随时打断并解释理由，而蒸馏只是分布对齐，不会告诉模型某一步为什么更好；而且训练时的特权信息在独立执业时并不存在。",
+          "mechanism": "SFT 阶段用 14,734 条前沿模型交互轨迹迁移证据搜寻工作流；RL 阶段在模型自己与环境交互产生的轨迹上优化策略；特权 on-policy 自蒸馏与 rubric LLM 反馈进一步约束证据到结论的推理，且不规定固定工具序列。",
+          "visual": "三段管道依次串联：轨迹 SFT（14,734 条）→ 环境内 RL 采样与组内优势更新 → 在学生自采轨迹上对带特权信息的教师做逐 token KL。",
+          "prerequisites": [
+            "监督微调 SFT",
+            "策略梯度与组内相对优势",
+            "知识蒸馏与 KL 散度"
+          ],
+          "selfTest": [
+            "为什么 RL 阶段必须在模型自己采样的轨迹上做，而不是继续用前沿模型轨迹？",
+            "on-policy 自蒸馏里的特权信息在推理阶段能否使用？",
+            "rubric 反馈与答案正确性同时作为奖励时，可能出现什么副作用？"
+          ],
+          "formula": "\\mathcal{L}_{\\mathrm{distill}}(\\theta)=\\mathbb{E}_{q}\\,\\mathbb{E}_{o\\sim\\pi_\\theta}\\Big[\\frac{1}{|o|}\\sum_{t=1}^{|o|}\\mathrm{KL}\\big(p_{\\mathrm{priv}}(\\cdot\\mid q,o_{<t},c_{\\mathrm{priv}})\\,\\|\\,p_\\theta(\\cdot\\mid q,o_{<t})\\big)\\Big]"
+        },
+        {
+          "name": "纵向多模态基准的构建（UK Biobank 派生）",
+          "readable": "题目不是人工编写的，而是从 4,739 名参与者的真实 ICD-10 诊断码派生出的 50,401 道临床问题，每题都挂在一个患者专属环境上，含基线与随访的多次影像。",
+          "analogy": "像用真实病历库自动出题：答案早就写在病史里，出题人只负责把病历切成问题和环境。",
+          "analogyBreaksDown": "病历里的诊断码并不等于推理链，诊断成立不代表模型的检索路径与临床医生一致；题量大也不能说明临床难度分布合理。",
+          "mechanism": "以 UK Biobank 参与者的 ICD-10 编码诊断为锚点生成临床问题；为每题构建包含临床上下文与基线、随访多序列 MRI 的患者环境；Agent 在其中自主选择访次、器官、模态、切片与专科工具，再输出答案。",
+          "visual": "一条纵向时间轴：基线访次与随访访次各挂若干 MRI 序列；时间轴上方是从 ICD-10 诊断派生的问题列表，箭头指向对应访次的影像。",
+          "prerequisites": [
+            "ICD-10 医学编码常识",
+            "纵向队列数据概念",
+            "多模态数据集设计"
+          ],
+          "selfTest": [
+            "这道基准的题目来源是什么，而不是由谁手写？",
+            "每个问题对应的环境里包含哪两类信息？",
+            "用 ICD-10 诊断派生问题，可能引入哪类偏差？"
+          ],
+          "formula": ""
+        }
+      ],
+      "formulas": [
+        {
+          "id": "f-case-agentic-rl",
+          "name": "Agentic RL 的组内相对优势裁剪目标",
+          "category": "agent",
+          "glyph": "∇",
+          "tags": [
+            "agent",
+            "rl",
+            "policy-gradient"
+          ],
+          "latex": "\\mathcal{L}_{\\mathrm{RL}}(\\theta)=-\\mathbb{E}_{q\\sim\\mathcal{D}}\\Big[\\frac{1}{G}\\sum_{i=1}^{G}\\frac{1}{|o_i|}\\sum_{t=1}^{|o_i|}\\min\\big(\\rho_{i,t}\\hat{A}_i,\\ \\mathrm{clip}(\\rho_{i,t},1-\\epsilon,1+\\epsilon)\\hat{A}_i\\big)\\Big]+\\beta\\,\\mathrm{KL}(\\pi_\\theta\\,\\|\\,\\pi_{\\mathrm{ref}})",
+          "html": "<code>L_RL(θ) = −E_q[ (1/G) Σ_i (1/|o_i|) Σ_t min(ρ_{i,t}·Â_i, clip(ρ_{i,t}, 1−ε, 1+ε)·Â_i) ] + β·KL(π_θ ‖ π_ref)</code>",
+          "symbols": [
+            [
+              "ρ_{i,t}",
+              "新旧策略在第 i 条轨迹第 t 步的似然比 π_θ/π_old"
+            ],
+            [
+              "Â_i",
+              "第 i 条轨迹的组内相对优势 (R_i − 组均值)/(组标准差 + δ)"
+            ],
+            [
+              "G",
+              "同一问题在环境中采样的轨迹条数"
+            ],
+            [
+              "ε",
+              "似然比的裁剪范围"
+            ],
+            [
+              "β",
+              "KL 惩罚系数"
+            ],
+            [
+              "R_i",
+              "第 i 条轨迹的回报，可含答案正确性与 rubric 反馈分"
+            ]
+          ],
+          "derivation": [
+            "把临床问答写成策略 π_θ 在患者环境里采样工具调用与结论轨迹 o 的过程。",
+            "对同一问题采样 G 条轨迹，按答案正确性与 rubric 分数得到回报 R_i。",
+            "用组内均值与标准差把 R_i 归一化为相对优势 Â_i，省掉额外的价值网络基线。",
+            "用似然比 ρ 构造裁剪代理目标，并加 KL 项把策略约束在参考策略附近。",
+            "最小化 L_RL 即最大化该目标；on-policy 蒸馏项可作为额外加权项并入同一损失。"
+          ],
+          "analogy": "同一个病例让同一位医生独立看 G 次，谁比同伴的平均表现好就奖励谁，而不看绝对分数；这样就不需要另请一位专门打分的老师网络。",
+          "pitfalls": [
+            "整组全对或全错时组内标准差接近 0，优势会被放大，需要加 δ 或丢弃该组",
+            "长度归一化的方式会明显改变长轨迹与短轨迹的相对权重",
+            "KL 约束的参考策略通常是冻结的 SFT 起点，不要与当前策略混淆",
+            "把 rubric 分数与正确性不加权直接相加，可能让模型学会讨好评分器"
+          ],
+          "code": "import torch\n\n\ndef group_relative_advantage(rewards: torch.Tensor, delta: float = 1e-4) -> torch.Tensor:\n    # rewards: [G]，同一问题下 G 条轨迹的回报（正确性 + rubric 分数）\n    return (rewards - rewards.mean()) / (rewards.std() + delta)\n\n\ndef agentic_rl_loss(logp_new, logp_old, rewards, eps=0.2, beta=0.01, logp_ref=None):\n    adv = group_relative_advantage(rewards).unsqueeze(-1)      # [G, 1]\n    ratio = torch.exp(logp_new - logp_old)                     # [G, T]\n    unclipped = ratio * adv\n    clipped = ratio.clamp(1 - eps, 1 + eps) * adv\n    pg = -torch.min(unclipped, clipped).mean()\n    if logp_ref is None:\n        return pg\n    kl = (logp_new - logp_ref).mean()                          # 单样本 KL 估计\n    return pg + beta * kl",
+          "sources": [
+            {
+              "title": "From Given to Gathered Evidence: Agentic Learning for Longitudinal Medical Reasoning",
+              "url": "https://arxiv.org/abs/2609.39566v1"
+            }
+          ]
+        },
+        {
+          "id": "f-case-onpolicy-distill",
+          "name": "特权 on-policy 自蒸馏目标",
+          "category": "posttraining",
+          "glyph": "→",
+          "tags": [
+            "distillation",
+            "on-policy",
+            "post-training"
+          ],
+          "latex": "\\mathcal{L}_{\\mathrm{distill}}(\\theta)=\\mathbb{E}_{q\\sim\\mathcal{D}}\\,\\mathbb{E}_{o\\sim\\pi_\\theta(\\cdot\\mid q)}\\Big[\\frac{1}{|o|}\\sum_{t=1}^{|o|}\\mathrm{KL}\\big(p_{\\mathrm{priv}}(\\cdot\\mid q,o_{<t},c_{\\mathrm{priv}})\\,\\|\\,p_\\theta(\\cdot\\mid q,o_{<t})\\big)\\Big]",
+          "html": "<code>L_distill(θ) = E_q E_{o~π_θ}[ (1/|o|) Σ_t KL( p_priv(·|q, o_&lt;t, c_priv) ‖ p_θ(·|q, o_&lt;t) ) ]</code>",
+          "symbols": [
+            [
+              "o ∼ π_θ",
+              "轨迹由学生策略自己在环境中产生，保证 on-policy"
+            ],
+            [
+              "p_priv",
+              "可见特权信息 c_priv 的教师分布"
+            ],
+            [
+              "c_priv",
+              "特权信息，例如标准答案或前沿模型的额外推理"
+            ],
+            [
+              "p_θ",
+              "学生策略的下一 token 分布"
+            ],
+            [
+              "KL",
+              "前向 KL，让学生覆盖教师的高概率模式"
+            ]
+          ],
+          "derivation": [
+            "学生先在患者环境中自主采样轨迹 o，使训练分布与部署分布一致。",
+            "教师在同一前缀上额外访问特权信息，给出更可靠的下一 token 分布。",
+            "在学生的这些前缀上最小化教师与学生的逐 token 前向 KL。",
+            "把该损失与 RL 目标加权相加，既保留探索到的策略，又吸收教师的证据到结论推理。"
+          ],
+          "analogy": "学生先自己写一遍解题步骤，老师拿着答案只在他写下的每一步上纠正下一步该怎么想，而不是直接给一份标准解答让他背。",
+          "pitfalls": [
+            "轨迹必须来自学生自己的分布，用教师轨迹就退化成普通 SFT",
+            "前向 KL 倾向于覆盖教师的多峰模式，反向 KL 会收敛到单峰，两者行为不同",
+            "特权信息只能在训练期使用，推理时泄漏即为作弊",
+            "与 RL 损失加权时系数需调节，蒸馏权重过大将压制 RL 的探索"
+          ],
+          "code": "import torch\nimport torch.nn.functional as F\n\n\ndef on_policy_distill_loss(logits_student, logits_teacher, mask):\n    # logits_*: [B, T, V]；轨迹 token 由学生策略自身采样得到\n    log_p_s = F.log_softmax(logits_student, dim=-1)\n    p_t = F.softmax(logits_teacher, dim=-1)                    # 教师可见特权信息\n    kl = (p_t * (torch.log(p_t + 1e-9) - log_p_s)).sum(dim=-1)  # [B, T]\n    return (kl * mask).sum() / mask.sum().clamp_min(1.0)",
+          "sources": [
+            {
+              "title": "From Given to Gathered Evidence: Agentic Learning for Longitudinal Medical Reasoning",
+              "url": "https://arxiv.org/abs/2609.39566v1"
+            }
+          ]
+        }
+      ],
+      "selfCheck": {
+        "claims": [
+          "CASE 是一系列角色化的临床证据搜寻 Agent，配套工具调用框架与面向紧凑视觉语言策略模型的 agentic 后训练框架。",
+          "作者指出常规医学基准评估的是对预先选定证据的推理，而非跨病历与纵向影像搜寻证据的能力。",
+          "基准建在 UK Biobank 上，含 4,739 名参与者的 50,401 道临床问题，问题由真实 ICD-10 编码诊断派生。",
+          "每题对应一个患者专属环境，含临床上下文与基线和随访访次的多序列 MRI，Agent 自主选择访次、器官、模态、切片与专科工具。",
+          "训练先用 14,734 条前沿模型交互轨迹做监督微调，再在学习者自身环境交互上做 agentic 强化学习。",
+          "用特权 on-policy 自蒸馏与基于 rubric 的 LLM 反馈改进证据到结论的推理，且不规定工具序列。",
+          "在匹配评估条件下，基于 Qwen3-VL-8B 的 agent 相对 GPT-5.4 与 Claude Opus 4.8 的答案准确率提升超过 16% 与 10%。",
+          "摘要说明代码将发布于 https://github.com/VinyehShaw/CASE 。"
+        ],
+        "uncertain": [
+          "摘要未给出具体强化学习算法、奖励构成与超参；formulas 中两条式子只是此类 agentic RL 与 on-policy 自蒸馏的通用形式，非论文原式。",
+          "50,401 道题与 4,739 名参与者如何划分训练/验证/测试，摘要未说明。",
+          "超过 16% 与 10% 的相对提升对应的具体评测集、基线与统计口径，摘要未说明。",
+          "匹配评估条件的具体含义（模型规模、工具预算、采样次数）摘要未展开。",
+          "代码在采集时标注为 will be available，是否已实际开源需人工核实。"
+        ]
+      }
+    },
+    {
+      "id": "5edfee114f60afd1",
+      "tldr": "vLLM 仓库条目：面向 LLM 的高吞吐、显存高效推理与服务引擎。采集摘要有限，仅一句仓库简介。",
+      "keyPoints": [
+        "标题与摘要都把 vllm 定位为 LLM 推理与服务引擎",
+        "核心卖点是高吞吐与显存高效",
+        "来源为 GitHub 仓库 vllm-project/vllm，代码可获取",
+        "仓库标签含 cuda、amd、blackwell、deepseek、gpt",
+        "采集摘要只有一句仓库简介，无实验数据"
+      ],
+      "why": "推理服务是后训练与 Agent 落地的基础设施，吞吐与显存决定成本与批量规模。对做 RL 采样、多模态批推理、Agent 工具调用者可写进履历。",
+      "difficulty": "medium",
+      "tags": [
+        "inference",
+        "serving",
+        "throughput",
+        "kv-cache",
+        "llm-engineering",
+        "gpu"
+      ],
+      "entities": [
+        "vLLM",
+        "vllm-project/vllm",
+        "CUDA",
+        "AMD",
+        "Blackwell",
+        "DeepSeek"
+      ],
+      "diagram": {
+        "kind": "architecture",
+        "title": "vLLM 推理服务数据流",
+        "caption": "请求经调度进入 GPU 执行，Token 流式返回；同时以分页的 KV Cache 缓存历史键值，省显存、提高批量并发。",
+        "svg": "<svg viewBox=\"0 0 880 340\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"vLLM 推理服务数据流\"><g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><rect x=\"24\" y=\"40\" width=\"160\" height=\"72\" rx=\"8\"/><rect x=\"240\" y=\"40\" width=\"180\" height=\"72\" rx=\"8\"/><rect x=\"476\" y=\"40\" width=\"170\" height=\"72\" rx=\"8\"/><rect x=\"702\" y=\"40\" width=\"154\" height=\"72\" rx=\"8\"/><rect x=\"240\" y=\"212\" width=\"406\" height=\"86\" rx=\"8\" stroke-dasharray=\"6 5\"/></g><g fill=\"currentColor\" font-size=\"15\" text-anchor=\"middle\"><text x=\"104\" y=\"72\">请求到达</text><text x=\"104\" y=\"94\" font-size=\"13\">各类客户端</text><text x=\"330\" y=\"72\">调度与批处理</text><text x=\"330\" y=\"94\" font-size=\"13\">把请求攒成一批</text><text x=\"561\" y=\"72\">GPU 执行</text><text x=\"561\" y=\"94\" font-size=\"13\">前向计算</text><text x=\"779\" y=\"72\">流式返回</text><text x=\"779\" y=\"94\" font-size=\"13\">逐 Token 输出</text><text x=\"443\" y=\"246\">KV Cache：历史键值按块分页存放</text><text x=\"443\" y=\"272\" font-size=\"13\">显存利用率提高，可并发更多序列</text></g><g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" marker-end=\"url(#ar)\"><line x1=\"184\" y1=\"76\" x2=\"236\" y2=\"76\"/><line x1=\"420\" y1=\"76\" x2=\"472\" y2=\"76\"/><line x1=\"646\" y1=\"76\" x2=\"698\" y2=\"76\"/></g><g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-dasharray=\"6 5\"><line x1=\"561\" y1=\"112\" x2=\"561\" y2=\"208\"/><line x1=\"561\" y1=\"208\" x2=\"561\" y2=\"208\"/></g><defs><marker id=\"ar\" viewBox=\"0 0 10 10\" refX=\"8\" refY=\"5\" markerWidth=\"7\" markerHeight=\"7\" orient=\"auto\"><path d=\"M0,0 L10,5 L0,10 z\" fill=\"currentColor\"/></marker></defs></svg>",
+        "spec": {
+          "type": "architecture",
+          "nodes": [
+            {
+              "label": "请求到达",
+              "detail": "客户端提交推理请求，进入服务队列"
+            },
+            {
+              "label": "调度与批处理",
+              "detail": "把多条请求组成一批，减少 GPU 空转"
+            },
+            {
+              "label": "GPU 执行",
+              "detail": "在 GPU 上完成前向计算，读写 KV Cache"
+            },
+            {
+              "label": "KV Cache 分页",
+              "detail": "历史键值按块存放，提高显存利用率与并发度"
+            },
+            {
+              "label": "流式返回",
+              "detail": "逐 Token 返回结果给客户端"
+            }
+          ],
+          "edges": [
+            {
+              "from": "请求到达",
+              "to": "调度与批处理",
+              "label": "入队"
+            },
+            {
+              "from": "调度与批处理",
+              "to": "GPU 执行",
+              "label": "组批"
+            },
+            {
+              "from": "GPU 执行",
+              "to": "KV Cache 分页",
+              "label": "读写键值"
+            },
+            {
+              "from": "GPU 执行",
+              "to": "流式返回",
+              "label": "生成 Token"
+            }
+          ]
+        },
+        "alt": "流程图：请求到达后经调度组批，进入 GPU 执行，读写分页 KV Cache，并逐 Token 流式返回。"
+      },
+      "concepts": [
+        {
+          "name": "KV Cache 显存占用",
+          "readable": "自回归生成时，历史 Token 的键和值要被反复用到，如果每步重算就太慢。于是把每层每个注意力头的键值存下来，这就是 KV Cache。它的大小随层数、头数、序列长度和并发路数线性增长，是长上下文与大批量推理的主要显存开销。",
+          "analogy": "像写长论文时把已写章节留在桌面上，方便随时回看，不用每次重读全书；但桌子就那么大，章节越多、同时铺开的稿子越多，就越放不下。",
+          "analogyBreaksDown": "桌面是均匀的物理空间，放不下就是放不下；而 KV Cache 的块可以被换出、共享前缀可以复用、精度还能压到 FP8，空间是可压缩、可调度的，不像桌子那样刚性地满。",
+          "mechanism": "每生成一个 Token，就为它算出各层的 K、V 向量并追加进缓存；下一步注意力直接读取整段缓存，避免重算历史。缓存总量与 batch、序列长度成正比，因此常用分页（按块分配）、前缀共享、低精度存储来压低占用，从而换取更大的并发批量。",
+          "visual": "画一条向右延伸的横条代表序列长度，每一小格是一个 Token；横条按层堆叠成多行，行数等于层数。右侧再并列若干条同样的横条代表并发序列，整体高度即显存占用；把格子换成半高表示低精度缓存，高度随之减半。",
+          "prerequisites": [
+            "Transformer 自注意力中 Q、K、V 的作用",
+            "自回归解码的逐步生成过程",
+            "字节数与张量形状的换算（元素数 × 每元素字节）"
+          ],
+          "selfTest": [
+            "把并发序列数从 8 提高到 32，KV Cache 显存大约变成原来的几倍？",
+            "上下文长度翻倍但并发数减半，KV Cache 显存总量大致如何变化？",
+            "把缓存从 FP16 换成 FP8，显存和精度各会受什么影响？"
+          ],
+          "formula": "M_{kv} = 2 \\cdot L \\cdot n_{kv} \\cdot d_{h} \\cdot s \\cdot b \\cdot p",
+          "formulaId": "f-kv-cache-footprint"
+        },
+        {
+          "name": "吞吐与延迟的取舍",
+          "readable": "推理服务同时被两个指标约束：每秒能处理多少 Token（吞吐）和单条请求要等多久（延迟）。把更多请求凑成一批能提高吞吐、摊薄权重读取成本，但每条请求的响应会变慢。服务引擎的核心工作就是在显存允许的范围内找这个平衡点。",
+          "analogy": "像拼车：车上人越多，人均油耗越低、总运力越高，但每个乘客的到达时间会被绕路拖长；想让人人都快，就只能少拉人。",
+          "analogyBreaksDown": "拼车的座位数是硬上限，而推理批量的上限是显存里 KV Cache 能装多少块，可以靠分页、前缀共享、低精度动态放宽，且批内不同请求长度不一，不是整齐的座位。",
+          "mechanism": "解码阶段每步都要读取全部模型权重，这部分开销与批量大小关系不大，因此增大批量能显著提高单位时间产出。但批量越大，KV Cache 占用越高、单步耗时越长，尾延迟上升。调度器据此在显存预算内动态决定每一步放哪些请求进批。",
+          "visual": "横轴为批量大小，纵轴向上画吞吐曲线（先陡升后趋平），向下画单请求延迟曲线（逐渐抬升）；两条曲线的交叉区域用阴影标出，注为可用的工作点区间。",
+          "prerequisites": [
+            "解码阶段每步需读取全部权重",
+            "KV Cache 占用随批量线性增长",
+            "吞吐与延迟的定义与关系"
+          ],
+          "selfTest": [
+            "为什么增大批量能提高吞吐？瓶颈在读取权重还是读取缓存？",
+            "批量增大后，首 Token 延迟和每 Token 延迟哪个先恶化？",
+            "如果显存足够但吞吐不涨，可能是什么原因？"
+          ],
+          "formula": ""
+        }
+      ],
+      "formulas": [
+        {
+          "id": "f-kv-cache-footprint",
+          "name": "KV Cache 显存占用估算",
+          "category": "engineering",
+          "glyph": "M",
+          "tags": [
+            "inference",
+            "kv-cache",
+            "memory",
+            "serving"
+          ],
+          "latex": "M_{kv} = 2 \\cdot L \\cdot n_{kv} \\cdot d_{h} \\cdot s \\cdot b \\cdot p",
+          "html": "<code>M_kv = 2 · L · n_kv · d_h · s · b · p</code>",
+          "symbols": [
+            [
+              "M_{kv}",
+              "KV Cache 显存总量（字节）"
+            ],
+            [
+              "2",
+              "K 与 V 两份张量"
+            ],
+            [
+              "L",
+              "Transformer 层数"
+            ],
+            [
+              "n_{kv}",
+              "键值注意力头数（GQA/MQA 下小于查询头数）"
+            ],
+            [
+              "d_{h}",
+              "每个注意力头的维度"
+            ],
+            [
+              "s",
+              "序列长度（含提示与已生成部分）"
+            ],
+            [
+              "b",
+              "并发序列数（批量大小）"
+            ],
+            [
+              "p",
+              "每个元素的字节数（FP16 为 2，FP8 为 1）"
+            ]
+          ],
+          "derivation": [
+            "单层单个 Token 的键与值各是一个 n_{kv} × d_h 的向量，故元素数为 2 · n_{kv} · d_h。",
+            "序列长度为 s 时，单层单条序列的元素数放大为 2 · n_{kv} · d_h · s。",
+            "叠加 L 层得到单条序列全部缓存元素数 2 · L · n_{kv} · d_h · s。",
+            "并发 b 条序列同时驻留时再乘 b，最后乘每元素字节数 p 得到显存总量。"
+          ],
+          "analogy": "像给每位同时办公的同事配一个文件柜：柜子层数相当于层数，每层抽屉数相当于头数，抽屉里放的历史页数相当于序列长度，同事人数相当于并发批量，纸张厚度相当于精度。任意一项变大，需要的柜子空间都线性变大。",
+          "pitfalls": [
+            "GQA/MQA 下键值头数小于查询头数，误用查询头数会把显存估算放大若干倍",
+            "忘记乘 2，只算了 K 或只算了 V",
+            "漏掉并发批量 b，把单序列占用当成整机占用",
+            "忽略精度 p：FP16 与 FP8 相差一倍，直接影响可并发序列数",
+            "把该式当精确值：分页分配的块内碎片、未用满的块会让实际占用高于估算"
+          ],
+          "code": "def kv_cache_bytes(num_layers, num_kv_heads, head_dim, seq_len, batch, bytes_per_elem=2):\n    # 单条序列单层：K 和 V 各 num_kv_heads * head_dim 个元素\n    per_token_per_layer = 2 * num_kv_heads * head_dim\n    total_elems = per_token_per_layer * num_layers * seq_len * batch\n    return total_elems * bytes_per_elem\n\n# 例：32 层、8 个键值头、头维度 128、4096 上下文、并发 16、FP16\nmb = kv_cache_bytes(32, 8, 128, 4096, 16) / 1024 ** 2\nprint(f'{mb:.1f} MiB')  # 约 8192.0 MiB\n\n# 换成 FP8 缓存，占用减半，可支撑的并发批量翻倍\nmb_fp8 = kv_cache_bytes(32, 8, 128, 4096, 16, bytes_per_elem=1) / 1024 ** 2\nprint(f'{mb_fp8:.1f} MiB')  # 约 4096.0 MiB",
+          "sources": [
+            {
+              "title": "vllm-project/vllm - A high-throughput and memory-efficient inference and serving engine for LLMs",
+              "url": "https://github.com/vllm-project/vllm"
+            }
+          ]
+        }
+      ],
+      "selfCheck": {
+        "claims": [
+          "标题为 vllm-project/vllm - A high-throughput and memory-efficient inference and serving engine for LLMs",
+          "摘要原文为 A high-throughput and memory-efficient inference and serving engine for LLMs - vllm-project/vllm",
+          "该条被归类为 engineering，来源为 github，代码可获取（codeAvailable 为 true）",
+          "仓库标签包含 amd、blackwell、cuda、deepseek、deepseek-v3、gpt、gpt-oss、inference、Python",
+          "唯一 source 的 url 为 https://github.com/vllm-project/vllm"
+        ],
+        "uncertain": [
+          "采集摘要只有一句仓库简介，没有版本号、架构说明、性能数据或论文引用，tldr 与 keyPoints 之外的机制描述均来自通用背景而非本条摘要",
+          "KV Cache 分页（PagedAttention）、连续批处理等具体机制未在本条 title/summary 中出现，属于 vLLM 的常见公开认知，需人工核实当前版本实现",
+          "标签中的具体模型与硬件支持名单来自仓库标签字段，未在摘要中说明其含义与支持程度",
+          "本节公式是通用 KV Cache 估算式，并非从本条摘要中提取",
+          "仓库当前特性与本文写作时是否一致，需查看仓库 README 与发布说明"
+        ]
+      }
+    },
+    {
+      "id": "38b311baeaddf577",
+      "tldr": "雷锋网报道：DeepSeek 把算子工具链铺到华为昇腾 950 NPU，TileLang 原生支持，五大库出昇腾版本。",
+      "keyPoints": [
+        "TileLang 官宣原生支持华为昇腾 NPU",
+        "DeepGEMM、DeepEP、FlashMLA 等五库出昇腾版",
+        "报道称目标是对标英伟达平台的全套算子工具链",
+        "文章称写算子可把硬件利用率从约 20% 提到 95% 以上"
+      ],
+      "why": "主题是算子工具链与国产芯片后端适配，与多模态、后训练、世界模型、RL、Agent 主线弱相关；对推理与 kernel 工程方向是生态信号。",
+      "difficulty": "medium",
+      "tags": [
+        "inference",
+        "kernel",
+        "toolchain",
+        "hardware",
+        "open-source"
+      ],
+      "entities": [
+        "DeepSeek",
+        "华为昇腾 950 NPU",
+        "TileLang",
+        "DeepGEMM",
+        "DeepEP",
+        "FlashMLA"
+      ],
+      "diagram": {
+        "kind": "flow",
+        "title": "算子工具链从英伟达迁到昇腾",
+        "caption": "英伟达平台工具链被原样铺到昇腾 950，TileLang 与五个核心库同步给出昇腾版本；三条原本的替代路径各有局限。",
+        "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 960 440\" width=\"960\" height=\"440\" font-family=\"system-ui, sans-serif\"><rect x=\"0\" y=\"0\" width=\"960\" height=\"440\" fill=\"none\"/><defs><marker id=\"a1\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"7\" markerHeight=\"7\" orient=\"auto-start-reverse\"><path d=\"M0,0 L10,5 L0,10 z\" fill=\"var(--fg-1)\"/></marker></defs><rect x=\"12\" y=\"81\" width=\"156\" height=\"78\" rx=\"8\" fill=\"none\" stroke=\"var(--line-1)\"/><text x=\"90\" y=\"111\" font-size=\"14\" text-anchor=\"middle\" fill=\"var(--fg-1)\">英伟达 CUDA</text><text x=\"90\" y=\"131\" font-size=\"13\" text-anchor=\"middle\" fill=\"var(--fg-1)\">工具链</text><line x1=\"168\" y1=\"120\" x2=\"209\" y2=\"120\" stroke=\"var(--fg-1)\" marker-end=\"url(#a1)\"/><rect x=\"212\" y=\"81\" width=\"156\" height=\"78\" rx=\"8\" fill=\"none\" stroke=\"var(--line-1)\"/><text x=\"290\" y=\"111\" font-size=\"14\" text-anchor=\"middle\" fill=\"var(--fg-1)\">TileLang 原生</text><text x=\"290\" y=\"131\" font-size=\"13\" text-anchor=\"middle\" fill=\"var(--fg-1)\">支持昇腾</text><line x1=\"368\" y1=\"120\" x2=\"409\" y2=\"120\" stroke=\"var(--fg-1)\" marker-end=\"url(#a1)\"/><rect x=\"412\" y=\"81\" width=\"156\" height=\"78\" rx=\"8\" fill=\"none\" stroke=\"var(--line-1)\"/><text x=\"490\" y=\"111\" font-size=\"14\" text-anchor=\"middle\" fill=\"var(--fg-1)\">五大计算与通信</text><text x=\"490\" y=\"131\" font-size=\"13\" text-anchor=\"middle\" fill=\"var(--fg-1)\">库出昇腾版本</text><line x1=\"568\" y1=\"120\" x2=\"609\" y2=\"120\" stroke=\"var(--fg-1)\" marker-end=\"url(#a1)\"/><rect x=\"612\" y=\"81\" width=\"156\" height=\"78\" rx=\"8\" fill=\"none\" stroke=\"var(--line-1)\"/><text x=\"690\" y=\"111\" font-size=\"14\" text-anchor=\"middle\" fill=\"var(--fg-1)\">昇腾 950</text><text x=\"690\" y=\"131\" font-size=\"13\" text-anchor=\"middle\" fill=\"var(--fg-1)\">NPU 运行</text><line x1=\"768\" y1=\"120\" x2=\"809\" y2=\"120\" stroke=\"var(--fg-1)\" marker-end=\"url(#a1)\"/><rect x=\"812\" y=\"81\" width=\"136\" height=\"78\" rx=\"8\" fill=\"none\" stroke=\"var(--accent)\"/><text x=\"880\" y=\"111\" font-size=\"14\" text-anchor=\"middle\" fill=\"var(--accent)\">国产算子</text><text x=\"880\" y=\"131\" font-size=\"13\" text-anchor=\"middle\" fill=\"var(--accent)\">工具层补齐</text><text x=\"12\" y=\"232\" font-size=\"14\" fill=\"var(--fg-1)\">文章提到的三条替代路径及其局限</text><line x1=\"52\" y1=\"250\" x2=\"880\" y2=\"250\" stroke=\"var(--line-1)\"/><text x=\"12\" y=\"284\" font-size=\"13\" fill=\"var(--fg-1)\">路径一 · 手写 CUDA</text><text x=\"212\" y=\"284\" font-size=\"13\" fill=\"var(--fg-1)\">性能天花板高，开发效率低，绑死英伟达</text><text x=\"12\" y=\"318\" font-size=\"13\" fill=\"var(--fg-1)\">路径二 · 厂商预制算子库</text><text x=\"252\" y=\"318\" font-size=\"13\" fill=\"var(--fg-1)\">开箱即用性能好，但改不了内部逻辑</text><text x=\"12\" y=\"352\" font-size=\"13\" fill=\"var(--fg-1)\">路径三 · 高层 DSL 编译器</text><text x=\"248\" y=\"352\" font-size=\"13\" fill=\"var(--fg-1)\">门槛低，性能受编译器限制，异构适配贵</text><line x1=\"480\" y1=\"374\" x2=\"480\" y2=\"394\" stroke=\"var(--line-1)\" marker-end=\"url(#a1)\" stroke-dasharray=\"4 3\"/><rect x=\"300\" y=\"398\" width=\"360\" height=\"34\" rx=\"17\" fill=\"none\" stroke=\"var(--line-1)\"/><text x=\"480\" y=\"420\" font-size=\"13\" text-anchor=\"middle\" fill=\"var(--fg-1)\">三条路都没解决：算法迭代快于算子供给</text></svg>",
+        "spec": {
+          "type": "flow",
+          "nodes": [
+            {
+              "label": "英伟达 CUDA 工具链",
+              "detail": "为英伟达 GPU 写算子的全套工具链"
+            },
+            {
+              "label": "TileLang 原生支持昇腾",
+              "detail": "报道称最核心的算子开发产品官宣原生支持昇腾"
+            },
+            {
+              "label": "五大库出昇腾版本",
+              "detail": "DeepGEMM、DeepEP、FlashMLA、TileKernels、DeepSelect"
+            },
+            {
+              "label": "昇腾 950 NPU 运行",
+              "detail": "同一套工具链铺到昇腾 950 NPU"
+            },
+            {
+              "label": "国产算子工具层补齐",
+              "detail": "报道称首次在核心算子工具层与英伟达生态对标"
+            },
+            {
+              "label": "路径一 · 手写 CUDA",
+              "detail": "性能天花板高，开发效率极低，无法跨平台移植"
+            },
+            {
+              "label": "路径二 · 厂商预制算子库",
+              "detail": "标准算子性能拉满，但无法改内部逻辑或做算子融合"
+            },
+            {
+              "label": "路径三 · 高层 DSL 编译器",
+              "detail": "门槛低，但性能受编译器限制，非英伟达硬件适配成本高"
+            },
+            {
+              "label": "未解决的核心冲突",
+              "detail": "模型算法迭代太快，芯片厂商官方算子库跟不上"
+            }
+          ],
+          "edges": [
+            {
+              "from": "英伟达 CUDA 工具链",
+              "to": "TileLang 原生支持昇腾",
+              "label": "迁移"
+            },
+            {
+              "from": "TileLang 原生支持昇腾",
+              "to": "五大库出昇腾版本",
+              "label": "配套"
+            },
+            {
+              "from": "五大库出昇腾版本",
+              "to": "昇腾 950 NPU 运行",
+              "label": "落位"
+            },
+            {
+              "from": "昇腾 950 NPU 运行",
+              "to": "国产算子工具层补齐",
+              "label": "对标"
+            },
+            {
+              "from": "路径一 · 手写 CUDA",
+              "to": "未解决的核心冲突",
+              "label": "效率低"
+            },
+            {
+              "from": "路径二 · 厂商预制算子库",
+              "to": "未解决的核心冲突",
+              "label": "不灵活"
+            },
+            {
+              "from": "路径三 · 高层 DSL 编译器",
+              "to": "未解决的核心冲突",
+              "label": "异构适配贵"
+            }
+          ]
+        },
+        "alt": "流程图：英伟达 CUDA 工具链经 TileLang 原生支持昇腾与五大库昇腾版本，落到昇腾 950 NPU 运行；下方列出三条替代路径的局限。"
+      },
+      "concepts": [
+        {
+          "name": "算子开发与算子库",
+          "readable": "算子就是芯片上干某个具体计算的小程序，比如矩阵乘法。把它写好，芯片才不空转；写不好，贵的芯片也只发挥一小部分性能。",
+          "analogy": "像给一支很能跑的施工队排工序：砖不缺、人也不缺，但没人安排谁先搬料谁先砌墙，工人大部分时间在等材料，工地照旧磨洋工。",
+          "analogyBreaksDown": "工地上加人加料通常就能提速，而算子的瓶颈往往在片上一小块高速缓存容量和寄存器数量上，加硬件也未必有用，得改计算的分块与搬运次序。",
+          "mechanism": "把矩阵乘法切成小块驻留片上高速缓存，调度线程块并行、预取下一块数据形成流水线，再在寄存器层面分块并重排指令，让计算单元尽量不空等数据。",
+          "visual": "时间轴上交替出现「算一算」与「等数据」两色方块：优化前等数据块又长又密，优化后等数据块被压短、被流水线重叠掉，整条轴几乎全是算一算。",
+          "prerequisites": [
+            "矩阵乘法的基本计算量含义",
+            "芯片的访存层次（全局显存 → 片上缓存 → 寄存器）",
+            "算子融合为何能省搬运"
+          ],
+          "selfTest": [
+            "为什么同一张芯片上，算子写得好坏能带来数倍性能差？",
+            "厂商预制算子库在什么情况下会成为瓶颈？",
+            "算子融合省下的主要是计算还是数据搬运？"
+          ],
+          "formula": ""
+        },
+        {
+          "name": "硬件后端与跨平台算子工具链",
+          "readable": "同一份算子代码要能跑在不同厂商的芯片上，就得有一层工具把芯片差异藏起来；文章说 TileLang 做到原生支持昇腾，五个库也同步给了昇腾版本。",
+          "analogy": "像同一份菜谱换厨房：灶台火候、锅具规格各家不同，中间有个懂行的帮厨替你换算火候和锅具，菜谱本身不用重写，换厨房也不用重新学一遍。",
+          "analogyBreaksDown": "换厨房最多影响口味，而换芯片后端时数值精度、并行粒度和通信原语都可能对不上，迁移后的正确性与性能必须逐项验证，类比给不出这种保证。",
+          "mechanism": "上层用统一的高层写法描述算子，编译层针对不同芯片生成各自指令，并让集合通信、注意力、矩阵乘法等库分别对接各家后端，从而复用同一套调用方式。",
+          "visual": "左右两栏对照：左栏英伟达平台列出工具链与各库，右栏昇腾平台列出「原生支持」与「昇腾版本」，中间用并列箭头表明一一对应关系。",
+          "prerequisites": [
+            "GPU 与 NPU 执行模型的差异",
+            "编译器前后端与代码生成的分工",
+            "集合通信库在分布式训练推理中的角色"
+          ],
+          "selfTest": [
+            "原生支持某个后端，和用适配层转译，差别可能体现在哪里？",
+            "为什么通信库也有必要单独出昇腾版本？",
+            "工具链能否跨平台，是否等于性能也能持平？"
+          ],
+          "formula": ""
+        }
+      ],
+      "formulas": [
+        {
+          "id": "f-roofline-kernel-utilization",
+          "name": "Roofline 耗时下界与硬件利用率",
+          "category": "engineering",
+          "glyph": "U",
+          "tags": [
+            "roofline",
+            "kernel",
+            "utilization",
+            "gemm",
+            "performance"
+          ],
+          "latex": "T=\\max\\!\\left(\\frac{\\mathrm{FLOPs}}{\\pi},\\ \\frac{\\mathrm{Bytes}}{\\beta}\\right),\\qquad U=\\frac{\\mathrm{FLOPS}_{\\text{实测}}}{\\pi}",
+          "html": "<code>T = max(FLOPs/π, Bytes/β) ; U = 实测 FLOPS / π</code>",
+          "symbols": [
+            [
+              "\\pi",
+              "芯片峰值算力（FLOPS/s）"
+            ],
+            [
+              "\\beta",
+              "显存带宽（Bytes/s）"
+            ],
+            [
+              "\\mathrm{FLOPs}",
+              "该算子需要的浮点运算次数"
+            ],
+            [
+              "\\mathrm{Bytes}",
+              "该算子需要搬运的字节数"
+            ],
+            [
+              "T",
+              "理论最短耗时，取计算与访存两个下界中的较大者"
+            ],
+            [
+              "U",
+              "硬件利用率，摘要称写算子的目标是把约 20% 提到 95% 以上"
+            ]
+          ],
+          "derivation": [
+            "算子要么受算力限制，要么受带宽限制，分别给出两个耗时下界 FLOPs/π 与 Bytes/β。",
+            "真实耗时不可能低于两者中较大的那个，于是有 T = max(FLOPs/π, Bytes/β)。",
+            "两者的比值 FLOPs/Bytes 称为算术强度；强度高于拐点时受算力限制，低于拐点时受带宽限制。",
+            "硬件利用率定义为实测每秒浮点运算数除以峰值算力，摘要用它刻画算子优化空间（约 20% → 95%+）。"
+          ],
+          "analogy": "像工厂出货由最慢的工序决定：算力是机床加工速度，带宽是传送带送料速度，哪一步先卡住，整条线就按那一步的节拍走。",
+          "pitfalls": [
+            "只看峰值算力而不看算术强度，会误判瓶颈在计算还是访存。",
+            "理论 FLOPS 是理想峰值，实际受频率、占用率影响，利用率分母口径必须一致。",
+            "摘要中的 20% 与 95% 是报道性的整体说法，未给出具体算子、输入规模与测试环境。",
+            "Roofline 给出的是下界，缓存命中、数据复用与指令调度会让真实耗时高于该下界。"
+          ],
+          "code": "def roofline(flops, nbytes, peak_flops, bandwidth):\n    \"\"\"返回计算下界、访存下界、理论最短耗时与瓶颈类型。\"\"\"\n    t_compute = flops / peak_flops\n    t_memory = nbytes / bandwidth\n    bottleneck = 'compute' if t_compute >= t_memory else 'memory'\n    return t_compute, t_memory, max(t_compute, t_memory), bottleneck\n\n\ndef utilization(measured_flops_per_s, peak_flops):\n    return measured_flops_per_s / peak_flops\n\n\n# 例：GEMM 2*M*N*K 次浮点运算，读写 (M*K + K*N + M*N) 个 FP16 元素\nM = N = K = 4096\nt_c, t_m, t_bound, why = roofline(2 * M * N * K, 2 * (M * K + K * N + M * N) * 2,\n                                  peak_flops=1.0e15, bandwidth=3.0e12)\nprint(round(t_c, 6), round(t_m, 6), why)       # 访存受限时 why == 'memory'\nprint('利用率示例:', round(utilization(2.0e14, 1.0e15), 2))  # 0.2 -> 20%",
+          "sources": [
+            {
+              "title": "DeepSeek 开源算子工具大礼包，联手华为昇腾，手撕 CUDA 绑定！",
+              "url": "https://leiphone.com/category/yanxishe/UUIfK7eeFE9Ws1JI.html"
+            }
+          ]
+        }
+      ],
+      "selfCheck": {
+        "claims": [
+          "该条标题为 DeepSeek 开源算子工具大礼包，联手华为昇腾，手撕 CUDA 绑定",
+          "摘要称把给英伟达 GPU 写代码的全套工具链原样铺到华为昇腾 950 NPU 上",
+          "摘要称最核心的算子开发产品 TileLang 官宣原生支持昇腾",
+          "摘要称 DeepGEMM、DeepEP、FlashMLA、TileKernels、DeepSelect 五大核心计算与通信库同步推出昇腾版本",
+          "摘要称这意味着国产算力第一次在核心算子工具层面做到与英伟达生态能力对标",
+          "摘要列举了手写 CUDA、厂商预制算子库、高层 DSL 编译器三条路径各自的局限",
+          "摘要称写算子可把硬件利用率从约 20% 提升到 95% 以上",
+          "该条为雷锋网中文媒体报道，codeAvailable 为 false，唯一来源是雷锋网文章链接"
+        ],
+        "uncertain": [
+          "报道的具体发布日期、发布场合与原始公告未给出，需核对 DeepSeek 官方仓库或公告",
+          "五个库昇腾版本的实际开源地址、许可证与可用状态未知",
+          "TileLang 原生支持昇腾的实现方式（自研后端还是适配层）摘要未说明",
+          "昇腾 950 NPU 的规格与对标英伟达哪一代产品，摘要未给出",
+          "利用率从 20% 到 95% 的具体算子、测试条件与来源缺少可核验数据",
+          "是否已有第三方复现或性能对比，摘要未提及"
+        ]
+      }
+    },
+    {
+      "id": "aa59255c96356e14",
+      "tldr": "聚合物信息学综述：梳理 2023-2025 年用 AI 挖结构-性质关系，做性质预测与逆向设计。采集摘要有限。",
+      "keyPoints": [
+        "聚合物科学正从劳动密集的试错实验，转向 AI 引导的数据驱动预测性材料设计",
+        "聚合物具有跨原子连接、链堆积到宏观形貌的多尺度结构，化学设计空间极大",
+        "高精度量子化学计算太贵，经典分子动力学在力场精度与可达时间尺度间权衡",
+        "综述基于 2023 至 2025 年代表性文献，属同行评审的 Review 文章",
+        "内容按数据基础、性质预测、逆向设计、可解释性与物理约束组织"
+      ],
+      "why": "与多模态/后训练/RL/Agent 主线弱相关，属 AI for Science 应用向。可迁移点是「小数据加物理约束」下的表征与评估流程。",
+      "difficulty": "medium",
+      "tags": [
+        "polymer-informatics",
+        "materials-design",
+        "structure-property",
+        "inverse-design",
+        "ai-for-science",
+        "review"
+      ],
+      "entities": [
+        "polymer informatics",
+        "structure-property-processing relationships",
+        "quantum-chemical calculations",
+        "classical molecular dynamics",
+        "inverse design"
+      ],
+      "diagram": {
+        "kind": "flow",
+        "title": "聚合物信息学综述框架",
+        "caption": "综述沿数据基础→表示与性质预测→逆向设计展开，并以可解释性与物理约束闭环回灌。",
+        "svg": "<svg viewBox=\"0 0 900 340\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"聚合物信息学综述的四维框架流程\"><rect x=\"1\" y=\"1\" width=\"898\" height=\"338\" rx=\"14\" fill=\"none\" stroke=\"var(--line-1)\"/><text x=\"450\" y=\"38\" text-anchor=\"middle\" font-size=\"18\" fill=\"var(--fg-1)\">聚合物信息学：综述组织框架</text><rect x=\"40\" y=\"70\" width=\"160\" height=\"70\" rx=\"10\" fill=\"none\" stroke=\"currentColor\"/><text x=\"120\" y=\"100\" text-anchor=\"middle\" font-size=\"15\" fill=\"var(--fg-1)\">数据基础</text><text x=\"120\" y=\"122\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">实验·模拟·文献</text><rect x=\"250\" y=\"70\" width=\"160\" height=\"70\" rx=\"10\" fill=\"none\" stroke=\"currentColor\"/><text x=\"330\" y=\"100\" text-anchor=\"middle\" font-size=\"15\" fill=\"var(--fg-1)\">表示方法</text><text x=\"330\" y=\"122\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">适用边界比较</text><rect x=\"460\" y=\"70\" width=\"160\" height=\"70\" rx=\"10\" fill=\"none\" stroke=\"currentColor\"/><text x=\"540\" y=\"100\" text-anchor=\"middle\" font-size=\"15\" fill=\"var(--fg-1)\">性质预测</text><text x=\"540\" y=\"122\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">结构-性质-加工</text><rect x=\"670\" y=\"70\" width=\"190\" height=\"70\" rx=\"10\" fill=\"none\" stroke=\"currentColor\"/><text x=\"765\" y=\"100\" text-anchor=\"middle\" font-size=\"15\" fill=\"var(--fg-1)\">逆向设计</text><text x=\"765\" y=\"122\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">按需反向找材料</text><line x1=\"200\" y1=\"105\" x2=\"250\" y2=\"105\" stroke=\"currentColor\"/><path d=\"M242 100 L252 105 L242 110 Z\" fill=\"currentColor\"/><line x1=\"410\" y1=\"105\" x2=\"460\" y2=\"105\" stroke=\"currentColor\"/><path d=\"M452 100 L462 105 L452 110 Z\" fill=\"currentColor\"/><line x1=\"620\" y1=\"105\" x2=\"670\" y2=\"105\" stroke=\"currentColor\"/><path d=\"M662 100 L672 105 L662 110 Z\" fill=\"currentColor\"/><rect x=\"250\" y=\"200\" width=\"420\" height=\"70\" rx=\"10\" fill=\"none\" stroke=\"var(--accent)\" stroke-dasharray=\"7 5\"/><text x=\"460\" y=\"230\" text-anchor=\"middle\" font-size=\"15\" fill=\"var(--fg-1)\">可解释性与物理约束</text><text x=\"460\" y=\"252\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">保证可解释、不违物理规律</text><line x1=\"540\" y1=\"140\" x2=\"540\" y2=\"200\" stroke=\"currentColor\"/><path d=\"M535 192 L540 202 L545 192 Z\" fill=\"currentColor\"/><text x=\"556\" y=\"176\" font-size=\"13\" fill=\"var(--fg-1)\">约束</text><path d=\"M250 235 L120 235 L120 140\" fill=\"none\" stroke=\"var(--accent)\"/><path d=\"M115 148 L120 138 L125 148 Z\" fill=\"var(--accent)\"/><text x=\"185\" y=\"300\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--fg-1)\">物理约束回灌数据与表示</text></svg>",
+        "spec": {
+          "type": "flow",
+          "nodes": [
+            {
+              "label": "数据基础",
+              "detail": "实验、模拟与文献数据的整合"
+            },
+            {
+              "label": "表示方法",
+              "detail": "各种聚合物表示与适用边界"
+            },
+            {
+              "label": "性质预测",
+              "detail": "结构-性质-加工关系建模"
+            },
+            {
+              "label": "逆向设计",
+              "detail": "按目标性质反向生成材料"
+            },
+            {
+              "label": "可解释性与物理约束",
+              "detail": "约束预测、回灌数据与表示"
+            }
+          ],
+          "edges": [
+            {
+              "from": "数据基础",
+              "to": "表示方法",
+              "label": "数据支撑"
+            },
+            {
+              "from": "表示方法",
+              "to": "性质预测",
+              "label": "输入编码"
+            },
+            {
+              "from": "性质预测",
+              "to": "逆向设计",
+              "label": "作为打分器"
+            },
+            {
+              "from": "性质预测",
+              "to": "可解释性与物理约束",
+              "label": "约束"
+            },
+            {
+              "from": "可解释性与物理约束",
+              "to": "数据基础",
+              "label": "物理约束回灌"
+            }
+          ]
+        },
+        "alt": "从数据基础到表示方法、性质预测、逆向设计的单向流程，配一条从可解释性与物理约束回到数据基础的回灌路径。"
+      },
+      "concepts": [
+        {
+          "name": "结构-性质-加工关系建模",
+          "readable": "把聚合物的化学结构、链堆积方式和加工条件当成输入，用机器学习拟合出它们与最终材料性质之间的映射，再用这个映射去预测还没做出来的新聚合物会有什么性质。",
+          "analogy": "像做菜时看菜谱：食材搭配和火候决定味道，做多了就能从配料表大致猜出成品口味。",
+          "analogyBreaksDown": "菜谱一旦定下味道基本确定，而聚合物性质还强烈依赖分子量分布、链缠结与热历史，同一配方不同加工历史会给出不同结果。",
+          "mechanism": "先用描述符、指纹或序列/图表示把聚合物编码成向量，再在实验、模拟与文献数据上训练回归或图神经网络，学习结构-性质-加工映射，用于性质预测。",
+          "visual": "箱形图思路：左侧输入列[化学组成 / 链堆积 / 加工条件] → 中间方框[机器学习映射] → 右侧输出列[预测性质]，方框下方标注训练数据来源。",
+          "prerequisites": [
+            "聚合物结构与形态的基础概念",
+            "常见分子表示与描述符",
+            "监督学习回归的基本流程"
+          ],
+          "selfTest": [
+            "为什么聚合物性质不能只从单个分子的化学式直接读出？",
+            "结构-性质-加工映射里，模型真正拟合的是哪一组变量之间的关系？",
+            "如果训练数据集中在某几类聚合物，这个映射的外推边界在哪里？"
+          ],
+          "formula": ""
+        },
+        {
+          "name": "逆向设计",
+          "readable": "不是先有材料再测性质，而是先写下想要的性质指标，再反过来搜索或生成满足这些指标的结构与配方。因为可能有很多种结构都能达到同一指标，所以这是一个一对多的搜索问题。",
+          "analogy": "像先定好想要的味道，再倒推该放哪些调料、各放多少，而不是先炒一盘再尝是什么味。",
+          "analogyBreaksDown": "调料总有可用的组合，而生成出的聚合物结构未必可合成、可加工，倒推出来的候选可能根本做不出来。",
+          "mechanism": "以性质预测模型当打分器，在生成模型、贝叶斯优化或变分自编码器等搜索策略下遍历设计空间，用预测性质逼近目标并加约束，迭代筛出候选结构。",
+          "visual": "箭头图思路：[目标性质向量] → [候选生成/搜索] → [性质预测打分] → 若未达标则回到生成步骤形成循环，外侧加一个[可合成性约束]的闸门标记。",
+          "prerequisites": [
+            "前向性质预测模型的训练与评估",
+            "生成模型或黑箱优化的基本概念",
+            "化学空间与合成可行性的常识"
+          ],
+          "selfTest": [
+            "逆向设计相比正向预测多出来的主要困难是什么？",
+            "打分器本身的预测误差会在搜索中被放大还是抵消？",
+            "为什么生成出的候选结构还需要经过可合成性检查？"
+          ],
+          "formula": ""
+        },
+        {
+          "name": "物理约束与可解释性",
+          "readable": "纯数据驱动的模型可能给出违反物理规律或无法解释的预测，所以要让模型在预测时受物理规律约束，并让人能看懂它凭什么这么预测，这样才能被材料研究者信任和采纳。",
+          "analogy": "像天气预报模型说要同时出现零下气温和暴雨成灾，懂常识的人会立刻怀疑模型出错，物理约束就扮演这种常识审查。",
+          "analogyBreaksDown": "常识审查往往靠人主观判断，物理约束必须写成可计算的目标或结构，而很多聚合物的物理规律本身还没有公认的定量形式。",
+          "mechanism": "把物理规律以约束、损失项或结构先验的形式加入建模，并辅以可解释性分析，让预测同时满足数据一致性与物理合理性，并暴露模型依据。",
+          "visual": "双栏对比图思路：左栏[纯数据模型]下方列出可能给出的不合理预测，右栏[含物理约束模型]下方列出被约束拦下的同类预测，中间用一条竖向[物理规律]闸门分隔。",
+          "prerequisites": [
+            "热力学与聚合物物理的基本规律",
+            "约束优化或正则化的基本思想",
+            "模型可解释性分析的常见手段"
+          ],
+          "selfTest": [
+            "为什么纯数据驱动模型在材料任务里容易给出物理上不合理的预测？",
+            "物理约束可以以哪几种形式进入建模流程？",
+            "可解释性对研究成果被实验团队采纳有什么作用？"
+          ],
+          "formula": ""
+        }
+      ],
+      "formulas": [
+        {
+          "id": "f-qspr-inverse-design",
+          "name": "结构-性质预测与逆向设计目标",
+          "category": "generative",
+          "glyph": "x*",
+          "tags": [
+            "inverse-design",
+            "structure-property",
+            "materials",
+            "optimization"
+          ],
+          "latex": "\\hat{p}=f_{\\theta}\\!\\left(D(x)\\right),\\qquad x^{\\star}=\\arg\\max_{x\\in\\mathcal{X}}\\; U\\!\\left(f_{\\theta}(D(x))\\right)\\ \\ \\text{s.t.}\\ \\ g_{j}(x)\\le 0",
+          "html": "<code>p_hat = f_theta(D(x)) ; x* = argmax_x U(f_theta(D(x))) s.t. g_j(x) &lt;= 0</code>",
+          "symbols": [
+            [
+              "x",
+              "候选化学结构或聚合物表示"
+            ],
+            [
+              "D(x)",
+              "结构描述符/表示，综述按「数据基础与表示策略」讨论"
+            ],
+            [
+              "f_{\\theta}",
+              "性质预测模型，学习结构-性质-加工关系"
+            ],
+            [
+              "\\hat{p}",
+              "预测的材料性质"
+            ],
+            [
+              "U(\\cdot)",
+              "设计目标效用，通常是多个目标性质的加权或打分"
+            ],
+            [
+              "g_{j}(x)\\le 0",
+              "物理约束与可制造性约束，综述强调物理约束与可解释性"
+            ],
+            [
+              "x^{\\star}",
+              "逆向设计给出的候选结构"
+            ]
+          ],
+          "derivation": [
+            "先用实验、模拟与文献数据训练结构到性质的映射 f_θ，输入是描述符 D(x)。",
+            "正向使用：给定结构 x，预测性质 p̂，用于大规模虚拟筛选替代昂贵的量子化学计算。",
+            "逆向使用：把预测模型当成可微或可搜索的目标函数，在结构空间里最大化效用 U。",
+            "加入物理与可制造性约束 g_j(x) ≤ 0，避免搜到化学上不合理或无法合成的结构。",
+            "候选结构再回到实验或高精度模拟验证，形成「预测—设计—验证」闭环。"
+          ],
+          "analogy": "像配一副合脚的鞋：先学会脚型到尺码的对应关系（正向预测），再反过来给定想要的舒适度去挑鞋型（逆向设计），最后还得受限于材料与工艺能不能做出来（约束）。",
+          "pitfalls": [
+            "正向预测精度高不代表逆向设计可用：优化器会主动钻到模型误差最大的区域。",
+            "摘要被截断，综述对表示方法差异与适用边界的结论未能读到，U 与 g_j 的具体形式属通用写法。",
+            "多目标性质之间常相互冲突，需要显式权衡而不是单一加权和。",
+            "缺少物理约束时容易生成无法合成或违反热力学规律的结构。"
+          ],
+          "code": "import torch\n\ndef inverse_design(f_theta, encode, x0, steps=200, lr=0.05):\n    \"\"\"对连续松弛的结构表示做梯度上升, 最大化预测效用 U(f_theta(D(x))).\"\"\"\n    x = x0.clone().requires_grad_(True)\n    opt = torch.optim.Adam([x], lr=lr)\n    for _ in range(steps):\n        opt.zero_grad()\n        p_hat = f_theta(encode(x))     # 正向: 结构 -> 性质\n        loss = -p_hat.mean()           # 逆向: 最大化目标性质\n        loss.backward()\n        opt.step()\n    return x.detach()\n\n# 约束 g_j(x) <= 0 通常以惩罚项或投影的方式加进 loss/更新步骤",
+          "sources": [
+            {
+              "title": "Polymer informatics: A review of ai-driven structure-property modeling and material design",
+              "url": "https://doi.org/10.13374/j.issn2095-9389.2026.01.24.001"
+            }
+          ]
+        }
+      ],
+      "selfCheck": {
+        "claims": [
+          "该条是一篇综述文章，venue 为 DOAJ，peerReviewed 为 true，codeAvailable 为 false",
+          "综述主题是 AI 驱动的聚合物结构-性质建模与材料设计，即 polymer informatics",
+          "摘要称聚合物科学正从劳动密集的试错实验转向 AI 引导的数据驱动、预测性材料设计",
+          "摘要称聚合物的多尺度结构（原子连接、链堆积、宏观形貌）带来传统实验与计算方法难以高效探索的巨大化学设计空间",
+          "摘要称高精度量子化学计算对大规模筛选过于昂贵，经典分子动力学在力场精度与可达时间尺度间存在权衡",
+          "摘要称综述基于 2023 至 2025 年代表性文献，围绕数据基础、性质预测、逆向设计、可解释性与物理约束四个维度组织"
+        ],
+        "uncertain": [
+          "摘要文本在「数据与表示策略」处被截断，综述对各类表示方法的具体结论与推荐未能读到",
+          "综述是否给出统一的基准数据集、评测协议或定量性能对比表，未在摘要中体现",
+          "摘要未给出任何具体方法名、模型名或作者机构，entities 只能取摘要中的通用概念词",
+          "摘要未提及该综述是否覆盖多模态大模型或基础模型在聚合物领域的应用",
+          "publishedAt 为 2026-10-01、DOI 前缀指向中文期刊，实际见刊时间与语言需人工核实"
+        ]
+      }
+    },
+    {
+      "id": "e6171b12b44b3aee",
+      "tldr": "用激活分类器给候选数学关系排序，再经分级过滤与可执行验证；在 OEIS 产出 62 条已验证新关联，全程不到 8 小时。",
+      "keyPoints": [
+        "用预训练模型激活上的分类器，对候选数学关系打分排序",
+        "管线含分级过滤、假设生成、可执行验证与解析检查",
+        "在 OEIS 的 1 万个高频序列中给 5000 万对候选打分",
+        "产出 62 条 OEIS 原本没有交叉引用的已验证关联",
+        "内容筛后保留 13 条，其中 9 条有信息量、4 条属全新，全程不到 8 小时"
+      ],
+      "why": "对多模态/后训练/生成式/世界模型/RL 主线相关性弱：它不训练模型，只用激活当特征做排序加闭环验证。可迁移的是先筛候选再可执行验证、控制成本。",
+      "difficulty": "medium",
+      "tags": [
+        "activation-probing",
+        "llm-reasoning",
+        "math-discovery",
+        "oeis",
+        "verification-pipeline"
+      ],
+      "entities": [
+        "LANTERN",
+        "OEIS",
+        "classifier over pretrained-model activations",
+        "hypothesis generation",
+        "executable verification"
+      ],
+      "diagram": {
+        "kind": "flow",
+        "title": "LANTERN 四阶筛选管线",
+        "caption": "从模型激活上的分类器排序开始，逐级过滤到少量经核验的数学关系。",
+        "svg": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 300' width='800' height='300' role='img'><title>LANTERN 四阶筛选管线</title><rect x='24' y='60' width='164' height='78' rx='12' fill='none' stroke='var(--line-1)'/><text x='106' y='92' text-anchor='middle' font-size='15' fill='currentColor'>激活分类器打分</text><text x='106' y='116' text-anchor='middle' font-size='13' fill='var(--fg-1)'>5000 万对候选</text><rect x='222' y='60' width='164' height='78' rx='12' fill='none' stroke='var(--line-1)'/><text x='304' y='92' text-anchor='middle' font-size='15' fill='currentColor'>分级过滤</text><text x='304' y='116' text-anchor='middle' font-size='13' fill='var(--fg-1)'>内容筛留 13 条</text><rect x='420' y='60' width='164' height='78' rx='12' fill='none' stroke='var(--line-1)'/><text x='502' y='92' text-anchor='middle' font-size='15' fill='currentColor'>验证与解析检查</text><text x='502' y='116' text-anchor='middle' font-size='13' fill='var(--fg-1)'>验证通过 62 条</text><rect x='618' y='60' width='164' height='78' rx='12' fill='none' stroke='var(--accent)'/><text x='700' y='92' text-anchor='middle' font-size='15' fill='currentColor'>人工复核</text><text x='700' y='116' text-anchor='middle' font-size='13' fill='var(--fg-1)'>9 条有信息量</text><text x='24' y='42' font-size='14' fill='var(--fg-1)'>四个阶段</text><text x='24' y='168' font-size='14' fill='currentColor'>阶段一：排序</text><text x='24' y='190' font-size='13' fill='var(--fg-1)'>分类器只看激活</text><text x='24' y='210' font-size='13' fill='var(--fg-1)'>不更新被探测模型</text><text x='24' y='246' font-size='14' fill='currentColor'>阶段二：收窄</text><text x='24' y='268' font-size='13' fill='var(--fg-1)'>分级过滤与生成</text><text x='300' y='168' font-size='14' fill='currentColor'>阶段三：验证</text><text x='300' y='190' font-size='13' fill='var(--fg-1)'>可执行验证</text><text x='300' y='210' font-size='13' fill='var(--fg-1)'>加解析检查</text><text x='300' y='246' font-size='14' fill='currentColor'>阶段四：判定</text><text x='300' y='268' font-size='13' fill='var(--fg-1)'>是否值得呈现</text><text x='576' y='168' font-size='14' fill='currentColor'>规模与耗时</text><text x='576' y='190' font-size='13' fill='var(--fg-1)'>1 万个高频序列</text><text x='576' y='210' font-size='13' fill='var(--fg-1)'>端到端不到 8 小时</text><text x='576' y='246' font-size='14' fill='currentColor'>成果</text><text x='576' y='268' font-size='13' fill='var(--fg-1)'>4 条为全新发现</text><path d='M188 99 L214 99' stroke='var(--line-1)' fill='none' marker-end='url(#lantern-arrow)'/><path d='M386 99 L412 99' stroke='var(--line-1)' fill='none' marker-end='url(#lantern-arrow)'/><path d='M584 99 L610 99' stroke='var(--line-1)' fill='none' marker-end='url(#lantern-arrow)'/><defs><marker id='lantern-arrow' viewBox='0 0 10 10' refX='8' refY='5' markerWidth='6' markerHeight='6' orient='auto-start-reverse'><path d='M0 0 L10 5 L0 10 z' fill='var(--line-1)'/></marker></defs></svg>",
+        "spec": {
+          "type": "flow",
+          "nodes": [
+            {
+              "label": "激活分类器打分",
+              "detail": "对 1 万个高频序列的 5000 万对候选关系打分排序"
+            },
+            {
+              "label": "分级过滤",
+              "detail": "内容筛后保留 13 条值得呈现的关系"
+            },
+            {
+              "label": "验证与解析检查",
+              "detail": "假设生成后经可执行验证与解析检查，得到 62 条已验证关联"
+            },
+            {
+              "label": "人工判定",
+              "detail": "9 条有信息量，其中 4 条为全新发现，全程不到 8 小时"
+            }
+          ],
+          "edges": [
+            {
+              "from": "激活分类器打分",
+              "to": "分级过滤",
+              "label": "排序结果"
+            },
+            {
+              "from": "分级过滤",
+              "to": "验证与解析检查",
+              "label": "候选假设"
+            },
+            {
+              "from": "验证与解析检查",
+              "to": "人工判定",
+              "label": "已验证关系"
+            }
+          ]
+        },
+        "alt": "流程：激活分类器在 5000 万候选对上排序，经分级过滤与验证解析检查得到 62 条已验证关系，最终 9 条有信息量、4 条全新，全程不到 8 小时。"
+      },
+      "concepts": [
+        {
+          "name": "激活分类器探针（activation probe）",
+          "readable": "把语言模型内部的激活当成特征，只在它上面训练一个分类器，用来判断哪两个数学对象之间可能存在值得研究的关系，再按分数排序候选。模型本身不训练、不改动。",
+          "analogy": "像在考场外不重新上课，只站在阅卷老师旁边观察他停笔的位置，据此预测哪份答卷更可能被划重点。",
+          "analogyBreaksDown": "阅卷老师的偏好有明确对错，而探针学到的只是与训练标签的相关性；它给出的是排序，不是关于关系成立的证明，也可能只学到数据集的偏置。",
+          "mechanism": "冻结预训练模型，对每个候选关系取表示的池化向量，用少量已知关系作正例训练线性分类器，再对全部候选对算分数并排序，把高分对交给后续过滤与验证环节。",
+          "visual": "横轴是候选对按探针分数的排序，纵轴是经人工判定为有信息量的比例；顶部高分区间集中大部分命中的条形最多，直观看出探针只在头部有效（示意，非原文数据）。",
+          "prerequisites": [
+            "语言模型前向推理与激活提取",
+            "线性分类器与逻辑回归损失",
+            "池化/句向量表示",
+            "打分排序与阈值筛选"
+          ],
+          "selfTest": [
+            "为什么探针训练不需要更新被探测模型的权重？",
+            "池化方式（均值/末位 token）变化会如何影响排序质量？",
+            "如何判断探针学到的是真实结构信号而不是数据集偏置？"
+          ],
+          "formula": "s(x)=\\sigma(w^{\\top}\\mathrm{pool}(h(x))+b)"
+        },
+        {
+          "name": "闭环验证的假设筛选",
+          "readable": "让模型先提出候选关系假设，再用可执行验证和解析检查去筛，只有能跑通、逻辑也站得住的才留下，最后人工判断哪些值得呈现。",
+          "analogy": "像投稿前先跑一遍程序化复现和同行评审：算得出来、讲得通的意见才会被送到主编桌上。",
+          "analogyBreaksDown": "可执行验证只能覆盖能写成程序的那部分关系；数学上的「有信息量」「新颖」最终仍由人的判断决定，管线无法把这两步自动化。",
+          "mechanism": "分级过滤先降规模，再对保留候选生成可检验的假设，交给可执行验证跑出结果，再做解析层面的合理性检查，最后内容筛决定哪些关系值得呈现。",
+          "visual": "漏斗式条形：5000 万候选对 → 62 条已验证 → 13 条保留 → 9 条有信息量 → 4 条全新，每层标注该层判据（示意，数字取自原文）。",
+          "prerequisites": [
+            "自动定理/关系验证的基本形态",
+            "可执行代码验证环境的搭建",
+            "LLM 假设生成与提示设计",
+            "人工评审流程设计"
+          ],
+          "selfTest": [
+            "分级过滤放在验证之前能省下什么成本？",
+            "可执行验证通过是否等于数学关系一定正确？",
+            "内容筛保留 13 条而验证通过 62 条，差额说明了什么？"
+          ],
+          "formula": ""
+        }
+      ],
+      "formulas": [
+        {
+          "id": "f-activation-probe-score",
+          "name": "激活探针的线性打分",
+          "category": "foundation",
+          "glyph": "σ",
+          "tags": [
+            "probing",
+            "linear-classifier",
+            "ranking"
+          ],
+          "latex": "s(x)=\\sigma\\!\\left(w^{\\top}\\,\\mathrm{pool}\\!\\left(h_{\\theta}(x)\\right)+b\\right)",
+          "html": "<code>s(x) = sigmoid( w · pool( h_θ(x) ) + b )</code>",
+          "symbols": [
+            [
+              "x",
+              "一个候选关系（一对序列或一条待检验的数学陈述）"
+            ],
+            [
+              "h_θ(x)",
+              "冻结的预训练模型给出的激活或表示，θ 不参与训练"
+            ],
+            [
+              "pool(·)",
+              "把序列位置的表示聚合成一个定长向量的池化操作"
+            ],
+            [
+              "w, b",
+              "在激活上训练的线性分类器权重与偏置，只有它们是可学参数"
+            ],
+            [
+              "σ",
+              "sigmoid，把分数压到 0 到 1，用于排序候选关系"
+            ],
+            [
+              "s(x)",
+              "探针分数，越高越可能是有价值的关系"
+            ]
+          ],
+          "derivation": [
+            "把预训练模型的参数 θ 冻住，对候选关系 x 做一次前向，取出内部表示 h_θ(x)。",
+            "用池化把变长表示压成一个定长向量 z = pool(h_θ(x))，作为候选的特征。",
+            "用已知成立（或已知有价值）的关系对当正例训练线性分类器，得到 w、b。",
+            "对全部候选对计算 s(x)，按分数从高到低排序，取头部交给后续过滤与验证。"
+          ],
+          "analogy": "像不改变水温，只在水里插一支温度计：探针不改变模型里已有的知识，只是把已经存在的信号读成一个可比较的分数。",
+          "pitfalls": [
+            "把探针分数当成关系成立的证据：它只反映与训练标签的相关性。",
+            "正例太少或类别极不平衡时，排序头部会被多数类或噪声主导。",
+            "池化方式、层位选择不同，分数几乎不可比，换层必须重训探针。",
+            "训练标签如果来自同一批数据筛选，容易把数据集偏置当成模型知识。"
+          ],
+          "code": "import numpy as np\nfrom sklearn.linear_model import LogisticRegression\n\nrng = np.random.default_rng(0)\nd = 64  # 表示维度\n\ndef make_data(n, w_star, noise=0.9):\n    z = rng.standard_normal((n, d))\n    logits = z @ w_star + noise * rng.standard_normal(n)\n    y = (logits > 0).astype(int)\n    return z, y\n\n# 用少量已知关系训练探针，w_true 代表表示中真实存在的结构方向\nw_true = rng.standard_normal(d)\nw_true /= np.linalg.norm(w_true)\nZ_tr, y_tr = make_data(600, w_true, noise=1.4)\nprobe = LogisticRegression(max_iter=1000).fit(Z_tr, y_tr)\n\ndef score_pairs(probe, Za, Zb):\n    # 候选关系的特征 = 两个对象的表示之差\n    return probe.predict_proba(Za - Zb)[:, 1]\n\nZ_va, y_va = make_data(400, w_true, noise=0.8)\nscores = score_pairs(probe, Z_va, rng.standard_normal((len(Z_va), d)))\norder = np.argsort(-scores)\n\n# 排序价值：只要头部命中率明显高于总体基率，探针就有筛选价值\nfor k in (50, 100, 200):\n    print(k, y_va[order[:k]].mean().round(3), 'base', y_va.mean().round(3))",
+          "sources": [
+            {
+              "title": "LANTERN (hf_papers)",
+              "url": "https://huggingface.co/papers/2609.32264"
+            },
+            {
+              "title": "LANTERN (arXiv)",
+              "url": "https://arxiv.org/abs/2609.32264"
+            }
+          ]
+        }
+      ],
+      "selfCheck": {
+        "claims": [
+          "LANTERN 是一个快速、成本高效的管线，用预训练模型激活上的分类器对候选关系排序。",
+          "管线包含分级过滤、假设生成、可执行验证与解析检查等阶段。",
+          "在 OEIS 上对 1 万个高频引用的序列、5000 万对候选关系做了排序。",
+          "产出 62 条 OEIS 中原本不存在交叉引用的已验证关系。",
+          "内容筛后保留 13 条值得呈现，其中 9 条有信息量、4 条据作者所知为全新。",
+          "整个端到端流程（含分类器训练、候选排序、过滤与验证）不到 8 小时。"
+        ],
+        "uncertain": [
+          "所用预训练模型的规模、训练探针的算力开销与具体成本未在摘要中给出。",
+          "分类器标签（正例）的来源、数量与标注方式未披露。",
+          "55 个序列、4 条全新关系、8 小时等数字来自摘要自述，尚未独立复核。",
+          "「有信息量」「新颖」的判定标准与人工复核流程细节不明。",
+          "可执行验证的具体实现（验证器、失败率）未说明，无法判断漏检风险。",
+          "该条被标为 job 类，但与求职主线的关联需要人工确认。"
+        ]
+      }
+    },
+    {
+      "id": "e82ba51d6a4c33e2",
+      "tldr": "仓库 Awesome-LLM-Post-training 自述为推理大模型的教程、综述与指南合集；采集摘要仅一句简介。",
+      "keyPoints": [
+        "标题给出仓库名 Awesome-LLM-Post-training",
+        "标题自述内容是 Reasoning LLM 的教程、综述与指南",
+        "摘要只有一句 GitHub 通用仓库简介，未列目录或方法",
+        "摘要提到在 GitHub 上创建账号即可参与该仓库开发",
+        "组织为 mbzuai-oryx，摘要未说明维护活跃度"
+      ],
+      "why": "面向后训练/RL 与推理方向求职者：可作为查找 SFT、偏好优化、推理链相关教程与综述的索引；但摘要过简，覆盖范围与质量须打开仓库核实，别直接写进简历。",
+      "difficulty": "easy",
+      "tags": [
+        "post-training",
+        "reasoning",
+        "awesome-list",
+        "llm",
+        "survey"
+      ],
+      "entities": [
+        "mbzuai-oryx",
+        "Awesome-LLM-Post-training",
+        "GitHub",
+        "Reasoning LLM"
+      ],
+      "diagram": {
+        "kind": "flow",
+        "title": "该条可确证的信息链",
+        "caption": "采集摘要只有一句简介，因此图中只画标题与摘要能支撑的三步：仓库名、内容定位、使用方式。",
+        "svg": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 240' width='640' height='240' role='img' aria-label='仓库名、内容定位与使用方式三步流程'> <rect x='12' y='70' width='180' height='100' rx='12' fill='none' stroke='var(--line-1)'/> <rect x='230' y='70' width='180' height='100' rx='12' fill='none' stroke='var(--line-1)'/> <rect x='448' y='70' width='180' height='100' rx='12' fill='none' stroke='var(--line-1)'/> <text x='320' y='34' text-anchor='middle' font-size='16' fill='var(--fg-1)'>依据标题与摘要可确证的信息</text> <text x='102' y='94' text-anchor='middle' font-size='13' fill='var(--accent)'>仓库名</text> <text x='102' y='120' text-anchor='middle' font-size='13' fill='var(--fg-1)'>mbzuai-oryx</text> <text x='102' y='140' text-anchor='middle' font-size='13' fill='var(--fg-1)'>Awesome-LLM-</text> <text x='102' y='160' text-anchor='middle' font-size='13' fill='var(--fg-1)'>Post-training</text> <text x='320' y='94' text-anchor='middle' font-size='13' fill='var(--accent)'>内容定位</text> <text x='320' y='124' text-anchor='middle' font-size='13' fill='var(--fg-1)'>Reasoning LLM</text> <text x='320' y='148' text-anchor='middle' font-size='13' fill='var(--fg-1)'>教程 · 综述 · 指南</text> <text x='538' y='94' text-anchor='middle' font-size='13' fill='var(--accent)'>使用方式</text> <text x='538' y='124' text-anchor='middle' font-size='13' fill='var(--fg-1)'>按目录查阅</text> <text x='538' y='148' text-anchor='middle' font-size='13' fill='var(--fg-1)'>在 GitHub 参与贡献</text> <line x1='196' y1='120' x2='222' y2='120' stroke='currentColor'/> <polygon points='230,120 218,115 218,125' fill='currentColor'/> <line x1='414' y1='120' x2='440' y2='120' stroke='currentColor'/> <polygon points='448,120 436,115 436,125' fill='currentColor'/> <text x='320' y='205' text-anchor='middle' font-size='13' fill='var(--fg-1)'>摘要仅一句 GitHub 通用简介，主题细节未经证实</text> </svg>",
+        "spec": {
+          "type": "flow",
+          "nodes": [
+            {
+              "label": "仓库名",
+              "detail": "mbzuai-oryx/Awesome-LLM-Post-training"
+            },
+            {
+              "label": "内容定位",
+              "detail": "Reasoning LLM 的教程、综述与指南"
+            },
+            {
+              "label": "使用方式",
+              "detail": "按目录查阅，并可在 GitHub 参与贡献"
+            }
+          ],
+          "edges": [
+            {
+              "from": "仓库名",
+              "to": "内容定位",
+              "label": "标题自述主题"
+            },
+            {
+              "from": "内容定位",
+              "to": "使用方式",
+              "label": "摘要说明可贡献"
+            }
+          ]
+        },
+        "alt": "三步流程：仓库 mbzuai-oryx/Awesome-LLM-Post-training，内容定位是 Reasoning LLM 的教程、综述与指南，使用方式为按目录查阅并在 GitHub 参与贡献。"
+      },
+      "concepts": [
+        {
+          "name": "Post-training（后训练）",
+          "readable": "预训练之后的一个阶段：用规模更小但更对口的数据和反馈，把只会续写的通用模型调成会听指令、会一步步推理的模型。",
+          "analogy": "像通识专业毕业的新人入职后的岗位集训：学校学的是通用知识，集训教的是把知识用在本岗位的具体做法。",
+          "analogyBreaksDown": "类比失效在于：后训练不只加新技能，还会改掉预训练留下的行为（啰嗦、回避、乱编），也可能让模型遗忘部分旧能力，而人类集训很少把大学知识忘掉。",
+          "mechanism": "先用示范数据做监督微调对齐格式与解题风格，再用偏好比较或可验证奖励做强化学习，提高推理链的正确率与稳定性，同时压缩无效的冗长输出。",
+          "visual": "纯文本流程：[预训练权重] --监督微调--> [指令跟随模型] --偏好/奖励强化学习--> [推理模型]；下方标注反馈来源：人工偏好、规则校验、可验证答案。",
+          "prerequisites": [
+            "预训练语言模型与自回归建模基础",
+            "监督微调 SFT 的损失与数据格式",
+            "策略梯度、偏好优化（如 DPO/RLHF）的基本概念"
+          ],
+          "selfTest": [
+            "后训练与预训练在数据规模和数据性质上通常有什么差别？",
+            "监督微调和基于偏好/奖励的强化学习，各自主要修正模型的什么问题？",
+            "为什么后训练可能带来能力遗忘或输出风格退化，可以怎么缓解？"
+          ],
+          "formula": ""
+        },
+        {
+          "name": "Awesome 清单式知识库",
+          "readable": "一种社区维护的索引仓库：把同一主题的论文、教程、代码按子方向整理成一份目录，条目本身只是标题加链接，不含正文。",
+          "analogy": "像图书馆门口的主题书单：告诉你有哪些书、索书号是多少，但书的内容还得自己借来看。",
+          "analogyBreaksDown": "类比失效处：书单由馆员定期核对，而清单仓库靠志愿者提 PR，条目可能失效、过时或只反映了维护者的偏好，收录不等于被同行认可。",
+          "mechanism": "维护者在 README 中按分类目录沉淀条目，读者沿目录跳转到外部论文或代码；新增与纠错通过 issue 和 pull request 完成，整体是弱结构化的纯文本索引。",
+          "visual": "纯文本树：[README 目录] ├─ 综述/教程条目 └─ 代码与论文链接，所有叶子节点均指向仓库外部。",
+          "prerequisites": [
+            "GitHub 基本操作（浏览、提 issue、提 PR）",
+            "对该主题有基本检索与判读能力，能分辨原始论文与二手解读"
+          ],
+          "selfTest": [
+            "清单仓库里的条目本身是否经过同行评审？判断依据是什么？",
+            "想核实一条清单内容是否可靠，应该沿着链接去查什么？",
+            "如果你发现清单缺少某个子方向，标准的补充流程是怎样的？"
+          ],
+          "formula": ""
+        }
+      ],
+      "formulas": [
+        {
+          "id": "f-sft-crossentropy",
+          "name": "监督微调（SFT）的交叉熵目标",
+          "category": "posttraining",
+          "glyph": "L",
+          "tags": [
+            "sft",
+            "cross-entropy",
+            "fine-tuning",
+            "post-training"
+          ],
+          "latex": "\\mathcal{L}_{\\mathrm{SFT}}(\\theta)=-\\sum_{t=1}^{T}\\log \\pi_{\\theta}\\!\\left(y_{t}\\mid x,\\,y_{<t}\\right)",
+          "html": "<code>L_SFT = -Σ_t log π_θ(y_t | x, y_&lt;t)</code>",
+          "symbols": [
+            [
+              "x",
+              "提示或指令（示范数据的输入部分）"
+            ],
+            [
+              "y_{<t}",
+              "目标回答里第 t 步之前的 token"
+            ],
+            [
+              "y_{t}",
+              "第 t 步的目标 token（来自示范数据）"
+            ],
+            [
+              "T",
+              "目标回答的长度"
+            ],
+            [
+              "\\pi_{\\theta}",
+              "待微调的语言模型；只对回答部分计算损失"
+            ]
+          ],
+          "derivation": [
+            "把示范数据写成 (x, y) 对，模型按自回归方式预测回答的每个 token。",
+            "对第 t 步取模型给出的条件概率 π_θ(y_t | x, y_<t)，越接近 1 越好。",
+            "取负对数把最大化概率转成最小化损失，并对全部 T 步求和。",
+            "对参数求梯度即可把模型输出分布推向示范答案；通常只在回答 token 上计算，不计算提示部分。"
+          ],
+          "analogy": "像照着字帖临摹：每一步都告诉你下一个字应该写什么，写错就扣分，练到能自己接着写下去。",
+          "pitfalls": [
+            "把提示 token 也算进损失会稀释监督信号，是常见实现错误。",
+            "只做 SFT 容易学到示范数据的表面格式，不一定提升推理正确率，后续常需偏好优化或可验证奖励。",
+            "在紧接 SFT 的强化学习里，过拟合 SFT 会压缩策略探索空间。",
+            "该公式是通用后训练基础式，不是本条仓库简介的内容，列入 selfCheck.uncertain。"
+          ],
+          "code": "import torch\nimport torch.nn.functional as F\n\ndef sft_loss(logits, labels, ignore_index=-100):\n    \"\"\"logits: [B, T, V]; labels: [B, T]，提示部分置为 ignore_index。\"\"\"\n    return F.cross_entropy(\n        logits[:, :-1, :].reshape(-1, logits.size(-1)),\n        labels[:, 1:].reshape(-1),\n        ignore_index=ignore_index,\n    )\n\nB, T, V = 2, 8, 100\nlogits = torch.randn(B, T, V, requires_grad=True)\nlabels = torch.randint(0, V, (B, T))\nlabels[:, :3] = -100          # 前 3 个位置是提示, 不计算损失\nprint(float(sft_loss(logits, labels)))",
+          "sources": [
+            {
+              "title": "mbzuai-oryx/Awesome-LLM-Post-training - Awesome Reasoning LLM Tutorial/Survey/Guide",
+              "url": "https://github.com/mbzuai-oryx/Awesome-LLM-Post-training"
+            }
+          ]
+        }
+      ],
+      "selfCheck": {
+        "claims": [
+          "标题给出仓库名 mbzuai-oryx/Awesome-LLM-Post-training",
+          "标题副标题为 Awesome Reasoning LLM Tutorial/Survey/Guide，即教程/综述/指南",
+          "摘要说明这是 GitHub 仓库，并提示创建账号即可参与其开发",
+          "摘要只提供了一句仓库简介，未给出目录结构、方法或数据"
+        ],
+        "uncertain": [
+          "目录具体覆盖哪些子方向（监督微调、RLHF、DPO、蒸馏、长思维链等）摘要未说明",
+          "是否附带可运行代码、教程正文或视频，摘要未说明",
+          "条目数量、更新频率与维护活跃度未知，无法判断时效性",
+          "是否覆盖多模态后训练、生成式或世界模型方向未知，与本工作台主线的相关度需打开仓库核实",
+          "采集给出的相关度评分为 50.1，属偏低，说明采集侧也认为这条信息量有限",
+          "概念卡片中的后训练与清单仓库机制属通用背景知识，不是该条摘要中的结论",
+          "f-sft-crossentropy 是通用后训练基础公式，并非该条仓库简介中的内容，仅因该仓库面向后训练主题而收入。"
+        ]
+      }
+    }
+  ],
+  "jobs": [],
+  "proposals": {
+    "channelHealth": [
+      {
+        "id": "jobs_bytedance",
+        "nameZh": "字节招聘",
+        "status": "blocked",
+        "streak": 6,
+        "evidence": "连续 6 轮 blocked，无备用源；字节 Seed 官方页本身可公开访问",
+        "suggestedAction": "先核对是否为接口/域名变更而非封禁；若确为反爬，改人工导入或走牛客岗位流"
+      },
+      {
+        "id": "jobs_alibaba",
+        "nameZh": "阿里招聘",
+        "status": "blocked",
+        "streak": 6,
+        "evidence": "连续 6 轮 blocked，无备用源，tier=P1",
+        "suggestedAction": "确认是否已下线或改为登录后可见；改人工导入或寻找替代源"
+      },
+      {
+        "id": "jobs_minimax",
+        "nameZh": "MiniMax",
+        "status": "blocked",
+        "streak": 6,
+        "evidence": "连续 6 轮 blocked，无备用源，tier=P2",
+        "suggestedAction": "标记为人工按需查看，或改用公司官方公众号/牛客岗位页"
+      },
+      {
+        "id": "jobs_moonshot",
+        "nameZh": "月之暗面",
+        "status": "blocked",
+        "streak": 6,
+        "evidence": "连续 6 轮 blocked，无备用源，tier=P2",
+        "suggestedAction": "同 MiniMax，或直接人工订阅其招聘页"
+      },
+      {
+        "id": "jobs_shailab",
+        "nameZh": "上海 AI Lab",
+        "status": "blocked",
+        "streak": 6,
+        "evidence": "连续 6 轮 blocked，无备用源，tier=P2",
+        "suggestedAction": "改为人工按需查看"
+      },
+      {
+        "id": "jobs_zhipu",
+        "nameZh": "智谱招聘",
+        "status": "blocked",
+        "streak": 6,
+        "evidence": "连续 6 轮 blocked，无备用源，tier=P2",
+        "suggestedAction": "改为人工按需查看"
+      },
+      {
+        "id": "machineheart",
+        "nameZh": "机器之心",
+        "status": "blocked",
+        "streak": 6,
+        "evidence": "连续 6 轮 blocked（原 RSS 为假源）；备用源 leiphone 已生效并产出 20 条",
+        "suggestedAction": "保留 blocked 状态即可，继续用 leiphone 备用源"
+      },
+      {
+        "id": "openreview",
+        "nameZh": "OpenReview",
+        "status": "blocked",
+        "streak": 6,
+        "evidence": "连续 6 轮 blocked（历史观测为 HTTP 403）；备用源 s2 已生效并产出 27 条",
+        "suggestedAction": "继续走 s2/OpenAlex 备用源，不要为绕 403 加代理"
+      },
+      {
+        "id": "reddit",
+        "nameZh": "Reddit",
+        "status": "blocked",
+        "streak": 6,
+        "evidence": "robots.txt 为 Disallow: /，属合规性不可抓取",
+        "suggestedAction": "保持禁用，不作为失败处理"
+      },
+      {
+        "id": "rsshub",
+        "nameZh": "RSSHub",
+        "status": "blocked",
+        "streak": 6,
+        "evidence": "连续 6 轮 blocked；备用源 zhihu 已生效",
+        "suggestedAction": "继续用 zhihu 备用源"
+      }
+    ],
+    "taxonomyProposals": [
+      {
+        "action": "reweight",
+        "category": "job",
+        "reason": "job 类队列按 depthScore 选出的前几名是 LANTERN 数学论文与 UltraInstinctVR 测试工具，真正的招聘帖（腾讯微信小店风控、携程 AI 应用开发实习）反而排在后面；说明 job 类缺少职位专属判据，paper/theory 类特征也能进入。",
+        "proposedKeywords": [
+          "招聘",
+          "岗位",
+          "实习",
+          "校招",
+          "社招",
+          "内推"
+        ]
+      },
+      {
+        "action": "reweight",
+        "category": "trend",
+        "reason": "trend 靠 state of / review 等综述词命中，收进了聚合物信息学、英语教育趋势等非 AI 求职领域；这类综述对本方向的迁移价值低。",
+        "proposedKeywords": [
+          "趋势",
+          "年度报告",
+          "模型发布",
+          "开源榜"
+        ]
+      },
+      {
+        "action": "reweight",
+        "category": "rl",
+        "reason": "rl 命中大量把 reinforcement learning 当方法用在医疗、法律、电力领域的论文（如 Patient-Centered Treatment Planning、AI Applicability in Law），标题含 RL 词但领域与求职方向无关。",
+        "proposedKeywords": [
+          "强化学习",
+          "RLHF",
+          "GRPO",
+          "PPO",
+          "策略优化",
+          "奖励模型"
+        ]
+      },
+      {
+        "action": "reweight",
+        "category": "generative",
+        "reason": "generative 队列第一名是《Quantum Algorithms for Computational Fluid Dynamics》综述，靠 model/generative 类词进入；缺少「生成模型」与「生成式方法」的区分。",
+        "proposedKeywords": [
+          "扩散模型",
+          "视频生成",
+          "图像生成",
+          "自回归生成",
+          "流匹配"
+        ]
+      },
+      {
+        "action": "reweight",
+        "category": "exam",
+        "reason": "exam 类有 7 条语料，但本轮 plan 的 perCategory 完全没有 exam 配额，深读覆盖缺这一类。",
+        "proposedKeywords": [
+          "笔试",
+          "机试",
+          "选择题",
+          "真题"
+        ]
+      }
+    ],
+    "keywordProposals": [
+      {
+        "category": "job",
+        "add": [
+          "招聘",
+          "校招",
+          "实习",
+          "岗位",
+          "内推"
+        ],
+        "remove": [
+          "paper",
+          "review"
+        ],
+        "reason": "近 7 日 job 类命中里混入论文与演讲，招聘类关键词命中率偏低。"
+      },
+      {
+        "category": "trend",
+        "add": [
+          "趋势",
+          "开源榜",
+          "模型发布"
+        ],
+        "remove": [
+          "state of",
+          "review"
+        ],
+        "reason": "review / state of 过宽，把非 AI 领域综述带进 trend。"
+      },
+      {
+        "category": "foundation",
+        "add": [
+          "transformer",
+          "attention",
+          "kv-cache",
+          "归一化"
+        ],
+        "remove": [
+          "theory",
+          "architecture"
+        ],
+        "reason": "theory / architecture 过宽，把比亚迪充电站、阿尔茨海默影像诊断等条目带进 foundation。"
+      }
+    ],
+    "newChannelProposals": [],
+    "noiseReport": {
+      "overBroadKeywords": [
+        "review",
+        "state of",
+        "paper",
+        "theory",
+        "architecture",
+        "手撕",
+        "招聘",
+        "岗位",
+        "实习",
+        "reinforcement learning"
+      ],
+      "underCoveredCategories": [
+        "exam"
+      ],
+      "unknownHosts": {
+        "machine0.io": 1,
+        "cactuscompute.com": 1,
+        "ncompass.tech": 1,
+        "openpipe.ai": 1,
+        "app.mokahr.com": 1
+      }
+    },
+    "humanReviewQueue": [
+      "deep-read-plan.json 全量队列为 103 条；本轮用仓库自带工具 scripts/scope_deep_read.py --total 13 收窄为「每类 1 条、取 depthScore 最高」，完整计划已备份到 web/data/deep-read-plan.full.json。请确认后续是继续每轮 13 条分批推进，还是把每类配额调到 2。",
+      "计划按 depthScore 排序时，多个分类的第一名与本方向无关：EU AI Act（paper）、量子 CFD（generative）、聚合物信息学（trend）、LANTERN 数学论文（被标成 job）。建议先按 taxonom 提案修关键词再加权，再重跑 plan_deep_read.py --all 对比「计划 vs 实际」。",
+      "本轮 digest 的 2 条 job 类条目（「招聘岗位确实在收缩」「字节国际化广告后端实习一二面凉经」）是求职讨论帖，不含 company/applyUrl，无法生成 jobs.json 记录；请确认是否只把可投递的真实岗位入库。",
+      "10 个渠道连续 6 轮 blocked（jobs_* 六个、machineheart、openreview、reddit、rsshub）；其中 openreview/machineheart/rsshub 备用源已生效。是否把 jobs_* 与 reddit 明确标为人工导入或下线？",
+      "小红书 / BOSS直聘 / 拉勾 / 实习僧仍无真实导入数据；如需这几类渠道内容，请按 README 第五节人工导出到 web/data/inbox/。"
+    ]
+  },
+  "log": {
+    "status": "ok",
+    "notes": "按 web/data/deep-read-plan.json 的 queue 深读 13 条：用仓库自带工具把 103 条全量队列收窄为「每类 depthScore 最高 1 条」（完整队列备份至 web/data/deep-read-plan.full.json），覆盖 13/13 分类。每条产出 tldr、要点、why、自包含内联 SVG 图解、2-3 个八层概念与 1-2 个五层公式，共新增 17 个公式。所有断言均可在 title/summary 中核对；摘要只有一句的两条（vLLM、Awesome-LLM-Post-training）已在 selfCheck.uncertain 明确标注「机制描述属通用背景」。本轮 digest 的 job 类条目是求职讨论帖而非可投递岗位，jobs.json 无新增。本轮是当日第 4 轮 agent payload：enrichment.json 累计 32 条（前 3 轮 19 条 + 本轮 13 条），formulas.json 累计 37 个；提案记录了 10 个连续 blocked 渠道与 5 类误分类证据。",
+    "errors": []
+  }
+}

@@ -1,0 +1,125 @@
+{
+  "id": "f337a0e7a6db2da2",
+  "tldr": "面向用户指定加速目标，用离线到在线强化学习自适应决定视频扩散缓存的复用还是重算。",
+  "keyPoints": [
+    "视频 DiT 迭代去噪延迟高，缓存复用步间冗余可加速",
+    "既有动态缓存用「步误差」指导决策，但步误差不等于「终端误差」",
+    "潜变量信息能刻画步误差与终端误差之间的关系",
+    "阈值法无法精确控制加速比，难以命中用户指定目标",
+    "MORCA 用离线到在线 RL 在加速目标下学习复用/重算策略"
+  ],
+  "why": "视频扩散推理加速是生成式落地的核心工程问题；把优化目标从中间误差改到终端质量，是 RL 在生成推理上很值得迁移的范式。",
+  "difficulty": "hard",
+  "tags": ["generative", "video-diffusion", "caching", "reinforcement-learning", "inference-acceleration"],
+  "entities": ["MORCA", "Diffusion Transformers", "DiT"],
+  "diagram": {
+    "kind": "flow",
+    "title": "MORCA 缓存调度闭环",
+    "caption": "把每步的复用/重算当序列决策，用潜变量观测与终端质量奖励，在指定加速目标下训练策略。",
+    "svg": "<svg viewBox='0 0 480 226' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='MORCA 从去噪序列到离线到在线强化学习缓存调度的四层闭环'>\n<rect x='40' y='14' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='38' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>视频 DiT 去噪序列</text>\n<text x='424' y='38' font-size='13' text-anchor='end' fill='currentColor'>多步迭代，存在步间冗余</text>\n<line x1='240' y1='52' x2='240' y2='60' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,68 236,60 244,60' fill='var(--line-1)'/>\n<rect x='40' y='68' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='92' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>缓存调度决策</text>\n<text x='424' y='92' font-size='13' text-anchor='end' fill='currentColor'>每步复用 or 重算</text>\n<line x1='240' y1='106' x2='240' y2='114' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,122 236,114 244,114' fill='var(--line-1)'/>\n<rect x='40' y='122' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='146' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>潜变量感知观测</text>\n<text x='424' y='146' font-size='13' text-anchor='end' fill='currentColor'>刻画步误差→终端误差</text>\n<line x1='240' y1='160' x2='240' y2='168' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,176 236,168 244,168' fill='var(--line-1)'/>\n<rect x='40' y='176' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='200' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>离线→在线 RL 训练</text>\n<text x='424' y='200' font-size='13' text-anchor='end' fill='currentColor'>对齐用户指定加速目标</text>\n</svg>",
+    "alt": "四层竖排流程：视频 DiT 去噪序列→每步缓存调度决策→潜变量感知观测→离线到在线强化学习训练对齐加速目标。"
+  },
+  "concepts": [
+    {
+      "name": "Step Error vs Terminal Error（步误差与终端误差）",
+      "readable": "步误差是「这一步复用缓存会引入多少偏差」，终端误差是「最终生成的视频质量掉了多少」。两者并不直接对应。",
+      "analogy": "像滚雪球：某一小段路多粘的雪（步误差）不直接等于最终雪球大小，因为后面还会滚动、塑造、消融。",
+      "analogyBreaksDown": "雪球只会变大；扩散去噪后期的步可能对视觉质量更关键，早期误差可能被后续步骤修正甚至放大，方向并不单调。",
+      "mechanism": "作者指出仅用步误差做缓存决策会误导，改而把「终端质量损失」当目标；并用潜变量携带当前生成状态，帮助从步误差推断终端误差，使决策更贴近最终结果。",
+      "visual": "横轴去噪步、纵轴两条曲线：一条是步误差（逐点抖动），一条是终端误差（事后累积）；两曲线形态不重合，交叉处标出决策误判。",
+      "prerequisites": ["扩散去噪过程", "缓存/复用推理加速", "回归代理模型"],
+      "selfTest": ["为什么步误差不能直接代表终端误差？", "潜变量为什么有助于刻画二者关系？", "若只优化步误差会遇到什么？"],
+      "formula": "\\hat{E}_{\\mathrm{term}}=g_{\\phi}\\!\\left(z_t,\\ E_{\\mathrm{step}}^{(t)}\\right)"
+    },
+    {
+      "name": "Offline-to-Online RL for Cache Scheduling（离线到在线强化学习缓存调度）",
+      "readable": "先用已有的离线轨迹训一个初始缓存策略，再在真实生成过程里在线微调，让它在用户指定的加速比下尽量保住画质。",
+      "analogy": "像学开车：先在模拟器里练（离线），上路后再根据真实路况微调（在线）。",
+      "analogyBreaksDown": "开车风险由人承担；这里在线探索只会影响生成质量与耗时，可以大量试错，但仍受在线采样的算力成本限制。",
+      "mechanism": "把「每步复用/重算」建模为序列决策，奖励同时考虑生成质量与是否达到目标加速比；离线阶段用已有数据预训练策略，在线阶段针对具体模型与加速目标微调，从而摆脱阈值法无法精确控速的问题。",
+      "visual": "横轴训练阶段（离线→在线）、纵轴两个指标：生成质量与加速比达标率；两条曲线在切换到在线后质量回升、达标率趋近 1。",
+      "prerequisites": ["强化学习基础（策略/奖励）", "off-policy 与 on-policy 区别", "扩散模型推理流程"],
+      "selfTest": ["为什么要离线到在线两阶段？", "奖励里为什么必须含加速目标？", "相比阈值法优势在哪？"],
+      "formula": "\\max_{\\pi}\\ \\mathbb{E}\\big[\\mathcal{Q}(x_0)\\big]\\quad \\mathrm{s.t.}\\ \\mathrm{Acc}(\\pi)\\ge A_{\\mathrm{tgt}}"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-morca-cache-objective",
+      "name": "面向加速目标的缓存调度目标（Acceleration-Targeted Cache Scheduling）",
+      "category": "generative",
+      "latex": "\\max_{\\pi\\in\\Pi}\\ \\mathbb{E}_{x_0\\sim\\mathcal{D}}\\big[\\mathcal{Q}(x_0)\\big]\\quad \\mathrm{s.t.}\\ \\mathrm{Acc}(\\pi)\\ge A_{\\mathrm{tgt}}",
+      "symbols": [["\\pi", "缓存调度策略：每步选复用或重算"], ["\\Pi", "策略空间"], ["\\mathcal{Q}(x_0)", "生成视频的质量/保真度"], ["\\mathrm{Acc}(\\pi)", "该策略带来的实际加速比"], ["A_{\\mathrm{tgt}}", "用户指定的加速目标"], ["\\mathcal{D}", "生成任务/提示分布"]],
+      "derivation": [
+        "把去噪的每一步「复用缓存还是重算」看成一个动作，整段去噪就是一条轨迹。",
+        "学习一个策略 π，在给定初始噪声与提示下逐步做决策。",
+        "目标是在满足用户指定加速比的前提下最大化生成质量。",
+        "阈值法只能间接影响加速比，无法精确命中 A_tgt，故用 RL 直接优化这个带约束目标。"
+      ],
+      "analogy": "像既要省油又要准时到：不固定某个油门，而是随路况在「省油」和「够快」之间动态取舍。",
+      "pitfalls": ["把加速目标当成软提示而非硬约束，导致实际速度与用户要求不符", "以为调一个阈值就能精确控制加速比，忽略它与模型、步数强耦合"],
+      "code": "def reward(quality, acc, a_tgt):\n    # 质量为主，未达加速目标时给惩罚\n    return quality - 10.0 * max(0.0, a_tgt - acc)",
+      "sources": [{"title": "MORCA: Offline-to-Online Reinforcement Learning for Adaptive Cache Reuse in Video Diffusion Acceleration", "url": "https://arxiv.org/abs/2610.10457v1"}]
+    },
+    {
+      "id": "f-morca-terminal-error",
+      "name": "潜变量感知的终端误差代理（Latent-Aware Terminal Error）",
+      "category": "generative",
+      "latex": "\\hat{E}_{\\mathrm{term}}=g_{\\phi}\\!\\left(z_t,\\ E_{\\mathrm{step}}^{(t)}\\right)",
+      "symbols": [["z_t", "第 t 步的潜变量（当前生成状态）"], ["E_{\\mathrm{step}}^{(t)}", "第 t 步复用缓存会引入的步误差"], ["g_{\\phi}", "可学习的代理网络"], ["\\hat{E}_{\\mathrm{term}}", "对最终视频质量损失的估计"]],
+      "derivation": [
+        "常见动态缓存做法用步误差 E_step 估计该步复用的代价。",
+        "但摘要指出步误差与终端误差并非直接对应，单看它会产生误判。",
+        "潜变量 z_t 携带当前生成状态，能帮助刻画二者之间的映射关系。",
+        "于是用代理网络 g_phi 以 (z_t, E_step) 为输入预测终端误差，作为缓存决策依据。"
+      ],
+      "analogy": "像体检：单项指标正常不代表最终健康，要结合整体状态一起判断。",
+      "pitfalls": ["直接用步误差阈值代替终端误差判断，忽略二者的非线性关系", "省掉潜变量只用统计量做决策，丢掉当前生成状态信息"],
+      "code": "import torch.nn as nn\nclass TermErrProxy(nn.Module):\n    def __init__(self, dz, de=1, h=128):\n        super().__init__()\n        self.net = nn.Sequential(nn.Linear(dz + de, h), nn.ReLU(), nn.Linear(h, 1))\n    def forward(self, z_t, e_step):\n        return self.net(torch.cat([z_t, e_step], dim=-1))",
+      "sources": [{"title": "MORCA: Offline-to-Online Reinforcement Learning for Adaptive Cache Reuse in Video Diffusion Acceleration", "url": "https://arxiv.org/abs/2610.10457v1"}]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "视频扩散 Transformer 的迭代去噪推理延迟高，缓存复用步间冗余是有效加速手段",
+      "既有动态缓存方法通常估计步误差来指导缓存决策",
+      "作者主张步误差不直接对应终端误差，且潜变量有助于刻画二者关系",
+      "阈值类方法无法提供精确的加速控制，难以满足用户指定的加速目标",
+      "MORCA 用离线到在线强化学习在用户指定加速目标下做潜变量感知的复用/重算决策",
+      "在多种视频生成模型与多个目标加速比下，MORCA 在可比算力预算内保真度优于 SOTA 缓存方法"
+    ],
+    "uncertain": [
+      "两条公式（调度目标与终端误差代理）摘要未给具体形式，均为按摘要重建的通用形式，需核对原文",
+      "离线数据来源与在线微调的交互细节、奖励具体定义摘要未说明，待核实",
+      "「可比算力预算」的度量与基线清单摘要未列全，待核实"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "它让视频生成模型按你要的速度跑，用强化学习决定哪些去噪步可以省。"},
+      {"level": "入门", "text": "视频扩散模型要迭代很多次去噪，慢。有人发现相邻步很像，可以复用上一步的中间结果（缓存）来省算力。MORCA 不满足于「这一步复用会差多少」，它关心「最终视频会差多少」，并用强化学习在用户给定的加速比下学习何时复用、何时重算。"},
+      {"level": "进阶", "text": "两个关键洞察：一是步误差和终端误差不成正比，所以用步误差做阈值会误判，需要借助潜变量估计终端误差；二是阈值法无法精确控制加速比，满足不了用户指定目标。于是把缓存决策建模成序列决策，用离线数据预训练、再在线微调，奖励里同时含质量与加速目标，从而在指定加速比下最大化保真度。"},
+      {"level": "专家", "text": "对比同期的动态缓存：主流做法是给每步算一个复用代价（步误差）再设阈值，缺点是目标与决策不一致、且速度不可控。MORCA 把目标改成终端质量，用潜变量感知的代理把「中间状态」与「最终损失」连起来，再用离线到在线的 RL 直接优化带加速约束的目标。意义是把缓存调度从「启发式阈值」升级为「可指定的目标导向策略」，代价是需要训练与推理时的策略网络开销。摘要自述在多种模型与多个加速比下均优于 SOTA。"}
+    ],
+    "socratic": [
+      {"q": "为什么不直接给每步设一个误差阈值？", "a": "摘要指出阈值法无法精确控制加速比，且步误差与终端误差不对应，阈值选不好会既慢又掉画质。"},
+      {"q": "为什么要两阶段（离线到在线）？", "a": "离线数据能快速预训练出一个可用策略，在线阶段再针对具体模型与加速目标微调，弥补离线数据与真实推理分布之间的差距。"},
+      {"q": "潜变量在这里到底起什么作用？", "a": "它是当前生成状态的紧凑描述，能把「这一步的误差」与「最终视频的损失」关联起来，让决策基于终端影响而非局部量。"}
+    ],
+    "mechanism": "缓存加速的本质是「省掉某些步骤」，但省哪一步的代价取决于当前生成状态，而非一步到位的固定规则。MORCA 把决策目标对齐到终端质量，并用潜变量补上「当前状态」这一缺失信息；同时因为加速比与模型、步数强耦合，固定阈值管不住速度，所以改用带加速约束的 RL 目标，并在离线预训练后在线微调，让策略能在用户给定加速目标下稳定产出。",
+    "boundary": "依赖可训练的策略/代理网络，需额外训练与在线采样成本；对训练时未覆盖的模型或极端加速比，泛化可能下降。若任务对画质极其敏感、不接受任何缓存近似，则缓存类方法本身不适用。",
+    "analogyBoundary": "「省油又准时」类比成立，但开车是在连续控制里权衡，这里的动作是离散的复用/重算，且奖励在视频生成结束后才结算，本质上更接近稀疏回报的序列决策。",
+    "misconceptions": [
+      "以为它是无损加速——缓存复用是近似，必然有质量代价，只是被最小化。",
+      "以为步误差最小就等于效果最好——摘要把这当作要纠正的误区。",
+      "以为阈值调参能精确控速——摘要明确说阈值法做不到精确加速控制。"
+    ],
+    "ownAnalysis": "最可迁移的是「把决策目标从局部代理量换成终端目标 + 用状态信息补全映射」（推断），这与 RL 里用 value function 替代即时奖励的思路同构。可疑处：在线阶段若对每个新模型都需微调，工程成本是否可接受，摘要未提（待核实）；另外「终端误差代理」的准确性直接决定策略上限，若代理本身有偏，在线微调可能被带偏（推断）。",
+    "officialNotes": [{"position": "步误差不直接对应终端误差，潜变量有助于刻画二者关系；阈值法无法精确控制加速比；MORCA 用离线到在线 RL 在用户指定加速目标下做缓存决策，在多种视频模型与多个加速比下优于 SOTA 缓存方法", "source": "arxiv: 2610.10457v1"}],
+    "interviewAnswer": "视频扩散 Transformer 迭代去噪很慢，缓存复用步间冗余能加速。现有动态缓存用「步误差」决定哪步复用，但论文指出步误差和最终视频的质量损失（终端误差）并不直接对应，中间还会被后续步骤修正或放大；而且阈值法控制不了精确的加速比。MORCA 把每步复用/重算建模成序列决策，用潜变量辅助估计终端误差，再用离线到在线的强化学习，在用户指定的加速比约束下最大化生成保真度。实验在多种视频生成模型、多个目标加速比下都优于同期缓存方法。",
+    "studyPath": {
+      "prerequisites": ["扩散模型与 DiT 去噪流程", "缓存/复用式推理加速（如特征复用）", "强化学习基础：策略、奖励、off-policy 与 on-policy"],
+      "nextSteps": ["读原文确认调度目标与终端误差代理的精确形式", "对照代码仓库复现一个最小缓存策略，比较步误差与终端误差的相关性"]
+    }
+  }
+}

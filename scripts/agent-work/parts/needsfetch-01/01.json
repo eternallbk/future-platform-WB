@@ -1,0 +1,73 @@
+{
+  "id": "fb667041cf928c83",
+  "tldr": "Liquid AI 开源 d1 决策模型：不生成 token，单次前向直接输出答案概率，d1-3B 边缘端 8ms。",
+  "keyPoints": [
+    "d1-3B（3.12B）基于 LFM2.5-VL-3B，接受文本+图像",
+    "d1-omni-600M 基于双向编码器，支持文本+图像或音频",
+    "不生成 token，单次前向直接给出候选答案概率",
+    "Decision Index v0.2.1：d1-3B 得 48.57",
+    "边缘延迟：RTX4090 8ms、Jetson Thor 16ms、Orin Nano 50ms"
+  ],
+  "why": "决策模型把路由/审核从「生成再解析」改成单次前向，是边缘多模态落地与推理加速方向的新范式，面试常问。",
+  "difficulty": "medium",
+  "tags": ["multimodal", "edge", "decision-model", "vlm", "inference"],
+  "entities": ["Liquid AI", "d1-3B", "d1-omni-600M", "LFM2.5-VL-3B", "LFM2.5-Encoder-350M", "Decision Index"],
+  "diagram": {
+    "kind": "architecture",
+    "title": "d1 决策模型四层结构",
+    "caption": "从多模态输入到决策头，一次前向直接出概率，落地到边缘毫秒级。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='d1 决策模型四层流程'><rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>输入层</text><text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>文本+图像 / 文本+音频</text><line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,70 236,62 244,62' fill='var(--line-1)'/><rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>骨干层</text><text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>LFM2.5-VL-3B / 双向编码器</text><line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,124 236,116 244,116' fill='var(--line-1)'/><rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>决策层</text><text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>单次前向输出答案概率</text><line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,178 236,170 244,170' fill='var(--line-1)'/><rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>部署层</text><text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>RTX 8ms · Jetson Thor 16ms</text></svg>",
+    "alt": "d1 决策模型：多模态输入经骨干编码，决策头单次前向出概率，部署到边缘端毫秒级。"
+  },
+  "concepts": [
+    {
+      "name": "Decision Model（非生成式决策模型）",
+      "readable": "不给状态写句子，而是读入状态和一组命名问题，一次前向返回每个候选答案的概率，省掉逐 token 生成与解析。",
+      "analogy": "像选择题答题卡：不写小作文，只在固定选项里直接涂出概率最高的一格。",
+      "analogyBreaksDown": "答题卡的选项是人预先写死的；决策模型的候选集要靠训练定义，遇到开放域、无候选集的问题就无能为力。",
+      "mechanism": "把输出头约束在候选答案集合上，用一次前向取 logits，避开自回归解码的延迟与格式错误；训练时打乱选项顺序、修数据捷径以抗位置偏置。",
+      "visual": "横轴延迟(ms)、纵轴准确率；生成式 LLM 落在高延迟点，决策模型落在低延迟点，一眼看出 Pareto 优势。",
+      "prerequisites": ["Transformer 前向传播", "softmax/logits", "自回归解码流程"],
+      "selfTest": ["决策模型和普通分类器的区别是什么？", "为什么它能大幅降低延迟？", "候选答案集合从哪来、缺了会怎样？"],
+      "formula": "P(y=k \\mid s, Q) = \\frac{\\exp(z_k)}{\\sum_{j \\in \\mathcal{A}} \\exp(z_j)}"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-decision-head-softmax",
+      "name": "决策头答案分布（Decision-Head Answer Distribution）",
+      "category": "multimodal",
+      "latex": "P(y=k \\mid s, Q) = \\frac{\\exp(z_k)}{\\sum_{j \\in \\mathcal{A}} \\exp(z_j)}",
+      "symbols": [["s", "输入状态（文本/图像/音频）"], ["Q", "一组命名问题"], ["z_k", "候选答案 k 的 logit"], ["\\mathcal{A}", "允许答案集合"], ["P(y=k)", "选择答案 k 的概率"]],
+      "derivation": ["第 1 步：编码器把状态 s 与问题 Q 编码成隐藏向量 h。", "第 2 步：决策头给每个候选答案打分 z_k = w_k^T h。", "第 3 步：在候选集合 A 上做 softmax 得概率，argmax 即答案。"],
+      "analogy": "把整页选择题瞬间涂卡：每个选项算个分，再归一化成把握，直接选最高的。",
+      "pitfalls": ["softmax 分母只在候选集合 A 上归一化，不是整个词表。", "开放输入没有候选答案时要硬塞进某个选项。", "不打乱选项顺序：模型会学成位置偏置。"],
+      "code": "import torch, torch.nn.functional as F\nh = model.encode(state, questions)   # [B, D]\nlogits = h @ W_answers.T              # [B, K]\nprobs = F.softmax(logits, dim=-1)     # 候选集内归一化\npred = probs.argmax(-1)",
+      "sources": [{"title": "Open d1: Edge decision models for text, vision, and audio", "url": "https://huggingface.co/blog/LiquidAI/open-d1"}]
+    }
+  ],
+  "selfCheck": {
+    "claims": ["d1-3B 为 3.12B 参数、基于 LFM2.5-VL-3B，支持文本+图像。", "d1-omni-600M 基于双向编码器 LFM2.5-Encoder-350M，支持文本+图像或文本+音频。", "决策模型不生成 token，单次前向直接输出答案概率。", "d1-3B 在 Decision Index v0.2.1 得 48.57。", "边缘延迟：RTX4090 8ms、Jetson AGX Thor 16ms、Orin Nano 50ms。"],
+    "uncertain": ["HF 原页抓取多次失败，内容取自 Liquid AI 官方同题公告与媒体转述，训练超参待核对原文。", "『领先所有 10B 以下模型』为厂商自述口径，待独立复现。", "d1-omni-600M 的延迟未公布。"]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "让模型不做作文只做选择：一次前向直接给出答案。"},
+      {"level": "入门", "text": "d1 是决策模型：给它状态和一组问题，它不逐字生成，而是一次前向返回每个候选答案的概率；d1-3B 3.12B 支持文本+图像，边缘端 8ms。"},
+      {"level": "进阶", "text": "它从 LFM2.5-VL-3B 训练而来，把 VLM 改造成在候选答案集合上的判定器。训练先权重平均造基座，再用不同随机种子与数据混合微调后合并，并打乱选项、修数据捷径抗位置偏置；代价是失去自由生成能力。"},
+      {"level": "专家", "text": "相比生成式 LFM，d1 用单次前向替代自回归解码，延迟与输出长度解耦，在路由/审核等分类型任务上 Pareto 更优；但它不能开放式生成，也依赖预先定义的候选答案集合。判断是否适用，就看任务能否写成『状态 + 命名问题 → 候选答案』。"}
+    ],
+    "socratic": [
+      {"q": "如果不做单次前向、仍逐 token 生成，会怎样？", "a": "边缘端延迟会被解码循环拖到几十上百毫秒，还可能出现格式错误需要解析与纠错。"},
+      {"q": "为什么不让生成的 LLM 直接输出分类标签就够？", "a": "生成式会把判定藏在文本里，延迟高、校准差；决策头直接在候选集上归一化，概率更可用。"}
+    ],
+    "mechanism": "关键是把它从『生成再解析』换成『候选集内判定』：输出头只在答案集合上归一化，训练时打乱选项顺序、剔除数据捷径，让模型学内容而非位置先验；这样延迟≈一次前向，边缘可实时。",
+    "boundary": "只在任务能写成分类/路由时成立；开放生成、需要多步推理链或候选集无法枚举时失效。厂商自述的领先结论也受自建 Decision Index 口径限制，跨域泛化待独立复现。",
+    "analogyBoundary": "答题卡类比在『选项由人预先写死』处失效：决策模型的候选集来自训练定义，遇到训练外的新类别会答错或强行归入已有类。",
+    "misconceptions": ["以为它只是更快的 LLM（其实不生成 token，是判定器）", "以为参数越大越准（3.12B 靠架构与数据取胜）", "以为任何任务都能单次前向（多步推理不行）"],
+    "ownAnalysis": "（推断）d1 与『把 LLM 当分类器』的加速思路同源，价值在边缘部署；但候选答案集合的构建与维护成本被淡化，开放域任务仍要生成/规划模型配合。它和 Decider 系列同属新赛道，值得跟踪其泛化评测与校准质量。",
+    "officialNotes": [{"position": "d1-3B 在 Decision Index v0.2.1 得 48.57，称领先所有 10B 以下模型；不生成 token，单次前向作答。", "source": "https://huggingface.co/blog/LiquidAI/open-d1"}],
+    "interviewAnswer": "我会这样讲：决策模型和聊天模型最大的区别是输出形态——它不写句子，而是针对给定的命名问题集合，一次前向返回候选答案的概率分布。以 Liquid AI 的 d1 为例，d1-3B 从 LFM2.5-VL-3B 训练而来，支持文本+图像，边缘端 8ms，适合路由、审核。它省掉了解码，代价是失去开放生成，只在答案可枚举时成立。",
+    "studyPath": {"prerequisites": ["Transformer 前向与自回归解码", "softmax/logits", "VLM 基本架构"], "nextSteps": ["读 d1/d1-omni 的推理代码", "对比生成式 VLM 的延迟预算", "研究候选答案集合构造与概率校准"]}
+  }
+}

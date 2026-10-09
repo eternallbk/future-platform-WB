@@ -1,0 +1,159 @@
+{
+  "id": "659c4ed727802f67",
+  "tldr": "用可训练向量探测出 RLVR 增益对应激活空间一个低维流形，并提出把主成分分量从梯度中投影掉的 Alpha-Stabler 稳定训练。",
+  "keyPoints": [
+    "用向量 steering 在激活空间定位与 RL 增益相关的低维有效流形",
+    "有效流形容量很小但非无限可压，极低容量下干预维度与输入相关表达力成约束",
+    "控制方向主要落在激活主成分子空间的低方差补集里",
+    "同任务同基座下几何跨训练配置基本一致，跨任务几何对齐与能力迁移相关",
+    "Alpha-Stabler 的 Predictor 监控主成分侵入并预警坍缩",
+    "Controller 在反传中移除激活梯度的主成分分量、保留正交补",
+    "5 个 LLM、6 个可验证奖励任务上稳定训练 2000 步并提升 RL 增益"
+  ],
+  "why": "把 RLVR 的「为什么有效」与「如何稳住」拼在一起，是后训练方向面试里解释训练动态与稳定性的硬通货。",
+  "difficulty": "hard",
+  "tags": ["posttraining", "rlvr", "interpretability", "steering", "training-stability"],
+  "entities": ["RLVR", "Alpha-Stabler", "Predictor", "Controller"],
+  "diagram": {
+    "kind": "flow",
+    "title": "从几何发现到稳定训练",
+    "caption": "用低维探针刻画 RLVR 的激活几何，再把「主成分侵入」这一坍缩信号接进训练稳定器。",
+    "svg": "<svg viewBox='0 0 480 258' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='RLVR 更新高维难分析，用可训练向量找到低维流形与控制方向，再由 Alpha-Stabler 预警并投影梯度，稳定训练'>\n<rect x='40' y='14' width='400' height='34' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='240' y='36' font-size='14' text-anchor='middle' fill='currentColor' font-weight='bold'>RLVR：参数更新高维、动态难分析</text>\n<line x1='240' y1='48' x2='240' y2='58' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,66 236,58 244,58' fill='var(--line-1)'/>\n<rect x='40' y='66' width='400' height='34' rx='8' fill='none' stroke='var(--accent)' stroke-width='1.6'/>\n<text x='240' y='88' font-size='14' text-anchor='middle' fill='currentColor' font-weight='bold'>可训练向量 steering 探针</text>\n<line x1='240' y1='100' x2='240' y2='110' stroke='var(--line-1)' stroke-width='1.6'/>\n<line x1='129' y1='110' x2='351' y2='110' stroke='var(--line-1)' stroke-width='1.6'/>\n<line x1='129' y1='110' x2='129' y2='120' stroke='var(--line-1)' stroke-width='1.6'/>\n<line x1='351' y1='110' x2='351' y2='120' stroke='var(--line-1)' stroke-width='1.6'/>\n<rect x='24' y='120' width='210' height='52' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='129' y='140' font-size='13' text-anchor='middle' fill='currentColor' font-weight='bold'>有效流形容量</text>\n<text x='129' y='158' font-size='13' text-anchor='middle' fill='currentColor'>很小但非无限可压</text>\n<rect x='246' y='120' width='210' height='52' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='351' y='140' font-size='13' text-anchor='middle' fill='currentColor' font-weight='bold'>控制流形分离</text>\n<text x='351' y='158' font-size='13' text-anchor='middle' fill='currentColor'>方向多在低方差补集</text>\n<line x1='129' y1='172' x2='129' y2='184' stroke='var(--line-1)' stroke-width='1.6'/>\n<line x1='351' y1='172' x2='351' y2='184' stroke='var(--line-1)' stroke-width='1.6'/>\n<rect x='40' y='184' width='400' height='44' rx='8' fill='none' stroke='var(--accent)' stroke-width='1.6'/>\n<text x='240' y='203' font-size='13' text-anchor='middle' fill='currentColor' font-weight='bold'>Alpha-Stabler</text>\n<text x='240' y='221' font-size='13' text-anchor='middle' fill='currentColor'>Predictor 预警 + Controller 投影梯度</text>\n<text x='240' y='248' font-size='13' text-anchor='middle' fill='currentColor'>5 LLM / 6 任务：稳定 2000 步、增益提升</text>\n</svg>",
+    "alt": "RLVR 更新高维难分析，用可训练向量探针找到低维有效流形与低方差补集中的控制方向，再由 Alpha-Stabler 的 Predictor 预警、Controller 投影梯度，稳定训练 2000 步。"
+  },
+  "concepts": [
+    {
+      "name": "Effective Manifold Capacity（有效流形容量）",
+      "readable": "能复现 RL 增益所需的激活干预维度其实很小，但也不是可以无限压缩到一维；容量太小时，干预维度与「随输入变化」的表达力就成了硬约束。",
+      "analogy": "像用几个旋钮去还原一台复杂机器的全部调节：多数功能三四个旋钮就够，但只剩一个旋钮就顾此失彼，且不同位置装旋钮效果不同。",
+      "analogyBreaksDown": "机器旋钮是物理固定的；这里「容量」是激活空间的维度，且干预可以随输入动态变化，二者在自由度上并不对等。",
+      "mechanism": "用可训练向量做 steering，扫不同干预维度并比较能否复现 RL 带来的性能，从而把「有效自由度」量化；结果随注入深度变化，说明容量约束与层位置相关。",
+      "visual": "横轴干预维度 k、纵轴复现的 RL 增益比例；曲线先快升后趋平，且在极低 k 处明显不足。",
+      "prerequisites": ["激活 steering", "主成分分析/PCA", "RL 增益度量"],
+      "selfTest": ["为什么容量「小」不等于可以压到一维？", "注入深度为什么会改变所需容量？", "如何用实验判定「无限可压」不成立？"],
+      "formula": "G(k) \\approx G_{\\mathrm{RL}},\\quad k \\ll d,\\ \\text{but}\\ k > 1"
+    },
+    {
+      "name": "Control Manifold Separation（控制流形分离）",
+      "readable": "真正影响能力的控制方向不在激活变化最大的那些方向上，而主要落在主成分子空间之外的低方差补集里。",
+      "analogy": "像在嘈杂音乐厅里找指挥：音量最大的是乐器声（主成分），但决定走向的指挥动作藏在背景的低音量里。",
+      "analogyBreaksDown": "音乐厅里指挥与乐器在同一声场；这里「低方差补集」是激活空间的几何概念，且与主成分正交，物理性质不同。",
+      "mechanism": "把有效控制方向投影到激活协方差的主成分基上，发现其能量集中在低方差补集；同一任务同一基座下该几何跨训练配置稳定，跨任务的几何对齐还与能力迁移相关。",
+      "visual": "画一个椭圆形的激活分布云，长轴=主成分；控制方向箭头画成垂直于长轴、指向短轴方向。",
+      "prerequisites": ["协方差与主成分", "正交投影", "表征几何"],
+      "selfTest": ["为什么控制方向落在低方差方向反而合理？", "几何跨配置一致说明了什么？", "跨任务几何对齐为什么能预示迁移？"],
+      "formula": "\\Pi_{\\perp} v \\approx v,\\quad \\Pi_{\\parallel} v \\approx 0"
+    },
+    {
+      "name": "Subspace Projection Controller（子空间投影控制器）",
+      "readable": "在反向传播时，把激活梯度里属于主成分子空间的那部分去掉，只留下正交补，让更新不去扰动带来坍缩的那些高方差方向。",
+      "analogy": "像给水管加过滤网：把容易堵塞主管道的大颗粒（主成分分量）滤掉，只放行其余水流。",
+      "analogyBreaksDown": "滤网是单向损耗；这里是正交投影，理想情况下不损失补集方向的信息，但投影矩阵由数据估计，估计误差会带来额外噪声。",
+      "mechanism": "Predictor 监控激活有多少能量侵入主成分子空间，作为早期坍缩预警；Controller 在反传中做投影 (I - P) g，保留正交补，从而抑制导致训练不稳的更新。",
+      "visual": "向量图：梯度 g 分解为平行与垂直主成分两部分，平行分量被划掉，仅垂直分量进入优化器。",
+      "prerequisites": ["梯度与反向传播", "正交投影矩阵", "训练稳定性问题"],
+      "selfTest": ["为什么移除主成分分量能稳定训练？", "Predictor 预警的是哪种失败模式？", "投影矩阵估计不准会有什么代价？"],
+      "formula": "g' = (I - U U^{\\top}) g"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-alpha-stabler-projection",
+      "name": "主成分分量投影移除（Principal-Subspace Gradient Projection）",
+      "category": "posttraining",
+      "latex": "g' = \\big(I - U U^{\\top}\\big) g,\\quad U = [u_1,\\dots,u_k]",
+      "symbols": [
+        ["g", "激活梯度向量"],
+        ["U", "激活协方差前 k 个主成分方向组成的矩阵"],
+        ["I", "单位阵"],
+        ["g'", "移除主成分分量、保留正交补后的梯度"]
+      ],
+      "derivation": [
+        "观察到有效控制方向主要落在激活主成分子空间的低方差补集。",
+        "训练中若梯度持续侵入主成分子空间，对应高方差方向被扰动，易诱发坍缩。",
+        "构造到主成分子空间的正交投影 P = U U^T，把梯度分解为平行与垂直两部分。",
+        "只保留垂直部分 (I - P) g 交给优化器，从而抑制主成分方向的更新。"
+      ],
+      "analogy": "像修路时只走辅路、避开主干道：主干道一震全城堵（高方差方向一扰动就失稳），辅路虽窄却能维持通行。",
+      "pitfalls": [
+        "把投影当成永久删维（其实每步重新估计 U，且不删参数）",
+        "用固定投影矩阵而不随训练更新主成分",
+        "忽略投影矩阵估计误差带来的梯度噪声"
+      ],
+      "code": "import torch\ndef project_out_principal(grad, k=8):\n    # grad: [d]，按激活协方差估计前 k 个主成分并移除其分量\n    U, _, _ = torch.linalg.svd(grad.unsqueeze(1), full_matrices=False)\n    U = U[:, :k]\n    return grad - U @ (U.t() @ grad)\ng = torch.randn(64)\nprint(project_out_principal(g, k=4).shape)  # torch.Size([64])",
+      "sources": [{"title": "Learning to Steer, Steering to See: Unveiling the Geometry of RLVR in Large Language Models via Trainable Vectors", "url": "https://arxiv.org/abs/2609.34344"}]
+    },
+    {
+      "id": "f-steering-vector-intervention",
+      "name": "向量 steering 干预（Vector Steering Intervention）",
+      "category": "posttraining",
+      "latex": "h' = h + \\lambda\\, v",
+      "symbols": [
+        ["h", "某层的原始激活"],
+        ["v", "可训练/可学习到的控制方向向量"],
+        ["\\lambda", "干预强度（steering 系数）"],
+        ["h'", "干预后的激活"]
+      ],
+      "derivation": [
+        "为分析高维参数更新，不去改权重，而是在激活空间加一个方向的偏置。",
+        "沿候选方向 v 施加强度 lambda，观察能否复现 RL 带来的性能增益。",
+        "扫描 v 的维度与注入层，量化有效流形容量及其随深度的变化。",
+        "由此定位与 RL 增益相关的低维子空间，用于后续的稳定性控制。"
+      ],
+      "analogy": "像在合唱团里指定一个领唱方向：不改每个人嗓音（权重），只沿某个方向整体加一点偏置，看旋律是否变对。",
+      "pitfalls": [
+        "把 steering 当成微调权重（它只改激活）",
+        "忽略注入层深度对效果的影响",
+        "把某一层的结论外推到所有层"
+      ],
+      "code": "import torch\ndef steer(h, v, lam=1.0):\n    # h: [B, S, d], v: [d]\n    return h + lam * v\nh = torch.randn(2, 8, 64); v = torch.randn(64)\nprint(steer(h, v, 0.5).shape)  # torch.Size([2, 8, 64])",
+      "sources": [{"title": "Learning to Steer, Steering to See: Unveiling the Geometry of RLVR in Large Language Models via Trainable Vectors", "url": "https://huggingface.co/papers/2609.34344"}]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "论文用向量 steering 在激活空间找到与 RL 增益相关的低维有效流形",
+      "有效流形容量可以很小但不是无限可压，且随注入深度变化",
+      "有效控制方向主要位于激活主成分空间的低方差补集",
+      "同任务同基座下几何跨训练配置基本一致，跨任务几何对齐与能力迁移相关",
+      "Alpha-Stabler 含 Predictor（预警主成分侵入）与 Controller（移除梯度的主成分分量）",
+      "实验覆盖 5 个 LLM 与 6 个可验证奖励任务，稳定训练 2000 步并提升增益"
+    ],
+    "uncertain": [
+      "「有效流形容量」精确定义与估计方法摘要未给，容量数值待核实",
+      "Controller 使用的主成分数 k 与估计频率摘要未给",
+      "Predictor 预警指标的阈值与形式摘要未给"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "RLVR 的增益其实藏在一个很小的激活方向子空间里，顺着它还能稳住训练。"},
+      {"level": "入门", "text": "RL 训练大模型时参数更新维度太高，看不清发生了什么。论文往激活里加可训练方向向量，发现只要很少的维度就能复现 RL 的增益，而且这些方向不在变化最大的方向上。"},
+      {"level": "进阶", "text": "两个几何结论：有效流形容量很小但不能压到极限，且需求随注入层深度变化；控制方向主要落在激活主成分空间的低方差补集里。基于此，Alpha-Stabler 用 Predictor 监控主成分侵入做坍缩预警，用 Controller 在反传时把梯度的主成分分量投影掉。"},
+      {"level": "专家", "text": "它的价值在于把「RLVR 为何有效」这一可解释性问题与「如何稳定训练」这一工程问题连接起来：低方差补集里的控制方向提示，训练不稳可能源于梯度持续侵入高方差主成分方向。实验在 5 个 LLM、6 个可验证奖励任务上稳定训练 2000 步并提升增益。边界：几何结论是同任务同基座下的经验观察，跨模型规模与任务的可迁移性未被证明。"}
+    ],
+    "socratic": [
+      {"q": "为什么不在权重空间分析，而要看激活？", "a": "权重更新维度极高难解释；激活空间能用低维 steering 直接干预并度量效果。"},
+      {"q": "为什么控制方向落在低方差方向很反直觉却不是 bug？", "a": "高方差方向是数据里天然的大变化，多与任务无关；真正改变行为的微调方向反而藏在低方差补集。"},
+      {"q": "为什么移除梯度主成分分量能稳定训练？", "a": "它避免更新去扰动高方差方向，从而抑制由这些方向被侵入引起的坍缩。"}
+    ],
+    "mechanism": "RLVR 的作用被观察到高度集中在激活空间一个很小的子空间；同时训练不稳被归因于梯度持续侵入高方差主成分方向。Alpha-Stabler 的机制就是把这两点接起来：用预测器把「主成分侵入」当作坍缩的早期信号，用控制器在反传时做正交投影，把主成分分量剔除，只保留低方差补集方向更新。",
+    "boundary": "几何结论来自 5 个 LLM、6 个可验证奖励任务，是否随模型规模、任务类型改变未被证明；投影矩阵的估计依赖激活统计，若统计不稳或批次过小，投影可能引入噪声；它也不保证对所有训练失败模式都有效。",
+    "analogyBoundary": "「滤网」类比的失效点：滤网永久损耗被拦部分，而这里是每步重新估计的正交投影，不删参数、不永久丢弃方向，只是当前步不更新该分量——性质不同。",
+    "misconceptions": [
+      "「控制方向就是激活变化最大的方向」——恰恰相反，在低方差补集",
+      "「容量越小越好」——极低容量下表达力不足，反而复现不了增益",
+      "「Alpha-Stabler 会删掉参数/维度」——它只在反传时投影梯度"
+    ],
+    "ownAnalysis": "（推断）这条与「激活 steering / 表征工程」以及「梯度投影做稳定训练」两条线都相接。值得注意的是，把控制方向放在低方差补集这一结论，与「内在维度」「子空间微调」类工作并不冲突：都在说有效自由度很低。可疑之处在于，投影会永久抑制主成分方向的学习，若某些能力恰好需要该方向，可能带来隐性的能力上限，摘要未评估这一点。（待核实）",
+    "officialNotes": [
+      {"position": "用向量 steering 识别出激活空间与 RL 增益相关的低维有效流形，并提出两项几何性质", "source": "https://arxiv.org/abs/2609.34344"},
+      {"position": "Alpha-Stabler 由 Predictor 与 Controller 组成，稳定训练 2000 步并稳定提升 RL 增益", "source": "https://huggingface.co/papers/2609.34344"}
+    ],
+    "interviewAnswer": "这篇工作想解释 RLVR 到底在激活空间里做了什么。它用可训练方向向量做 steering 探针，发现复现 RL 增益只需要一个很小的低维流形，而且有效容量不是无限可压、还随注入层深度变化；更进一步，控制方向主要落在激活主成分空间的低方差补集里。基于这个几何，作者提出 Alpha-Stabler：Predictor 监控主成分侵入来预警坍缩，Controller 在反传时把梯度的主成分分量投影掉、只留正交补。在 5 个 LLM、6 个可验证奖励任务上，它稳定训练 2000 步并持续提升增益。",
+    "studyPath": {
+      "prerequisites": ["RLVR / 可验证奖励", "激活 steering 与表征几何", "PCA 与正交投影"],
+      "nextSteps": ["在开源 LLM 上复现 steering 探针与容量曲线", "实现梯度主成分投影并观察稳定性", "对比内在维度、子空间微调相关工作"]
+    }
+  }
+}

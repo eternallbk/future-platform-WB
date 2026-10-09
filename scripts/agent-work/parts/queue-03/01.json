@@ -1,0 +1,171 @@
+{
+  "id": "725a16be31a8a015",
+  "tldr": "隔离 RL 后训练阶段的参数更新，只把其主导方向保幅值迁移到 VLM 语言模块，15 项对比中 12 项优于全量更新插值。",
+  "keyPoints": [
+    "全量更新迁移次优：各分量跨模型可迁移性差异很大",
+    "主导方向比完整更新更容易跨模型迁移",
+    "Selective-RL 隔离 RL 更新并保留矩阵级主导方向、保幅值",
+    "12/15 对比优于全量插值，Qwen 接收方 MathVision 提升 8.55 点",
+    "匹配控制：单靠幅度或任意低秩不能复现增益"
+  ],
+  "why": "后训练能力如何跨模型复用是 post-training 高频考点；「哪些更新真能迁移」可迁移到 VLM 推理增强与参数级能力注入。",
+  "difficulty": "hard",
+  "tags": [
+    "posttraining",
+    "model-merging",
+    "rl",
+    "vlm",
+    "transfer"
+  ],
+  "entities": [
+    "Selective-RL",
+    "MathVision",
+    "Qwen"
+  ],
+  "diagram": {
+    "kind": "flow",
+    "title": "Selective-RL 迁移流程",
+    "caption": "把 RL 后训练的更新拆开，只把能跨模型迁移的主导方向搬进 VLM 语言模块。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='选择性迁移 RL 更新的四步流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>隔离 RL 阶段更新（Δ = θ_RL − θ_SFT）</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>逐矩阵 SVD 分解（按奇异值排方向）</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>保幅值保留主导方向</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>注入 VLM 语言模块，接收方直接得推理能力</text>\n</svg>",
+    "alt": "选择性迁移 RL 更新的四步流程：隔离 RL 更新、逐矩阵 SVD 分解、保幅值保留主导方向、注入 VLM 语言模块。"
+  },
+  "concepts": [
+    {
+      "name": "Training-Stage Update Isolation（训练阶段更新隔离）",
+      "readable": "不再比较「后训练模型终点」和「基座」，而是先扣掉基座自身差异，只拿出 RL 那一步真正改动的参数。",
+      "analogy": "想学某位老师的方法，不是照抄他现在全部讲义，而是和他入职前的旧版对照，只把这段新增的批注抄过来。",
+      "analogyBreaksDown": "讲义能逐页干净比对，但神经网络里预训练已有差异与后训练改动叠在同一组权重上，只能按训练阶段取差近似。",
+      "mechanism": "用同一基座两阶段检查点相减得到 Δ=θ_RL−θ_SFT，把能力转移的坐标系从模型端点换成训练阶段增量，只谈后训练学到的东西。",
+      "visual": "一条从 θ_SFT 指向 θ_RL 的箭头表示 Δ，旁边另一条 θ_pre 到 θ_post 的端点差箭头方向不同，强调只有前者是纯 RL 增量。",
+      "prerequisites": [
+        "SFT 与 RL 两阶段后训练流程",
+        "模型合并与任务向量"
+      ],
+      "selfTest": [
+        "端点差混进了什么？",
+        "为何要在阶段增量而非端点差上迁移？",
+        "Δ 与权重本身是否同量纲可加？"
+      ],
+      "formula": "\\Delta_{\\mathrm{RL}} = \\theta_{\\mathrm{RL}} - \\theta_{\\mathrm{SFT}}"
+    },
+    {
+      "name": "Dominant-Direction Selective Transfer（主导方向选择性迁移）",
+      "readable": "把更新的每个权重矩阵做 SVD，只搬走奇异值最大（能量最大）的那几个方向，并且幅值原样保留。",
+      "analogy": "搬家时行李塞不下，就按使用频率只带最常用的几件，而且原封不动地搬，不改它们的尺寸。",
+      "analogyBreaksDown": "被丢掉的方向并非「不存在的家当」，它们可能承载接收方通用能力，丢弃或改写会扰乱对方，家当类比不成立。",
+      "mechanism": "实验发现同一 RL 更新各分量跨模型迁移性差别很大、主导方向最可迁移，于是逐矩阵截断到前 k 个奇异方向并保留奇异值，使迁移的是方向而非被重缩放的量。",
+      "visual": "对每个权重矩阵画一条奇异值下降曲线，前 k 个点用主色标出（要迁移），尾部浅色（丢弃），旁边注「保幅值=点高不变」。",
+      "prerequisites": [
+        "奇异值分解与低秩近似",
+        "LoRA 秩概念"
+      ],
+      "selfTest": [
+        "「保幅值」保留的是什么量？",
+        "为何任意低秩不一定复现增益？",
+        "k 为何要按矩阵分别选？"
+      ],
+      "formula": "\\Delta_{\\mathrm{sel}} = U_{:k}\\Sigma_{:k}V_{:k}^{\\top}"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-rl-update-isolation",
+      "name": "RL 阶段更新隔离与注入",
+      "category": "posttraining",
+      "latex": "\\Delta_{\\mathrm{RL}} = \\theta_{\\mathrm{RL}} - \\theta_{\\mathrm{SFT}}, \\quad \\theta_{\\mathrm{recv}} \\leftarrow \\theta_{\\mathrm{recv}} + \\alpha\\,\\Delta_{\\mathrm{sel}}",
+      "symbols": [
+        ["\\theta_{\\mathrm{SFT}}", "RL 之前的检查点"],
+        ["\\theta_{\\mathrm{RL}}", "RL 后训练后的检查点"],
+        ["\\Delta_{\\mathrm{RL}}", "隔离出的 RL 净增量"],
+        ["\\Delta_{\\mathrm{sel}}", "选择性保留后的更新"],
+        ["\\alpha", "迁移强度"]
+      ],
+      "derivation": [
+        "第 1 步：端点差 θ_post−θ_pre 会把预训练期已有差异也算进去。",
+        "第 2 步：取同基座相邻两阶段之差得纯 RL 增量 Δ_RL。",
+        "第 3 步：把选择后的增量按强度 α 加到接收方语言模块。",
+        "第 4 步：全量迁移次优，故用 Δ_sel 取代 Δ_RL。"
+      ],
+      "analogy": "像转岗交接：只交接前任在这个项目上新增的流程，再叠到你原有习惯上。",
+      "pitfalls": [
+        "用端点差当增量，把无关差异算成可迁移能力",
+        "以为 α 越大越好，忽略全量注入反而次优"
+      ],
+      "code": "import torch\n@torch.no_grad()\ndef transfer(recv, src_rl, src_sft, sel, alpha=1.0):\n    for n, p in recv.named_parameters():\n        p.add_(alpha * sel(src_rl[n] - src_sft[n]))  # 隔离后注入",
+      "sources": [
+        {"title": "Selective Transfer of RL Updates for Visual Reasoning", "url": "https://arxiv.org/abs/2610.08659v1"}
+      ]
+    },
+    {
+      "id": "f-dominant-direction-svd",
+      "name": "主导方向截断与保幅值",
+      "category": "posttraining",
+      "latex": "\\Delta = U\\Sigma V^{\\top}, \\quad \\Delta_{\\mathrm{sel}} = U_{:k}\\Sigma_{:k}V_{:k}^{\\top}",
+      "symbols": [
+        ["\\Delta", "权重矩阵上的 RL 更新"],
+        ["U, V", "左右奇异向量（方向）"],
+        ["\\Sigma", "奇异值对角阵（幅值）"],
+        ["k", "保留的主导方向数"]
+      ],
+      "derivation": [
+        "第 1 步：对每个权重矩阵的更新做 SVD，拆成方向与幅值。",
+        "第 2 步：实验发现按奇异值排序的主导方向迁移性更高。",
+        "第 3 步：只取前 k 个方向并保留奇异值（保幅值）。",
+        "第 4 步：用 Δ_sel 替代全量 Δ 注入接收方。"
+      ],
+      "analogy": "像压缩照片：只保留最主要的几种色块并按原亮度照搬，而非把颜色统一调暗。",
+      "pitfalls": [
+        "把保幅值做成把奇异值归一化，改掉了更新尺度",
+        "跨矩阵统一 k，忽略各层可迁移方向数不同"
+      ],
+      "code": "import torch\ndef sel_svd(delta, k):\n    U, S, Vh = torch.linalg.svd(delta, full_matrices=False)\n    return (U[:, :k] * S[:k]) @ Vh[:k]   # 保幅值：保留 S[:k]",
+      "sources": [
+        {"title": "Selective Transfer of RL Updates for Visual Reasoning", "url": "https://arxiv.org/abs/2610.08659v1"}
+      ]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "端点式迁移会把模型既有差异与后训练获得的变化混在一起",
+      "作者围绕训练阶段更新做能力迁移，隔离 RL 引起的参数变化",
+      "全量迁移该更新次优，各分量跨模型可迁移性差异显著",
+      "主导方向比完整更新迁移得更有效",
+      "Selective-RL 保留矩阵级主导方向并保幅值，再迁移到 VLM 语言模块",
+      "在 3 个模型族、5 个视觉推理基准上，15 项中 12 项优于全量更新插值",
+      "Qwen 接收方在 MathVision 上提升 8.55 个百分点",
+      "匹配控制显示单靠更新幅度或任意低秩不能复现这些增益"
+    ],
+    "uncertain": [
+      "保幅值定义与 k 的选取策略摘要未给，公式为按摘要重建的通用形式，需核对原文",
+      "三个模型族与另外两个基准名摘要未列出，待核实"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "把 RL 后训练改动的参数挑出最能迁移的方向，搬到另一个视觉语言模型里。"},
+      {"level": "入门", "text": "模型合并能把语言模型的推理能力免训练搬给 VLM，但直接比两个模型端点会把基座差异也算进去。这篇改成只看 RL 那一步的增量，再搬给 VLM 的语言模块。"},
+      {"level": "进阶", "text": "关键发现是全量搬运 RL 增量并不好：同一更新里各分量跨模型迁移性差别很大，主导方向最能迁移。于是先隔离 Δ=θ_RL−θ_SFT，再对每个权重矩阵做 SVD，只留前 k 个主导方向并保幅值，最后按强度 α 注入接收方语言模块。"},
+      {"level": "专家", "text": "与经典任务向量相比，它把坐标系从端点差换成训练阶段增量，避免把预训练差异误当能力；与 LoRA 式低秩微调相比，它不训练而是截断已有更新并保持奇异值尺度。摘要强调「后训练学到什么」与「什么能跨模型迁移」是两回事：匹配控制显示仅靠幅值或任意低秩都无法复现增益。"}
+    ],
+    "socratic": [
+      {"q": "为什么不能直接搬 θ_post−θ_pre？", "a": "端点差把两模型本就存在的架构与预训练差异也算进去了，真正来自 RL 的部分被淹没，会带入无关漂移。"},
+      {"q": "全量搬 RL 增量为什么不够？", "a": "更新里次要分量跨模型迁移性差，搬过去会引入噪声甚至负迁移，只留主导方向更稳。"}
+    ],
+    "mechanism": "能力转移的难点是混入无关差异。作者先把搬运对象从模型端点换成训练阶段增量，使被搬的量只含 RL 学到的变化；再用矩阵级 SVD 拆出方向与幅值，利用「主导方向更可迁移」的规律选择性截断并保幅值以免改变尺度。这样迁移的是可复用方向而非整块增量，故优于全量插值。",
+    "boundary": "当接收方与源模型语言模块结构差异过大，或 RL 增量的主导方向恰是模型特有能力时，迁移会失效甚至负迁移。若 RL 本身增益很小，可迁移信号也弱。k 与 α 需按模型族调。",
+    "analogyBoundary": "搬家类比在「家当可独立挑选」时成立；但权重方向不是独立物件，被截断的分量仍参与行为，且不同模型同名前缀未必语义对应，类比失效。",
+    "misconceptions": [
+      "把端点差当训练增量，忽略预训练差异的污染。",
+      "以为任意低秩截断都行——作者控制实验专门否定了这点。"
+    ],
+    "ownAnalysis": "（推断）这套「阶段增量 + 主导方向迁移」像把 RL 更新当作可插拔适配器，与 LoRA 可合并性同源但方向相反：LoRA 主动学低秩，这里从已有更新里筛低秩。可疑处是主导方向由训练动态而非任务语义决定，若两模型语言塔对齐不佳，保幅值可能放大失配；摘要只给 12/15 与单个 8.55 点，未给跨族完整表，需核对原文。",
+    "officialNotes": [
+      {"position": "后训练「学到什么」与「什么能跨模型迁移」是两个不同问题，训练阶段视角为跨模型能力转移提供新解释", "source": "arxiv: 2610.08659v1"}
+    ],
+    "interviewAnswer": "先区分两个坐标系：端点差 θ_post−θ_pre 会混进模型本来就有的差异，所以这篇改成只看 RL 阶段的增量 Δ=θ_RL−θ_SFT。它还有个经验发现——同一增量里各分量跨模型迁移性差别很大，主导方向最可迁移，于是对每个权重矩阵做 SVD，只留前 k 个主导方向并保幅值，再注入 VLM 语言模块。结果是 15 项里 12 项优于全量插值，Qwen 上 MathVision 涨了 8.55 点，控制实验还显示光靠幅值或任意低秩复现不了。核心洞见是：学到的能力不等于可迁移的能力。",
+    "studyPath": {
+      "prerequisites": ["模型合并与任务向量", "SVD 与低秩近似", "SFT→RL 两阶段后训练"],
+      "nextSteps": ["读原文核对保幅值与 k 的选取", "对比 LoRA 合并与更新截断", "把该接口试接到视觉塔"]
+    }
+  }
+}

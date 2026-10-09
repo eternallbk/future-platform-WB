@@ -1,0 +1,159 @@
+{
+  "id": "8f2f9a8185514295",
+  "tldr": "统一图像/视频深度研究智能体 OneSearch-VL，用视觉锚定证据图 VGEG 贯穿数据构造、过程监督与操作级评估。",
+  "keyPoints": [
+    "单图/多图/视频操作不同，但共享「视觉定位—外部检索—事实组合」流程",
+    "VGEG 把视觉锚点、实体关系、来源事实、答案操作编码为依赖图",
+    "VGEG 数据引擎构造并校验多图/视频问题，并过滤专家轨迹",
+    "由 VGEG 导出 EVGR 奖励，在 RL 中监督证据可追溯与视觉锚定",
+    "8B 模型在两个新基准超 Qwen3-VL-8B 20.2 / 17.6 个百分点"
+  ],
+  "why": "多模态深度研究是 agent×多模态交叉热点；「证据图 + 可追溯奖励」的建模方式可迁移到多模态 RAG 与后训练奖励设计，面试常考。",
+  "difficulty": "hard",
+  "tags": ["multimodal", "agent", "deep-research", "multimodal-rag", "rl", "evidence-graph"],
+  "entities": [
+    "OneSearch-VL",
+    "Visually Grounded Evidence Graph (VGEG)",
+    "EVGR reward",
+    "Qwen3-VL-8B",
+    "OneSearch-MI-Bench",
+    "OneSearch-Video-Bench",
+    "OneSearch-VL-SFT-110K",
+    "OneSearch-VL-RL-10K"
+  ],
+  "diagram": {
+    "kind": "flow",
+    "title": "OneSearch-VL 证据图工作流",
+    "caption": "同一张 VGEG 证据图贯穿数据构造、过程监督与评估，使定位与检索的依赖不被压平。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='OneSearch-VL 证据图工作流四层'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>图/视频 + 问题</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>单图/多图/视频统一输入</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>视觉锚定 + 外部检索</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>定位锚点、取回来源</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>VGEG 证据图</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>锚点/实体/事实/操作依赖</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>SFT + RL(EVGR)</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>证据可追溯奖励</text>\n</svg>",
+    "alt": "四层竖排流程：图/视频+问题→视觉锚定与外部检索→VGEG 证据图→SFT+RL(EVGR)。"
+  },
+  "concepts": [
+    {
+      "name": "Visually Grounded Evidence Graph（视觉锚定证据图）",
+      "readable": "把一次多模态深究拆成一张依赖图：节点是定位到的图像区域、实体、来源支持的事实和产出答案的操作，边表示它们之间的依赖关系。",
+      "analogy": "像侦探的线索板：照片上的关键区域、人物关系、查到的档案和最终推理用红线连成一张网，而不是只写一句结论。",
+      "analogyBreaksDown": "线索板靠人脑连线，这里的节点类别与依赖边是数据引擎构造并校验出来的结构化标注，可被程序遍历，人类手画达不到这种一致性。",
+      "mechanism": "用同一张任务级图同时充当三种角色：数据构造（生成并校验多图/视频问题）、过程监督（约束轨迹）、操作级评估，使依赖在训练与评测间保持一致。",
+      "visual": "画一张有向图：底层是图像/视频帧上的锚定框，中层是实体与来源事实节点，顶层是答案操作节点；边用不同颜色区分「依赖/证据支持/操作」三类关系。",
+      "prerequisites": ["多模态视觉定位（grounding）基础", "检索增强生成（RAG）", "图结构与依赖建模"],
+      "selfTest": ["VGEG 的节点有哪几类？", "为什么把数据构造、监督、评估统一到一张图？", "删掉依赖边后评估会失去什么？"],
+      "formula": "G=(V,E),\\quad V=V_{\\mathrm{anchor}}\\cup V_{\\mathrm{entity}}\\cup V_{\\mathrm{fact}}\\cup V_{\\mathrm{op}}"
+    },
+    {
+      "name": "Evidence-aware Visual-Grounded Rubric Reward（证据感知视觉锚定评分奖励）",
+      "readable": "从 VGEG 标注里导出的一条可打分奖励规则，在 RL 中奖励「证据可追溯」与「视觉锚定正确」，而不只看最终答案对不对。",
+      "analogy": "像老师改证明题：不只看结论对不对，还要看每一步引用是否有出处、图形指认是否对准。",
+      "analogyBreaksDown": "老师能凭经验给主观分，这里的 rubric 是把 VGEG 依赖翻译成程序可算的分项加权，无法覆盖图中未编码的评价维度。",
+      "mechanism": "把图级依赖拆成分项（锚定、可追溯、事实支持）加权求和作为 RL 奖励，使策略在生成过程中显式保持证据链完整，而非仅拟合答案。",
+      "visual": "画分项柱状图：横轴为锚定、可追溯、事实支持三项，纵轴为分数，同一次 rollout 各分项同色，加权和决定奖励。",
+      "prerequisites": ["强化学习奖励设计", "多模态 grounding 的评估指标"],
+      "selfTest": ["EVGR 比答案对错奖励多监督了什么？", "为什么要从 VGEG 导出 rubric？", "分项权重失衡会带来什么后果？"],
+      "formula": "r_{\\mathrm{EVGR}}=\\lambda_{g}s_{\\mathrm{ground}}+\\lambda_{t}s_{\\mathrm{trace}}+\\lambda_{f}s_{\\mathrm{fact}}"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-vgeg-evidence-graph",
+      "name": "视觉锚定证据图（Visually Grounded Evidence Graph）",
+      "category": "multimodal",
+      "latex": "G=(V,E),\\quad V=V_{\\mathrm{anchor}}\\cup V_{\\mathrm{entity}}\\cup V_{\\mathrm{fact}}\\cup V_{\\mathrm{op}}",
+      "symbols": [
+        ["V_{\\mathrm{anchor}}", "定位到的视觉锚点（图像/视频区域）集合"],
+        ["V_{\\mathrm{entity}}", "实体及其关系节点集合"],
+        ["V_{\\mathrm{fact}}", "来源支持的事实节点集合"],
+        ["V_{\\mathrm{op}}", "产出答案的检索/推理操作节点集合"],
+        ["E", "连接上述节点、表示依赖关系的边集合"]
+      ],
+      "derivation": [
+        "第 1 步：多模态深究的答案依赖若干中间量（定位、检索、事实、操作），需要显式表示。",
+        "第 2 步：把这些中间量建成节点，按语义分成锚点、实体、事实、操作四类。",
+        "第 3 步：用边编码它们之间的依赖，得到任务级有向图。",
+        "第 4 步：同一张图同时用于数据构造、过程监督与操作级评估。"
+      ],
+      "analogy": "像把侦探的线索板结构化：每条线索是节点，线索之间「谁支撑谁」的关系是边。",
+      "pitfalls": [
+        "把图当成事后可视化，忘记它同时是数据与监督的规范",
+        "节点粒度不一致，导致跨任务无法复用",
+        "忽略边类型，把依赖关系压平成无结构集合"
+      ],
+      "code": "def vgeg(anchors, entities, facts, ops, edges):\n    V = {\n        'anchor': anchors, 'entity': entities,\n        'fact': facts, 'op': ops,\n    }\n    E = edges  # [(src, dst, rel), ...]\n    return {'nodes': V, 'edges': E}\n\ng = vgeg(['box0'], ['Eiffel'], ['height=330m'], ['compare'],\n         [('box0', 'Eiffel', 'grounds')])",
+      "sources": [
+        {"title": "OneSearch-VL: Unified Multimodal Deep Research Agent for Image and Video", "url": "https://arxiv.org/abs/2610.12419v1"}
+      ]
+    },
+    {
+      "id": "f-evgr-rubric-reward",
+      "name": "证据感知视觉锚定评分奖励（Evidence-aware Visual-Grounded Rubric Reward）",
+      "category": "multimodal",
+      "latex": "r_{\\mathrm{EVGR}}=\\lambda_{g}s_{\\mathrm{ground}}+\\lambda_{t}s_{\\mathrm{trace}}+\\lambda_{f}s_{\\mathrm{fact}}",
+      "symbols": [
+        ["s_{\\mathrm{ground}}", "视觉锚定正确性得分（是否指对区域）"],
+        ["s_{\\mathrm{trace}}", "证据可追溯性得分（引文/来源是否可追）"],
+        ["s_{\\mathrm{fact}}", "事实与来源一致性得分"],
+        ["\\lambda_{g},\\lambda_{t},\\lambda_{f}", "各分项权重"]
+      ],
+      "derivation": [
+        "第 1 步：多模态深究仅奖励最终答案对错，无法约束过程，易生成无依据内容。",
+        "第 2 步：把 VGEG 的图级依赖拆成锚定、可追溯、事实支持三个可计算分项。",
+        "第 3 步：按权重加权求和，得到逐条 rollout 的奖励。",
+        "第 4 步：把该奖励接入 RL，使策略在生成时维持证据链与视觉锚定。"
+      ],
+      "analogy": "像改证明题按步骤给分：结论对但引用错、指认错，仍要扣分。",
+      "pitfalls": [
+        "只看答案对错，忽视证据链是否完整",
+        "把 rubric 分项当硬约束，导致训练信号过强、探索受限",
+        "默认权重可直接照搬，忽略不同任务分项尺度不同"
+      ],
+      "code": "def evgr(s_ground, s_trace, s_fact,\n         lg=1.0, lt=1.0, lf=1.0):\n    return lg * s_ground + lt * s_trace + lf * s_fact\n\n# 单次 rollout 的三项得分 -> 标量奖励\nr = evgr(0.9, 0.6, 0.8)\nprint(r)  # 2.3",
+      "sources": [
+        {"title": "OneSearch-VL: Unified Multimodal Deep Research Agent for Image and Video", "url": "https://arxiv.org/abs/2610.12419v1"}
+      ]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "单图、多图、视频深度研究操作不同但共享视觉定位、外部检索、事实组合的工作流",
+      "VGEG 把视觉锚点、实体关系、来源事实与答案操作编码为共享依赖图",
+      "VGEG 数据引擎构造并校验多图/视频问题并过滤专家轨迹，产出 SFT-110K 与 RL-10K",
+      "由 VGEG 标注导出 EVGR 奖励，在 RL 中监督证据可追溯与视觉锚定",
+      "构造了 OneSearch-MI-Bench 与 OneSearch-Video-Bench，按 VGEG 操作组织问题",
+      "OneSearch-VL-8B 在两个新基准上比 Qwen3-VL-8B（带工具）高 20.2 / 17.6 个百分点，并在 7 个图像基准与 VideoDR 上提升"
+    ],
+    "uncertain": [
+      "EVGR 三项是否恰为我所列的锚定/可追溯/事实支持、以及分项权重取值，摘要未给，公式为按摘要重建的通用形式，需核对原文",
+      "VGEG 四类节点与边类型的具体定义摘要未展开，待核实",
+      "数据引擎过滤专家轨迹的具体准则（成功/可验证比例等）摘要未说明，待核实",
+      "「20.2/17.6」对应的两个基准分别哪个摘要未明确，待核实"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "给能看图的 AI 一张「证据线索板」，让它边查边指认、答案有据可依。"},
+      {"level": "入门", "text": "图像或视频深度研究要做视觉定位、外部检索和事实组合。这篇把这几步的依赖画成一张结构化证据图 VGEG，并用它造数据、约束训练、做评估，最后按图给 RL 奖励，8B 模型在两个新基准显著超过带工具的 Qwen3-VL-8B。"},
+      {"level": "进阶", "text": "关键设计是「一图三用」：VGEG 同时当数据构造规范、过程监督信号和操作级评测基准，避免训练与评测的依赖定义不一致。训练上先 SFT-110K 再 RL-10K，RL 用从 VGEG 导出的 EVGR 奖励，把「证据可追溯」和「视觉锚定」变成可打分信号，而不是只奖励最终答案。"},
+      {"level": "专家", "text": "与常规多模态 RAG/agent 相比，它没有把定位、检索、事实压平成文本上下文，而是保留为带类型的节点与依赖边，因此可以逐操作评估与细粒度监督。代价是图构造与校验成本高，且 rubric 只能覆盖图中已编码的维度。对求职者，它的迁移点是：把中间证据显式结构化，再由此设计过程奖励——这正是多模态 agent 与后训练奖励建模的结合部。"}
+    ],
+    "socratic": [
+      {"q": "如果只用最终答案对错做 RL 会怎样？", "a": "模型可能给出正确结论但指认了错误区域或编造来源；过程错误无法被发现和纠正，证据可追溯性也无从优化。"},
+      {"q": "为什么不直接把检索到的文本拼进上下文？", "a": "那会丢失「哪条证据支撑哪步操作」的依赖结构，既难做操作级评估，也无法把依赖转成分项奖励。"}
+    ],
+    "mechanism": "多模态深究的难点不在单步能力，而在锚点、检索、事实、操作之间的依赖容易在压平成文本后被抹掉。作者把依赖固化成任务级图，使数据生成、轨迹监督与评估共用同一套结构；再把图翻译成分项 rubric 奖励，让 RL 能直接惩罚「定位错/来源不可追」，从而把过程正确性写进策略而不是事后检查。",
+    "boundary": "当问题本身不需要外部检索（纯感知题）或证据依赖极浅时，VGEG 的图结构收益有限；rubric 奖励也只覆盖图中已编码维度，未编码的错误不会被纠正。图构建若有误，会污染数据、监督与评估三处。",
+    "analogyBoundary": "线索板类比在「线索有限、关系稀疏」时成立；真实深究里证据可能互相矛盾或需要多跳加权，此时二元「有边/无边」的图信息量不足，需引入置信度与冲突处理。",
+    "misconceptions": [
+      "以为 VGEG 只是可视化——它同时是数据构造与监督的规范。",
+      "把 EVGR 当成答案正确率奖励——它监督的是过程证据与锚定。",
+      "认为两个新基准的提升等于通用能力提升——它们是按 VGEG 操作组织的专项评测。"
+    ],
+    "ownAnalysis": "最有迁移价值的是「先把中间证据结构化，再据此设计过程奖励」（推断），这与其说是一个 agent 框架，不如说是一套可复用的监督协议，和 RLHF 里从偏好转 rubric、以及多模态 RAG 的引用一致性评估同构。可疑处：摘要只给两个新基准的百分比提升，未给与纯答案奖励的消融，因此 EVGR 的独立贡献无法从摘要判断（待核实）；VGEG 由数据引擎构造，其正确性依赖引擎质量，摘要未提人工校验比例。",
+    "officialNotes": [
+      {"position": "VGEG 作为共享任务级引用，统一数据构造、过程监督与操作级评估；OneSearch-VL-8B 在两个新基准上比带工具的 Qwen3-VL-8B 高 20.2 与 17.6 个百分点", "source": "arxiv: 2610.12419v1"}
+    ],
+    "interviewAnswer": "我理解这篇的核心不是又一个多模态 agent，而是把「视觉定位、检索、事实、操作」的依赖固定成一张证据图 VGEG。它一图三用：造数据、监督轨迹、做操作级评估。训练是先 SFT 后 RL，RL 的奖励 EVGR 从图里导出，分项奖励锚定正确和证据可追溯，而不是只看答案。效果是 8B 在两个新基准超带工具的 Qwen3-VL-8B 二十个百分点上下。我会记住的迁移点是：把中间证据显式结构化，再据此设计过程奖励，这套思路可以直接搬到多模态 RAG 的奖励设计里。",
+    "studyPath": {
+      "prerequisites": ["多模态 grounding 与视觉问答基础", "RAG 与工具调用 agent", "RLHF/RL 奖励设计入门"],
+      "nextSteps": ["读原文与 github.com/appletea233/OneSearch-VL", "对比纯答案奖励与 EVGR 的消融（待原文补充）", "思考把 VGEG 结构接到自有多模态 agent 的证据链评估"]
+    }
+  }
+}

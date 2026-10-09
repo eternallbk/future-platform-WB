@@ -1,0 +1,137 @@
+{
+  "id": "4850800a9f8bfcd8",
+  "tldr": "每 k 个节点为一组原地翻转链表，不足 k 的最后一组保持原序；用哑结点 + 组前驱/组后驱指针，O(n)/O(1)。",
+  "keyPoints": [
+    "先用哑结点统一头节点可能改变的情况",
+    "每轮先探测是否还有完整 k 个节点，不够就停止",
+    "对组内 k 个节点做一次反转，再接回组前驱与组后驱",
+    "组前驱右移成为下一组的组前驱",
+    "整体只走一遍链表，时间 O(n)、空间 O(1)"
+  ],
+  "why": "本题是「反转链表」的分组升级版，字节高频（303 次）；考察指针边界与分组不变量的把控，是链表 hard 题代表。",
+  "difficulty": "hard",
+  "tags": ["leetcode", "linked-list", "recursion", "two-pointers"],
+  "entities": ["ListNode", "哑结点", "分组反转"],
+  "diagram": {
+    "kind": "flow",
+    "title": "K 个一组翻转的指针接力",
+    "caption": "先定位第 k 个节点与组后驱，再把组内 k 个节点反向，最后把 group_prev 接到 kth、组尾接到组后驱。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='K 个一组翻转：哑结点、组前驱、第 k 个节点、组后驱四个关键指针，组内整体反向'>\n<text x='24' y='28' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>k=2：head=[1,2,3,4,5]</text>\n<rect x='30' y='46' width='52' height='34' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='68' font-size='13' text-anchor='middle' fill='currentColor'>dummy</text>\n<rect x='102' y='46' width='52' height='34' rx='6' fill='none' stroke='var(--accent)' stroke-width='1.6'/>\n<text x='128' y='68' font-size='13' text-anchor='middle' fill='currentColor'>1</text>\n<rect x='174' y='46' width='52' height='34' rx='6' fill='none' stroke='var(--accent)' stroke-width='1.6'/>\n<text x='200' y='68' font-size='13' text-anchor='middle' fill='currentColor'>2</text>\n<rect x='246' y='46' width='52' height='34' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='272' y='68' font-size='13' text-anchor='middle' fill='currentColor'>3</text>\n<rect x='318' y='46' width='52' height='34' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='344' y='68' font-size='13' text-anchor='middle' fill='currentColor'>4</text>\n<rect x='390' y='46' width='52' height='34' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='416' y='68' font-size='13' text-anchor='middle' fill='currentColor'>5</text>\n<text x='128' y='98' font-size='13' text-anchor='middle' fill='currentColor'>group_prev</text>\n<text x='200' y='114' font-size='13' text-anchor='middle' fill='currentColor'>kth</text>\n<text x='272' y='98' font-size='13' text-anchor='middle' fill='currentColor'>group_next</text>\n<text x='24' y='146' font-size='13' text-anchor='start' fill='currentColor'>翻转第一组 1,2 → 2,1，并把两端接回</text>\n<rect x='30' y='162' width='52' height='34' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='184' font-size='13' text-anchor='middle' fill='currentColor'>dummy</text>\n<rect x='102' y='162' width='52' height='34' rx='6' fill='none' stroke='var(--accent)' stroke-width='1.6'/>\n<text x='128' y='184' font-size='13' text-anchor='middle' fill='currentColor'>2</text>\n<rect x='174' y='162' width='52' height='34' rx='6' fill='none' stroke='var(--accent)' stroke-width='1.6'/>\n<text x='200' y='184' font-size='13' text-anchor='middle' fill='currentColor'>1</text>\n<rect x='246' y='162' width='104' height='34' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='298' y='184' font-size='13' text-anchor='middle' fill='currentColor'>3 4 5</text>\n<text x='240' y='222' font-size='13' text-anchor='middle' fill='currentColor'>不足 k 的组（如剩 1 个）原样保留</text>\n</svg>",
+    "alt": "哑结点后接 [1,2,3,4,5]，标出组前驱、第 k 个节点与组后驱；组内翻转后仍是哑结点接 2→1→3→4→5，不足 k 的组保留原序。"
+  },
+  "concepts": [
+    {
+      "name": "哑结点与组边界（Dummy Node and Group Boundary）",
+      "readable": "在头节点前放一个 dummy，它的 next 指向真正的头；再用 group_prev 表示「上一组末尾」，用它来定位并接回每一组，从而避免对头节点的特判。",
+      "analogy": "给队伍最前面站一个领队，无论后面的人怎么换位，你总能从领队开始数人、插入新队伍，不用管第一个是不是换了人。",
+      "analogyBreaksDown": "领队类比里领队本身会随队伍移动，而 dummy 是固定不动的哨兵，永远指向结果链表的第一个真实节点，最终要返回 dummy.next。",
+      "mechanism": "翻转会让每组的头尾互换，头节点也可能改变，导致「谁是新头」的边界情况剧增。dummy 把「头节点」统一成「dummy 的 next」，group_prev 把「上一组的末尾」固定成操作锚点，使拼接只需两次赋值。",
+      "visual": "画含 dummy 的链表，用不同颜色标出 group_prev、kth、group_next 三个锚点，先画未翻转状态再画翻转后两条新连接。",
+      "prerequisites": ["反转链表（LC 206）", "链表哑结点技巧"],
+      "selfTest": ["为什么最后返回 dummy.next 而不是 head？", "如何判断剩余节点不足 k 个？", "翻转后 group_prev 应该更新成哪个节点？"],
+      "formula": ""
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-reverse-k-group-ops",
+      "name": "分组翻转的指针改写次数（Pointer Rewrites in K-Group Reverse）",
+      "category": "engineering",
+      "latex": "W(n, k) = k \\left\\lfloor \\dfrac{n}{k} \\right\\rfloor",
+      "symbols": [["n", "链表节点总数"], ["k", "每组节点数"], ["W(n,k)", "被改写的 next 指针总数"], ["\\left\\lfloor \\dfrac{n}{k} \\right\\rfloor", "被完整翻转的组数（向下取整）"]],
+      "derivation": [
+        "第 1 步：只有完整含 k 个节点的组才翻转，组数上取整向下即 floor(n/k)",
+        "第 2 步：每个被翻转的组内，k 条 next 指针全部反向，共 k 条",
+        "第 3 步：末尾不足 k 的 n mod k 个节点保持原样，指针不改写",
+        "第 4 步：因此被改写的指针数为 k·floor(n/k) = n - (n mod k)，整体仍是线性"
+      ],
+      "analogy": "一班 k 个人一组向后转，最后如果凑不满一组就原地不动，转过的总人数就是 k 乘以完整组数。",
+      "pitfalls": ["把不足 k 的尾组也翻转，违反题意", "误把复杂度写成 O(n log k)，实际是 O(n)"],
+      "code": "def groups(n: int, k: int) -> int:\n    # 会被完整翻转的节点数\n    return n - (n % k)\n\nassert groups(5, 2) == 4    # 前 4 个翻转，剩 1 个不动\nassert groups(5, 3) == 3    # 只翻转前 3 个",
+      "sources": [{"title": "K 个一组翻转链表（LeetCode 25）· 大厂高频手撕题", "url": "https://leetcode.cn/problems/reverse-nodes-in-k-group"}]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "该题被记录为字节跳动 303 次、美团 68 次、腾讯 39 次等合计 470 次",
+      "难度标注为困难；bankTopics 含链表与字符串",
+      "最近一次出现于 2026-09-16"
+    ],
+    "uncertain": [
+      "源 summary 未给题面与示例，statement 与 examples 依 LeetCode 25 惯例重述并自行构造，代码已逐步验证",
+      "按题意最后不足 k 个节点是否保持原序以官方题面为准（本解析按 LeetCode 25 的「保持原序」处理）"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "把链表每 k 个节点作为一组局部翻转，最后凑不满一组就原样留着。"},
+      {"level": "入门", "text": "先从头数 k 个节点，如果不足 k 个就结束；够的话把这一组整体反向，再接着数下一组。因为头节点可能变，我们在最前面加一个 dummy 简化边界。"},
+      {"level": "进阶", "text": "维护三个锚点：group_prev 是上一组末尾，group_next 是本组之后的第一个节点。翻转时把本组节点的 next 反向，并让组头指向 group_next、group_prev 指向本组原来的第 k 个节点；然后 group_prev 更新为本组原来的头。"},
+      {"level": "专家", "text": "本题是 LC 206 的分组封装：先探测组是否完整（不够就返回），再复用反转骨架并在两端接回。指针操作总数是 n-(n mod k)，整体 O(n)、额外空间 O(1)。递归写法更短但栈深度为 O(n/k)；迭代版把 dummy 与 group_prev 的接力关系写清楚，是面试更稳的选择。"}
+    ],
+    "socratic": [
+      {"q": "为什么要先探测这一组是否够 k 个？", "a": "因为不足 k 的尾组不能翻转，必须提前发现并直接结束，否则会把不该动的节点也反向。"},
+      {"q": "翻转后为什么接回时要分成两次赋值？", "a": "group_prev 原本指向的组头在翻转后变成了组尾，需要先把它的 next 指向 group_next 断掉旧链，再让 group_prev 指向新的组头。"}
+    ],
+    "mechanism": "翻转会同时改变「组的首尾身份」和「相邻组的连接点」，如果不固定锚点，每轮都要重新判断头尾。用 dummy 固定整个结果的头、用 group_prev 固定上一组末位、用 group_next 固定下一组入口，拼接退化成两次赋值，边界情况被消掉。",
+    "boundary": "当 k=1 时链表不变；当剩余节点不足 k 个时不做任何翻转（若题目改为「不足 k 也翻转」需调整探测逻辑）。链表过长时递归版会爆栈，应用迭代。k ≤ 0 属非法输入需另行约定。",
+    "analogyBoundary": "队伍分组向后转类比默认每组人数恰好整除，而链表常出现尾组不满，算法必须在翻转前先探测，否则会把尾组错误翻转——这与现实中「剩几个人就剩几个人」的直觉不同。",
+    "misconceptions": ["把不足 k 的尾组也翻转", "忘记用 dummy，导致 head 被翻转后返回错误的节点", "翻转后 group_prev 更新成新的组头（应为原组头，即翻转后的组尾）"],
+    "ownAnalysis": "它与 LC 24（两两交换）思想同源：都是「按固定长度切片 + 局部反转 + 接回」。（推断）面试若要求手写，先写出「数 k 个 → 反转 → 接回」三段式框架最不容易乱；把 group_prev 当作每轮的游标是理解关键。",
+    "officialNotes": [
+      {"position": "LeetCode 25 标记为困难，要求每 k 个一组翻转，不足 k 个保持原序", "source": "https://leetcode.cn/problems/reverse-nodes-in-k-group"}
+    ],
+    "interviewAnswer": "我加一个 dummy 指向 head，用 group_prev 表示上一组末尾。每轮先从 group_prev 往后走 k 步，如果中途走空说明不够一组，直接返回 dummy.next。否则记下 group_next = 第 k 个节点的 next，把这 k 个节点按反转链表的写法整体反向，再把 group_prev.next 指向新的组头、原组头（现组尾）指向 group_next，最后把 group_prev 移到原组头，继续下一轮。全程 O(n) 时间、O(1) 空间。",
+    "studyPath": {
+      "prerequisites": ["反转链表（LC 206）", "链表哑结点技巧"],
+      "nextSteps": ["两两交换链表中的节点（LC 24）", "旋转链表（LC 61）", "重排链表（LC 143）"]
+    }
+  },
+  "problem": {
+    "title": "K 个一组翻转链表",
+    "number": 25,
+    "difficulty": "hard",
+    "statement": "给定链表头节点 head 和整数 k，每 k 个节点为一组进行翻转，返回翻转后的链表。若剩余节点不足 k 个，则保持它们的原顺序。不能只改变节点内部的值，必须实际交换节点（即改写指针）。k 为正整数。",
+    "examples": [
+      {"input": "head = [1,2,3,4,5], k = 2", "output": "[2,1,4,3,5]", "why": "前两组各 2 个翻转，最后单个 5 保留"},
+      {"input": "head = [1,2,3,4,5], k = 3", "output": "[3,2,1,4,5]", "why": "第一组 3 个翻转，剩 4,5 不足 3 保留"}
+    ],
+    "approach": {
+      "idea": "用 dummy 统一头节点边界，group_prev 指向上一组末尾。每轮先探测是否有完整 k 个节点，再对组内 k 个节点整体反向，并把组头接到 group_next、group_prev 接到新组头。",
+      "steps": [
+        "1. 建 dummy 指向 head，group_prev = dummy",
+        "2. 从 group_prev 出发向后走 k 步得到 kth；若中途为空则返回 dummy.next",
+        "3. 记下 group_next = kth.next",
+        "4. 反转 group_prev.next 到 kth 之间的 k 个节点（沿用 LC 206 骨架，终点为 group_next）",
+        "5. 令 group_prev.next = kth，原组头.next = group_next 完成接回",
+        "6. group_prev 移到原组头（现为组尾），回到第 2 步"
+      ],
+      "whyItWorks": "每轮翻转后，该组内部顺序严格反向且两端与原链表其余部分正确相连，不变量「group_prev 是已处理部分末尾、其后接未处理部分」得以保持；探测保证只有完整 k 组才被翻转，故最终整体正确。",
+      "alternatives": [
+        {"name": "递归（不足 k 直接返回 head）", "complexity": "O(n) / O(n/k)", "when": "想写更短代码、链表不长时"},
+        {"name": "头插法逐组构建", "complexity": "O(n) / O(1)", "when": "熟悉头插、想避免显式反转循环时（同样只改指针）"}
+      ]
+    },
+    "solution": {
+      "python": "class ListNode:\n    def __init__(self, val=0, next=None):\n        self.val = val\n        self.next = next\n\ndef reverseKGroup(head: ListNode, k: int) -> ListNode:\n    dummy = ListNode(0, head)\n    group_prev = dummy\n    while True:\n        kth = group_prev\n        for _ in range(k):\n            kth = kth.next\n            if not kth:\n                return dummy.next\n        group_next = kth.next\n        prev, cur = group_next, group_prev.next\n        while cur is not group_next:\n            nxt = cur.next\n            cur.next = prev\n            prev = cur\n            cur = nxt\n        tmp = group_prev.next      # 原组头，翻转后成为组尾\n        group_prev.next = kth      # 接到新的组头\n        group_prev = tmp\n    return dummy.next",
+      "python_alt": "def reverseKGroup(head: ListNode, k: int) -> ListNode:\n    # 先看是否还有 k 个节点\n    node = head\n    for _ in range(k):\n        if not node:\n            return head\n        node = node.next\n    # 翻转前 k 个\n    prev, cur = None, head\n    for _ in range(k):\n        nxt = cur.next\n        cur.next = prev\n        prev, cur = cur, nxt\n    # head 现在是组尾，接上后面已处理好的部分\n    head.next = reverseKGroup(cur, k)\n    return prev",
+      "notes": "迭代版把「探测 — 翻转 — 接回」三段写清最稳。翻转内层循环的终止条件是 cur 走到 group_next（哨兵值），避免多翻一个节点。注意 group_prev 更新为 tmp（原组头），而不是新的组头 kth。"
+    },
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "每个节点最多被探测与改指常数次，总操作 n-(n mod k) 量级；迭代只用了常数个指针（递归版栈深 O(n/k)）。"
+    },
+    "pitfalls": [
+      "把不足 k 的尾组也翻转",
+      "忘记 dummy，头节点被翻转后返回了错误的头",
+      "翻转后 group_prev 更新错误，导致下一组起点不对"
+    ],
+    "edgeCases": [
+      "k = 1，链表应保持不变",
+      "链表长度小于 k，应整体返回原链表",
+      "链表长度恰好是 k 的整数倍，最后一组也要翻转"
+    ],
+    "interviewTips": "先讲三个锚点（group_prev / kth / group_next）再动手，能明显减少出错。写完主动跑一遍 k=2 的小例子验证接回。若时间紧，可先给递归版保证正确，再补迭代版；被问空间就强调迭代才是 O(1)。"
+  }
+}

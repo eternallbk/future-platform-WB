@@ -1,0 +1,1055 @@
+{
+ "batchId": "queue-16b",
+ "entries": [
+  {
+   "id": "45af88edc732a0d6",
+   "tldr": "数据库事务四大特性：原子性靠 Undo Log、隔离性靠锁与 MVCC、持久性靠 Redo Log，一致性是最终目的。",
+   "keyPoints": [
+    "原子性：事务内操作要么全做、要么全不做",
+    "一致性：事务前后数据的完整性约束不被破坏",
+    "隔离性：并发事务互不干扰，由锁与 MVCC 实现",
+    "持久性：提交后的修改不丢失，由 Redo Log 保证",
+    "隔离级别与并发问题相关：脏读、不可重复读、幻读"
+   ],
+   "why": "ACID 是数据库工程面开场必答题；隔离性与日志机制同构于 checkpoint 与数据一致性，对算法岗属中等相关的基础加分项。",
+   "difficulty": "medium",
+   "tags": [
+    "interview",
+    "database",
+    "acid",
+    "transaction",
+    "mvcc"
+   ],
+   "entities": [
+    "ACID",
+    "Undo Log",
+    "Redo Log",
+    "MVCC",
+    "隔离级别",
+    "脏读",
+    "幻读"
+   ],
+   "diagram": {
+    "kind": "matrix",
+    "title": "隔离级别与并发异常",
+    "caption": "记住一句话：隔离级别每升一级，堵掉一类并发异常，但并发度随之下降。",
+    "svg": "<svg viewBox='0 0 480 200' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='隔离级别与并发异常矩阵：读未提交可能出现脏读、不可重复读、幻读；读已提交避免脏读；可重复读避免不可重复读；串行化四类异常均避免'><text x='20' y='34' font-size='13' text-anchor='start' fill='currentColor' font-weight='bold'>隔离级别</text><text x='204' y='34' font-size='13' text-anchor='middle' fill='currentColor' font-weight='bold'>脏读</text><text x='315' y='34' font-size='13' text-anchor='middle' fill='currentColor' font-weight='bold'>不可重复读</text><text x='418' y='34' font-size='13' text-anchor='middle' fill='currentColor' font-weight='bold'>幻读</text><line x1='16' y1='46' x2='464' y2='46' stroke='var(--line-1)' stroke-width='1.2'/><line x1='16' y1='82' x2='464' y2='82' stroke='var(--line-1)' stroke-width='1.2'/><line x1='16' y1='118' x2='464' y2='118' stroke='var(--line-1)' stroke-width='1.2'/><line x1='16' y1='154' x2='464' y2='154' stroke='var(--line-1)' stroke-width='1.2'/><line x1='16' y1='190' x2='464' y2='190' stroke='var(--line-1)' stroke-width='1.2'/><line x1='150' y1='20' x2='150' y2='190' stroke='var(--line-1)' stroke-width='1.2'/><line x1='258' y1='20' x2='258' y2='190' stroke='var(--line-1)' stroke-width='1.2'/><line x1='372' y1='20' x2='372' y2='190' stroke='var(--line-1)' stroke-width='1.2'/><text x='20' y='72' font-size='13' text-anchor='start' fill='currentColor'>读未提交</text><text x='204' y='72' font-size='13' text-anchor='middle' fill='currentColor'>可能</text><text x='315' y='72' font-size='13' text-anchor='middle' fill='currentColor'>可能</text><text x='418' y='72' font-size='13' text-anchor='middle' fill='currentColor'>可能</text><text x='20' y='108' font-size='13' text-anchor='start' fill='currentColor'>读已提交</text><text x='204' y='108' font-size='13' text-anchor='middle' fill='currentColor'>不会</text><text x='315' y='108' font-size='13' text-anchor='middle' fill='currentColor'>可能</text><text x='418' y='108' font-size='13' text-anchor='middle' fill='currentColor'>可能</text><text x='20' y='144' font-size='13' text-anchor='start' fill='currentColor'>可重复读</text><text x='204' y='144' font-size='13' text-anchor='middle' fill='currentColor'>不会</text><text x='315' y='144' font-size='13' text-anchor='middle' fill='currentColor'>不会</text><text x='418' y='144' font-size='13' text-anchor='middle' fill='currentColor'>可能</text><text x='20' y='180' font-size='13' text-anchor='start' fill='currentColor'>串行化</text><text x='204' y='180' font-size='13' text-anchor='middle' fill='currentColor'>不会</text><text x='315' y='180' font-size='13' text-anchor='middle' fill='currentColor'>不会</text><text x='418' y='180' font-size='13' text-anchor='middle' fill='currentColor'>不会</text></svg>",
+    "alt": "隔离级别与并发异常矩阵：读未提交可能出现脏读、不可重复读、幻读；读已提交避免脏读；可重复读避免不可重复读；串行化四类异常均避免。"
+   },
+   "concepts": [
+    {
+     "name": "ACID 与实现机制（ACID & Implementation）",
+     "readable": "事务要同时保证四件事：原子性（全做或全不做）、一致性（约束不被破坏）、隔离性（并发不打架）、持久性（提交后不丢）；它们各有对应机制支撑。",
+     "analogy": "像银行转账：钱要么两边都改、要么都不改（原子性），总账始终平（一致性），别人查余额时不会看到改了一半（隔离性），一转完就记账本上再也不改（持久性）。",
+     "analogyBreaksDown": "银行转账是单机、强一致、串行柜台业务；而真实数据库是高并发且崩溃随时发生，隔离性并非靠排队而是靠版本快照，持久性靠先写日志再改数据页，类比里看不到日志与版本这一层。",
+     "mechanism": "一致性是目的，另三者是手段：原子性用 Undo Log 记录旧值以便回滚；持久性用 Redo Log 先写日志再改数据（WAL），崩溃后重放已提交事务；隔离性用锁管写写互斥、用 MVCC 让读写不互斥。日志被复用，是设计的关键取舍。",
+     "visual": "画一个事务方框，左侧箭头连 Undo Log（回滚）、右侧连 Redo Log（重放），底部连 MVCC 版本链；三者汇入中央的一致性约束。",
+     "prerequisites": [
+      "SQL 与事务基础用法",
+      "日志与持久化基本概念"
+     ],
+     "selfTest": [
+      "四大特性里哪一个不是靠独立机制实现的？",
+      "Redo Log 与 Undo Log 各自解决什么问题？",
+      "为什么 WAL 能保证崩溃后恢复？"
+     ],
+     "formula": ""
+    },
+    {
+     "name": "MVCC 多版本并发控制（Multi-Version Concurrency Control）",
+     "readable": "给每行数据保留多个历史版本，读操作读符合自己快照的那个旧版本，写操作生成新版本，从而让读和写互不阻塞，避免读被写锁住。",
+     "analogy": "像维基百科的版本历史：你可以翻到某个时间点的旧版本照常阅读，别人同时在编辑最新页，两边互不影响。",
+     "analogyBreaksDown": "维基历史永久保留且人人可见，而 MVCC 的旧版本由 Undo Log 维护、会被清理，且不同事务看到的可见版本由隔离级别规则决定，不是『谁都能看全部历史』。",
+     "mechanism": "读操作依事务快照沿版本链找到可见版本，不加共享锁；写操作加排他锁并生成新版本。这样读写不互斥，把并发冲突从『阻塞』转成『多版本』，MySQL InnoDB 的可重复读即依赖此机制。",
+     "visual": "画一条行的版本链 v1→v2→v3，两个读事务各自指向不同版本，一个写事务在链尾追加新版本。",
+     "prerequisites": [
+      "事务与隔离级别",
+      "行锁与一致性读概念"
+     ],
+     "selfTest": [
+      "MVCC 为什么能让读不加锁？",
+      "旧版本存放在哪里、何时清理？",
+      "MVCC 下写写冲突还需不需要锁？"
+     ],
+     "formula": ""
+    },
+    {
+     "name": "隔离级别与并发异常（Isolation Levels & Anomalies）",
+     "readable": "隔离级别从低到高是读未提交、读已提交、可重复读、串行化；级别越高越安全，但并发度越低。对应三类典型异常：脏读、不可重复读、幻读。",
+     "analogy": "像看一份不断被修订的名单：脏读是看到别人写了一半又划掉的草稿；不可重复读是同一条被改了；幻读是原本没有的名字后来冒了出来。",
+     "analogyBreaksDown": "看名单是单人视角、随时可重看，而数据库是并发多事务、每条读都有快照时刻；类比无法体现『同一事务内两次读为何应看到同一快照』这条可重复读的语义。",
+     "mechanism": "读已提交用语句级快照避免脏读；可重复读用事务级快照避免不可重复读，MySQL InnoDB 再借间隙锁避免大部分幻读；串行化对读也加锁，代价是并发度骤降。级别选择本质是安全与吞吐的权衡。",
+     "visual": "画一张四行三列的矩阵：行是四档隔离级别，列是脏读/不可重复读/幻读，格子里标可能或不会。",
+     "prerequisites": [
+      "并发事务基础",
+      "锁与快照读概念"
+     ],
+     "selfTest": [
+      "哪一档隔离级别会脏读？",
+      "可重复读在标准 SQL 里能防住幻读吗？",
+      "串行化为什么吞吐最低？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [],
+   "selfCheck": {
+    "claims": [
+     "事务四大特性为原子性、一致性、隔离性和持久性（ACID）",
+     "原子性由 Undo Log 保证",
+     "隔离性由锁与 MVCC 实现",
+     "持久性由 Redo Log 确保",
+     "摘要探讨了事务隔离级别与并发问题（脏读、幻读）的关系"
+    ],
+    "uncertain": [
+     "本条为数据库八股，偏 Java 后端，与多模态 / post-training / 生成式 / 世界模型方向的直接相关性中等（按批次要求正常深读）",
+     "摘要给出 ACID 定义与 Undo Log / Redo Log / 锁与 MVCC 的实现分工，但未给出隔离级别与并发异常的对照矩阵；图中矩阵为数据库通用教科书结论（待核实与原文口径一致；MySQL InnoDB 的可重复读借间隙锁可避免大部分幻读，与标准 SQL 略有差异）",
+     "摘要提到脏读与幻读，未逐一给出不可重复读的定义与示例，concepts 与 teaching 中相关解释为通用补充（待核实）"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "数据库事务要做到四件事：全做或全不做、前后一致、并发不打架、提交后不丢。"
+     },
+     {
+      "level": "入门",
+      "text": "ACID 是事务的四项保证：原子性（要么全成功、要么全回滚）、一致性（约束不被破坏）、隔离性（并发事务互不干扰）、持久性（提交结果永久保存）。实现上原子性靠 Undo Log、持久性靠 Redo Log、隔离性靠锁和 MVCC。"
+     },
+     {
+      "level": "进阶",
+      "text": "四特性不是并列的四条规则：一致性是目的，另外三个是手段。原子性用 Undo Log 记旧值，回滚时反向恢复；持久性用 Redo Log 先写日志再改数据，崩溃后重放；隔离性用锁管写写互斥、用 MVCC 让读写不互斥、按快照读旧版本。隔离级别越高越安全，但并发度越低。"
+     },
+     {
+      "level": "专家",
+      "text": "ACID 的核心矛盾在隔离性与性能：串行化最安全但吞吐最低，读已提交最常用，可重复读在 MySQL InnoDB 里借 MVCC 快照加间隙锁避免了大部分幻读。分工上 Undo Log 同时服务回滚与 MVCC 的旧版本读取，Redo Log 保证已提交事务崩溃后可重放，二者都用 WAL 把随机写变顺序写。面试要能说清四个特性分别由什么机制支撑，以及隔离级别与脏读、不可重复读、幻读的对应关系，而不是背定义。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "如果只有原子性而没有持久性会怎样？",
+      "a": "事务提交后若断电，已提交的修改会丢失，等于白做；所以必须用 Redo Log 在提交前落盘，崩溃后重放已提交事务。"
+     },
+     {
+      "q": "为什么隔离性不能一律用串行化？",
+      "a": "串行化让事务排队执行，吞吐和并发度骤降；多数业务接受读已提交或可重复读的弱保证，用 MVCC 换取读写不互斥的高并发。"
+     },
+     {
+      "q": "一致性为什么不单独配一种日志机制？",
+      "a": "一致性是目标不是手段，靠原子性（回滚不留半成品）、隔离性（并发不读脏数据）与约束检查共同保证，本身不需要专门机制。"
+     }
+    ],
+    "mechanism": "四特性里一致性是目的，原子性、隔离性、持久性是三根支柱，且实现上互相复用日志：Undo Log 既用于回滚（原子性）又供 MVCC 读旧版本，Redo Log 用于持久化。之所以这样设计，是因为崩溃恢复必须能在数据页尚未落盘时靠日志重建，而并发读写必须在锁与版本之间权衡；把日志复用让两个目标共享同一份写入，代价是恢复逻辑更复杂。",
+    "boundary": "ACID 的强弱取决于数据库与隔离级别：MySQL InnoDB 默认可重复读借间隙锁避免大部分幻读，而标准 SQL 的可重复读仍允许幻读；分布式事务常放宽为 BASE（基本可用、软状态、最终一致）。因此不能说 ACID 一劳永逸，跨库跨节点时严格 ACID 代价极高。",
+    "analogyBoundary": "把事务比作转账要么都成要么都不成很贴切，但转账类比看不到版本与日志这一层：实际隔离性不是靠互斥而是靠 MVCC 快照，读的人可能误以为并发一定得加锁排队、性能必然差。",
+    "misconceptions": [
+     "以为一致性由某个独立机制保证：它靠原子性、隔离性与约束共同达成，是目的不是手段。",
+     "以为隔离级别越高越该默认用串行化：串行化吞吐极低，多数系统默认读已提交或可重复读。",
+     "以为用了 MVCC 就不需要锁：它让读写不互斥，但写写仍需加锁，版本链本身也要管理。"
+    ],
+    "ownAnalysis": "这是数据库通用八股，与多模态 / 后训练没有直接技术交集，与算法岗相关性中等。（推断）可迁移的点是 WAL 与 MVCC 快照：WAL『先写日志再改数据』同构于训练 checkpoint 的先写临时文件再原子替换；MVCC『读一致性快照不阻塞写入』同构于数据加载时按快照读取而不影响写入方。摘要只给了 ACID 定义与实现机制名，未给隔离级别矩阵，图中矩阵为通用补充。记忆锚点建议用『一致性是目的，另三是手段』。",
+    "officialNotes": [
+     {
+      "position": "来源为卡码网基础八股整理页（ACID），给出四特性定义与 Undo Log / Redo Log / 锁与 MVCC 的实现分工，并关联隔离级别与脏读、幻读",
+      "source": "https://notes.kamacoder.com/base/acid-properties.html"
+     }
+    ],
+    "interviewAnswer": "ACID 是原子性、一致性、隔离性、持久性。我会强调一致性是目的：原子性用 Undo Log 保证回滚不留半成品，持久性用 Redo Log 的 WAL 保证提交后崩溃可重放，隔离性用锁和 MVCC 让并发事务互不干扰。隔离性再展开：读未提交有脏读，读已提交避免脏读，可重复读避免不可重复读、MySQL 借间隙锁避免大部分幻读，串行化最安全但吞吐最低。",
+    "studyPath": {
+     "prerequisites": [
+      "SQL 与事务基本用法",
+      "并发与锁的基本概念"
+     ],
+     "nextSteps": [
+      "在 MySQL 里用两个会话复现脏读与不可重复读",
+      "读 InnoDB 的 MVCC 与 Undo/Redo Log 实现",
+      "整理隔离级别与并发异常对照矩阵"
+     ]
+    }
+   }
+  },
+  {
+   "id": "fbcd218ee56a57f3",
+   "tldr": "把 vMLX 推理引擎包成 macOS 应用：本机跑 LLM、视觉与图像生成，并对外提供 OpenAI 兼容 HTTP API。",
+   "keyPoints": [
+    "本仓库是 macOS 应用壳，真正的推理引擎在同组织 jjang-ai/vmlx 仓库",
+    "通过 OpenAI 兼容 HTTP 服务在 localhost 供任意客户端调用",
+    "引擎内置连续批处理 + PagedAttention、投机解码、前缀缓存与 KV Cache 量化",
+    "支持 JANG 混合精度量化，覆盖 Mamba/SSM 与 Transformer 混合架构",
+    "内置 Python 3.12 与 Electron 前端，免装 Python、免配置文件"
+   ],
+   "why": "推理引擎是算法岗部署侧的必答题；连续批处理、PagedAttention、KV 量化正是把长上下文塞进有限显存的核心工程手段。",
+   "difficulty": "medium",
+   "tags": [
+    "inference",
+    "apple-silicon",
+    "serving",
+    "quantization",
+    "kv-cache",
+    "llm"
+   ],
+   "entities": [
+    "MLX Studio",
+    "vMLX",
+    "MLX",
+    "Apple Silicon",
+    "PagedAttention",
+    "JANG",
+    "Kokoro",
+    "Whisper",
+    "OpenAI-compatible API"
+   ],
+   "diagram": {
+    "kind": "architecture",
+    "title": "MLX Studio 数据流",
+    "caption": "模型从 Hugging Face 下载后交给 vMLX 引擎，引擎起 OpenAI 兼容服务，再由 Electron 前台消费。",
+    "svg": "<svg viewBox='0 0 480 254' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='MLX Studio 数据流：模型下载到推理引擎到 HTTP 服务到前台应用'><rect x='56' y='16' width='368' height='34' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='38' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>Hugging Face 模型下载</text><text x='408' y='38' font-size='13' text-anchor='end' fill='currentColor'>应用内浏览下载</text><line x1='240' y1='50' x2='240' y2='58' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,64 236,56 244,56' fill='var(--line-1)'/><rect x='56' y='64' width='368' height='34' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='86' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>vMLX 推理引擎 (MLX)</text><text x='408' y='86' font-size='13' text-anchor='end' fill='currentColor'>PagedAttention/KV 量化</text><line x1='240' y1='98' x2='240' y2='106' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,112 236,104 244,104' fill='var(--line-1)'/><rect x='56' y='112' width='368' height='34' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='134' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>OpenAI 兼容 HTTP 服务</text><text x='408' y='134' font-size='13' text-anchor='end' fill='currentColor'>localhost /v1/chat/completions</text><line x1='240' y1='146' x2='240' y2='154' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,160 236,152 244,152' fill='var(--line-1)'/><rect x='56' y='160' width='368' height='34' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='182' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>Electron 前台应用</text><text x='408' y='182' font-size='13' text-anchor='end' fill='currentColor'>Chat/Image/Server/Tools</text><line x1='240' y1='194' x2='240' y2='202' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,208 236,200 244,200' fill='var(--line-1)'/><rect x='56' y='208' width='368' height='34' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='230' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>本地持久化与输出</text><text x='408' y='230' font-size='13' text-anchor='end' fill='currentColor'>SQLite 会话 + 流式结果</text></svg>",
+    "alt": "五步数据流：Hugging Face 模型下载→vMLX 推理引擎→OpenAI 兼容 HTTP 服务→Electron 前台应用→本地持久化与输出。"
+   },
+   "concepts": [
+    {
+     "name": "Engine-Wrapper Separation（引擎与外壳分离）",
+     "readable": "把推理引擎做成独立服务，图形界面只当它的客户端；同一引擎能被 CLI、PyPI 库或任意 HTTP 客户端复用。",
+     "analogy": "像把发动机和车身分开做：同一台发动机装进轿车、卡车都行，仪表盘坏了也不影响发动机运转。",
+     "analogyBreaksDown": "汽车发动机接口高度标准，换车不换机；而推理引擎的接口会随模型架构（纯注意力 vs Mamba/SSM 混合）变化，前端往往要跟着升级才能用上新模型，接口稳定这一前提会失效。",
+     "mechanism": "引擎与界面分仓（本仓库是壳，引擎在 vmlx），以 OpenAI 兼容 HTTP 作为唯一契约；换前端、换客户端都不动引擎，也便于把引擎单独发布到 PyPI 供脚本复用。",
+     "visual": "从 README 读起：本仓库只有 README.md、latest.json、assets/；真正引擎与 panel/ 前端在同组织 vmlx 仓库，pip install -e . 装引擎，服务暴露 /v1/chat/completions。",
+     "prerequisites": [
+      "HTTP 与 REST 接口",
+      "客户端/服务端分离",
+      "LLM 推理基本流程"
+     ],
+     "selfTest": [
+      "为什么把推理引擎做成 HTTP 服务而不是库调用？",
+      "本仓库里能读到引擎实现吗？",
+      "OpenAI 兼容 API 带来什么好处？"
+     ],
+     "formula": ""
+    },
+    {
+     "name": "Continuous Batching + PagedAttention",
+     "readable": "连续批处理让不同长度的请求在同一批次里动态进出，PagedAttention 把 KV Cache 切成页按需分配，从而省显存、提吞吐。",
+     "analogy": "像洗衣店不等一桶衣服攒满才开机：凑够就洗，先洗完的先取走；衣柜按抽屉分格放不同顾客的衣服，不整柜预留。",
+     "analogyBreaksDown": "洗衣机不会因某桶衣服太长而无限占位，而 PagedAttention 的页仍会随序列变长而增长，长上下文下显存照样线性吃掉，必须靠 KV 量化进一步压缩。",
+     "mechanism": "批处理按 token 步调度、请求完成即退出（连续批处理），消除静态批里短请求干等长请求的浪费；PagedAttention 以固定大小页管理 KV，减少显存碎片与预留浪费。",
+     "visual": "画两条并排时间线：上行是静态批，短请求完成仍占位干等；下行是连续批，请求一结束新请求立即补位，批次始终填满。",
+     "prerequisites": [
+      "自回归解码",
+      "KV Cache",
+      "吞吐与时延的权衡"
+     ],
+     "selfTest": [
+      "连续批处理相比静态批省在哪里？",
+      "PagedAttention 解决什么碎片问题？",
+      "为什么长上下文下还需 KV 量化？"
+     ],
+     "formula": "M_{KV}=2\\,b\\,s\\,n_{layer}\\,n_{head}\\,d_{head}\\,\\mathrm{bytes}"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-mlx-kv-cache-memory",
+     "name": "KV Cache 显存占用（KV Cache Memory Footprint）",
+     "category": "engineering",
+     "latex": "M_{KV}=2\\cdot b\\cdot s\\cdot n_{layer}\\cdot n_{head}\\cdot d_{head}\\cdot \\mathrm{bytes}",
+     "symbols": [
+      [
+       "b",
+       "批大小"
+      ],
+      [
+       "s",
+       "序列长度（上下文 token 数）"
+      ],
+      [
+       "n_{layer}",
+       "Transformer 层数"
+      ],
+      [
+       "n_{head}",
+       "注意力头数"
+      ],
+      [
+       "d_{head}",
+       "每个头的维度"
+      ],
+      [
+       "2",
+       "Key 与 Value 两份缓存"
+      ],
+      [
+       "bytes",
+       "单元素字节数，fp16 为 2"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：自回归解码要缓存每层每个头的 Key 和 Value，避免重复计算历史 token。",
+      "第 2 步：单层单头单 token 的缓存量为 2 份 × 维度 d_head。",
+      "第 3 步：乘以层数、头数与序列长度、批大小，得到总量。",
+      "第 4 步：序列越长、批越大，显存线性增长，这就是必须做 KV 量化的原因。"
+     ],
+     "analogy": "像开卷考试：每答一题都要把前面所有草稿留在桌上，卷子越长、同时考的人越多，桌子就越不够用。",
+     "pitfalls": [
+      "漏掉系数 2（只算了 K 或只算了 V）",
+      "把量化当成免费午餐；KV 量化会带来精度损失",
+      "把 KV 显存与模型权重显存混为一谈，两者独立叠加"
+     ],
+     "code": "def kv_bytes(b, s, layers, heads, d_head, dtype_bytes=2):\n    return 2 * b * s * layers * heads * d_head * dtype_bytes\nprint(kv_bytes(1, 32768, 32, 32, 128) / 2**30)  # 约 8.0 GiB fp16",
+     "sources": [
+      {
+       "title": "jjang-ai/mlxstudio",
+       "url": "https://github.com/jjang-ai/mlxstudio"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "MLX Studio 是包装 vMLX 推理服务器的原生 macOS 应用，基于 Apple MLX 做 GPU 加速",
+     "推理结果通过 OpenAI 兼容 HTTP API 在 localhost 提供",
+     "支持聊天、视觉（Qwen-VL/LLaVA/Pixtral）、推理模型、工具调用、文生图、TTS(Kokoro) 与 STT(Whisper)",
+     "引擎特性含连续批处理 + PagedAttention、投机解码、KV Cache 量化、前缀缓存、Mamba/SSM 混合架构支持",
+     "支持 JANG 混合精度量化；内置 Python 3.12 环境，无需系统 Python",
+     "会话用 SQLite 持久化；仅支持 Apple Silicon 与 macOS 14+，最低 8GB 内存"
+    ],
+    "uncertain": [
+     "KV Cache 公式为通用教科书形式，用于解释 README 所称的『KV Cache 量化以容纳更长上下文』，并非该仓库给出的具体实现公式",
+     "本仓库只含 README.md / latest.json / assets/，引擎源码文件路径需到 jjang-ai/vmlx 仓库核实",
+     "各量化格式的精度损失与吞吐数据、长上下文实际可用长度，README 未给出，待核实",
+     "『vMLX』与 MLX 生态中其它项目命名相近，实际项目边界待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "把 Mac 上跑大模型的引擎，包成一个点了就能用的图形应用。"
+     },
+     {
+      "level": "入门",
+      "text": "MLX Studio 是 macOS 应用，底层是 vMLX 推理引擎，基于 Apple MLX 做 GPU 加速。它在本机起一个 OpenAI 兼容的 HTTP 服务，界面、命令行或任意客户端都能调，支持聊天、图像理解、文生图与语音。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键是把引擎与界面分仓：本仓库只是应用壳（README、更新清单、素材），引擎与 Electron 前端在同组织的 vmlx 仓库。引擎侧用连续批处理 + PagedAttention 管显存、投机解码提速、KV Cache 量化把长上下文塞进内存，并支持 JANG 混合精度量化与 Mamba/SSM 混合架构。"
+     },
+     {
+      "level": "专家",
+      "text": "与 Ollama/llama.cpp 等本地推理方案比，它以 Apple 生态的 MLX 为后端、以 OpenAI 兼容 API 为契约，前端可替换；代价是深度绑定 Apple Silicon。值得学的工程点是『引擎—契约—壳』三层解耦，以及显存管理四件套（连续批处理、分页 KV、前缀缓存、KV 量化），这是长上下文服务化的通用套路。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不直接把推理代码写成库，由界面直接调用？",
+      "a": "耦合后换客户端要重写；做成 HTTP 服务可让 CLI、PyPI 用户、任意 OpenAI 客户端复用同一引擎。"
+     },
+     {
+      "q": "已经有 PyPI 的 vmlx，为什么还要单独做一个应用壳？",
+      "a": "降低门槛：免装 Python、免配文件、免终端，模型直接在应用内从 Hugging Face 下载即可用。"
+     },
+     {
+      "q": "连续批处理和 PagedAttention 各自解决什么？",
+      "a": "前者让不同长度请求动态进出批次，减少干等；后者按页分配 KV 显存，减少碎片与预留浪费。"
+     }
+    ],
+    "mechanism": "核心设计是把推理能力做成独立服务、界面只当客户端，并用 OpenAI 兼容 API 当唯一契约。之所以必须这样：解耦后同一引擎可被多种前端复用，契约统一后无需为每个客户端写适配。引擎侧又必须同时管好显存与吞吐——连续批处理解决静态批的等待浪费，PagedAttention 解决 KV 碎片，KV 量化与 JANG 把长上下文压进有限内存，否则本地设备根本跑不动大模型。",
+    "boundary": "只在 Apple Silicon + macOS 14 以上可用，非 Mac 无解；显存受统一内存限制，模型越大越依赖量化。官方标注 8GB 内存起、16GB 更佳。README 未给出各量化格式的精度损失与吞吐实测，长上下文下的实际可用长度也待核实。",
+    "analogyBoundary": "把壳比作车身、引擎比作发动机很贴切，但汽车发动机接口高度标准，换车不换机；推理引擎接口会随模型架构（注意力与 SSM 混合）变化，前端常要跟着升级才能支持新模型，『接口稳定』这一前提会失效。",
+    "misconceptions": [
+     "以为本仓库就是推理引擎本体；引擎在同组织 vmlx 仓库，这里是应用壳。",
+     "以为 OpenAI 兼容 API 等于调用 OpenAI 云服务；它其实是本机 localhost 服务。",
+     "以为本地就能低成本跑任意大模型；统一内存仍是硬约束，严重依赖量化。"
+    ],
+    "ownAnalysis": "MLX Studio 的定位与 Ollama 类似，都是『本地一键跑模型』，差别在绑定 Apple MLX 与 macOS 生态（README 明确）。把『引擎—契约—壳』三层拆开，是推理服务值得复用的架构范式（推断）。需要核实：README 只列出引擎特性，未给各特性开关与实测数据；且它的功能覆盖面（文生图、TTS、STT、工具调用）远超『推理服务器』一词的字面含义（推断，值得核实产品边界）。",
+    "officialNotes": [
+     {
+      "position": "本仓库是 macOS 应用壳：可见文件为 README.md（文档）、latest.json（自动更新清单）与 assets/（截图）；推理引擎与 Electron 前端在同组织 jjang-ai/vmlx（panel/ 为前端，pip install -e . 装 Python 引擎），服务暴露 /v1/chat/completions 与 /v1/responses",
+      "source": "https://github.com/jjang-ai/mlxstudio"
+     }
+    ],
+    "interviewAnswer": "MLX Studio 是把 vMLX 推理引擎包成的 macOS 应用，底层用 Apple MLX 做 GPU 加速。架构上引擎和界面分仓：本仓库只是应用壳，引擎在同组织 vmlx 仓库，通过 OpenAI 兼容的 localhost HTTP 服务对外，前端是 Electron。功能覆盖聊天、视觉、推理模型、工具调用、文生图和语音。引擎侧的关键工程是连续批处理加 PagedAttention、投机解码、前缀缓存、KV Cache 量化，以及 JANG 混合精度量化。局限是只能在 Apple Silicon 上跑。",
+    "studyPath": {
+     "prerequisites": [
+      "HTTP/REST 接口",
+      "LLM 推理与 KV Cache 基础",
+      "量化基本概念"
+     ],
+     "nextSteps": [
+      "读 vmlx 仓库的引擎与 panel 目录，跑通 pip install vmlx",
+      "对比 Ollama / llama.cpp 的批处理与显存策略",
+      "自建一个 OpenAI 兼容服务并用客户端验证"
+     ]
+    }
+   }
+  },
+  {
+   "id": "5d166480d300892b",
+   "tldr": "磁盘调度按不同策略给磁道请求排序以减少磁头移动：FCFS、SSTF、SCAN、C-SCAN、LOOK 在寻道长度、公平与饥饿间各有取舍。",
+   "keyPoints": [
+    "七大算法含 FCFS、SSTF、SCAN、C-SCAN、LOOK 等",
+    "核心考点是寻道过程与平均寻道长度计算，并要会代码实现",
+    "SSTF 就近服务、平均寻道短，但远端请求会饥饿",
+    "SCAN/C-SCAN 电梯式扫掠，消除饥饿但边沿等待不均",
+    "需对比响应时间、公平性与饥饿三类指标"
+   ],
+   "why": "操作系统 I/O 八股高频；算法岗做数据加载与存储访存时也会遇到 I/O 调度，理解吞吐与公平的取舍有助于估时延。",
+   "difficulty": "medium",
+   "tags": [
+    "os",
+    "disk-scheduling",
+    "io",
+    "interview",
+    "scheduling"
+   ],
+   "entities": [
+    "FCFS",
+    "SSTF",
+    "SCAN",
+    "C-SCAN",
+    "LOOK"
+   ],
+   "diagram": {
+    "kind": "matrix",
+    "title": "五种磁盘调度算法对比",
+    "caption": "记住这张表：平均寻道越小的算法往往越容易饥饿，扫掠类用方向约束换公平。",
+    "svg": "<svg viewBox='0 0 480 236' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='五种磁盘调度算法在平均寻道、饥饿与特点上的对比表'><rect x='12' y='16' width='456' height='204' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><line x1='12' y1='40' x2='468' y2='40' stroke='var(--line-1)' stroke-width='1.2'/><line x1='12' y1='76' x2='468' y2='76' stroke='var(--line-1)' stroke-width='1.2'/><line x1='12' y1='112' x2='468' y2='112' stroke='var(--line-1)' stroke-width='1.2'/><line x1='12' y1='148' x2='468' y2='148' stroke='var(--line-1)' stroke-width='1.2'/><line x1='12' y1='184' x2='468' y2='184' stroke='var(--line-1)' stroke-width='1.2'/><line x1='110' y1='16' x2='110' y2='220' stroke='var(--line-1)' stroke-width='1.2'/><line x1='225' y1='16' x2='225' y2='220' stroke='var(--line-1)' stroke-width='1.2'/><line x1='300' y1='16' x2='300' y2='220' stroke='var(--line-1)' stroke-width='1.2'/><text x='20' y='32' font-size='13' fill='currentColor' font-weight='bold'>算法</text><text x='118' y='32' font-size='13' fill='currentColor' font-weight='bold'>平均寻道</text><text x='233' y='32' font-size='13' fill='currentColor' font-weight='bold'>饥饿</text><text x='308' y='32' font-size='13' fill='currentColor' font-weight='bold'>特点</text><text x='20' y='62' font-size='13' fill='currentColor'>FCFS</text><text x='118' y='62' font-size='13' fill='currentColor'>大</text><text x='233' y='62' font-size='13' fill='currentColor'>无</text><text x='308' y='62' font-size='13' fill='currentColor'>按到达顺序，最公平但慢</text><text x='20' y='98' font-size='13' fill='currentColor'>SSTF</text><text x='118' y='98' font-size='13' fill='currentColor'>小</text><text x='233' y='98' font-size='13' fill='currentColor'>有</text><text x='308' y='98' font-size='13' fill='currentColor'>就近服务，远道易饥饿</text><text x='20' y='134' font-size='13' fill='currentColor'>SCAN</text><text x='118' y='134' font-size='13' fill='currentColor'>较小</text><text x='233' y='134' font-size='13' fill='currentColor'>无</text><text x='308' y='134' font-size='13' fill='currentColor'>单向扫到端点再折返</text><text x='20' y='170' font-size='13' fill='currentColor'>C-SCAN</text><text x='118' y='170' font-size='13' fill='currentColor'>较小</text><text x='233' y='170' font-size='13' fill='currentColor'>无</text><text x='308' y='170' font-size='13' fill='currentColor'>只单向服务回程不服务</text><text x='20' y='206' font-size='13' fill='currentColor'>LOOK</text><text x='118' y='206' font-size='13' fill='currentColor'>小于SCAN</text><text x='233' y='206' font-size='13' fill='currentColor'>无</text><text x='308' y='206' font-size='13' fill='currentColor'>扫到最远请求即折返</text></svg>",
+    "alt": "对比表：FCFS 平均寻道大、无饥饿、按序服务；SSTF 最小但有饥饿；SCAN/C-SCAN/LOOK 较小且无饥饿，差异在扫掠方式。"
+   },
+   "concepts": [
+    {
+     "name": "Seek-Time Minimization（寻道时间最小化）",
+     "readable": "磁盘服务请求的耗时里，磁头移动到目标磁道（寻道）占大头，所以调度算法目标是让磁头移动的总距离尽量短。",
+     "analogy": "像在长书架前取书：真正费时间的是从这排走到那排，不是翻书本身；好的取书顺序能少走很多冤枉路。",
+     "analogyBreaksDown": "现实中你可以先看完所有书的位置再规划路线，而磁盘请求是动态到达的、调度器不知道未来；SSTF 只顾眼前最近，反而可能让最远的请求永远排不上。",
+     "mechanism": "以磁道距离为代价函数给待服务队列排序：FCFS 保序保公平、SSTF 贪心就近、SCAN/C-SCAN/LOOK 用单向或折返扫掠在吞吐与公平之间折中。",
+     "visual": "横轴时间、纵轴磁道号画磁头折线：SSTF 是小幅乱跳，SCAN 是规律的锯齿扫掠，肉眼就能看出总路程差异。",
+     "prerequisites": [
+      "磁盘物理结构（盘面/磁道/扇区）",
+      "寻道时间、旋转延迟与传输时间",
+      "队列与贪心算法"
+     ],
+     "selfTest": [
+      "为什么 SSTF 平均寻道最短却可能被淘汰？",
+      "SCAN 与 C-SCAN 的差别在哪？",
+      "LOOK 为什么比 SCAN 少走一段？"
+     ],
+     "formula": "L_{avg}=\\frac{1}{n}\\sum_{i=1}^{n}|T_{i}-T_{i-1}|"
+    },
+    {
+     "name": "Starvation vs Fairness（饥饿与公平性）",
+     "readable": "请求是动态到达的，若调度总优先服务最近的磁道，远端请求就会被源源不断的新请求插队，长时间得不到服务，这就是饥饿。",
+     "analogy": "食堂里总有人插到离窗口最近的位置，排在最后的人可能永远轮不到。",
+     "analogyBreaksDown": "食堂可以用强制排队保证秩序，而磁盘调度里公平与吞吐往往此消彼长——完全公平的 FCFS 会牺牲平均寻道长度，两者不能同时最优。",
+     "mechanism": "SSTF 用贪心换低寻道，代价是远端饥饿；SCAN 类强制磁头单向扫过全范围，保证任何请求在有限时间内被扫到，用略大的寻道换公平。",
+     "visual": "画一条磁道轴并标出请求点：SSTF 下最右端的点始终不被访问；SCAN 下磁头扫过时它终会被覆盖。",
+     "prerequisites": [
+      "调度公平性的含义",
+      "贪心算法的局限"
+     ],
+     "selfTest": [
+      "哪种算法会产生饥饿？为什么？",
+      "C-SCAN 如何让等待时间更均匀？",
+      "为什么说公平与吞吐是一对矛盾？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-avg-seek-length",
+     "name": "平均寻道长度（Average Seek Length）",
+     "category": "engineering",
+     "latex": "L_{avg}=\\frac{1}{n}\\sum_{i=1}^{n}\\left|T_{i}-T_{i-1}\\right|",
+     "symbols": [
+      [
+       "T_{i}",
+       "第 i 个被服务的磁道号"
+      ],
+      [
+       "T_{0}",
+       "初始磁头所在磁道"
+      ],
+      [
+       "n",
+       "请求总数"
+      ],
+      [
+       "L_{avg}",
+       "平均每次服务的寻道长度（磁道数）"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：动机——用磁头移动的磁道总距离衡量调度好坏。",
+      "第 2 步：把被服务的磁道按顺序排成 T_0→T_1→…→T_n，逐段求移动距离绝对值。",
+      "第 3 步：累加所有相邻距离得到总寻道长度。",
+      "第 4 步：除以请求数 n 得平均寻道长度，越小越好。"
+     ],
+     "analogy": "快递员按不同顺序送同一批货：货物没变，但总路程会差很多，总路程除以订单数就是『平均每单跑多远』。",
+     "pitfalls": [
+      "忘记算初始磁头位置 T_0 到第一个请求的距离",
+      "把寻道长度当成总 I/O 时间，忽略旋转延迟与传输时间",
+      "不同算法必须用同一请求序列与同一初始磁头才可比，不能背数字"
+     ],
+     "code": "def avg_seek(seq, head, order):\n    pos, total = head, 0\n    for i in order:\n        total += abs(seq[i] - pos); pos = seq[i]\n    return total / len(order)\nseq = [98, 183, 37, 122, 14, 124, 65, 67]\nprint(avg_seek(seq, 53, list(range(len(seq)))))  # FCFS 顺序",
+     "sources": [
+      {
+       "title": "磁盘调度算法有什么？",
+       "url": "https://notes.kamacoder.com/base/disk-scheduling-algorithms.html"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "磁盘调度是操作系统面试高频考点，主要考察 FCFS、SSTF、SCAN、C-SCAN、LOOK 等七大算法",
+     "考察点是各算法寻道过程、优缺点、平均寻道长度计算与代码实现",
+     "需要分析饥饿、公平性、响应时间等核心问题",
+     "服务于大厂操作系统面试中关于 I/O 性能优化的提问"
+    ],
+    "uncertain": [
+     "摘要说『七大算法』，但只点名了 FCFS/SSTF/SCAN/C-SCAN/LOOK 五种，其余（如 C-LOOK）具体清单待核实",
+     "各算法的量化性能对比数字摘要未给出，本文的『较大/较小』为定性描述",
+     "示例请求序列为自行构造，仅用于演示公式与代码，非原文数据"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "磁盘调度就是决定先服务哪个磁道请求，好让磁头少跑路。"
+     },
+     {
+      "level": "入门",
+      "text": "磁盘读写要先让磁头移到目标磁道，这段寻道最慢。调度算法把待服务请求排序：FCFS 按到达顺序，SSTF 先服务最近的，SCAN 像电梯一样来回扫。目标是平均寻道长度尽量小，同时不让某些请求饿死。"
+     },
+     {
+      "level": "进阶",
+      "text": "FCFS 最公平但平均寻道大；SSTF 贪心就近、平均寻道小，但远端请求会饥饿；SCAN 让磁头单向扫到端点再折返，消除饥饿但边沿等待不均；C-SCAN 只在单程服务、回程快速返回，让等待更均匀；LOOK/C-LOOK 在最远请求处折返，不空扫到物理端点。"
+     },
+     {
+      "level": "专家",
+      "text": "本质是排队论里『以寻道距离为代价的排序问题』：SSTF 是贪心近似，SCAN 类引入方向约束把最坏等待时间变成有界。真实磁盘还要叠旋转延迟与传输时间；SSD 无寻道、由固件与多队列调度，所以 SCAN 类更多是理解调度权衡的模型。面试给请求序列时，要正确标出磁头移动顺序并算总磁道数。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "如果不做任何重排（FCFS）会怎样？",
+      "a": "公平且实现简单，但磁头来回横跳、平均寻道长度大，吞吐低。"
+     },
+     {
+      "q": "既然 SSTF 平均寻道最短，为什么还要 SCAN？",
+      "a": "SSTF 只优化眼前，远端请求会被不断到达的近距离请求插队，造成饥饿；SCAN 保证有限等待。"
+     },
+     {
+      "q": "LOOK 凭什么比 SCAN 少走？",
+      "a": "SCAN 要求扫到物理端点才折返，无请求也要空扫；LOOK 扫到最远请求即回头，省掉无效行程。"
+     }
+    ],
+    "mechanism": "这类算法之所以必须存在，是因为『吞吐』与『公平』无法同时最优：只按到达顺序（FCFS）磁头大幅横跳、寻道时间高；只按最近优先（SSTF）吞吐上去了却让远端请求饥饿。SCAN 类用方向约束把无界等待变为有界——磁头单向扫过全范围，任何请求在有限时间内必被覆盖，代价是边沿与中间磁道等待不均；C-SCAN 只服务单程来再平衡等待。",
+    "boundary": "所有结论都基于『寻道时间主导』的机械磁盘模型；在 SSD/NVMe 上无寻道概念，调度由固件与多队列完成，这些算法不再直接适用。请求稀疏且集中时，SCAN 的空扫开销（LOOK 可避免）会显得浪费；不同算法的平均寻道数只在同一请求序列与同一初始磁头位置下才可比。",
+    "analogyBoundary": "电梯类比很贴切（SCAN 就是电梯算法），但电梯有明确楼层上下限、乘客按楼层排队，磁盘请求却是动态到达且磁头位置连续；电梯也不为公平牺牲行程，而磁盘调度里公平与吞吐是此消彼长的。",
+    "misconceptions": [
+     "以为 SCAN 一定最优；它只是吞吐与公平的折中，并非普适最优。",
+     "把 SSTF 平均寻道最短等同于最好；它会造成远端请求饥饿。",
+     "把寻道长度当成总 I/O 时间，忽略旋转延迟与传输时间。"
+    ],
+    "ownAnalysis": "从调度模型看，SSTF 可视为 SCAN 家族的贪心下界，SCAN 用方向约束把无界等待变成有界（推断）。摘要标题说『七大算法』却只点名五种，是否含 C-LOOK 等待核实。结合摘要强调『平均寻道长度计算与代码实现』，建议把 FCFS/SSTF/SCAN/C-SCAN/LOOK 五种都练到手算无误（推断）。现代面试常给一串请求让你写移动序列，光背定义不够。",
+    "officialNotes": [
+     {
+      "position": "磁盘调度是操作系统面试高频考点，主要考察 FCFS、SSTF、SCAN、C-SCAN、LOOK 等七大算法的原理、优缺点与性能对比，以及平均寻道长度计算与饥饿、公平性、响应时间问题",
+      "source": "https://notes.kamacoder.com/base/disk-scheduling-algorithms.html"
+     }
+    ],
+    "interviewAnswer": "磁盘调度是给待服务的磁道请求排序，减少磁头寻道距离。四类经典做法：FCFS 按到达顺序，最公平但平均寻道大；SSTF 优先最近的磁道，平均寻道最短但会造成远端请求饥饿；SCAN 像电梯一样单向扫到端点再折返，消除饥饿但边沿等待不均；C-SCAN 只在单程服务、回程不服务，等待更均匀；LOOK 和 C-LOOK 扫到最远请求就折返，省掉空扫。衡量指标是平均寻道长度，面试常给请求序列让你算移动顺序。",
+    "studyPath": {
+     "prerequisites": [
+      "磁盘结构与寻道/旋转/传输时间",
+      "排队与贪心算法",
+      "操作系统 I/O 子系统"
+     ],
+     "nextSteps": [
+      "手算五种算法在同一请求序列下的磁头移动顺序",
+      "写脚本模拟各算法并对比平均寻道长度",
+      "对比 SSD 调度与机械盘的差异"
+     ]
+    }
+   }
+  },
+  {
+   "id": "209a6520800a5cf3",
+   "tldr": "TCP 靠慢开始、拥塞避免、快重传、快恢复四个算法动态调节 cwnd，围绕 ssthresh 实现 AIMD 式吞吐控制。",
+   "keyPoints": [
+    "四种经典算法：慢开始、拥塞避免、快重传、快恢复",
+    "拥塞窗口 cwnd 限制在途未确认数据，受慢开始阈值 ssthresh 约束",
+    "慢开始指数增长到 ssthresh，随后拥塞避免线性增长",
+    "丢包时 ssthresh 减半、进入快恢复，避免吞吐骤降",
+    "现代演进出 TCP CUBIC、BBR；拥塞控制区别于流量控制"
+   ],
+   "why": "网络八股必问；分布式训练与推理集群的通信都依赖拥塞控制，理解 cwnd 有助于排查吞吐与时延。",
+   "difficulty": "medium",
+   "tags": [
+    "network",
+    "tcp",
+    "congestion-control",
+    "interview",
+    "aimd"
+   ],
+   "entities": [
+    "TCP",
+    "cwnd",
+    "ssthresh",
+    "快速重传",
+    "快速恢复",
+    "TCP CUBIC",
+    "BBR"
+   ],
+   "diagram": {
+    "kind": "curve",
+    "title": "cwnd 随时间演化的锯齿",
+    "caption": "记住这条锯齿：慢开始陡升到 ssthresh，之后线性爬升，一丢包就砍半再重新爬。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='拥塞窗口随时间变化曲线：慢开始指数上升，拥塞避免线性上升，丢包后砍半进入快恢复'><line x1='40' y1='200' x2='460' y2='200' stroke='var(--line-1)' stroke-width='1.4'/><line x1='40' y1='40' x2='40' y2='200' stroke='var(--line-1)' stroke-width='1.4'/><line x1='40' y1='90' x2='460' y2='90' stroke='var(--line-1)' stroke-width='1.2' stroke-dasharray='4 4'/><polyline points='48,196 70,180 92,160 114,136 136,108 152,92 200,84 248,78 290,72' fill='none' stroke='var(--accent)' stroke-width='2'/><line x1='290' y1='72' x2='290' y2='110' stroke='var(--accent)' stroke-width='2'/><polyline points='290,110 335,104 380,98 415,92' fill='none' stroke='var(--accent)' stroke-width='2'/><line x1='415' y1='92' x2='415' y2='126' stroke='var(--accent)' stroke-width='2'/><polyline points='415,126 440,122 460,118' fill='none' stroke='var(--accent)' stroke-width='2'/><circle cx='290' cy='72' r='3' fill='var(--accent)'/><circle cx='415' cy='92' r='3' fill='var(--accent)'/><text x='44' y='34' font-size='13' fill='currentColor'>cwnd</text><text x='434' y='218' font-size='13' fill='currentColor'>时间</text><text x='396' y='84' font-size='13' fill='currentColor'>ssthresh</text><text x='96' y='178' font-size='13' fill='currentColor'>慢开始</text><text x='206' y='66' font-size='13' fill='currentColor'>拥塞避免</text><text x='298' y='136' font-size='13' fill='currentColor'>快恢复</text></svg>",
+    "alt": "曲线：cwnd 在慢开始阶段陡峭上升至 ssthresh 虚线，之后线性上升，两次丢包处垂直下砍一半再继续线性上升。"
+   },
+   "concepts": [
+    {
+     "name": "AIMD（加性增乘性减）",
+     "readable": "发送方无丢包时每条 RTT 把拥塞窗口加一点（加性增），一旦丢包就把窗口砍一半（乘性减），在平衡点附近来回试探出网络容量。",
+     "analogy": "往杯里倒水：慢慢加流量试探，一旦溢出就立刻减半，再慢加；反复几次就能稳定在『刚好不溢出』的水位附近。",
+     "analogyBreaksDown": "倒水是单方试探，而 TCP 的减半是所有流同时发生，多个连接会同步振荡；且网络容量是共享且实时变化的，不像杯子容量固定，AIMD 只能收敛到近似公平而非精确最优。",
+     "mechanism": "用『加性增』换稳定、用『乘性减』加快从拥塞退出：慢开始指数增长快速逼近容量，拥塞避免线性增长避免过冲，丢包减半让所有流快速回到不拥塞区。",
+     "visual": "横轴时间、纵轴 cwnd，画锯齿：每次触到 ssthresh 后线性爬升，丢包处垂直下砍一半，周期重复。",
+     "prerequisites": [
+      "TCP 可靠传输与确认机制",
+      "RTT 与往返时延",
+      "窗口与流水线发送"
+     ],
+     "selfTest": [
+      "为什么用乘性减而不是线性减？",
+      "慢开始为什么反而增长最快？",
+      "AIMD 在多流共享链路上为什么趋向公平？"
+     ],
+     "formula": "cwnd_{t+1}=\\begin{cases} 2\\,cwnd_t & \\mathrm{SS} \\\\ cwnd_t+1 & \\mathrm{CA} \\\\ \\max\\!\\left(cwnd_t/2,\\,2\\right) & \\mathrm{loss} \\end{cases}"
+    },
+    {
+     "name": "Congestion Window vs Receive Window（拥塞窗口与接收窗口）",
+     "readable": "拥塞窗口 cwnd 是发送方对『网络能不能承受』的估计，接收窗口 rwnd 是接收方通告的『我还能收多少』；实际发送量取两者中的较小值。",
+     "analogy": "寄快递：rwnd 是收件人门口能堆多少件的上限，cwnd 是路上这条路能挤多少辆车的上限，真正能发多少由更紧的那个决定。",
+     "analogyBreaksDown": "门口容量由收件人直接告知（明确），而路上拥挤程度发送方看不见，只能靠丢包或时延间接推断，所以 cwnd 的调节必然滞后且有误差。",
+     "mechanism": "流量控制解决『接收方来不及收』（rwnd），拥塞控制解决『网络中间节点过载』（cwnd）；两者维度不同，发送窗口 = min(cwnd, rwnd)，区分它们是面试高频追问点。",
+     "visual": "画两条并列的量尺：左侧 cwnd 随丢包振荡，右侧 rwnd 由接收方缓冲区决定；发送窗口取两者较小值，用一条水平线标出。",
+     "prerequisites": [
+      "滑动窗口机制",
+      "接收缓冲区"
+     ],
+     "selfTest": [
+      "拥塞控制和流量控制分别解决什么问题？",
+      "发送窗口由谁决定？",
+      "为什么 cwnd 只能间接推断？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-tcp-aimd-cwnd",
+     "name": "拥塞窗口的 AIMD 更新（Additive Increase Multiplicative Decrease）",
+     "category": "engineering",
+     "latex": "cwnd_{t+1}=\\begin{cases} 2\\,cwnd_t & \\mathrm{SS} \\\\ cwnd_t+1 & \\mathrm{CA} \\\\ \\max\\!\\left(cwnd_t/2,\\,2\\right) & \\mathrm{loss} \\end{cases}",
+     "symbols": [
+      [
+       "cwnd_t",
+       "当前拥塞窗口，单位 MSS"
+      ],
+      [
+       "\\mathrm{SS}",
+       "慢开始阶段（Slow Start），收到 ACK 即翻倍"
+      ],
+      [
+       "\\mathrm{CA}",
+       "拥塞避免阶段（Congestion Avoidance），每 RTT 加 1"
+      ],
+      [
+       "\\mathrm{loss}",
+       "检测到丢包时的下调规则"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：发送方无法直接观测网络容量，只能用丢包当拥塞信号。",
+      "第 2 步：慢开始阶段每收到一个 ACK 就把 cwnd 翻倍，呈指数增长，快速逼近容量。",
+      "第 3 步：到达 ssthresh 后转入拥塞避免，每个 RTT 只加 1 MSS，缓慢试探。",
+      "第 4 步：一旦丢包，cwnd 与 ssthresh 减半，形成周期性的锯齿。"
+     ],
+     "analogy": "往杯里倒水：先猛倒（慢开始）感觉快满就改小流量（拥塞避免），一旦溢出（丢包）就立刻关小一半，再慢慢加回去。",
+     "pitfalls": [
+      "把『慢开始』理解为增长慢；它其实是指数增长，比拥塞避免快得多",
+      "混淆 ssthresh（阈值）与 cwnd（当前窗口）",
+      "把拥塞控制与流量控制混为一谈，后者管的是接收方缓冲区"
+     ],
+     "code": "cwnd, ssthresh = 1, 16\nfor step in range(20):\n    if cwnd < ssthresh:\n        cwnd *= 2          # 慢开始：指数增长\n    else:\n        cwnd += 1          # 拥塞避免：线性增长\n    if cwnd > 40:          # 模拟一次丢包\n        ssthresh = max(cwnd // 2, 2)\n        cwnd = ssthresh\n    print(step, cwnd, ssthresh)",
+     "sources": [
+      {
+       "title": "能说说拥塞控制是怎样实现的吗？",
+       "url": "https://notes.kamacoder.com/base/congestion-control.html"
+      }
+     ]
+    },
+    {
+     "id": "f-tcp-fast-recovery-ssthresh",
+     "name": "快重传与快恢复的窗口更新（Fast Retransmit / Fast Recovery）",
+     "category": "engineering",
+     "latex": "ssthresh=\\max\\!\\left(\\frac{cwnd}{2},\\,2\\right),\\quad cwnd=ssthresh+3",
+     "symbols": [
+      [
+       "ssthresh",
+       "慢开始阈值，超过它就从指数增长切换到线性增长"
+      ],
+      [
+       "cwnd",
+       "拥塞窗口"
+      ],
+      [
+       "3",
+       "收到 3 个重复 ACK 触发快重传后额外补偿的 3 个 MSS"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：收到 3 个重复 ACK，说明单个报文丢失但网络尚未完全拥塞。",
+      "第 2 步：快重传立即重发丢失报文，不必等超时定时器到期。",
+      "第 3 步：把 ssthresh 减半，cwnd 设为 ssthresh + 3（补偿已离开网络的 3 个报文）。",
+      "第 4 步：随后进入拥塞避免，缓慢线性增长，避免吞吐骤降。"
+     ],
+     "analogy": "队伍里有人掉队，不必让全队停下等超时，派人回头接一下（快重传）再继续前进，队伍整体不掉速。",
+     "pitfalls": [
+      "把快恢复与超时重传后的处理混淆：超时通常直接回到慢开始（cwnd=1）",
+      "以为快重传要重传整个窗口，实际只重传丢失的那个报文",
+      "忽略触发条件是『3 个重复 ACK』，少于 3 个不触发"
+     ],
+     "code": "def fast_recovery(cwnd):\n    ssthresh = max(cwnd // 2, 2)\n    cwnd = ssthresh + 3   # 3 个重复 ACK 的补偿\n    return cwnd, ssthresh\nprint(fast_recovery(32))  # (19, 16)",
+     "sources": [
+      {
+       "title": "能说说拥塞控制是怎样实现的吗？",
+       "url": "https://notes.kamacoder.com/base/congestion-control.html"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "TCP 拥塞控制靠慢开始、拥塞避免、快重传、快恢复四种经典算法动态调整发送速率",
+     "拥塞窗口 cwnd 与慢开始阈值 ssthresh 是核心机制",
+     "需要对比拥塞控制与流量控制的区别",
+     "文中提及现代算法如 TCP CUBIC 和 BBR 的演进",
+     "目标是防止网络过载，应对面试中关于网络性能优化的深入提问"
+    ],
+    "uncertain": [
+     "AIMD 分段形式与快恢复的 cwnd=ssthresh+3 为按摘要四算法重建的通用形式，原文具体表述待核实",
+     "摘要未给出慢开始初始 cwnd 与 ssthresh 的具体取值，本文示例数字为演示用（自行构造）",
+     "TCP CUBIC 与 BBR 的具体机制摘要未展开，本文只提其存在"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "TCP 靠不停试探，拥塞就减速、通畅就加速，避免把网络挤爆。"
+     },
+     {
+      "level": "入门",
+      "text": "TCP 用一个叫拥塞窗口 cwnd 的值限制同时在路上的数据量。开始用慢开始快速上探，到 ssthresh 后改用拥塞避免慢慢加；一旦丢包就认为网络拥塞，把窗口砍半再从快恢复继续。"
+     },
+     {
+      "level": "进阶",
+      "text": "四算法分工明确：慢开始让 cwnd 指数增长，快速逼近网络容量；拥塞避免线性增长防止过冲；快重传在收到 3 个重复 ACK 时立刻重发丢失报文，不等超时；快恢复把 ssthresh 减半、cwnd 设为 ssthresh+3 后进入线性增长，避免吞吐骤降。整体形成围绕 ssthresh 的锯齿。"
+     },
+     {
+      "level": "专家",
+      "text": "这套机制本质是 AIMD：加性增换取稳定、乘性减加快退出拥塞，多流共享链路上趋向公平。局限是它把丢包等同于拥塞，在高带宽长时延或无线链路上会误判；于是有了 BBR（按带宽时延积建模、不依赖丢包）和 CUBIC（用三次函数替代线性增长，适配高速网络）。答面试时要把『丢包即拥塞』这个前提与它的失效场景一起说清。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "如果发送方不做任何窗口控制会怎样？",
+      "a": "发送速率超过链路与中间节点容量，队列溢出导致大量丢包、重传，吞吐反而崩塌（拥塞崩溃）。"
+     },
+     {
+      "q": "为什么慢开始阶段增长那么猛，还要叫『慢』？",
+      "a": "『慢』是相对它起步的初始值小、从 1 个 MSS 开始；但每 ACK 翻倍，实际上是指数增长，比拥塞避免快。"
+     },
+     {
+      "q": "为什么快重传不必等超时定时器？",
+      "a": "3 个重复 ACK 已足以说明该报文丢失但后续报文还能到达，立即重发能省下一整个超时周期（可能几百毫秒）。"
+     }
+    ],
+    "mechanism": "之所以必须设计这套机制，是因为发送方看不见网络内部状态，只能通过丢包（或时延）间接推断拥塞。指数增长的慢开始用于快速找到大致容量，线性增长的拥塞避免用于在容量附近精细试探、避免过冲，减半规则让所有流在拥塞时快速收缩。三者配合把发送速率稳定在平衡点附近：既用满带宽，又不让中间队列长期溢出。",
+    "boundary": "前提是『丢包即拥塞、链路对称、有足够缓冲』。在无线链路上随机误码会被误判为拥塞而无谓降速；高带宽长时延链路上 AIMD 收敛太慢，于是需要 CUBIC/BBR。这些机制只管发送速率，不解决接收方缓冲区不足（那是流量控制）；也不适用于 UDP 等无连接协议，除非上层自建。",
+    "analogyBoundary": "『倒水试探』的类比失效在于：杯子容量固定、只有一个人在倒，而网络容量共享且实时变化，多条 TCP 流会同步减半再同步爬升，产生全局振荡；且倒水能立刻看到溢出，TCP 只能事后从丢包推断。",
+    "misconceptions": [
+     "把慢开始误认为增长慢；它其实是指数增长。",
+     "把拥塞控制与流量控制混为一谈；后者管接收方窗口 rwnd。",
+     "以为丢包一定等于拥塞；无线误码也会丢包，导致无谓降速。"
+    ],
+    "ownAnalysis": "四算法里，快重传与快恢复是『优化』而非必需——只靠慢开始加拥塞避免加超时重传也能工作，快重传的价值是把『等超时』换成『等 3 个重复 ACK』，省下大量时延（推断）。摘要提到 TCP CUBIC 与 BBR 的演进，说明面试官可能追问『为什么经典算法在高 BDP 链路上不够用』，建议把带宽时延积（BDP）作为答这道题的延伸钩子（推断）。整体上这是背多不如讲通『丢包即拥塞』前提的一道题。",
+    "officialNotes": [
+     {
+      "position": "TCP 拥塞控制靠慢开始、拥塞避免、快重传、快恢复四种经典算法动态调整发送速率防止网络过载，核心是拥塞窗口 cwnd 与慢开始阈值 ssthresh，并与流量控制相区别，现代演进出 TCP CUBIC 与 BBR",
+      "source": "https://notes.kamacoder.com/base/congestion-control.html"
+     }
+    ],
+    "interviewAnswer": "TCP 拥塞控制分四个阶段。开始是慢开始，cwnd 从 1 个 MSS 起，每收到 ACK 就翻倍，指数增长直到慢开始阈值 ssthresh；之后进入拥塞避免，每个 RTT 只加 1，线性上探。如果收到 3 个重复 ACK，就触发快重传立即重发丢失报文，并把 ssthresh 减半、cwnd 设为 ssthresh 加 3，进入快恢复继续线性增长。整体形成围绕 ssthresh 的锯齿。它和流量控制不同，后者管的是接收方窗口。现代还有 CUBIC 和 BBR 解决高带宽长时延下的不足。",
+    "studyPath": {
+     "prerequisites": [
+      "TCP 可靠传输与确认机制",
+      "滑动窗口与 RTT",
+      "丢包与重传"
+     ],
+     "nextSteps": [
+      "画一遍 cwnd 随时间演化的锯齿图并标注四个阶段",
+      "对比拥塞控制与流量控制的区别",
+      "了解 CUBIC 与 BBR 的设计动机"
+     ]
+    }
+   }
+  },
+  {
+   "id": "b06d216e7d58a20f",
+   "tldr": "上下文窗口由输入与输出 token 共同占用；Context Engineering 用检索、重排、压缩、滑动窗口与记忆来对抗信息稀释、Lost in the Middle 与上下文污染。",
+   "keyPoints": [
+    "输入与输出 token 共享同一个窗口预算",
+    "Context Engineering 管的是整个上下文，不等于 Prompt Engineering",
+    "长上下文三大问题：信息稀释、Lost in the Middle、上下文污染",
+    "工程手法：检索、筛选、排序、摘要压缩、滑动窗口",
+    "还包括外部记忆与工具结果清理"
+   ],
+   "why": "上下文管理是 LLM 应用与后训练共用的核心工程能力，长上下文与记忆机制是生成式、Agent 方向的面试高频考点。",
+   "difficulty": "medium",
+   "tags": [
+    "llm",
+    "context-engineering",
+    "long-context",
+    "prompt",
+    "kv-cache",
+    "retrieval"
+   ],
+   "entities": [
+    "Context Engineering",
+    "Prompt Engineering",
+    "Lost in the Middle",
+    "滑动窗口",
+    "外部记忆",
+    "KV Cache"
+   ],
+   "diagram": {
+    "kind": "architecture",
+    "title": "上下文组装流水线",
+    "caption": "记住这条流水线：先把资料取进来，再重排压缩，最后才组装进共享的窗口预算。",
+    "svg": "<svg viewBox='0 0 480 254' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='上下文组装流水线：任务与历史到检索筛选到排序压缩到组装上下文到生成与记忆回写'><rect x='56' y='16' width='368' height='34' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='38' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>任务与对话历史</text><text x='408' y='38' font-size='13' text-anchor='end' fill='currentColor'>用户输入 + 多轮消息</text><line x1='240' y1='50' x2='240' y2='58' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,64 236,56 244,56' fill='var(--line-1)'/><rect x='56' y='64' width='368' height='34' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='86' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>检索与筛选</text><text x='408' y='86' font-size='13' text-anchor='end' fill='currentColor'>从外部库取相关片段</text><line x1='240' y1='98' x2='240' y2='106' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,112 236,104 244,104' fill='var(--line-1)'/><rect x='56' y='112' width='368' height='34' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='134' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>排序与压缩</text><text x='408' y='134' font-size='13' text-anchor='end' fill='currentColor'>重排 / 摘要 / 去冗余</text><line x1='240' y1='146' x2='240' y2='154' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,160 236,152 244,152' fill='var(--line-1)'/><rect x='56' y='160' width='368' height='34' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='182' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>组装上下文</text><text x='408' y='182' font-size='13' text-anchor='end' fill='currentColor'>输入 + 输出共享窗口预算</text><line x1='240' y1='194' x2='240' y2='202' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,208 236,200 244,200' fill='var(--line-1)'/><rect x='56' y='208' width='368' height='34' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='230' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>生成与记忆回写</text><text x='408' y='230' font-size='13' text-anchor='end' fill='currentColor'>工具结果清理、写回记忆</text></svg>",
+    "alt": "五步流水线：任务与对话历史→检索与筛选→排序与压缩→组装上下文（输入输出共享窗口）→生成与记忆回写。"
+   },
+   "concepts": [
+    {
+     "name": "Context Engineering（上下文工程）",
+     "readable": "把『给模型的全部输入』当成需要精心设计的工程对象：检索什么、怎么排序、超长怎么压、跨轮怎么记、工具结果怎么清理。",
+     "analogy": "像给专家准备一份开庭简报：不是把全部卷宗搬过去，而是挑出关键证据、按重要性排序、把冗长材料做成摘要、把无关的废纸扔掉。",
+     "analogyBreaksDown": "简报对象是有限耐心的人，能翻页也能追问；而模型对序列中部信息利用最差，位置本身就是变量，同一份内容换顺序效果就变，这在简报类比里体现不出来。",
+     "mechanism": "对抗注意力的不均匀与稀释：检索管『读什么』、排序管『读的顺序』、压缩与滑动窗口管『留多少』、记忆管『跨轮留什么』，把有限窗口预算投向高价值信息，同时压低 KV 显存与延迟。",
+     "visual": "画一条横向窗口预算条：左侧是输入（系统提示、检索片段、工具结果），右侧预留输出；前面用检索-重排-压缩三个漏斗逐步缩小输入占比。",
+     "prerequisites": [
+      "注意力机制",
+      "KV Cache",
+      "RAG 检索流程"
+     ],
+     "selfTest": [
+      "输入和输出如何共享窗口？",
+      "为什么排序会影响最终结果？",
+      "检索与压缩分别解决什么问题？"
+     ],
+     "formula": "n_{in}+n_{out}\\le L"
+    },
+    {
+     "name": "Lost in the Middle（中间遗忘）",
+     "readable": "模型对长上下文里开头和结尾的信息利用较好，位于中间的信息容易被忽略，即使它同样重要。",
+     "analogy": "听一场很长的讲座：开头和结尾记得清楚，中间大段内容记不住，哪怕中间才是重点。",
+     "analogyBreaksDown": "人忘掉中间常因分心或疲劳，而模型的这种现象源于注意力分布与训练位置分布的固有偏差，靠『认真听』无法改善，只能靠重排把关键信息移到首尾。",
+     "mechanism": "与位置编码及训练时的位置分布有关；工程对策是把最关键的证据放在上下文开头或结尾，或用重排把高相关片段提前，减少对中部长文的依赖。",
+     "visual": "横轴为信息所在位置（开头→中间→结尾），纵轴为利用该信息的准确率，画一条 U 形曲线：两端高、中间凹。",
+     "prerequisites": [
+      "注意力机制",
+      "位置编码"
+     ],
+     "selfTest": [
+      "为什么把关键信息放中间会掉分？",
+      "有哪些缓解手段？",
+      "它和上下文污染的区别是什么？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-context-window-budget",
+     "name": "上下文窗口预算（Context Window Budget）",
+     "category": "foundation",
+     "latex": "n_{in}+n_{out}\\le L",
+     "symbols": [
+      [
+       "n_{in}",
+       "输入 token 数（系统提示、历史、检索片段、工具结果之和）"
+      ],
+      [
+       "n_{out}",
+       "本次生成占用的 token 数"
+      ],
+      [
+       "L",
+       "模型的上下文窗口上限"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：模型一次前向能处理的 token 上限是 L。",
+      "第 2 步：组装好的 prompt 占用 n_in 个 token。",
+      "第 3 步：解码时每个新 token 追加到序列，占用 n_out 个 token。",
+      "第 4 步：两者之和不能超过 L，否则必须截断、压缩或给输出预留预算。"
+     ],
+     "analogy": "一个固定大小的行李箱：说明书（输入）塞得越多，留给带回来的纪念品（输出）的空间就越少。",
+     "pitfalls": [
+      "以为窗口只限制输入；输出与输入共用同一预算",
+      "漏算系统提示与工具返回结果，它们都计入 n_in",
+      "以为窗口越大就能等量利用；长窗口存在信息稀释与中部遗忘"
+     ],
+     "code": "def fits(n_in, n_out, L=128000):\n    return n_in + n_out <= L\nprint(fits(120000, 8000))   # True\nprint(fits(125000, 8000))   # False，需压缩或截断输入",
+     "sources": [
+      {
+       "title": "上下文窗口有多大？Context Engineering入门",
+       "url": "https://notes.kamacoder.com/llm/app/context_engineering.html"
+      }
+     ]
+    },
+    {
+     "id": "f-context-rope-interpolation",
+     "name": "位置插值的外推（Position Interpolation for RoPE）",
+     "category": "foundation",
+     "latex": "\\phi_{m,i}=\\frac{m}{s}\\,\\theta_{i},\\qquad \\theta_{i}=10000^{-2i/d}",
+     "symbols": [
+      [
+       "m",
+       "token 的位置索引"
+      ],
+      [
+       "i",
+       "维度对索引"
+      ],
+      [
+       "d",
+       "注意力头维度"
+      ],
+      [
+       "\\theta_{i}",
+       "旋转位置编码的基频"
+      ],
+      [
+       "s",
+       "外推缩放因子（新长度 / 训练长度）"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：RoPE 用位置 m 与基频 θ_i 的乘积作为旋转角度，位置越远角度越大。",
+      "第 2 步：训练时见过的最大位置有限，直接外推到更长位置会超出训练分布，效果骤降。",
+      "第 3 步：位置插值把位置除以缩放因子 s，把新长度整体『压』回训练区间。",
+      "第 4 步：压缩后角度变小、分辨率变粗，通常需要少量继续训练来恢复短上下文能力。"
+     ],
+     "analogy": "把只在 3 米内校准过刻度的皮尺等比例拉伸到 6 米用：刻度对得上，但每格精度变粗了。",
+     "pitfalls": [
+      "以为位置插值是零成本；通常需要继续微调才能恢复性能",
+      "把位置插值与 NTK / YaRN 等其它外推方案混为一谈",
+      "把『窗口 128K』当成所有位置都能同等有效利用"
+     ],
+     "code": "import torch\ndef scale_positions(pos, s):\n    # 位置插值：把位置除以缩放因子，压回训练区间\n    return pos / s\npos = torch.arange(0, 32768)\nprint(scale_positions(pos, s=4.0)[-1].item())  # 8191.0",
+     "sources": [
+      {
+       "title": "上下文窗口有多大？Context Engineering入门",
+       "url": "https://notes.kamacoder.com/llm/app/context_engineering.html"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "上下文窗口由输入与输出 token 共同占用",
+     "Context Engineering 与 Prompt Engineering 是不同概念",
+     "长上下文的典型问题包括信息稀释、Lost in the Middle、上下文污染",
+     "工程方案包括检索、筛选、排序、摘要压缩、滑动窗口",
+     "还包括外部记忆与工具结果清理"
+    ],
+    "uncertain": [
+     "位置插值公式与 KV Cache 显存公式属通用背景知识，本知识页摘要未给出具体公式，需与原文核对",
+     "摘要未给各手法的量化效果对比与推荐选型，实际取舍需实测",
+     "『输入输出共同占用窗口』的具体分配建议（预留多少给输出）摘要未给"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "把要给大模型看的内容挑好、排好、压好，这就是上下文工程。"
+     },
+     {
+      "level": "入门",
+      "text": "上下文窗口是模型一次能看的 token 上限，输入和输出共用这个预算。窗口大不等于用得都好：关键信息放中间容易被忽略，无关内容会稀释注意力。Context Engineering 就是靠检索、筛选、排序、压缩与清理，把有限窗口花在最有用的信息上。"
+     },
+     {
+      "level": "进阶",
+      "text": "它与 Prompt Engineering 的差别在于管的是『整个上下文』而非一句提示词：从外部检索候选片段、按相关性重排、超长时摘要压缩、多轮对话用滑动窗口或外部记忆、工具返回结果要清理后再放回。要解决的三类问题是信息稀释、Lost in the Middle 和上下文污染。"
+     },
+     {
+      "level": "专家",
+      "text": "工程上要同时权衡有效长度、KV Cache 显存与成本：KV 缓存随序列长度线性增长（2·b·s·n_layer·n_head·d_head·bytes），塞满窗口很贵。更长的可用长度还要靠位置编码外推——如位置插值把位置除以缩放因子 s 压回训练区间，通常需少量微调。所以它是检索、记忆、压缩与显存预算的联合优化，不是单纯堆长度。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "如果直接把所有相关资料都塞进窗口会怎样？",
+      "a": "信息稀释：无关内容摊薄注意力、淹没关键证据，还推高 KV 显存与延迟。"
+     },
+     {
+      "q": "既然窗口有 128K，为什么还要做检索？",
+      "a": "能放下不等于能用好：Lost in the Middle 让中部信息易被忽略，且长上下文显存与成本线性上涨。"
+     },
+     {
+      "q": "上下文污染是怎么来的？",
+      "a": "历史里保留的错误结论、失败的工具输出、过期的检索片段会一路带偏后续推理。"
+     }
+    ],
+    "mechanism": "之所以需要它，是因为注意力既不免费也不均匀：窗口越大，单条信息分到的注意力越少（稀释），模型对序列中部信息的利用又最差（Lost in the Middle）。所以必须主动裁剪——检索决定『读什么』、排序决定『先读什么』、压缩与滑动窗口决定『留多少』、记忆决定『跨轮记住什么』，把预算投向高价值信息，同时压低 KV 显存与推理成本。",
+    "boundary": "任务只需短上下文、信息高度自洽时，过度工程反而增加延迟与出错面；检索质量差时，噪声会直接污染上下文，比不检索更糟。摘要压缩会丢细节，对需要精确数值或代码的任务要谨慎。位置外推能延长可用长度，但超出训练分布后精度仍会下降，不能无脑加长。",
+    "analogyBoundary": "『行李箱』类比在容量固定这点上成立，但行李箱装再多东西也不会互相干扰，而上下文里的条目会彼此竞争注意力、还会互相污染；超长上下文下模型对中部内容的利用明显变差，这在行李箱类比里完全体现不出来。",
+    "misconceptions": [
+     "以为窗口越大越好；能放下不等于能用好，中部信息易被忽略。",
+     "把 Context Engineering 等同于 Prompt Engineering；前者管整个上下文与记忆。",
+     "以为塞满窗口零成本；KV 显存与延迟随长度线性增长。"
+    ],
+    "ownAnalysis": "把 Context Engineering 与 RAG、长上下文外推放在一起看，本质是同一约束下的三种解法：外扩窗口（位置外推）、精准取用（检索加重排）、主动遗忘（压缩、滑动窗口、记忆）（推断）。摘要特别强调『输入和输出共同占用窗口』，做 Agent 时要给输出留预算，否则容易被截断（推断）。可疑处：摘要未给各手法的效果对比，实际选型仍需实测；KV 显存与位置外推为通用背景，公式为教科书形式，需与原文核对。",
+    "officialNotes": [
+     {
+      "position": "上下文窗口由输入与输出 token 共同占用；Context Engineering 与 Prompt Engineering 不同，需应对信息稀释、Lost in the Middle、上下文污染，并给出检索、筛选、排序、摘要压缩、滑动窗口、外部记忆与工具结果清理等工程方案",
+      "source": "https://notes.kamacoder.com/llm/app/context_engineering.html"
+     }
+    ],
+    "interviewAnswer": "上下文窗口是模型一次能处理的 token 上限，输入和输出共用这个预算。窗口大不等于用得好：信息会稀释，模型对序列中部利用最差，也就是 Lost in the Middle，历史里的错误还会造成上下文污染。Context Engineering 是围绕整个上下文做工程：检索相关片段、按相关性重排、超长时摘要压缩、多轮用滑动窗口或外部记忆、工具结果清理后再放回。工程上还要权衡 KV Cache 显存和成本，必要时用位置编码外推延长可用长度。",
+    "studyPath": {
+     "prerequisites": [
+      "Transformer 注意力与位置编码",
+      "KV Cache",
+      "RAG 基本流程"
+     ],
+     "nextSteps": [
+      "实现一个带重排与压缩的上下文组装器",
+      "对比不同截断与摘要策略的效果",
+      "了解 RoPE 外推（位置插值、YaRN）"
+     ]
+    }
+   }
+  }
+ ],
+ "skipped": []
+}

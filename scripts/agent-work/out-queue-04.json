@@ -1,0 +1,1120 @@
+{
+ "batchId": "queue-04",
+ "entries": [
+  {
+   "id": "a526f15fe6c04b42",
+   "tldr": "RoboJEPA 在 12 种机器人本体数据上训练 JEPA 隐空间世界模型，发现想象误差随算力呈二阶幂律，可外推预测规划性能。",
+   "keyPoints": [
+    "基于 JEPA 的隐空间世界模型，训练数据覆盖 12 种机器人本体",
+    "想象误差（隐 rollout 误差）随算力呈二阶幂律，可外推预测模型质量",
+    "下游机器人规划性能随算力可预测提升，且与想象误差强相关",
+    "可零样本部署为机器人智能体，朝单张目标图做长时程规划",
+    "发布全部检查点与训练/部署代码，8B 为迄今最大 JEPA 预测器"
+   ],
+   "why": "把「算力→世界模型质量→规划性能」变成可预算的工程规律，是 world model 与具身方向面试的高价值谈资。",
+   "difficulty": "hard",
+   "tags": [
+    "worldmodel",
+    "jepa",
+    "scaling-law",
+    "robotics",
+    "latent-dynamics"
+   ],
+   "entities": [
+    "RoboJEPA",
+    "Joint Embedding Predictive Architecture",
+    "JEPA"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "RoboJEPA 训练与部署链路",
+    "caption": "同一隐空间里预测未来表征，想象误差可预测规划性能。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='RoboJEPA 四层流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>多本体数据</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>12 种机器人本体</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>JEPA 隐空间世界模型</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>8B 预测器</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>想象误差</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>隐 rollout 误差，二阶幂律</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>规划性能与部署</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>朝单张目标图零样本规划</text>\n</svg>",
+    "spec": {
+     "type": "flow",
+     "nodes": [
+      {
+       "label": "多本体数据",
+       "detail": "12 种本体、真实机器人数据"
+      },
+      {
+       "label": "JEPA 预测器",
+       "detail": "隐空间预测未来表征，8B"
+      },
+      {
+       "label": "想象误差",
+       "detail": "隐 rollout 误差，随算力二阶幂律"
+      },
+      {
+       "label": "规划/部署",
+       "detail": "目标图条件的长时程规划"
+      }
+     ],
+     "edges": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "大规模预训练"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "隐空间 rollout"
+      },
+      {
+       "from": 2,
+       "to": 3,
+       "label": "作为代理指标"
+      }
+     ]
+    },
+    "alt": "RoboJEPA 从多本体数据训练隐空间世界模型，用想象误差预测下游规划性能并零样本部署。"
+   },
+   "concepts": [
+    {
+     "name": "Latent World Model (JEPA)",
+     "readable": "不重建每个像素，而是在编码器给出的表征空间里预测下一时刻的表征；预测对了表征就抓住了对未来有用的状态信息。",
+     "analogy": "像下棋不复现棋盘照片，只记「局面特征向量」——够用就能推演下一步。",
+     "analogyBreaksDown": "棋局特征是人手设计且完全可观测；机器人表征是学出来的，有遮挡与硬件噪声时，表征空间里的「等价」可能掩盖对控制关键的细节。",
+     "mechanism": "预测损失只作用于隐表征、不监督像素重建，迫使模型丢弃与动作无关的外观细节，把容量集中到可预测的动力学上，从而在多本体间共享一个动力学先验。",
+     "visual": "横轴为时间步，纵轴为隐状态空间；实线是真实轨迹折线，虚线是模型 rollout，两条线随时间分叉，分叉幅度即想象误差。",
+     "prerequisites": [
+      "自监督学习（对比/预测式目标）",
+      "表征学习与 EMA/stop-gradient 技巧",
+      "强化学习中的模型预测控制"
+     ],
+     "selfTest": [
+      "JEPA 与像素重建式世界模型的核心差别是什么？",
+      "为什么在多本体数据上共享隐空间比共享动作空间更可行？",
+      "想象误差为什么可以替代真机评测？"
+     ],
+     "formula": "\\mathcal{L}_{\\mathrm{JEPA}} = \\lVert f_{\\theta}(z_t, a_t) - \\mathrm{sg}(z_{t+1}) \\rVert_2^2"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-imagination-error-scaling",
+     "name": "想象误差算力幂律（Imagination Error Compute Power Law）",
+     "category": "worldmodel",
+     "latex": "E(C) = A\\,C^{-\\alpha} + E_{\\infty}",
+     "symbols": [
+      [
+       "C",
+       "训练算力（FLOPs）"
+      ],
+      [
+       "E(C)",
+       "该算力下的想象误差（隐 rollout 误差）"
+      ],
+      [
+       "A",
+       "比例系数"
+      ],
+      [
+       "\\alpha",
+       "幂律指数（拟合得到的下降斜率）"
+      ],
+      [
+       "E_{\\infty}",
+       "不可约误差下界"
+      ]
+     ],
+     "derivation": [
+      "动机：想用有限算力实验预测更大规模世界模型的质量，避免每次都训到最大。",
+      "假设误差随算力按幂律衰减，并存在一个不随规模下降的下界 E_inf。",
+      "两边减去下界后取对数：log(E - E_inf) 对 log C 近似直线，斜率即 -alpha。",
+      "原文称其为二阶（second-order）幂律；若单幂律在低算力区偏离，需再加一项修正。"
+     ],
+     "analogy": "像用几十公里的油耗外推整车续航：先量几段斜率，再预测长途表现，但前提是路况没变、发动机没换。",
+     "pitfalls": [
+      "幂律只在拟合区间内可信，外推越远越不可靠",
+      "算力必须统一定义（训练 FLOPs vs 参数量×步数），否则曲线不可比",
+      "不同论文的「想象误差」指标不同，不能直接横向比数值"
+     ],
+     "code": "import numpy as np\nC = np.array([1e18,3e18,1e19,3e19,1e20])\nE = 0.9*np.power(C,-0.35)+0.05\nb, logA = np.polyfit(np.log(C), np.log(E-0.05), 1)  # slope = -alpha\nalpha, A = -b, np.exp(logA)\nC_next = 1e21; print(A*np.power(C_next,-alpha)+0.05)",
+     "sources": [
+      {
+       "title": "RoboJEPA: Scaling Robotic Latent World Models",
+       "url": "https://arxiv.org/abs/2610.10515v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "RoboJEPA 基于 JEPA 架构，训练数据覆盖 12 种机器人本体",
+     "想象误差随算力呈二阶幂律，可用于外推预测模型质量",
+     "下游规划性能随算力可预测提升，且与想象误差强相关",
+     "可零样本部署为机器人智能体，朝单张目标图做长时程规划",
+     "8B 参数，作者称是迄今最大的 JEPA 预测器"
+    ],
+    "uncertain": [
+     "公式为按摘要中 second-order power law 重建的通用形式，需核对原文系数、指数与是否含二阶项",
+     "摘要未给出具体算力区间、误差数值与相关性系数，待核实",
+     "幂律中的 compute 是否指训练 FLOPs，摘要未明说，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "把机器人世界模型做大，误差会按可预测的规律下降。"
+     },
+     {
+      "level": "入门",
+      "text": "世界模型学会在隐空间里想象未来；RoboJEPA 用 12 种机器人的真实数据训练，发现想象误差随算力按幂律下降，而且这个误差能预测真机规划表现好不好。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键设计是 JEPA：只在隐表征上做预测，不重建像素，从而跨本体共享动力学；再用「想象误差 vs 算力」的幂律外推模型质量，把昂贵真机评测替换成离线代理指标，并证明模型可零样本朝目标图规划。"
+     },
+     {
+      "level": "专家",
+      "text": "相比像素重建世界模型与行为克隆，它把「表征可预测性」当成规模化抓手：容量花在动力学而非外观上。边界是幂律只在拟合区间外推可信、跨本体共享隐空间可能抹掉控制关键细节，且想象误差与真机性能是相关而非因果。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么要预测隐表征而不是重建像素？",
+      "a": "像素里大量信息与动作无关，重建会浪费容量；预测表征迫使模型聚焦动力学，也更易跨本体共享。"
+     },
+     {
+      "q": "为什么不直接训练最大模型？",
+      "a": "训练与真机评测都昂贵；幂律让你用中等规模实验外推大模型质量，提前判断投入是否值得。"
+     },
+     {
+      "q": "想象误差凭什么当代理指标？",
+      "a": "摘要说它与下游规划性能强相关，故可离线替代真机评测，但这是经验相关而非因果。"
+     }
+    ],
+    "mechanism": "真机数据贵、评测更贵：只有把预测放进隐空间，12 种本体的异构观测才能共享同一动力学先验，把数据规模转化为模型规模；只有找到与真机性能强相关的离线误差，规模化收益才可被测量而不必反复上真机。",
+    "boundary": "幂律仅在拟合算力区间内可靠，外推过远会失真；观测差异极大时跨本体共享隐空间可能失效；域偏移或评测协议变化后，想象误差与真机性能的代理关系可能不再成立。",
+    "analogyBoundary": "「用油耗外推续航」失效在于：车况是固定物理规律，而世界模型误差还随数据分布、本体差异与评测指标变化，斜率本身会漂移。",
+    "misconceptions": [
+     "把 JEPA 说成「VAE 式重建损失」——它不重建输入，只在隐空间预测",
+     "认为想象误差低就一定真机成功率高；摘要只说强相关",
+     "把 scaling law 当保证，忽略它只在拟合区间外推有效"
+    ],
+    "ownAnalysis": "把隐空间预测与 scaling law 结合，本质是把「表征质量」变成可测量的规模函数（推断）。幂律拟合对指标定义与算力口径高度敏感，若各本体数据量不均，混合曲线斜率可能被数据最多的本体主导（推断），部署前应按本体分组验证。",
+    "officialNotes": [
+     {
+      "position": "作者称这是首个为多本体机器人世界模型建立 scaling law 的工作，且 RoboJEPA（8B）是迄今最大的 JEPA 预测器",
+      "source": "arxiv https://arxiv.org/abs/2610.10515v1"
+     }
+    ],
+    "interviewAnswer": "RoboJEPA 是 JEPA 架构的机器人隐空间世界模型，用 12 种本体数据训练。最值得学的两点：一是预测放在隐空间，不重建像素，省容量且方便跨本体共享动力学；二是想象误差随算力呈二阶幂律，并与下游规划性能强相关，因此能外推大模型质量、用离线误差替代真机评测。8B 是迄今最大的 JEPA 预测器，还能零样本朝目标图做长时程规划。",
+    "studyPath": {
+     "prerequisites": [
+      "JEPA / 自监督表征学习",
+      "模型预测控制基础",
+      "scaling law 拟合与对数坐标阅读"
+     ],
+     "nextSteps": [
+      "读原文的幂律拟合细节与算力口径",
+      "复现隐空间 rollout 误差曲线",
+      "对比 DreamerV3、V-JEPA 等世界模型"
+     ]
+    }
+   }
+  },
+  {
+   "id": "d9d89b09e299af71",
+   "tldr": "OmniCapBench 把音视频字幕评测从整段打分改成「原子可验证单元」集合预测，用确定性约束+局部 LLM 语义对比做深度结构化诊断。",
+   "keyPoints": [
+    "音频-视觉字幕是诊断 MLLM 能力上限的理想任务",
+    "现有基准存在耦合权衡：整段打分有覆盖无定位，局部探针反过来",
+    "无约束 LLM 评判会引入不稳定打分",
+    "预测目标改为三条赛道的原子可验证单元：实体引用、视觉镜头、音频事件",
+    "786 个密集标注视频，可定位时序、身份漂移、跨模态错配与幻觉"
+   ],
+   "why": "评测即方向：能设计细粒度诊断基准，意味着你看得懂 MLLM 的真实失效模式，这是多模态岗面试常问的「你怎么评估」的硬答案。",
+   "difficulty": "medium",
+   "tags": [
+    "multimodal",
+    "benchmark",
+    "captioning",
+    "audio-visual",
+    "evaluation"
+   ],
+   "entities": [
+    "OmniCapBench",
+    "Omni-Video Caption Benchmark",
+    "MLLM"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "OmniCapBench 结构化评测",
+    "caption": "把整段字幕拆成原子单元，确定性检查定位、LLM 只做局部语义比对。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='OmniCapBench 四层流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>786 段密集标注视频</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>音视频输入</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>三赛道原子单元</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>实体/镜头/音频事件</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>确定性约束检查</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>可验证、可定位</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>局部 LLM 语义比对</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>只在单元内评分，稳定</text>\n</svg>",
+    "spec": {
+     "type": "flow",
+     "nodes": [
+      {
+       "label": "视频输入",
+       "detail": "786 段密集标注音视频"
+      },
+      {
+       "label": "原子单元",
+       "detail": "实体引用/视觉镜头/音频事件"
+      },
+      {
+       "label": "约束检查",
+       "detail": "确定性、可定位"
+      },
+      {
+       "label": "局部语义比对",
+       "detail": "LLM 只在单元内判分"
+      }
+     ],
+     "edges": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "拆解为可验证单元"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "硬约束"
+      },
+      {
+       "from": 1,
+       "to": 3,
+       "label": "软语义"
+      }
+     ]
+    },
+    "alt": "OmniCapBench 将音视频字幕评测拆为三赛道原子单元，用确定性检查和局部 LLM 比对给出结构化诊断。"
+   },
+   "concepts": [
+    {
+     "name": "Atomic Verifiable Evaluation Units",
+     "readable": "不评「整段字幕好不好」，而是先把字幕拆成一条条能单独判定真假的原子陈述，再分别核对每条是否被预测命中、是否落在正确时间段。",
+     "analogy": "像批改作文改为批改句子：过去只能给整篇一个总分，现在逐句打勾，还能指出「第三句把主讲人说成路人」这种具体错误。",
+     "analogyBreaksDown": "句子对错的语感判断依赖人类读者；这里的原子单元能否被自动判定，取决于标注是否足够密集、单元是否真的有确定真假，含糊的描述性表述仍会退化成主观判断。",
+     "mechanism": "把自由文本预测转成集合预测，使每个单元都能被确定性约束检查（如时间区间、实体是否出现）覆盖式核对，同时把 LLM 判分限制在单个单元内做语义比对，降低全局评判的不稳定性。",
+     "visual": "画一条视频时间轴，轴上分布若干短色块代表三赛道单元；预测被命中且时间对齐的块涂实心，时间错了的块标虚线边框，完全没提到的块留空心，一眼看出错误类型分布。",
+     "prerequisites": [
+      "多模态大模型基本评测范式",
+      "视频时序定位（temporal grounding）指标",
+      "LLM-as-a-judge 的偏差来源"
+     ],
+     "selfTest": [
+      "整段打分与局部探针各自的缺陷是什么？",
+      "为什么把 LLM 评判限制在原子单元内会更稳定？",
+      "三条赛道分别覆盖哪类错误？"
+     ],
+     "formula": "S = \\frac{1}{|U|}\\sum_{u \\in U} c(u)\\, s(u)"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-structured-caption-score",
+     "name": "结构化字幕得分（Deep-Structured Caption Score）",
+     "category": "multimodal",
+     "latex": "S = \\frac{1}{|U|}\\sum_{u \\in U} c(u)\\, s(u), \\quad c(u) \\in \\{0,1\\},\\; s(u) \\in [0,1]",
+     "symbols": [
+      [
+       "U",
+       "该视频的原子可验证评测单元集合"
+      ],
+      [
+       "u",
+       "单个原子单元（一个实体引用/镜头/音频事件）"
+      ],
+      [
+       "c(u)",
+       "确定性约束检查结果，取 0 或 1"
+      ],
+      [
+       "s(u)",
+       "该单元内的局部 LLM 语义相似度得分"
+      ],
+      [
+       "S",
+       "视频级综合得分"
+      ]
+     ],
+     "derivation": [
+      "动机：整段打分缺定位、局部探针缺覆盖，需要同时保留两者的优点。",
+      "把预测从自由文本改写为单元集合，使评测可以按单元对齐。",
+      "对每个单元先用确定性约束（出现、时间、属性）做硬判定 c(u)。",
+      "再对被命中的单元用受限 LLM 做局部语义比对得到 s(u)，最后对单元取平均得 S。"
+     ],
+     "analogy": "像单位考核：先看关键指标是否达标（硬性、只能打勾/叉），达标后再由主管评价完成质量（软性 0~1），最后按指标平均得出总分。",
+     "pitfalls": [
+      "把 c(u) 与 s(u) 混成一次 LLM 打分，就丢掉了确定性与可定位",
+      "单元集合大小不同时直接比 S，会偏向单元少的样本",
+      "把 S 当唯一结论，忽略错误类型分解（身份漂移 vs 时序错）"
+     ],
+     "code": "def score(units):\n    # units: list of (constraint_pass_bool, semantic_score_0_1)\n    if not units:\n        return 0.0\n    total = sum(float(c) * s for c, s in units)\n    return total / len(units)\nprint(score([(1,0.9),(1,0.4),(0,1.0)]))  # -> 0.4333",
+     "sources": [
+      {
+       "title": "OmniCapBench: A Deep-Structured Evaluation Framework for Fine-Grained Audio-Visual Captioning",
+       "url": "https://huggingface.co/papers/2610.12458"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "OmniCapBench 把音视频字幕评测重构为深度结构化诊断框架",
+     "预测目标从自由文本改为三类原子可验证单元：实体引用、视觉镜头、音频事件",
+     "评测方法含确定性约束检查与局部 LLM 语义比对",
+     "数据集含 786 个密集标注视频",
+     "可区分时序定位失败、身份漂移、跨模态错配与幻觉，前沿 MLLM 局部感知强、长时程音视频推理弱"
+    ],
+    "uncertain": [
+     "公式为按摘要中 deterministic constraint checks + localized LLM-based semantic comparisons 重建的通用形式，需核对原文具体打分公式",
+     "三条赛道的单元数量、评测协议与指标名称摘要未细述，待核实",
+     "摘要未给出具体 MLLM 的分数与排名，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "不评整段字幕，而是逐条原子事实核对，还告诉你是哪类错。"
+     },
+     {
+      "level": "入门",
+      "text": "现行音视频字幕基准两头不讨好：整段打分覆盖面广但说不清错在哪，局部探针能定位但覆盖不全，自由 LLM 评委又忽高忽低。OmniCapBench 把字幕拆成一批能单独判对错的原子单元，再用硬约束加局部语义比对来打分。"
+     },
+     {
+      "level": "进阶",
+      "text": "核心是把生成任务重写成集合预测：三条赛道分别管实体、镜头、音频事件，每个单元先过确定性约束，再在该单元内做受限 LLM 语义比对，既保留定位能力又保留覆盖度，于是能把错误归因到身份漂移、时序失败、跨模态错配或幻觉。"
+     },
+     {
+      "level": "专家",
+      "text": "它的方法论价值在于把评测的稳定性问题转化为结构问题：限制 LLM 的作用域比调 judge prompt 更有效。代价是原子单元的完备性与可判定性依赖密集标注，且单元粒度一变分数不可直接比较；对超长视频，单元数爆炸也会带来聚合口径的偏差，需要在设计赛道时权衡粒度。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么无约束的 LLM 评委不稳定？",
+      "a": "整段文本的评判需要模型同时权衡覆盖与正确性，判据随上下文漂移，同一回答换个 prompt 分数就变；限制到单个单元后判据单一，方差显著下降。"
+     },
+     {
+      "q": "既然要定位，为什么不用纯局部探针？",
+      "a": "局部探针只问几个预设问题，覆盖不到模型乱说或漏说的地方，会高估能力；原子单元集合能覆盖整段内容。"
+     },
+     {
+      "q": "为什么用确定性约束而不是全交给 LLM？",
+      "a": "时间区间、实体是否出现这类可硬判定的东西交给规则更可靠、可复现，把 LLM 留给真正需要语义判断的部分。"
+     }
+    ],
+    "mechanism": "必须这样做，是因为「整段打分」把覆盖与定位两个诉求耦合在一个分数里，任何单一指标都只能满足一头；把预测改成单元集合后，评测可以按单元分解，确定性检查负责可复现的硬事实，LLM 只在局部承担语义判断，从而同时获得覆盖度、定位精度和打分稳定性。",
+    "boundary": "当视频很长、描述性内容占比高、或原子单元本身真假难判定时，方法退化为主观打分；单元粒度改变会使分数不可跨版本比较；标注不够密集时覆盖率会被高估。",
+    "analogyBoundary": "「改作文为批改句子」的类比失效在于：句子对错靠人类语感，而原子单元的对错要靠可执行规则，规则写不出来的模糊表述在系统里无法被公平判定。",
+    "misconceptions": [
+     "以为它只是又一个字幕数据集，忽略「评测框架」这层设计",
+     "把 LLM 语义比对当成主分，其实确定性约束才是可复现的骨架",
+     "认为分数高就代表长时程推理强；摘要指出前沿模型恰恰在长时程上弱"
+    ],
+    "ownAnalysis": "这个思路与「把评测拆成可验证子问题」的潮流一致，比如把开放问答转成可核验的断言集合（推断）。可疑之处在于，论文说分数能区分四类错误，但若一个单元同时包含多种错误，归因会不唯一；另外 786 段的规模对细分赛道偏小，统计显著性需要看原文的置信区间（待核实）。",
+    "officialNotes": [
+     {
+      "position": "作者称现有基准存在「覆盖无定位 / 定位无覆盖 / LLM 评判不稳定」的耦合权衡，并称 OmniCapBench 能区分时序、身份、跨模态与幻觉四类感知错误",
+      "source": "hf_papers https://huggingface.co/papers/2610.12458"
+     }
+    ],
+    "interviewAnswer": "我会从这个基准学到的是评测设计：音视频字幕的难点是覆盖与定位不可兼得。OmniCapBench 把预测目标从自由文本改成实体、镜头、音频事件三类原子单元，每个单元先过确定性约束再局部做 LLM 语义比对，这样既有覆盖又有定位，还能把错误归因到身份漂移、时序失败或跨模态错配。它的结论也很实用：当前前沿 MLLM 局部感知不错，但长时程音视频推理明显偏弱。",
+    "studyPath": {
+     "prerequisites": [
+      "MLLM 评测基本范式",
+      "视频时序定位指标",
+      "LLM-as-a-judge 的偏差来源"
+     ],
+     "nextSteps": [
+      "对照 OmniCapBench 三赛道设计自己的评测集",
+      "复现确定性约束检查脚本",
+      "研究长时程音视频推理的改进方法"
+     ]
+    }
+   }
+  },
+  {
+   "id": "6ac8dd7e823188cc",
+   "tldr": "MultiFly 发布 RGB/热成像/LiDAR/雷达四模态低空 UAV 语义感知数据集，只用 115 张人工 RGB 标注经共享几何表示把标签传播到全部模态。",
+   "keyPoints": [
+    "17,272 个同步样本、四个郊区场景、15 类逐帧标注",
+    "附带标定与 GNSS-RTK/IMU 测量",
+    "仅 115 张人工 RGB 标注，经共享几何表示传播到四模态",
+    "传播生成 17,157 RGB、17,272 热成像、840M LiDAR 点、3.4M 雷达点标签",
+    "传播标注与留出人工标注平均一致率 89.93%，六模态对平均语义一致性 90.94%"
+   ],
+   "why": "多模态数据工程是实习岗的高频实操题：它示范了「少量人工标注 + 几何对齐」如何把标注成本摊薄到四个模态，可直接迁移到自家的多模态数据集搭建。",
+   "difficulty": "medium",
+   "tags": [
+    "multimodal",
+    "dataset",
+    "uav",
+    "label-transfer",
+    "semantic-segmentation"
+   ],
+   "entities": [
+    "MultiFly",
+    "GNSS-RTK",
+    "IMU",
+    "LiDAR",
+    "radar",
+    "thermal"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "MultiFly 标签传播管线",
+    "caption": "少量人工 RGB 标注经共享几何表示，摊薄到四个模态。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='MultiFly 四层标签传播流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>115 张人工 RGB 标注</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>唯一的人工成本</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>共享几何表示</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>标定 + RTK/IMU 对齐</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>四模态标签传播</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>RGB/热成像/LiDAR/雷达</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>分割基准评测</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>稠密 LiDAR 与稀疏雷达不同</text>\n</svg>",
+    "spec": {
+     "type": "flow",
+     "nodes": [
+      {
+       "label": "人工标注",
+       "detail": "115 张 RGB"
+      },
+      {
+       "label": "共享几何表示",
+       "detail": "标定 + GNSS-RTK/IMU"
+      },
+      {
+       "label": "四模态传播",
+       "detail": "RGB/热/LiDAR/雷达"
+      },
+      {
+       "label": "分割基准",
+       "detail": "四模态语义分割"
+      }
+     ],
+     "edges": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "投影到几何空间"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "标签传播"
+      },
+      {
+       "from": 2,
+       "to": 3,
+       "label": "训练与评测"
+      }
+     ]
+    },
+    "alt": "MultiFly 用 115 张人工 RGB 标注经几何对齐传播到 RGB、热成像、LiDAR、雷达四模态，并建立分割基准。"
+   },
+   "concepts": [
+    {
+     "name": "Annotation Transfer via Shared Geometry",
+     "readable": "只在一小部分 RGB 图上人工打标签，然后借助相机标定和位姿测量，把标签按几何关系投影到其他模态和同一场景的其他帧上，从而几乎零额外人工地得到全模态标签。",
+     "analogy": "像只给一张底图描好色块，再用地图的经纬网格把同样的色块套到卫星图、地形图和雷达图上——前提是各图层对齐准确。",
+     "analogyBreaksDown": "地图图层是理想对齐的；真实多模态传感器之间有时间同步误差、外参标定漂移和视差，几何对齐正确但语义可能不成立（例如热成像里被遮挡的人、雷达里的多径回波）。",
+     "mechanism": "把标注问题从「每个模态各自标注」转成「一个共享几何空间里的统一标注」，再用标定与 RTK/IMU 位姿完成跨模态、跨帧投影，使标注成本与模态数量解耦；随后用一致率与跨模态一致性量化传播质量。",
+     "visual": "左半画一张俯视场景地图，上面叠加 RGB 视锥、热成像视锥、LiDAR 点云与雷达波束的覆盖范围；右半画四个色块网格代表同一区域在四模态下的标签，用同一套颜色编码，色块错位处标红表示不一致。",
+     "prerequisites": [
+      "相机标定与内外参",
+      "多传感器时间同步",
+      "语义分割基本指标"
+     ],
+     "selfTest": [
+      "为什么只标 115 张 RGB 就能得到四模态标签？",
+      "跨模态标签传播会在什么情况下语义失效？",
+      "一致率与语义一致性这两个指标分别衡量什么？"
+     ],
+     "formula": "A = \\frac{1}{N}\\sum_{i=1}^{N} \\mathbf{1}\\!\\left[\\, T_{m' \\leftarrow m}\\!\\left(l^{(m)}_i\\right) = l^{(m')}_i \\,\\right]"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-label-transfer-agreement",
+     "name": "跨模态标签传播一致率（Label Transfer Agreement）",
+     "category": "multimodal",
+     "latex": "A = \\frac{1}{N}\\sum_{i=1}^{N} \\mathbf{1}\\!\\left[\\, T_{m' \\leftarrow m}\\!\\left(l^{(m)}_i\\right) = l^{(m')}_i \\,\\right]",
+     "symbols": [
+      [
+       "N",
+       "参与统计的像素/点数量"
+      ],
+      [
+       "l^{(m)}_i",
+       "模态 m 下第 i 个点的标签"
+      ],
+      [
+       "T_{m' \\leftarrow m}",
+       "由几何对齐导出的模态 m 到 m' 的标签映射"
+      ],
+      [
+       "\\mathbf{1}[\\cdot]",
+       "指示函数，条件成立取 1"
+      ],
+      [
+       "A",
+       "平均一致率"
+      ]
+     ],
+     "derivation": [
+      "动机：标签传播要可信，必须能量化「传过去的标签对不对」。",
+      "做法：从模态 m 的标签出发，用标定得到的几何映射 T 投到模态 m'。",
+      "与 m' 上留出的人工标注逐点比对，逐点判定是否相同。",
+      "对所有点取平均得一致率 A；对六组模态对分别求值即得 90.94% 的跨模态一致性口径。"
+     ],
+     "analogy": "像把一张描好的透明膜按定位孔叠到另一张图上，逐格看颜色是否吻合，吻合格子占比就是一致率。",
+     "pitfalls": [
+      "把一致率当成最终分割精度，它只衡量标签质量不衡量模型能力",
+      "逐点统计会掩盖小目标类的错误，类别不均衡时需按类加权",
+      "时间同步或外参误差会让一致率系统性偏低，需先排除对齐问题"
+     ],
+     "code": "import numpy as np\ndef agreement(transferred, manual):\n    # 两张同尺寸标签图\n    ok = (transferred == manual)\n    return ok.mean()\nprint(agreement(np.array([1,2,3,4]), np.array([1,2,0,4])))  # 0.75",
+     "sources": [
+      {
+       "title": "MultiFly: A Real-World Multimodal Aerial Dataset with Annotation-Efficient Label Transfer and Cross-Modal Semantic Consistency",
+       "url": "https://arxiv.org/abs/2610.10359v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "MultiFly 是覆盖 RGB、热成像、LiDAR、雷达四模态的真实低空 UAV 数据集",
+     "17,272 个同步样本来自四个郊区场景，15 类逐帧标注，含标定与 GNSS-RTK/IMU",
+     "只用 115 张人工 RGB 标注做标签传播",
+     "生成 17,157 张额外 RGB、17,272 张热成像、840M LiDAR 点、3.4M 雷达点的标签",
+     "传播标注与留出人工标注平均一致率 89.93%，六模态对平均语义一致性 90.94%",
+     "建立四模态语义分割基准，稠密 LiDAR 与稀疏雷达表现不同"
+    ],
+    "uncertain": [
+     "公式为按摘要中 label transfer 与 cross-modal semantic consistency 重建的通用形式，需核对原文指标定义",
+     "摘要未说明传播用的具体几何模型（单应/深度投影）与一致率的类别加权方式，待核实",
+     "六个模态对的具体组合与数值细分未给出，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "只标 115 张图，就能给四个传感器模态都打上标签。"
+     },
+     {
+      "level": "入门",
+      "text": "多模态数据集的瓶颈是标注：每种传感器都单独标既贵又容易不一致。MultiFly 在小部分 RGB 上人工标注，再借助标定与位姿把标签按几何关系投影到热成像、LiDAR 和雷达上，并验证传播标签与人工标注的一致率。"
+     },
+     {
+      "level": "进阶",
+      "text": "设计的精髓是把标注成本与模态数量解耦：建立共享几何表示后，一份标注就能覆盖所有模态和所有帧。它还用一致率与跨模态语义一致性两个指标为传播质量背书，最后给出四模态分割基准，展示稠密 LiDAR 与稀疏雷达需要不同架构。"
+     },
+     {
+      "level": "专家",
+      "text": "对做多模态数据的人来说，这条最值得学的是「先验证标注质量再谈模型」的方法论：89.93% 一致率给出了传播的可信上界，意味着后续模型误差里有一部分来自标签噪声而非架构。局限在于几何对齐正确不代表语义正确，遮挡、跨模态外观差异与类不均衡都会让某些类的一致率显著低于平均值，需要按类复核。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不在每个模态上分别标注？",
+      "a": "成本高且标注标准不统一，同一个物体在不同模态下会得到不同边界，反而破坏跨模态一致性；共享几何标注天然对齐。"
+     },
+     {
+      "q": "几何对齐对了，标签就一定对吗？",
+      "a": "不一定。对齐只保证位置对应，语义可能不同，例如热成像里人的热签名范围、雷达里的多径都会让同一位置的正确标签发生偏移。"
+     },
+     {
+      "q": "为什么稠密 LiDAR 与稀疏雷达不能用同一套架构？",
+      "a": "点云密度差两个数量级，稀疏雷达需要更强的先验或更激进的邻域聚合，稠密 LiDAR 则更依赖局部几何细节。"
+     }
+    ],
+    "mechanism": "必须用共享几何表示，是因为多模态标注的真正瓶颈不在算法而在人时；只有把所有模态放到同一几何参照系里，一份人工标注才能被复用多次，从而让数据集规模与标注量脱钩。一致率指标的存在则是为了让这种复用可被审计，而不是靠信任。",
+    "boundary": "当传感器外参标定不准、时间同步误差大、或场景中存在模态特有现象（玻璃对 LiDAR、多径对雷达、热交叉）时，传播标签会系统性出错；类不均衡时平均值会掩盖小类的高错误率。",
+    "analogyBoundary": "「描色块套多图层」的类比在传感器语义层面失效：不同图层能看到的物理量不同，一个在 RGB 里是「树」的像素，在雷达里可能根本没有有效回波，色块无处可套。",
+    "misconceptions": [
+     "把 89.93% 一致率当成模型精度；它衡量的是标注质量",
+     "以为四个模态可以共享同一分割网络；摘要明确说稠密与稀疏模态行为不同",
+     "忽略 GNSS-RTK/IMU 与标定的作用，以为只是把图像和点云简单拼接"
+    ],
+    "ownAnalysis": "这类「一次标注、多模态复用」的路线在自动驾驶数据集里也有对应做法（推断）。值得警惕的是 115 张标注图覆盖的场景多样性：若这 115 张集中在少数场景，传播到四场景四模态时会放大分布偏差，一致率的置信区间需要按场景拆分看（待核实）。另外 840M LiDAR 点与 3.4M 雷达点的量级差异，提示雷达分支可能更适合用稀疏卷积而非点卷积（推断）。",
+    "officialNotes": [
+     {
+      "position": "作者称这是首个公开的、为 RGB、热成像、LiDAR、雷达提供一致逐帧语义标注的真实低空航空基准",
+      "source": "arxiv https://arxiv.org/abs/2610.10359v1"
+     }
+    ],
+    "interviewAnswer": "MultiFly 解决的是多模态数据集的标注成本问题：它用 115 张人工标注 RGB，通过标定和 GNSS-RTK/IMU 建立的共享几何表示，把标签传播到热成像、LiDAR、雷达，最终得到 1.7 万多个同步样本、15 类逐帧标注，而且传播标签与留出人工标注的一致率有 89.93%，六模态对语义一致性 90.94%。我觉得它最实用的是「先用一致率给标签质量背书，再建立四模态分割基准」这个流程，以及发现稠密 LiDAR 与稀疏雷达需要不同架构。",
+    "studyPath": {
+     "prerequisites": [
+      "相机标定与外参",
+      "多传感器时间同步",
+      "语义分割与 mIoU"
+     ],
+     "nextSteps": [
+      "复现几何标签传播流程",
+      "按类与按场景拆分一致率做误差分析",
+      "对比稠密/稀疏点云的骨干网络"
+     ]
+    }
+   }
+  },
+  {
+   "id": "864aa5f7df07768d",
+   "tldr": "EmbodiedRSI 用快慢双系统 + 假设图把机器人试验变成代码与技能的共同进化，按价值信息选实验，RoboCasa365 达 77.0% 成功率。",
+   "keyPoints": [
+    "机器人基础模型在物体位置或任务指令变化时会退化，重训数据昂贵",
+    "现有自演化 harness 在决定改哪段代码/技能时浪费机器人试验",
+    "快慢双系统架构，竞争的代码与技能假设存在假设图里",
+    "价值信息实验选择挑能区分假设的物理实验，结果驱动代码-技能共演化",
+    "RoboCasa365 77.0% 总成功、71.3% Composite-Unseen（最佳基线 40.1%），真机零样本 71.3%"
+   ],
+   "why": "把「主动实验设计」引入具身智能体自进化，是 agent + world model 交叉的前沿范式，面试里能讲清「试验怎么花在刀刃上」很加分。",
+   "difficulty": "hard",
+   "tags": [
+    "agent",
+    "embodied-ai",
+    "self-evolving",
+    "worldmodel",
+    "robot-learning"
+   ],
+   "entities": [
+    "EmbodiedRSI",
+    "Hypothesis Graph",
+    "Value-of-Information Experiment Selection",
+    "Code-Skill Co-Evolution",
+    "RoboCasa365",
+    "LIBERO-Pro"
+   ],
+   "diagram": {
+    "kind": "architecture",
+    "title": "EmbodiedRSI 快慢双系统",
+    "caption": "慢系统建记忆，快系统选实验，结果反哺代码与技能。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='EmbodiedRSI 快慢双系统架构'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>假设图</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>竞争的代码/技能假设</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>价值信息实验选择</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>挑最能区分假设的物理实验</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>代码-技能共演化</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>用实验结果改代码与技能</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>分层记忆</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>按价值挑选有效记忆</text>\n</svg>",
+    "spec": {
+     "type": "architecture",
+     "nodes": [
+      {
+       "label": "假设图",
+       "detail": "竞争的代码与技能假设"
+      },
+      {
+       "label": "VoI 实验选择",
+       "detail": "挑能区分假设的物理实验"
+      },
+      {
+       "label": "代码-技能共演化",
+       "detail": "实验结果改写代码与技能"
+      },
+      {
+       "label": "分层记忆",
+       "detail": "按对快系统的价值筛选"
+      }
+     ],
+     "edges": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "生成候选实验"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "物理试验结果"
+      },
+      {
+       "from": 2,
+       "to": 3,
+       "label": "慢系统沉淀"
+      },
+      {
+       "from": 3,
+       "to": 0,
+       "label": "记忆回灌"
+      }
+     ]
+    },
+    "alt": "EmbodiedRSI 的假设图产生候选实验，按价值信息选出物理试验，结果驱动代码与技能共演化并沉淀为分层记忆。"
+   },
+   "concepts": [
+    {
+     "name": "Value-of-Information Experiment Selection",
+     "readable": "机器人每次试一次都要花时间，所以不随便试，而是先评估「做这个实验能多大程度上分辨出我手上哪套假设是对的」，挑最能消除不确定性的那个去做。",
+     "analogy": "像医生开检查：不会把所有项目都做一遍，而是先做那个「无论阴性阳性都能大幅缩小诊断范围」的检查，其余留到必要时再查。",
+     "analogyBreaksDown": "医学检查的结果分布相对稳定、可量化；机器人实验的噪声来自硬件磨损、光照、物体初始状态，单次试验的区分度很低，需要多次重复才能得到可靠信号，这会削弱单次信息增益的估计。",
+     "mechanism": "把「探索该做什么」形式化为对假设空间不确定性的减少量，用互信息/熵减作为打分，从而把有限的真机试验预算优先分配给那些能把候选假设劈成两半的实验，避免在区分度低的实验上浪费样本。",
+     "visual": "画一张二维散点图：横轴是每个候选实验的预期信息增益，纵轴是执行成本，理想区域在左上；每个点用圆圈大小表示该假设当前的置信度，点越靠左上越优先被选中。",
+     "prerequisites": [
+      "强化学习中的探索与信息增益",
+      "贝叶斯实验设计基础",
+      "机器人任务成功率评测协议"
+     ],
+     "selfTest": [
+      "为什么不能简单地「把成功率最低的技能先修」？",
+      "信息增益高的实验为什么往往成本也高？",
+      "在全失败或全成功的组里，VoI 会发生什么？"
+     ],
+     "formula": "\\mathrm{VoI}(e) = H(\\theta) - \\mathbb{E}_{o \\sim p(o \\mid e)}\\!\\left[ H(\\theta \\mid o, e) \\right]"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-value-of-information",
+     "name": "实验价值信息（Value of Information）",
+     "category": "agent",
+     "latex": "\\mathrm{VoI}(e) = H(\\theta) - \\mathbb{E}_{o \\sim p(o \\mid e)}\\!\\left[ H(\\theta \\mid o, e) \\right]",
+     "symbols": [
+      [
+       "e",
+       "候选物理实验（一组代码/技能的尝试）"
+      ],
+      [
+       "\\theta",
+       "假设图里的代码与技能假设集合"
+      ],
+      [
+       "H(\\theta)",
+       "当前假设分布的先验熵"
+      ],
+      [
+       "o",
+       "实验 e 得到的观测/结果"
+      ],
+      [
+       "H(\\theta \\mid o, e)",
+       "观测后的后验熵"
+      ],
+      [
+       "\\mathrm{VoI}(e)",
+       "该实验预期能消除的不确定性"
+      ]
+     ],
+     "derivation": [
+      "动机：真机试验预算有限，要挑最能推进判断的实验。",
+      "先验不确定性用假设分布熵 H(theta) 度量。",
+      "假设实验 e 会产生观测 o，观测后按贝叶斯更新得到后验熵。",
+      "对可能的观测取期望，与先验熵之差即为预期信息增益，排序后选最大者执行。"
+     ],
+     "analogy": "像二十问游戏：每次都问那个能把可能性一刀切开的问题，而不是随便猜一个答案去验证。",
+     "pitfalls": [
+      "把成功率提升直接当 VoI，忽略它可能与区分假设无关",
+      "忽略执行成本，导致总选最贵但增益略高的实验",
+      "只用单次试验估增益，真机噪声会放大方差"
+     ],
+     "code": "import numpy as np\ndef voi(prior, likelihoods):\n    # prior: (K,) 假设概率; likelihoods: (E,K,W) 每个实验在每种假设下观测的分布\n    H = lambda p: -np.sum(p[p>0]*np.log(p[p>0]))\n    out = []\n    for lik in likelihoods:          # lik: (K,W)\n        Hpost = 0.0\n        for w in range(lik.shape[1]):\n            joint = prior * lik[:, w]\n            post = joint / joint.sum()\n            Hpost += joint.sum() * H(post)\n        out.append(H(prior) - Hpost)\n    return np.array(out)",
+     "sources": [
+      {
+       "title": "EmbodiedRSI: Active Continual Robot Learning Through Hypothesis-Guided Co-Evolution",
+       "url": "https://arxiv.org/abs/2610.10498v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "机器人基础模型在物体位置或任务指令变化时性能会退化",
+     "EmbodiedRSI 是自演化 agentic harness，自主决定下一步探索方向",
+     "采用快慢双系统架构，代码与技能假设维护在假设图中",
+     "用价值信息实验选择挑选能区分假设的物理实验，结果驱动代码-技能共演化",
+     "慢系统构建分层记忆，按价值选择有效记忆供快系统使用",
+     "RoboCasa365 达 77.0% 总体、71.3% Composite-Unseen，最佳基线 40.1%；LIBERO-Pro 86.8%；真机零样本 71.3%"
+    ],
+    "uncertain": [
+     "公式为按摘要中 Value-of-Information Experiment Selection 重建的通用信息增益形式，需核对原文具体打分函数",
+     "假设图的更新规则、代码与技能的具体表示形式摘要未给出，待核实",
+     "真机零样本评测的任务集合与评测协议摘要未细述，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "让机器人自己设计最能答疑的实验，再把答案变成更会干活的代码。"
+     },
+     {
+      "level": "入门",
+      "text": "机器人基础模型遇到新位置或新指令就变笨，重训又太贵。EmbodiedRSI 让智能体把自己当成实验者：手里有多套互相竞争的代码和技能假设，每次挑一个最能分辨对错的实验去做，用结果同时改代码和技能，并把经验存成记忆。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键是双系统分工：快系统负责在假设图上做实验选择与代码/技能改写，慢系统把结果沉淀成分层记忆并按价值筛选。核心创新是价值信息实验选择——不是按成功率排序，而是按「这个实验能消除多少假设不确定性」排序，让每单位真机时间的信息收益最大。"
+     },
+     {
+      "level": "专家",
+      "text": "相比朴素的失败驱动迭代，它把探索问题从「修哪个 bug」提升为「做哪个实验」；相比超参式自适应，它同时演化代码与技能两种载体。边界是 VoI 的估计依赖对结果分布的建模，真机噪声与长时程信用分配会带来偏差；此外它需要可自主执行的实验接口和较稳的仿真到真机迁移，否则选出的实验在真机上不可行。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不直接把最差的任务多练几遍？",
+      "a": "最差的任务不一定最有信息量；重复已经确定的失败只是补贴，不能区分多套假设，应选能一刀切开假设空间的实验。"
+     },
+     {
+      "q": "为什么要同时演化代码和技能，只改一个不行吗？",
+      "a": "失败既可能来自高层逻辑（代码），也可能来自底层执行（技能），只改一边会误判归因；两者的联合假设空间才完整。"
+     },
+     {
+      "q": "慢系统如果只存成功记忆会怎样？",
+      "a": "会丢掉「为什么失败」这类高价值信息，后续在相似情境下可能重复踩坑；因此摘要强调按价值选择记忆，而不是只留成功。"
+     }
+    ],
+    "mechanism": "必须引入实验选择，是因为真机时间是最稀缺资源：随机试错或按成功率贪心都会把预算花在区分度低的方向上；只有用信息增益对实验排序，才能让每一条实验数据同时服务于「验证假设」和「改进代码」两个目标，实现样本效率与性能提升兼得。",
+    "boundary": "需要可反复执行且风险可控的实验接口；真机噪声大、单次试验区分度低时 VoI 估计不准；若假设空间没有被穷举或假设图构建有偏，实验选择会在错误假设里打转；跨场景零样本仍依赖基础模型的迁移能力。",
+    "analogyBoundary": "「医学检查」类比失效在于：检查结果的条件分布可以事先标定，而机器人实验的观测分布随硬件状态漂移，且部分实验会改变环境与物体状态，使后续实验的前提被污染。",
+    "misconceptions": [
+     "把它当作又一个 RL 微调，忽略核心在「实验选择的 harness」而非策略梯度",
+     "以为 77.0% 是纯模型能力；其中很大一部分来自代码与技能的持续改写",
+     "把信息增益当成最终目标，忽略它只是手段，最终目标仍是任务成功率"
+    ],
+    "ownAnalysis": "这个工作与「自演化智能体 + 主动学习」两条线交汇，思路是给 agent 加一层实验设计（推断）。可疑处在于假设图从哪来：若由 LLM 提出代码/技能假设，假设质量的上限就受 LLM 先验限制，信息增益可能被「候选集本身偏了」压低（推断）。另外从 RoboCasa365 的 40.1%→77.0% 跨度很大，需留意基线是否与本文同预算同接口（待核实）。",
+    "officialNotes": [
+     {
+      "position": "作者称现有自演化 harness 在用机器人试验决定改哪些代码与技能时效率低下，并称 EmbodiedRSI 可零样本迁移到真实机器人",
+      "source": "arxiv https://arxiv.org/abs/2610.10498v1"
+     }
+    ],
+    "interviewAnswer": "EmbodiedRSI 解决的是机器人基础模型在新位置或新指令下退化、而重训数据又贵的问题。它把自演化做成快慢双系统：快系统在假设图里维护互相竞争的代码与技能假设，用价值信息准则挑选最能区分这些假设的物理实验，再把实验结果用于代码与技能的共同演化；慢系统建分层记忆并按价值筛选。结果是 RoboCasa365 从最佳基线的 40.1% 提到 77.0%，Composite-Unseen 71.3%，真机零样本也有 71.3%。我认为核心可迁移点是「把探索当实验设计」而不是试错。",
+    "studyPath": {
+     "prerequisites": [
+      "强化学习探索与信息增益",
+      "贝叶斯实验设计",
+      "机器人任务评测协议"
+     ],
+     "nextSteps": [
+      "复现 VoI 打分与假设图更新",
+      "研究 LLM 生成假设的可靠性",
+      "对比 Voyager 等自演化智能体"
+     ]
+    }
+   }
+  },
+  {
+   "id": "c6bed269261489ad",
+   "tldr": "DiffGate 把 GRPO 与选择性有界教师引导结合：只对失败轨迹叠加教师监督，按组难度缩放并平滑有界，防止极端师生差距主导优化。",
+   "keyPoints": [
+    "On-policy distillation 在学生自生成轨迹上监督，缓解训练-测试不匹配",
+    "现有 OPD 目标仍是 token-local、outcome-agnostic，只优化逐前缀一致",
+    "GRPO 给结果级监督但有稀疏奖励与粗粒度 credit，全失败组信号消失",
+    "OPD 与 RLVR 盲点互补：教师密集但与正确性弱对齐，组奖励对但 credit 粗",
+    "只对失败轨迹施以教师监督，按组难度缩放并有界裁剪"
+   ],
+   "why": "把「教师信号」与「可验证奖励」按结果门控组合，是后训练岗位最前沿的实操思路；Qwen3 上的收益数字也是面试可直接引用的证据。",
+   "difficulty": "hard",
+   "tags": [
+    "posttraining",
+    "distillation",
+    "rlvr",
+    "grpo",
+    "llm"
+   ],
+   "entities": [
+    "DiffGate",
+    "On-Policy Distillation",
+    "GRPO",
+    "RLVR",
+    "Qwen3-0.6B",
+    "Qwen3-1.7B"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "DiffGate 结果门控流程",
+    "caption": "验证器决定谁拿教师信号，教师只在失败轨迹里给密集方向。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='DiffGate 四层流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>学生自生成轨迹</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>on-policy rollout</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>验证器 / 组相对奖励</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>结果级信号，稀疏</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>结果门控</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>仅失败轨迹开教师通道</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>有界教师引导</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>按组难度缩放并裁剪</text>\n</svg>",
+    "spec": {
+     "type": "flow",
+     "nodes": [
+      {
+       "label": "学生 rollout",
+       "detail": "自生成轨迹"
+      },
+      {
+       "label": "验证器/组奖励",
+       "detail": "结果级、稀疏"
+      },
+      {
+       "label": "结果门控",
+       "detail": "只对失败轨迹开教师信号"
+      },
+      {
+       "label": "有界教师引导",
+       "detail": "按组难度缩放并平滑裁边"
+      }
+     ],
+     "edges": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "判定对错"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "门控开关"
+      },
+      {
+       "from": 2,
+       "to": 3,
+       "label": "token 级密集方向"
+      }
+     ]
+    },
+    "alt": "DiffGate 用验证器对失败轨迹开启教师监督，教师信号按组难度缩放并有界裁剪，与 GRPO 项相加。"
+   },
+   "concepts": [
+    {
+     "name": "Outcome-Gated Teacher Guidance",
+     "readable": "教师只在学生答错的题上出声，音量由这组题整体难度决定，再设上限，免得师生差距太大把训练带偏。",
+     "analogy": "像教练带队员：做对的不用纠正，只在动作做砸时逐帧指出问题，差距极大时只给方向不硬掰。",
+     "analogyBreaksDown": "教练能看清每个动作对错；语言模型轨迹里「哪一步导致答错」不可知，门控只能按最终结果开关，无法保证监督落在出错那一步。",
+     "mechanism": "用可验证的结果做门控开关，把教师信号限制在确实需要修正的轨迹上；再按组内难度调整权重，使全失败等困难组获得足够梯度，同时对师生差异做平滑有界处理，避免少数异常样本主导更新。",
+     "visual": "画热力图：横轴是 token 位置，纵轴是 rollout 样本；答对的整行留白，答错的行在关键 token 处涂深色，深度按组难度整体缩放，超过阈值的被截平。",
+     "prerequisites": [
+      "知识蒸馏与 KL / 前反向 KL",
+      "GRPO 的组相对优势估计",
+      "RLVR 与可验证奖励"
+     ],
+     "selfTest": [
+      "为什么教师监督只加在失败轨迹上？",
+      "平滑有界这一步是在防什么？",
+      "全失败组上 GRPO 与 DiffGate 的行为差别是什么？"
+     ],
+     "formula": "\\mathcal{L} = \\mathcal{L}_{\\mathrm{GRPO}} + \\lambda\\, w(g)\\, \\mathbf{1}[\\mathrm{fail}]\\, \\min\\!\\left(\\sum_{t} d_t, \\tau\\right)"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-diffgate-objective",
+     "name": "DiffGate 结果门控目标（Difficulty-Gated Objective）",
+     "category": "posttraining",
+     "latex": "\\mathcal{L} = \\mathcal{L}_{\\mathrm{GRPO}} + \\lambda\\, w(g)\\, \\mathbf{1}[\\mathrm{fail}]\\, \\min\\!\\left(\\sum_{t} d_t, \\tau\\right), \\quad d_t = D_{\\mathrm{KL}}\\!\\left(p_T(\\cdot \\mid s_t)\\,\\|\\,p_S(\\cdot \\mid s_t)\\right)",
+     "symbols": [
+      [
+       "\\mathcal{L}_{\\mathrm{GRPO}}",
+       "组相对策略优化项（结果级监督）"
+      ],
+      [
+       "\\lambda",
+       "教师引导总权重"
+      ],
+      [
+       "g",
+       "该 rollout 所属组的难度"
+      ],
+      [
+       "w(g)",
+       "按组难度缩放的权重函数"
+      ],
+      [
+       "\\mathbf{1}[\\mathrm{fail}]",
+       "门控指示：仅轨迹失败时为 1"
+      ],
+      [
+       "d_t",
+       "第 t 步教师与学生的分布差异（KL）"
+      ],
+      [
+       "\\tau",
+       "差异上界，防止极端师生差距主导"
+      ],
+      [
+       "p_T, p_S",
+       "教师与学生在各前缀 s_t 上的下一 token 分布"
+      ]
+     ],
+     "derivation": [
+      "动机：OPD 的 token 级密集信号与正确性弱对齐，GRPO 的结果级信号又太稀疏。",
+      "保留 GRPO 项作为结果级骨架，先保证轨迹正确性被直接优化。",
+      "用验证器结果做门控：只有失败的轨迹才接收教师 token 级监督，避免在已正确的轨迹上做无谓扰动。",
+      "按组难度缩放权重 w(g)，让困难组（尤其全失败组）不至于因优势全为 0 而失去梯度。",
+      "对教师-学生差异总和做 min(·, tau) 的平滑有界，防止少数极端 token 主导整个更新。"
+     ],
+     "analogy": "像补习班只给考不及格的学生发精讲讲义，且讲义量按班级平均分调整、单次最多发一叠，避免有个别学生被塞爆。",
+     "pitfalls": [
+      "把门控写成硬阈值后直接乘，忽略它需要与 GRPO 的优势项量纲匹配",
+      "忘记有界裁剪，导致师生差距极大时梯度爆炸或崩塌",
+      "混淆前向/反向 KL：用反向 KL 会鼓励学生覆盖教师所有模式，与前向 KL 的均值对齐行为不同"
+     ],
+     "code": "import torch, torch.nn.functional as F\ndef diffgate_loss(logits_T, logits_S, grpo_loss, difficulty, failed, lam=1.0, tau=5.0):\n    # logits_*: (B, T, V) 教师与学生在每个前缀下的下一 token 分布\n    logp_T = F.log_softmax(logits_T, -1)\n    logp_S = F.log_softmax(logits_S, -1)\n    d_t = (logp_T.exp() * (logp_T - logp_S)).sum(-1)      # (B, T) 逐 token KL\n    bounded = torch.clamp(d_t.sum(-1), max=tau)           # (B,) 平滑有界\n    gate = failed.float() * difficulty                    # 仅失败且按难度缩放\n    return grpo_loss + lam * (gate * bounded).mean()",
+     "sources": [
+      {
+       "title": "DiffGate: Difficulty-Gated Teacher Guidance for On-Policy Distillation",
+       "url": "https://huggingface.co/papers/2610.04596"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "OPD 在学生自生成轨迹上监督，缓解训练-测试不匹配",
+     "现有 OPD 目标 largely token-local、outcome-agnostic",
+     "GRPO 有稀疏奖励与粗粒度 credit，且在全失败组上信号消失",
+     "DiffGate 将 GRPO 与选择性有界教师引导组合，教师监督只用于失败轨迹",
+     "教师权重按组难度缩放，并平滑有界以限制极端师生差异",
+     "Qwen3-0.6B/1.7B 上：代码 avg@8 +1.7/+1.8、pass@8 +1.6/+5.7；数学 avg@8 差 ≤0.5、pass@8 +1.1/+3.9"
+    ],
+    "uncertain": [
+     "公式为按摘要中 selective / bounded / scaled by group difficulty 重建的通用形式，需核对原文具体权重函数 w(g) 与是否用 KL",
+     "摘要未说明教师模型的来源与规模、以及组难度 g 的精确定义，待核实",
+     "原文摘要末尾被截断（under our ev...），可能还有额外实验结论，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "只在学生答错的轨迹上请老师补课，且补课量随难度调节、有上限。"
+     },
+     {
+      "level": "入门",
+      "text": "on-policy distillation 让学生在自生成的轨迹上被教师逐 token 纠正，信号密集但和最终对错关系不大；GRPO 用组内相对奖励看结果，信号对但太稀疏、全错一组时没有梯度。DiffGate 把两者缝合：结果决定是否请老师，难度决定老师讲多少，并给讲量设上限。"
+     },
+     {
+      "level": "进阶",
+      "text": "核心是门控与缩放：1[失败] 把教师监督限定在需要修正的轨迹上，避免在正确轨迹上引入噪声；w(g) 按组难度提升困难组的教师权重，缓解全失败组优势为零的问题；min(·,τ) 对师生 KL 之和做平滑有界，防止个别极端 token 主导更新。"
+     },
+     {
+      "level": "专家",
+      "text": "与前向 KL 的知识蒸馏相比，它把「在哪里蒸馏」当作核心变量，而不是只调温度与权重；与纯 GRPO 相比，它用教师补上了结果级信号无法提供的 token 级 credit。边界是门控只能按最终结果开关，无法保证监督落在真正出错的那一步；若教师本身在困难组上也不可靠，按难度加权反而会放大教师的错误。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不把所有轨迹都加上教师监督？",
+      "a": "正确的轨迹已经达到目标，再拉向教师分布会引入无谓扰动，甚至把学生拉离已经找到的更优解；门控把监督集中到真正需要的地方。"
+     },
+     {
+      "q": "GRPO 在全失败组上为什么会失效？",
+      "a": "组相对优势是组内归一化的，一组全失败时奖励相同、优势为零，梯度消失，于是没有任何学习信号。"
+     },
+     {
+      "q": "为什么一定要有界？",
+      "a": "困难样本上师生差异可能极大，若不裁剪，少数 token 的巨大会主导整个 batch 的更新，训练不稳定。"
+     }
+    ],
+    "mechanism": "必须这样组合，是因为两种监督的失效模式恰好互补：教师信号密集但不懂「最终对不对」，组相对奖励懂对错但只在有正负样本对比时才有梯度。门控用可验证结果决定教师的作用范围，难度缩放补上困难组的梯度空洞，有界处理保证这种补丁不会反过来破坏稳定性。",
+    "boundary": "依赖可靠的验证器；若奖励可被刷分，门控会系统性地把教师引到错误方向。当教师模型在困难任务上本身不可靠时，按难度加权会放大其错误；另外门控是轨迹级的，长轨迹中只错一步也会让整条轨迹接收教师信号，可能引入不必要扰动。",
+    "analogyBoundary": "「教练只纠正做砸的动作」的类比失效在于：动作对错是可见的，而推理轨迹里哪一步错了没有标注，门控只知道整条答错了，教师监督可能落在正确的中间步骤上，产生副作用。",
+    "misconceptions": [
+     "以为 DiffGate 是一种新的 RL 算法；它是在 GRPO 上加门控教师项",
+     "把 OPD 与离线蒸馏混为一谈；OPD 的关键是在学生自己的轨迹上监督",
+     "认为 pass@8 提升等同于 avg@8 提升；摘要显示数学上 avg@8 基本持平而 pass@8 提升"
+    ],
+    "ownAnalysis": "这个思路与「按难度做数据筛选」的课程学习有相通之处（推断）：不同的是它把难度用在权重而不是采样上，因此不会丢弃困难样本。值得注意的是摘要里数学任务 avg@8 只与 GRPO 持平（差 ≤0.5），说明收益主要来自解空间的多样性（pass@8）而非平均水平，这暗示门控更多在帮模型「换个思路」而不是「答得更对」（推断）。另外原文摘要末尾截断，可能还有更细的消融，待核实。",
+    "officialNotes": [
+     {
+      "position": "作者称 OPD 与 RLVR 存在互补盲点：教师信号密集但与 rollout 正确性弱对齐，组相对奖励捕捉任务成功但 token credit 粗且在组内全失败时为零",
+      "source": "hf_papers https://huggingface.co/papers/2610.04596"
+     }
+    ],
+    "interviewAnswer": "DiffGate 解决 on-policy distillation 和 GRPO 各自的短板。OPD 在学生自生成轨迹上给密集 token 级监督，但它是局部、和最终对错无关的；GRPO 有可验证的结果级奖励，却稀疏、credit 粗，而且一组全失败时优势全为零没有梯度。DiffGate 用验证器做门控：只有失败轨迹才叠加教师监督，权重按组难度缩放，并对师生 KL 之和做平滑有界裁剪。Qwen3 上它在代码任务把 avg@8 提升 1.7/1.8，pass@8 提升 1.6/5.7，数学上 avg@8 基本持平而 pass@8 明显提升，说明主要改善的是解答覆盖度。",
+    "studyPath": {
+     "prerequisites": [
+      "知识蒸馏与前向/反向 KL",
+      "GRPO 与组相对优势",
+      "RLVR 可验证奖励"
+     ],
+     "nextSteps": [
+      "复现 DiffGate 门控损失并做消融",
+      "研究门控粒度从轨迹级到步骤级的改进",
+      "对比 GKD、MiniLLM 等蒸馏方案"
+     ]
+    }
+   }
+  }
+ ],
+ "skipped": []
+}

@@ -1,0 +1,128 @@
+{
+  "id": "83d50b8fffe7bd19",
+  "tldr": "把程序性视频生成重构为视觉世界空间里的闭环任务执行：从生成状态选动作、执行、并判断是否完成。",
+  "keyPoints": [
+    "长程程序性任务要求生成能根据「实际已生成的内容」调整",
+    "开环生成无法适应执行结果，现有闭环系统依赖预训练执行器或间接验证",
+    "WorldGuide 给初始图与任务目标，预测原子动作并生成对应视频片段",
+    "用生成结果选下一个动作或终止；Planner 与 Executor 在同一步级示范上训练",
+    "缺步级监督故提出 WorldGuide Bench：约 59K 视频、245 任务、27 个类别",
+    "分层视觉记忆以有界历史 token 维持长程状态"
+  ],
+  "why": "世界模型与具身/程序性任务执行的交叉是热点；「规划与执行耦合、闭环决策」是 embodied 与 world model 岗位的核心考点。",
+  "difficulty": "hard",
+  "tags": ["worldmodel", "video-generation", "planning", "closed-loop", "embodied"],
+  "entities": ["WorldGuide", "WorldGuide Bench", "MiniMax-H3", "VideoCraft-Bench", "Planner", "Executor"],
+  "diagram": {
+    "kind": "flow",
+    "title": "WorldGuide 闭环执行环",
+    "caption": "从初始图与目标出发，Planner 出动作、Executor 生成片段、据结果闭环推进，分层记忆兜住长程状态。",
+    "svg": "<svg viewBox='0 0 480 280' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='WorldGuide 从初始图与目标到终止判定的五级闭环执行流程'>\n<rect x='40' y='12' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='36' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>初始图 + 任务目标</text>\n<text x='424' y='36' font-size='13' text-anchor='end' fill='currentColor'>只给起点与目标</text>\n<line x1='240' y1='50' x2='240' y2='58' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,66 236,58 244,58' fill='var(--line-1)'/>\n<rect x='40' y='66' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='90' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>Planner 预测原子动作</text>\n<text x='424' y='90' font-size='13' text-anchor='end' fill='currentColor'>从视觉进展推下一步</text>\n<line x1='240' y1='104' x2='240' y2='112' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,120 236,112 244,112' fill='var(--line-1)'/>\n<rect x='40' y='120' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='144' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>Executor 生成视频片段</text>\n<text x='424' y='144' font-size='13' text-anchor='end' fill='currentColor'>把动作实现为视频</text>\n<line x1='240' y1='158' x2='240' y2='166' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,174 236,166 244,166' fill='var(--line-1)'/>\n<rect x='40' y='174' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='198' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>据生成结果闭环</text>\n<text x='424' y='198' font-size='13' text-anchor='end' fill='currentColor'>选下一动作 or 终止</text>\n<line x1='240' y1='212' x2='240' y2='220' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,228 236,220 244,220' fill='var(--line-1)'/>\n<rect x='40' y='228' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='252' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>分层视觉记忆</text>\n<text x='424' y='252' font-size='13' text-anchor='end' fill='currentColor'>有界 token 维持长程状态</text>\n</svg>",
+    "alt": "五级竖排流程：初始图与目标→Planner 预测原子动作→Executor 生成视频片段→据结果闭环选下一步或终止→分层视觉记忆。"
+  },
+  "concepts": [
+    {
+      "name": "Closed-Loop Procedural Video Generation（闭环程序性视频生成）",
+      "readable": "生成不是一次到底，而是每一步看「已经生成出来的画面」再决定下一个动作，直到判断任务完成。",
+      "analogy": "像照着菜谱做菜：每加一样就尝一口，根据味道决定下一步放什么，而不是闭着眼睛把整道菜做完。",
+      "analogyBreaksDown": "做菜有实时味觉；这里的「尝」只能靠模型对自己生成的视频片段做判断，判断本身可能出错，误差会累积。",
+      "mechanism": "把程序性视频生成形式化为「在视觉世界空间里的闭环任务执行」：由当前视觉状态推下一个原子动作、生成该动作的视频片段、再据此选下一步或终止。相比开环一次性生成，能让输出适应实际执行结果。",
+      "visual": "一个回路图：动作节点→视频片段节点→状态更新→回到动作节点；旁边并排放一条开环直线，标出开环无法回退修正。",
+      "prerequisites": ["视频生成模型", "世界模型与状态转移", "任务规划基础"],
+      "selfTest": ["开环生成为什么长程程序任务会失败？", "闭环的「状态」这里由什么表示？", "如何判断任务完成？"],
+      "formula": "a_t=\\pi_{\\mathrm{plan}}(g,\\ s_t),\\qquad s_{t+1}=\\pi_{\\mathrm{exec}}(s_t,\\ a_t)"
+    },
+    {
+      "name": "Planner-Executor Coupling（规划-执行耦合）",
+      "readable": "Planner 负责决定「下一步做什么」，Executor 负责把这一步真正生成出来；两者用同一批步级示范一起训练，而不是各自为政。",
+      "analogy": "像导演和摄影：导演说要拍「切菜」这一镜，摄影师得真拍出切菜的画面，否则接不上下一镜。",
+      "analogyBreaksDown": "剧组有回放可核对；这里只有在步级动作-视频对齐的示范上训练，缺少这种监督，作者才要专门造 WorldGuide Bench。",
+      "mechanism": "既有闭环系统常靠预训练执行器或间接验证，规划与执行之间存在「说得对但做不到」的鸿沟。WorldGuide 让 Planner 从视觉进展预测原子动作或完成，让 Executor 直接学着把预测动作实现出来，两者共享同一套步级示范，从而缩小这个鸿沟。",
+      "visual": "两列：左列 Planner 输出的动作序列（文字/标签），右列 Executor 生成的分镜（视频帧缩略）；用横箭头表示「动作→片段」一一对应，错位处高亮为耦合失败。",
+      "prerequisites": ["视频扩散/生成模型与条件控制", "视觉语言模型做决策", "步级数据标注"],
+      "selfTest": ["为何不能直接用预训练执行器？", "Planner 与 Executor 为什么共享示范？", "「间接验证」的缺陷是什么？"],
+      "formula": "\\mathcal{S}=\\frac{1}{N}\\sum_{i=1}^{N}\\mathbb{1}\\big[\\mathrm{complete}(i)\\big]"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-worldguide-closed-loop",
+      "name": "闭环规划-执行递归（Closed-Loop Plan-Execute Recursion）",
+      "category": "worldmodel",
+      "latex": "a_t=\\pi_{\\mathrm{plan}}\\big(g,\\ s_t\\big),\\qquad s_{t+1}=\\pi_{\\mathrm{exec}}\\big(s_t,\\ a_t\\big)",
+      "symbols": [["g", "任务目标"], ["s_t", "第 t 步的视觉状态（已生成的画面/记忆）"], ["a_t", "第 t 步预测的原子动作，或终止标志"], ["\\pi_{\\mathrm{plan}}", "Planner：从视觉进展预测下一动作或完成"], ["\\pi_{\\mathrm{exec}}", "Executor：把动作生成为视频片段并推进状态"]],
+      "derivation": [
+        "长程程序性任务要求生成能根据实际产出调整，开环一次性生成做不到。",
+        "把过程写成递归：每个时间步先由 Planner 依据目标 g 与当前视觉状态 s_t 选出原子动作 a_t。",
+        "再由 Executor 依据 (s_t, a_t) 生成对应视频片段，得到新状态 s_{t+1}。",
+        "循环直到 Planner 输出终止，完成任务。"
+      ],
+      "analogy": "像导航：每到路口看一眼实际位置（状态），决定下一次转向（动作），开过去再看新位置，直到到达。",
+      "pitfalls": ["把它当成一次性 prompt 生成——闭环的关键是每步都依赖真实生成结果", "忽略终止判定，导致循环无法停止或提前结束"],
+      "code": "def run(plan, exec_, g, s0, tmax=20):\n    s, done = s0, False\n    for _ in range(tmax):\n        a = plan(g, s)          # 预测原子动作或终止\n        if a is None:\n            done = True\n            break\n        s = exec_(s, a)         # 生成视频片段，推进状态\n    return s, done",
+      "sources": [{"title": "WorldGuide: Goal-Directed Video World Model for Procedural Task Execution", "url": "https://arxiv.org/abs/2610.12459"}]
+    },
+    {
+      "id": "f-worldguide-visual-memory",
+      "name": "有界分层视觉记忆（Bounded Hierarchical Visual Memory）",
+      "category": "worldmodel",
+      "latex": "\\mathcal{M}_t=\\mathrm{Compress}\\big(\\mathcal{M}_{t-1},\\, o_t\\big),\\qquad \\lvert\\mathcal{M}_t\\rvert\\le B",
+      "symbols": [["\\mathcal{M}_t", "第 t 步的视觉记忆（分层摘要）"], ["o_t", "第 t 步的新观测（生成的视频片段）"], ["B", "历史 token 预算上限"], ["\\mathrm{Compress}", "把新观测并入记忆并压缩到有界规模"]],
+      "derivation": [
+        "长程执行的历史会不断增长，直接全部保留会超出上下文预算。",
+        "但闭环决策又需要跨步状态，不能丢掉历史。",
+        "于是把历史组织成分层摘要，只保留当前任务相关的多尺度信息。",
+        "每步用新观测更新记忆并压缩，保证规模有界（按摘要重建的通用形式）。"
+      ],
+      "analogy": "像写旅行日记：不记下每一分钟，而是每天一句、每周一段，需要时回看摘要即可。",
+      "pitfalls": ["以为记忆是无限回放——摘要强调历史 token 成本有界，必然有信息损失", "层次设计不当会把关键步级细节压没，导致长程决策漂移"],
+      "code": "def update_memory(M, obs, compress, B):\n    M = compress(M, obs)   # 并入新观测并生成分层摘要\n    return M[:B]           # 控制历史 token 成本有界",
+      "sources": [{"title": "WorldGuide: Goal-Directed Video World Model for Procedural Task Execution", "url": "https://arxiv.org/abs/2610.12459"}]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "视频生成器与视频世界模型能合成看似合理的视觉轨迹，但长程程序性任务要求生成适应实际已产出的内容",
+      "开环生成无法适应执行结果，现有闭环系统常依赖预训练执行器或间接验证，留下「决定动作」与「成功实现动作」之间的鸿沟",
+      "论文把程序性视频生成形式化为视觉世界空间中的闭环任务执行，提出 WorldGuide",
+      "只给初始图与任务目标，WorldGuide 预测原子动作、生成对应视频片段、并据生成结果选下一动作或终止",
+      "Planner 与 Executor 在同一步级程序示范上训练：Planner 预测下一原子动作或完成，Executor 直接学着实现预测动作",
+      "分层视觉记忆在有界历史 token 成本下维持长程状态",
+      "因缺少步级动作-视频监督，论文提出 WorldGuide Bench：约 59K 步级标注视频、245 个任务、27 个程序类别",
+      "WorldGuide 在 WorldGuide-Bench 达 33.33% 任务成功率，对比 MiniMax-H3 的 29.90%（后者还接收了参考动作计划）；在 VideoCraft-Bench 达 47.69%，对比 MiniMax-H3 的 32.73%（目标仅给目标的条件下）"
+    ],
+    "uncertain": [
+      "两条公式（闭环递归、有界视觉记忆）摘要未给具体形式，均为按摘要重建的通用形式，需核对原文",
+      "Planner/Executor 的具体网络结构与训练损失摘要未说明，待核实",
+      "WorldGuide Bench 的采集来源与「步级标注」的定义细节摘要未说明，待核实"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "做一个任务时，它每生成一步就回头看结果，再决定下一步，直到判断做完。"},
+      {"level": "入门", "text": "视频世界模型能生成看起来合理的画面，但做菜、装配这类多步骤任务要求「下一步」取决于「已经做出什么」。WorldGuide 只给一张初始图和目标，就让模型预测一个原子动作、生成这个动作的视频片段，再用生成结果决定下一个动作或收尾。"},
+      {"level": "进阶", "text": "它把问题重新定义为视觉世界空间里的闭环执行，强调规划和执行要一起学：Planner 从视觉进展预测下一动作或完成，Executor 直接学着把动作实现出来，两者共用同一套步级示范。因为缺这种步级动作-视频监督，作者建了 WorldGuide Bench（约 59K 视频、245 任务、27 类）。长程执行靠分层视觉记忆维持状态，同时把历史 token 成本控制在有界范围。"},
+      {"level": "专家", "text": "相比开环一次性生成，闭环能根据实际产出修正；相比依赖预训练执行器或间接验证的既有闭环系统，它把规划与执行端到端耦合，缩小「决定动作」与「成功实现动作」的鸿沟。结果上：WorldGuide-Bench 33.33% 对 MiniMax-H3 29.90%（对方还额外给了参考动作计划），VideoCraft-Bench 47.69% 对 32.73%。边界在于它仍是视觉世界里的执行，没有真实物理矫正回路，长程误差会沿记忆累积；有界记忆意味着信息必然被压缩。"}
+    ],
+    "socratic": [
+      {"q": "为什么开环生成做不了长程程序任务？", "a": "开环生成不根据实际产出调整，一旦某步偏离真实可行状态，后面所有步骤都会在错误状态上继续。"},
+      {"q": "为什么要 Planner 和 Executor 一起训？", "a": "摘要指出既有系统存在「决定动作」与「成功实现动作」的鸿沟；共享步级示范可让预测的动作落在执行器真能做到的范围内。"},
+      {"q": "为什么记忆必须有界？", "a": "长程执行的历史会无限增长、超出上下文；分层摘要能在有限的 token 成本下保留跨步所需状态。"}
+    ],
+    "mechanism": "这类任务的核心矛盾是「长程依赖」与「误差累积」：每一步的输出都成为下一步的输入，必须根据真实产出而非计划前进。WorldGuide 用闭环递归把动作决策与视频实现绑在一起，用共享的步级示范让两者对齐，再用分层视觉记忆在固定 token 预算下携带跨步状态。三件事配合才能让「决定下一步」与「真的做出这一步」保持一致。",
+    "boundary": "在视觉世界空间里执行，没有真实物理反馈或人工纠错，长程误差会沿记忆累积；有界视觉记忆会丢失细节，超长任务上状态可能漂移；依赖规模较大的步级标注数据。对不需要多步交互的一次性视频生成任务，闭环收益有限。",
+    "analogyBoundary": "「每步尝一口再决定」类比在味觉即时可靠时成立；这里的「尝」是模型对自己生成片段的判断，可能自欺（把失败的片段判为成功），于是误差不仅来自动作，还来自判别本身。",
+    "misconceptions": [
+      "以为它只是更强的视频生成模型——它的关键是闭环规划与执行耦合。",
+      "以为它用了预训练执行器——作者正是要摆脱这种依赖。",
+      "忽略对照条件：MiniMax-H3 在 WorldGuide-Bench 上还额外拿到了参考动作计划，比较是在这个前提下成立的。"
+    ],
+    "ownAnalysis": "最可迁移的是「把长程生成当序列决策、用共享示范对齐规划与执行」（推断），这与 VLA/具身智能里的「高层规划 + 低层控制」架构同构，只是把低层换成视频生成。可疑处：Task Success 33.33% 绝对值并不高，说明闭环执行仍然很难（推断）；且「判定完成」由 Planner 自己做，缺少外部验证器时，可能出现过早终止或不停循环两种失败（待核实）。",
+    "officialNotes": [{"position": "WorldGuide 把程序性视频生成形式化为视觉世界空间中的闭环任务执行；Planner 与 Executor 共享步级示范训练，分层视觉记忆保证有界 token 成本；WorldGuide-Bench 33.33% 对 MiniMax-H3 29.90%，VideoCraft-Bench 47.69% 对 32.73%", "source": "arxiv: 2610.12459"}],
+    "interviewAnswer": "这篇把程序性视频生成重新定义成视觉世界空间里的闭环任务执行。开环生成没法根据实际产出调整，已有闭环系统又常依赖预训练执行器或间接验证，导致「决定动作」和「真的做出动作」之间有鸿沟。WorldGuide 只给初始图和目标，让 Planner 从视觉进展预测原子动作或任务完成，让 Executor 把动作真的生成成视频片段，再用生成结果选下一步或终止，两者用同一套步级示范训练。长程执行靠分层视觉记忆维持状态、控制 token。在 WorldGuide-Bench 上 33.33% 对 MiniMax-H3 的 29.90%，而对方还额外拿到了参考动作计划；VideoCraft-Bench 上 47.69% 对 32.73%。",
+    "studyPath": {
+      "prerequisites": ["视频扩散/生成模型与条件控制", "世界模型与状态转移建模", "序列决策与长程依赖问题"],
+      "nextSteps": ["读原文与 WorldGuide Bench 说明，明确步级标注定义", "复现一个最小的闭环执行循环，观察误差如何沿步累积"]
+    }
+  }
+}

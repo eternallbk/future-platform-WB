@@ -1,0 +1,260 @@
+{
+ "batchId": "problems-02",
+ "mode": "full",
+ "items": [
+  {
+   "id": "562df016aeec7465",
+   "title": "最长回文子串",
+   "category": "coding",
+   "channel": "programmercarl",
+   "url": "https://leetcode.cn/problems/longest-palindromic-substring",
+   "sources": [
+    {
+     "url": "https://programmercarl.com/algo/other/0005-longest-palindromic-substring.html",
+     "name": "programmercarl"
+    }
+   ],
+   "tags": [
+    "算法题",
+    "题解",
+    "leetcode",
+    "手撕",
+    "algo"
+   ],
+   "kind": "problem",
+   "summary": "最长回文子串问题通过动态规划、双指针和 Manacher 算法实现，涉及区间判断、中心扩散和回文对称性利用。",
+   "needsFetch": false,
+   "bankKey": "lc-5",
+   "problemNumber": 5,
+   "examFrequency": 304,
+   "askingCompanies": [
+    "字节跳动",
+    "快手",
+    "百度",
+    "腾讯",
+    "阿里巴巴",
+    "滴滴"
+   ],
+   "lastAsked": "2026-09-21",
+   "bankTopics": [
+    "动态规划",
+    "双指针",
+    "字符串"
+   ],
+   "analysisStatus": "partial",
+   "bankSources": [
+    {
+     "title": "5.最长回文子串 · 题解",
+     "url": "https://programmercarl.com/algo/other/0005-longest-palindromic-substring.html"
+    },
+    {
+     "title": "5. 最长回文子串 · 题解",
+     "url": "https://programmercarl.com/hot100/0005.longest-palindromic-substring.html"
+    },
+    {
+     "title": "最长回文子串（LeetCode 5）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/longest-palindromic-substring"
+    }
+   ]
+  },
+  {
+   "id": "74b546c8e2d25647",
+   "title": "搜索旋转排序数组",
+   "category": "coding",
+   "channel": "codetop",
+   "url": "https://leetcode.cn/problems/search-in-rotated-sorted-array",
+   "sources": [
+    {
+     "url": "https://leetcode.cn/problems/search-in-rotated-sorted-array",
+     "name": "codetop"
+    }
+   ],
+   "tags": [
+    "leetcode",
+    "手撕",
+    "算法题",
+    "高频面试题",
+    "字节跳动",
+    "快手",
+    "阿里巴巴"
+   ],
+   "kind": "problem",
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 161 次、快手 21 次、阿里巴巴 18 次、微软 15 次、滴滴 14 次、京东 7 次（共 247 次）；难度 中等；最近一次出现 2026-10-07",
+   "needsFetch": false,
+   "bankKey": "lc-33",
+   "problemNumber": 33,
+   "examFrequency": 247,
+   "askingCompanies": [
+    "字节跳动",
+    "快手",
+    "阿里巴巴",
+    "微软",
+    "滴滴",
+    "京东"
+   ],
+   "lastAsked": "2026-10-07",
+   "bankTopics": [
+    "排序与TopK"
+   ],
+   "analysisStatus": "partial",
+   "bankSources": [
+    {
+     "title": "搜索旋转排序数组（LeetCode 33）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/search-in-rotated-sorted-array"
+    }
+   ]
+  },
+  {
+   "id": "814e895b8d210660",
+   "title": "岛屿数量",
+   "category": "coding",
+   "channel": "programmercarl",
+   "url": "https://leetcode.cn/problems/number-of-islands",
+   "sources": [
+    {
+     "url": "https://programmercarl.com/algo/other/0200-number-of-islands-bfs.html",
+     "name": "programmercarl"
+    },
+    {
+     "url": "https://programmercarl.com/algo/other/0200-number-of-islands-dfs.html",
+     "name": "programmercarl"
+    }
+   ],
+   "tags": [
+    "算法题",
+    "题解",
+    "leetcode",
+    "手撕",
+    "algo"
+   ],
+   "kind": "problem",
+   "summary": "二维网格中岛屿数量计算问题，通过深度优先搜索遍历陆地并标记访问节点，统计未访问陆地数量。",
+   "needsFetch": false,
+   "bankKey": "lc-200",
+   "problemNumber": 200,
+   "examFrequency": 246,
+   "askingCompanies": [
+    "字节跳动",
+    "百度",
+    "阿里巴巴",
+    "华为",
+    "滴滴",
+    "亚马逊"
+   ],
+   "lastAsked": "2026-09-06",
+   "bankTopics": [
+    "二叉树",
+    "图论",
+    "dsu",
+    "graph"
+   ],
+   "analysisStatus": "partial",
+   "bankSources": [
+    {
+     "title": "200. 岛屿数量 · 题解",
+     "url": "https://programmercarl.com/algo/other/0200-number-of-islands-bfs.html"
+    },
+    {
+     "title": "岛屿数量（LeetCode 200）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/number-of-islands"
+    },
+    {
+     "title": "面经｜算法｜计算机视觉｜百度，B站，图森，商汤，九坤等20个",
+     "url": "https://www.nowcoder.com/discuss/353159089435910144"
+    }
+   ]
+  },
+  {
+   "id": "99eea52bfd97b716",
+   "title": "全排列",
+   "category": "coding",
+   "channel": "programmercarl",
+   "url": "https://leetcode.cn/problems/permutations",
+   "sources": [
+    {
+     "url": "https://programmercarl.com/algo/backtracking/0046-permutations.html",
+     "name": "programmercarl"
+    }
+   ],
+   "tags": [
+    "算法题",
+    "题解",
+    "leetcode",
+    "手撕",
+    "algo"
+   ],
+   "kind": "problem",
+   "summary": "全排列问题通过回溯算法求解，使用used数组标记已选择元素，递归遍历所有可能排列。",
+   "needsFetch": false,
+   "bankKey": "lc-46",
+   "problemNumber": 46,
+   "examFrequency": 231,
+   "askingCompanies": [
+    "字节跳动",
+    "快手",
+    "百度",
+    "阿里巴巴",
+    "滴滴",
+    "华为"
+   ],
+   "lastAsked": "2026-09-16",
+   "bankTopics": [
+    "二叉树",
+    "回溯"
+   ],
+   "analysisStatus": "partial",
+   "bankSources": [
+    {
+     "title": "46.全排列 · 题解",
+     "url": "https://programmercarl.com/algo/backtracking/0046-permutations.html"
+    },
+    {
+     "title": "全排列（LeetCode 46）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/permutations"
+    }
+   ]
+  },
+  {
+   "id": "b0a9a5de579bcd4a",
+   "title": "二叉树的锯齿形层次遍历",
+   "category": "coding",
+   "channel": "codetop",
+   "url": "https://leetcode.cn/problems/binary-tree-zigzag-level-order-traversal",
+   "sources": [
+    {
+     "url": "https://leetcode.cn/problems/binary-tree-zigzag-level-order-traversal",
+     "name": "codetop"
+    }
+   ],
+   "tags": [
+    "leetcode",
+    "手撕",
+    "算法题",
+    "高频面试题",
+    "字节跳动",
+    "微软"
+   ],
+   "kind": "problem",
+   "summary": "被大厂真实考过的高频手撕题：字节跳动 189 次、微软 12 次（共 201 次）；难度 中等；最近一次出现 2026-09-15",
+   "needsFetch": false,
+   "bankKey": "lc-103",
+   "problemNumber": 103,
+   "examFrequency": 201,
+   "askingCompanies": [
+    "字节跳动",
+    "微软"
+   ],
+   "lastAsked": "2026-09-15",
+   "bankTopics": [
+    "二叉树"
+   ],
+   "analysisStatus": "partial",
+   "bankSources": [
+    {
+     "title": "二叉树的锯齿形层次遍历（LeetCode 103）· 大厂高频手撕题",
+     "url": "https://leetcode.cn/problems/binary-tree-zigzag-level-order-traversal"
+    }
+   ]
+  }
+ ]
+}

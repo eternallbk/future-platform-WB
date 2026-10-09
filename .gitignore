@@ -1,0 +1,65 @@
+# ---------------------------------------------------------------------------
+# Build output. `dist/` is the publishable site produced by build_site.py - it is
+# generated, so it is not versioned. It is published via WorkBuddy
+# (scripts/publish-workbuddy.ps1 audits it, the daily automation uploads it).
+# ---------------------------------------------------------------------------
+dist/
+
+# ---------------------------------------------------------------------------
+# Private data. NEVER commit these:
+#   state/  - de-duplication fingerprints, firstSeen/lastSeen and the raw
+#             canonical corpus (~1 MB). Internal, and not needed by the site.
+#   inbox/  - manual exports from login-walled sites (Xiaohongshu, BOSS Zhipin).
+#             May contain referral codes, personal notes, contact details.
+#   logs/harness-*.log - machine-local run logs (absolute paths, console noise).
+#   logs/*.txt         - stdout dumps written by manual runs of run-daily.ps1
+#                        (run-daily-stdout.txt, publish-*.txt, guards-*.txt).
+#                        Machine-local console noise, not part of the product;
+#                        the structured run history lives in logs/runs.json.
+#   .tmp-verify-profile/ - throwaway Chrome profiles from verify-web.mjs
+# ---------------------------------------------------------------------------
+web/data/state/
+web/data/inbox/
+web/data/archive/
+web/data/logs/harness-*.log
+web/data/logs/*.txt
+.tmp-verify-profile/
+.tmp-*/
+tmp/
+
+# ---------------------------------------------------------------------------
+# Secrets. The API key belongs in an environment variable or the DSH credential
+# store (~/.dsh/.credentials.yaml), never in this repo.
+# ---------------------------------------------------------------------------
+.env
+.env.*
+config/*.local.json
+
+# ---------------------------------------------------------------------------
+# Python / Node / editor noise
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+node_modules/
+
+# ---------------------------------------------------------------------------
+# Research working files.
+#
+# IMPORTANT - do not un-ignore research/_probe/:
+#   It holds ~230 raw HTTP response bodies (7.5 MB), and a credential scan found
+#   four credential-SHAPED strings (sk- + 38 chars) inside a scraped
+#   lab-deepmind RSS file. They are almost certainly a false positive (an HTML
+#   entity or an obfuscated URL fragment), but "almost certainly" is not good
+#   enough for a public repository: nothing in there is needed to run the
+#   workbench, so it stays local.
+#   The conclusions that DO matter live in docs/, research/source_registry.json,
+#   research/channel_probe.json and research/jobs_kb.json.
+# ---------------------------------------------------------------------------
+research/_probe/
+research/_scratch/
+research/__pycache__/
+research/channel_probe.json
+
+# Throwaway screenshots written by the UI guards
+docs/screenshots/_*.png

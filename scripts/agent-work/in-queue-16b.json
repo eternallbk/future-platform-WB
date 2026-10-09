@@ -1,0 +1,120 @@
+{
+ "batchId": "queue-16b",
+ "mode": "full",
+ "items": [
+  {
+   "id": "fbcd218ee56a57f3",
+   "title": "jjang-ai/mlxstudio - MLX Studio - Easiest way to run LLM's on your Mac. All in one engine.",
+   "category": "engineering",
+   "channel": "github",
+   "url": "https://github.com/jjang-ai/mlxstudio",
+   "sources": [
+    {
+     "url": "https://github.com/jjang-ai/mlxstudio",
+     "name": "github"
+    }
+   ],
+   "tags": [
+    "ai",
+    "ai-agents",
+    "anthropic",
+    "anthropic-api",
+    "apple-silicon",
+    "inference",
+    "inference-engine",
+    "llm"
+   ],
+   "kind": "repo",
+   "summary": "MLX Studio - Easiest way to run LLM's on your Mac. All in one engine. - jjang-ai/mlxstudio",
+   "needsFetch": false
+  },
+  {
+   "id": "5d166480d300892b",
+   "title": "磁盘调度算法有什么？ · 八股",
+   "category": "exam",
+   "channel": "kamacoder_notes",
+   "url": "https://notes.kamacoder.com/base/disk-scheduling-algorithms.html",
+   "sources": [
+    {
+     "url": "https://notes.kamacoder.com/base/disk-scheduling-algorithms.html",
+     "name": "kamacoder_notes"
+    }
+   ],
+   "tags": [
+    "八股",
+    "知识点",
+    "基础",
+    "base"
+   ],
+   "kind": "notes",
+   "summary": "磁盘调度算法是操作系统面试高频考点，主要考察FCFS、SSTF、SCAN、C-SCAN、LOOK等七大算法的原理、优缺点与性能对比。本文详解各算法寻道过程、平均寻道长度计算及代码实现，并分析其饥饿、公平性、响应时间等核心问题，帮助应对大厂操作系统面试中关于I/O性能优化的提问。",
+   "needsFetch": false
+  },
+  {
+   "id": "209a6520800a5cf3",
+   "title": "能说说拥塞控制是怎样实现的吗？ · 八股",
+   "category": "exam",
+   "channel": "kamacoder_notes",
+   "url": "https://notes.kamacoder.com/base/congestion-control.html",
+   "sources": [
+    {
+     "url": "https://notes.kamacoder.com/base/congestion-control.html",
+     "name": "kamacoder_notes"
+    }
+   ],
+   "tags": [
+    "八股",
+    "知识点",
+    "基础",
+    "base"
+   ],
+   "kind": "notes",
+   "summary": "TCP 拥塞控制是计算机网络面试中的高频考点，主要考察如何通过慢开始、拥塞避免、快重传、快恢复四种经典算法动态调整发送速率，防止网络过载。本文详细解析了拥塞窗口（cwnd）、慢开始阈值（ssthresh）的作用机制，并对比了拥塞控制与流量控制的区别，同时提及了现代算法如 TCP CUBIC 和 BBR 的演进，帮助应对大厂面试中关于网络性能优化的深入提问。",
+   "needsFetch": false
+  },
+  {
+   "id": "b06d216e7d58a20f",
+   "title": "上下文窗口有多大？Context Engineering入门 · 大模型笔记",
+   "category": "exam",
+   "channel": "kamacoder_notes",
+   "url": "https://notes.kamacoder.com/llm/app/context_engineering.html",
+   "sources": [
+    {
+     "url": "https://notes.kamacoder.com/llm/app/context_engineering.html",
+     "name": "kamacoder_notes"
+    }
+   ],
+   "tags": [
+    "大模型",
+    "llm",
+    "知识点",
+    "llm"
+   ],
+   "kind": "notes",
+   "summary": "大模型上下文窗口到底有多大，输入和输出Token怎么共同占用窗口？本文从大模型应用开发和面试角度讲清Context Engineering与Prompt Engineering的区别，以及长上下文中的信息稀释、Lost in the Middle、上下文污染问题，给出检索、筛选、排序、摘要压缩、滑动窗口、外部记忆和工具结果清理等工程方案。",
+   "needsFetch": false
+  },
+  {
+   "id": "45af88edc732a0d6",
+   "title": "事务的四大特性有哪些？ · 八股",
+   "category": "exam",
+   "channel": "kamacoder_notes",
+   "url": "https://notes.kamacoder.com/base/acid-properties.html",
+   "sources": [
+    {
+     "url": "https://notes.kamacoder.com/base/acid-properties.html",
+     "name": "kamacoder_notes"
+    }
+   ],
+   "tags": [
+    "八股",
+    "知识点",
+    "基础",
+    "base"
+   ],
+   "kind": "notes",
+   "summary": "事务的四大特性（ACID）是数据库面试的核心高频考点，包括原子性、一致性、隔离性和持久性。本文详细解析了每个特性的定义、作用及实现机制，如通过Undo Log保证原子性、锁与MVCC实现隔离性、Redo Log确保持久性，并探讨了事务隔离级别与并发问题（脏读、幻读）的关系，帮助你在数据库大厂面试中清晰阐述ACID原理。",
+   "needsFetch": false
+  }
+ ]
+}

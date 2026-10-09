@@ -1,0 +1,165 @@
+{
+  "id": "89824e07d162c472",
+  "tldr": "回溯去重两种写法对照：每层用 set 跳过同层重复值，或用 used 数组区分树层与树枝，避免重复子集。",
+  "keyPoints": [
+    "同一节点下本层去重：每层新建 set 记录已用的分支值",
+    "used 数组版用 树枝 标记判断元素是否已在当前路径上",
+    "子集、组合、排列都套同一套去重模板",
+    "去重前必须先排序，让相同值相邻才能判重",
+    "set 写法更直观，used 写法更省内存但条件更绕"
+  ],
+  "why": "回溯去重是手撕题高频陷阱，面试常追问「树层与树枝的区别」；讲清 set 与 used 的取舍能直接加分。",
+  "difficulty": "medium",
+  "tags": ["leetcode", "backtracking", "deduplication", "algorithm", "interview"],
+  "entities": ["set", "used 数组", "回溯", "子集", "组合", "排列"],
+  "diagram": {
+    "kind": "flow",
+    "title": "回溯去重四步",
+    "caption": "去重只发生在「同一层的兄弟分支」之间，一条路径向下的元素本来就不复用。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='回溯去重四步：排序、每层建 set、跳过同层重复值、沿路径递归收集'>\n<rect x='24' y='16' width='432' height='42' rx='8' fill='none' stroke='var(--accent)' stroke-width='1.4'/>\n<text x='40' y='42' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>① 先排序 nums.sort()</text>\n<text x='440' y='42' font-size='13' text-anchor='end' fill='currentColor'>相同值相邻，重复才可判</text>\n<line x1='240' y1='58' x2='240' y2='66' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,74 236,66 244,66' fill='var(--line-1)'/>\n<rect x='24' y='74' width='432' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='40' y='100' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>② 每层新建 used = set()</text>\n<text x='440' y='100' font-size='13' text-anchor='end' fill='currentColor'>只记录本层用作起点的值</text>\n<line x1='240' y1='116' x2='240' y2='124' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,132 236,124 244,124' fill='var(--line-1)'/>\n<rect x='24' y='132' width='432' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='40' y='158' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>③ 值已在 set 中 → continue</text>\n<text x='440' y='158' font-size='13' text-anchor='end' fill='currentColor'>树层去重：同层不重复取</text>\n<line x1='240' y1='174' x2='240' y2='182' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,190 236,182 244,182' fill='var(--line-1)'/>\n<rect x='24' y='190' width='432' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='40' y='216' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>④ 下探并收集 path</text>\n<text x='440' y='216' font-size='13' text-anchor='end' fill='currentColor'>树枝语义：元素不复用</text>\n</svg>",
+    "alt": "竖排四步：排序、每层新建 set、同层重复值跳过、沿路径递归收集，说明去重发生在同一层的兄弟分支之间。"
+  },
+  "concepts": [
+    {
+      "name": "树层去重 vs 树枝去重（Level vs Branch Deduplication）",
+      "readable": "把回溯的递归树分成横向和纵向：横向同一层的兄弟节点若值相同，会产生重复结果，要剪掉（树层去重）；纵向一条路径上元素本就不该复用，用标记控制（树枝去重）。",
+      "analogy": "点菜时一张桌子上「清蒸鱼」只点一次，这是同桌（同层）去重；而同一个人不能把同一道菜吃两遍，这是一条路径（树枝）去重。",
+      "analogyBreaksDown": "点菜类比里「菜」是固定的，回溯里是否剪枝取决于数组已排序且相同值相邻；没排序时同层重复值不相邻，类比就失效了。",
+      "mechanism": "排序把相同值聚在一起，使「本层已取过该值」可判定；每层用一个全新 set 记录本层已作为起点的值，命中即 continue，从而删掉值相同的兄弟分支，而 path 与递归顺序不受影响。",
+      "visual": "画一棵递归树：同一深度的节点用同一行横向排列并框住（标 树层），从根到叶的一条竖线加粗（标 树枝），重复值的兄弟节点打叉。",
+      "prerequisites": ["递归与回溯模板", "数组排序", "集合（set）用法"],
+      "selfTest": ["为什么去重前一定要先排序？", "每层新建 set 和全局共用一个 set 有什么区别？", "used 数组版里 used[i-1] 为 false 代表什么？"],
+      "formula": "\\mathrm{skip}(i) = \\left[\\, \\mathrm{nums}[i] = \\mathrm{nums}[i-1] \\,\\right]"
+    },
+    {
+      "name": "排序加本层集合去重（Sort + Level Set）",
+      "readable": "先把数组排序让相同的数挨在一起，再在每一层循环里开一个新 set，记录这一层已经用来作为分支起点的值，重复出现就直接跳过。",
+      "analogy": "把一摞扑克按点数排好，发牌时每种点数只发给第一个人一张；后面再摸到同点数的牌就跳过去，牌型组合就不会重样。",
+      "analogyBreaksDown": "发牌是一次性的，回溯会沿着每条分支反复进入新的一层，每层都要重新判重；类比没体现「每层一个新 set」这种随递归深度重建的结构。",
+      "mechanism": "把「本层是否已用过该值」这个状态局限在单层的作用域里，天然对应该层新增一个 set；这样既避免跨层误剪，又不需要像 used 数组那样维护下标与路径的对应关系。",
+      "visual": "画一行候选数组，同层循环的每个下标上方标一个小格子记录 set；某下标的值已在格子里时，用一个叉标出它被跳过。",
+      "prerequisites": ["循环与递归", "哈希集合", "子集问题模板"],
+      "selfTest": ["set 版和 used 数组版的结果为什么完全一致？", "为什么 set 要写在递归函数内部而不是外部？", "排列问题里 set 去重与组合问题里有什么不同？"],
+      "formula": ""
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-backtrack-level-dedup",
+      "name": "回溯树层去重条件（Level Deduplication）",
+      "category": "engineering",
+      "latex": "\\mathrm{skip}(i) = \\left[\\, i > \\mathrm{start} \\;\\wedge\\; \\mathrm{nums}[i] = \\mathrm{nums}[i-1] \\,\\right]",
+      "symbols": [
+        ["i", "当前层循环下标"],
+        ["\\mathrm{start}", "本层循环的起始下标（去重下界）"],
+        ["\\mathrm{nums}", "已升序排序的候选数组"],
+        ["\\mathrm{skip}(i)", "取 1 表示剪掉该分支，取 0 表示保留"]
+      ],
+      "derivation": [
+        "第 1 步：为了产生所有不重复的子集/组合，先对 nums 升序排序，使相同值相邻",
+        "第 2 步：在同一层里，下标不同的两个相同值会产生一模一样的兄弟分支，必须去掉其中一个",
+        "第 3 步：因此当 i 大于本层起点 start 且 nums[i] 与前一个相等时，说明是重复值，剪掉",
+        "第 4 步：限定 i>start（而不是 i>0）是为了只在同一层剪枝，不误伤不同层的合法取值"
+      ],
+      "analogy": "同一桌点菜，同一种菜只点一次；判断依据是「它已经在前面被点过了」，而不是「这道菜今天出现两次」。",
+      "pitfalls": [
+        "把 i>start 写成 i>0，会连不同层的合法取值一起剪掉",
+        "忘记先排序，相同值不相邻，nums[i]=nums[i-1] 判断失效",
+        "把去重放在树枝上，导致本该允许的重复元素组合被全部删除"
+      ],
+      "code": "def backtrack(nums, start, path, res):\n    res.append(path[:])\n    for i in range(start, len(nums)):\n        if i > start and nums[i] == nums[i-1]:\n            continue  # 树层去重：同层跳过重复值\n        path.append(nums[i])\n        backtrack(nums, i + 1, path, res)\n        path.pop()",
+      "sources": [
+        {"title": "回溯算法去重问题的另一种写法 · 题解", "url": "https://programmercarl.com/algo/backtracking/alternative-backtracking-deduplication.html"}
+      ]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "摘要说明本条讲的是：回溯在子集、组合、排列问题中用 set 做同一节点下本层去重的实现",
+      "摘要说明本条会与 used 数组去重版本作对比",
+      "条目类型为题解，channel 为 programmercarl（代码随想录）"
+    ],
+    "uncertain": [
+      "本条为写法讲解（非单一 LeetCode 题），代表题由本层选定为「子集 II」；problem.number 因此留 null，未填 LeetCode 题号",
+      "摘要未给出 set 与 used 两版的具体代码细节，approach 与 complexities 依回溯去重通用写法重建（待核实原文措辞）",
+      "示例 nums=[1,2,2] 及其 6 个子集为自行构造，已用两版参考代码逐步验证"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "数组里有重复数时，回溯要主动跳过同层的重复选择，结果才不会重复。"},
+      {"level": "入门", "text": "求子集、组合、排列时，如果原数组有重复元素，同一层里选了两个值相同的分支，会得到一模一样的答案。做法是先把数组排序，让相同值挨在一起，然后在每一层用一个 set 记住本层已经选过的值，再遇到相同值就跳过。"},
+      {"level": "进阶", "text": "去重分两个方向：横向的「树层去重」处理同一层里的兄弟重复，纵向的「树枝去重」保证一条递归路径上不重复使用同一个元素。set 写法的思路是每层新建一个集合，只记录本层作为分支起点出现过的值；used 数组写法则用下标标记元素是否已在当前路径上，靠 nums[i]==nums[i-1] 且前一个未被使用来判断「这是本层的重复」。"},
+      {"level": "专家", "text": "两种写法本质等价：set 把「本层已用的值」直接存下来，语义最直白但每层要额外 O(n) 空间；used 数组用布尔标记同时承担树枝判重，省内存但条件更难推——它依赖「若 nums[i-1] 与 nums[i] 相等且 nums[i-1] 未在路径上，则二者必是同层兄弟」这一性质，因此必须先排序。选择上：面试里先讲 set 版讲清语义，被追问空间再切 used 版；排列问题还要叠加上「同一位置不重复用」的 used 语义，比组合问题多一层约束。"}
+    ],
+    "socratic": [
+      {"q": "如果不排序直接去重会怎样？", "a": "相同的值可能不相邻，nums[i]==nums[i-1] 判不出重复，同层重复分支去不掉，结果里就会出现重复子集。"},
+      {"q": "为什么 set 必须写在递归函数里面？", "a": "set 表达的是「本层已用过的值」，作用域必须限定在单层；写在外面会跨层累积，把不同层的合法取值也误当成重复剪掉。"}
+    ],
+    "mechanism": "关键设计是先把「重复」定义清楚：重复只来自同一层的兄弟分支产生相同结果，而不是路径上复用了元素。排序让相同值相邻，使这个判断可以在 O(1) 内完成；每层新建一个 set 则是把判重状态的作用域精确限制在单层，从而既不误剪跨层取值，也不需要维护下标与路径的复杂对应。",
+    "boundary": "这套去重依赖「先排序」。若题目要求保持原顺序、或候选集合不是数组而是图/字符串的字符集，直接照搬会出错。另外它只解决「结果重复」，不解决「同元素只能用一次」这类树枝约束，两者要分别处理。",
+    "analogyBoundary": "点菜类比没有体现排序这一步不可省：现实里「同一种菜」天然可识别，而数组里相同值若不相邻，程序无法判断它们是否同类；把类比当成「天生就能去重」会在没排序时踩坑。",
+    "misconceptions": [
+      "把去重判断写成 i>0，把不同层的合法取值也一起剪掉，结果变少",
+      "以为 set 写在递归外更省事，实际造成跨层误剪",
+      "把「树层去重」和「同元素不复用」混为一谈，只做了一半。"
+    ],
+    "ownAnalysis": "（推断）这条题解的价值不在某道题，而在把「去重」拆成横向与纵向两个正交问题，这与后面课程表（207）里「图论约束」是一个思路：先精确定义要排除的重复来源，再选最省的判重结构。set 与 used 之争其实是「可读性 vs 空间」的老取舍，面试里先答 set 讲语义、再答 used 讲优化，是更稳的表述顺序。",
+    "officialNotes": [
+      {"position": "原文标题为「回溯算法去重问题的另一种写法」，主题是按同一节点下本层去重的 set 写法，并与 used 数组版对比", "source": "https://programmercarl.com/algo/backtracking/alternative-backtracking-deduplication.html"}
+    ],
+    "interviewAnswer": "我会先区分两个方向：横向同一层里值相同的兄弟分支要剪掉，这是树层去重；纵向一条路径上不重复使用同一元素，这是树枝去重。实现上，先排序让相同值相邻，然后在递归函数内部、每一层新建一个 set，记录本层已作为起点用过的值，命中就直接 continue。如果面试官追问空间，我会换成 used 数组，用 nums[i]==nums[i-1] 且前一个未被使用来判断这是同层重复。",
+    "studyPath": {
+      "prerequisites": ["递归与回溯模板", "排序", "集合与数组标记"],
+      "nextSteps": ["子集 II（LeetCode 90）", "组合总和 II（LeetCode 40）", "全排列 II（LeetCode 47）的树层去重"]
+    }
+  },
+  "problem": {
+    "title": "子集 II（树层去重 vs 树枝去重）",
+    "number": null,
+    "difficulty": "medium",
+    "statement": "给定一个可能包含重复元素的整数数组 nums，返回它的所有不重复子集（幂集）。解集不能包含重复的子集，子集之间的顺序与每个子集内部的顺序都不限。请用回溯实现，并说明其中哪些环节属于树层去重、哪些属于树枝去重。",
+    "examples": [
+      {"input": "nums = [1,2,2]", "output": "[[],[1],[1,2],[1,2,2],[2],[2,2]]", "why": "含重复 2，去重后共 6 个子集而非 8 个"},
+      {"input": "nums = [0]", "output": "[[],[0]]", "why": "单元素只有空集与自身两种子集"}
+    ],
+    "approach": {
+      "idea": "先把数组升序排序，让相同值相邻；递归每一层时新建一个 set 记录本层已作为分支起点用过的值，命中就跳过（树层去重）。递归下探时下标从 i+1 开始，保证一条路径上不复用同一元素（树枝语义）。",
+      "steps": [
+        "1. 对 nums 升序排序，使相同元素相邻",
+        "2. 定义回溯函数 backtrack(start)，进入时先把当前 path 的副本收进结果",
+        "3. 在每层循环前新建一个 used = set()",
+        "4. 循环 i 从 start 到末尾：若 nums[i] 已在 used 中则 continue，否则把 nums[i] 加入 used",
+        "5. 把 nums[i] 压入 path，递归 backtrack(i+1)，返回后弹出 path",
+        "6. 循环结束后返回结果集"
+      ],
+      "whyItWorks": "排序保证同层重复值相邻，set 精确记录「本层已用过的值」，因此值相同的兄弟分支只会保留一个，删掉的正是产生重复子集的那些分支；而递归下标取 i+1 保证路径上不复用元素，二者结合后每个不同子集恰好被收集一次。",
+      "alternatives": [
+        {"name": "used 布尔数组版", "complexity": "O(n·2^n) / O(n)", "when": "想要省掉每层 set 的空间、或练习「树层 vs 树枝」条件推导时"},
+        {"name": "暴力枚举全部子集再用 set 对结果去重", "complexity": "O(2^n·n) / O(2^n)", "when": "只想快速写出可跑版本、数据规模很小时"}
+      ]
+    },
+    "solution": {
+      "python": "def subsetsWithDup(nums):\n    nums.sort()\n    res, path = [], []\n\n    def backtrack(start):\n        res.append(path[:])          # 树上的每个节点都是一种子集\n        used = set()                 # 本层专属：记录本层已用作起点的值\n        for i in range(start, len(nums)):\n            if nums[i] in used:      # 树层去重：同层重复值跳过\n                continue\n            used.add(nums[i])\n            path.append(nums[i])\n            backtrack(i + 1)         # 树枝语义：下标往后推进，不复用元素\n            path.pop()\n\n    backtrack(0)\n    return res",
+      "python_alt": "def subsetsWithDup(nums):\n    nums.sort()\n    res, path = [], []\n    used = [False] * len(nums)       # 标记元素是否在当前路径（树枝）上\n\n    def backtrack(start):\n        res.append(path[:])\n        for i in range(start, len(nums)):\n            if i > 0 and nums[i] == nums[i - 1] and not used[i - 1]:\n                continue              # 树层去重：前一个相同值不在路径上\n            used[i] = True\n            path.append(nums[i])\n            backtrack(i + 1)\n            path.pop()\n            used[i] = False\n\n    backtrack(0)\n    return res",
+      "notes": "两版结果完全一致。set 版把「本层已用过的值」显式存下来，最直观；used 版用下标布尔标记同时承担树枝判重，省掉每层的 set 空间，但条件依赖数组已排序，写成 i>0 会误剪。切记 set 必须建在递归函数内部。"
+    },
+    "complexity": {
+      "time": "O(n * 2^n)",
+      "space": "O(n)",
+      "why": "去重后子集数上界为 2^n，每个子集复制 path 花 O(n)；递归栈与 path 深度为 O(n)（不计结果集本身）。"
+    },
+    "pitfalls": [
+      "忘记先排序，nums[i]==nums[i-1] 判不出重复，结果出现重复子集",
+      "把 set 建在递归函数外，造成跨层误剪，结果变少",
+      "used 数组版把条件写成 i>0，把不同层的合法取值也剪掉",
+      "收集结果时写成 res.append(path) 而非 path[:]，所有子集指向同一个列表"
+    ],
+    "edgeCases": [
+      "nums 为单个元素：结果只有空集与自身",
+      "nums 全部相同：去重后只有 n+1 个子集（长度 0 到 n 各一个）",
+      "nums 无重复：退化为普通求子集，共 2^n 个"
+    ],
+    "interviewTips": "先口头把「树层 vs 树枝」两点说清楚，再写 set 版，因为它的语义直接对应语言描述。写完主动提一句「这里必须排序」，并说明「set 要建在递归函数里面」。被追问空间就切到 used 数组版，边写边解释 nums[i]==nums[i-1] 且前一个未被使用这个条件为什么等价于同层重复。"
+  }
+}

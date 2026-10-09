@@ -1,0 +1,300 @@
+{
+ "id": "99eea52bfd97b716",
+ "tldr": "回溯枚举排列：每层从没用过的数里挑一个放进路径，选满 n 个就收集，再撤销选择回溯。",
+ "keyPoints": [
+  "结果共 n! 个，回溯是自然的枚举方式",
+  "used 数组或原地交换保证每层每数只用一次",
+  "path 长度等于 n 时记录结果",
+  "回溯三步：做选择 → 递归 → 撤销选择",
+  "记录结果要 path[:] 深拷贝，否则被后续污染"
+ ],
+ "why": "全排列是回溯模板题，字节/华为高频；它和子集、组合、分割共用一套模板，掌握后能横扫一大类手撕。",
+ "difficulty": "medium",
+ "tags": [
+  "leetcode",
+  "backtracking",
+  "recursion",
+  "permutation",
+  "dfs"
+ ],
+ "entities": [
+  "回溯",
+  "used 数组",
+  "递归树",
+  "交换法"
+ ],
+ "diagram": {
+  "kind": "flow",
+  "title": "全排列的递归树",
+  "caption": "以 nums=[1,2,3] 为例，每层选一个没用过的数往下走，叶子是 6 条完整排列。",
+  "alt": "数字 1 2 3 的全排列递归树，六个叶子分别对应 123 132 213 231 312 321",
+  "svg": "<svg viewBox='0 0 680 340' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='全排列 1 2 3 的递归树，叶子共六个'><line x1='340' y1='50' x2='170' y2='80' stroke='var(--line-1)' stroke-width='1.2'/><line x1='340' y1='50' x2='340' y2='80' stroke='var(--line-1)' stroke-width='1.2'/><line x1='170' y1='120' x2='97' y2='150' stroke='var(--line-1)' stroke-width='1.2'/><line x1='170' y1='120' x2='194' y2='150' stroke='var(--line-1)' stroke-width='1.2'/><line x1='340' y1='120' x2='291' y2='150' stroke='var(--line-1)' stroke-width='1.2'/><line x1='340' y1='120' x2='389' y2='150' stroke='var(--line-1)' stroke-width='1.2'/><line x1='510' y1='120' x2='486' y2='150' stroke='var(--line-1)' stroke-width='1.2'/><line x1='510' y1='120' x2='583' y2='150' stroke='var(--line-1)' stroke-width='1.2'/><line x1='97' y1='190' x2='97' y2='220' stroke='var(--line-1)' stroke-width='1.2'/><line x1='194' y1='190' x2='194' y2='220' stroke='var(--line-1)' stroke-width='1.2'/><line x1='291' y1='190' x2='291' y2='220' stroke='var(--line-1)' stroke-width='1.2'/><line x1='389' y1='190' x2='389' y2='220' stroke='var(--line-1)' stroke-width='1.2'/><line x1='486' y1='190' x2='486' y2='220' stroke='var(--line-1)' stroke-width='1.2'/><line x1='583' y1='190' x2='583' y2='220' stroke='var(--line-1)' stroke-width='1.2'/><circle cx='340' cy='30' r='20' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='340' y='35' font-size='13' text-anchor='middle' fill='currentColor'>起</text><circle cx='170' cy='100' r='20' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='170' y='105' font-size='13' text-anchor='middle' fill='currentColor'>1</text><circle cx='340' cy='100' r='20' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='340' y='105' font-size='13' text-anchor='middle' fill='currentColor'>2</text><circle cx='510' cy='100' r='20' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='510' y='105' font-size='13' text-anchor='middle' fill='currentColor'>3</text><circle cx='97' cy='170' r='20' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='97' y='175' font-size='13' text-anchor='middle' fill='currentColor'>1,2</text><circle cx='194' cy='170' r='20' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='194' y='175' font-size='13' text-anchor='middle' fill='currentColor'>1,3</text><circle cx='291' cy='170' r='20' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='291' y='175' font-size='13' text-anchor='middle' fill='currentColor'>2,1</text><circle cx='389' cy='170' r='20' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='389' y='175' font-size='13' text-anchor='middle' fill='currentColor'>2,3</text><circle cx='486' cy='170' r='20' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='486' y='175' font-size='13' text-anchor='middle' fill='currentColor'>3,1</text><circle cx='583' cy='170' r='20' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='583' y='175' font-size='13' text-anchor='middle' fill='currentColor'>3,2</text><circle cx='97' cy='240' r='20' fill='none' stroke='var(--accent)' stroke-width='2.2'/><text x='97' y='245' font-size='13' text-anchor='middle' fill='currentColor'>123</text><circle cx='194' cy='240' r='20' fill='none' stroke='var(--accent)' stroke-width='2.2'/><text x='194' y='245' font-size='13' text-anchor='middle' fill='currentColor'>132</text><circle cx='291' cy='240' r='20' fill='none' stroke='var(--accent)' stroke-width='2.2'/><text x='291' y='245' font-size='13' text-anchor='middle' fill='currentColor'>213</text><circle cx='389' cy='240' r='20' fill='none' stroke='var(--accent)' stroke-width='2.2'/><text x='389' y='245' font-size='13' text-anchor='middle' fill='currentColor'>231</text><circle cx='486' cy='240' r='20' fill='none' stroke='var(--accent)' stroke-width='2.2'/><text x='486' y='245' font-size='13' text-anchor='middle' fill='currentColor'>312</text><circle cx='583' cy='240' r='20' fill='none' stroke='var(--accent)' stroke-width='2.2'/><text x='583' y='245' font-size='13' text-anchor='middle' fill='currentColor'>321</text><text x='16' y='318' font-size='13' fill='currentColor' opacity='0.78'>叶子共 3! = 6 个，每个叶子就是一条完整排列</text></svg>"
+ },
+ "concepts": [
+  {
+   "name": "回溯（Backtracking）",
+   "readable": "把求解过程看成一棵「在每一步做选择」的树。沿着一条选择路径深搜到底，得到或得不到解后，退回上一步撤销这个选择，再试下一个分支。",
+   "analogy": "像走迷宫：沿一条岔路走到底发现是死路，就退回上一个岔口换另一条路，而不是从头再来。",
+   "analogyBreaksDown": "回溯不是「碰运气」，它要有明确的「结束条件（到底了）」和「撤销动作」。若忘记撤销（used 不复位、交换不还原），后续分支会带着上一次的状态，结果既错又难查。",
+   "mechanism": "用路径 path 记录当前选择，用 used 记录哪些元素已用；进入一层就做选择、递归，返回后立即撤销，使状态在兄弟分支间彼此独立。",
+   "visual": "画一棵树：根是空路径，每条边是「选了一个数」；用高亮标出当前正在走的路径，回溯时高亮退回上一层。",
+   "prerequisites": [
+    "递归与递归基",
+    "数组的增删",
+    "深度优先搜索"
+   ],
+   "selfTest": [
+    "为什么每次从递归返回后要撤销选择？",
+    "如果不做 path.pop() 会发生什么？",
+    "排列问题为什么不需要排序去重（与 LC47 的区别）？"
+   ],
+   "formula": ""
+  },
+  {
+   "name": "排列数与 n! 的规模",
+   "readable": "n 个互异元素的全排列个数是 n!。回溯树的叶子数就是答案个数，所以任何枚举排列的算法都至少要 O(n·n!) 的时间。",
+   "analogy": "像 n 个人排队：第一个人有 n 个位置可选，选定后第二个人剩 n-1 个，方案数就是 n×(n-1)×…×1。",
+   "analogyBreaksDown": "n! 增长极快：n=10 时约 362 万，n=13 已超 60 亿。所以这类题的实际限制往往由数据规模决定，而不是算法常数——n 稍大就不能用枚举。",
+   "mechanism": "回溯每层用 for 循环挑未用元素，组合数的乘积正好是 n!，因此枚举本身无法突破这个规模；优化方向只能是剪枝或换问题（如求第 k 个排列）。",
+   "visual": "把结果数量画成柱状图：横轴 n=1..8，纵轴 n!，指数上升；标出 n=10 的量级。",
+   "prerequisites": [
+    "阶乘",
+    "乘法原理"
+   ],
+   "selfTest": [
+    "为什么答案有 n! 个？",
+    "n=10 的全排列大约多少个？",
+    "求「第 k 个排列」为什么能不用枚举？"
+   ],
+   "formula": "P(n, n) = n! = \\prod_{k=1}^{n} k"
+  }
+ ],
+ "formulas": [
+  {
+   "id": "f-permutation-count",
+   "name": "排列数（Number of Permutations）",
+   "category": "engineering",
+   "latex": "P(n, n) = n! = \\prod_{k=1}^{n} k",
+   "symbols": [
+    [
+     "n",
+     "元素个数"
+    ],
+    [
+     "P(n,n)",
+     "n 个元素取 n 个的排列数"
+    ],
+    [
+     "\\prod",
+     "连乘"
+    ]
+   ],
+   "derivation": [
+    "第一位有 n 种选择。",
+    "选定第一位后，第二位剩 n-1 种。",
+    "依次递推，到第 n 位只剩 1 种。",
+    "由乘法原理，总方案数 = n×(n-1)×…×1 = n!。"
+   ],
+   "analogy": "排队照相：第一个人的站位随便挑，后面的人可选位置越来越少，方案数是 5×4×3×2×1。",
+   "pitfalls": [
+    "把排列数 n! 与组合数 C(n,k)=n!/(k!(n-k)!) 混为一谈",
+    "算总复杂度时漏乘「每个结果拷贝一次」的 O(n)"
+   ],
+   "code": "import math\n\ndef perm_count(n):\n    return math.factorial(n)\n\nprint(perm_count(3))   # 6\nprint(perm_count(4))   # 24",
+   "sources": [
+    {
+     "title": "46.全排列 · 题解",
+     "url": "https://programmercarl.com/algo/backtracking/0046-permutations.html"
+    }
+   ]
+  },
+  {
+   "id": "f-permutation-complexity",
+   "name": "回溯枚举复杂度（Backtracking Complexity）",
+   "category": "engineering",
+   "latex": "T(n) = O\\bigl(n \\cdot n!\\bigr)",
+   "symbols": [
+    [
+     "n!",
+     "叶子数（结果个数）"
+    ],
+    [
+     "n",
+     "每个结果拷贝路径的代价"
+    ],
+    [
+     "T(n)",
+     "总时间"
+    ]
+   ],
+   "derivation": [
+    "递归树的叶子对应每个完整排列，共 n! 个。",
+    "每个叶子要把长度 n 的 path 拷贝进结果，代价 O(n)。",
+    "非叶子节点的展开总代价不超过叶子的常数倍。",
+    "因此总时间上界为 O(n·n!)。"
+   ],
+   "analogy": "像给 n! 个人各复印一份 n 页的材料，总工作量自然是份数乘页数。",
+   "pitfalls": [
+    "只算 n! 忘了每份结果还要 O(n) 拷贝，结果少一个因子 n",
+    "把空间 O(n)（递归栈+path）误写成 O(n!)（那只算输出本身）"
+   ],
+   "code": "import math\nn = 4\nleaves = math.factorial(n)   # 24\nwork = leaves * n            # 96\nprint(leaves, work)",
+   "sources": [
+    {
+     "title": "46.全排列 · 题解",
+     "url": "https://programmercarl.com/algo/backtracking/0046-permutations.html"
+    }
+   ]
+  }
+ ],
+ "selfCheck": {
+  "claims": [
+   "全排列可用回溯算法求解，使用 used 数组标记已选元素（摘要原文）。",
+   "算法递归遍历所有可能的排列（摘要原文）。",
+   "nums=[1,2,3] 的全部排列为 [[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]（示例自验，共 6 个）。"
+  ],
+  "uncertain": [
+   "源摘要只描述回溯+used 数组，未给示例；nums=[1,2,3] 示例按 LeetCode 46 题面构造，已用代码验证 6 个结果。",
+   "示例为自行构造"
+  ]
+ },
+ "teaching": {
+  "progressive": [
+   {
+    "level": "一句话",
+    "text": "从没用过的数里一个一个选，选满一组就记下来，再退回去换下一个。"
+   },
+   {
+    "level": "入门",
+    "text": "用 path 记录当前选中的数、used 记录哪些数已经用过。每层遍历所有数，跳过用过的，选一个没用的加进 path，递归下一层；返回后把它弹出并复位 used。当 path 长度等于 n 时，把 path 的一份拷贝加入答案。"
+   },
+   {
+    "level": "进阶",
+    "text": "关键在于「状态在兄弟分支间互不影响」：选择 → 递归 → 撤销三步必须配对。记录结果一定要 path[:] 深拷贝，否则所有结果都会指向同一个被清空的列表。时间 O(n·n!)，空间 O(n)（递归栈与 path），输出本身占 O(n·n!)。"
+   },
+   {
+    "level": "专家",
+    "text": "除了 used 数组，还能用「原地交换」省掉 used：把当前位置与后面每个位置交换，递归后再换回来。两种写法等价，但交换法在原数组上改，要注意恢复。若元素可能重复（LC47），需先排序再在「同层」跳过相邻重复值，否则会出面重复排列。"
+   }
+  ],
+  "socratic": [
+   {
+    "q": "为什么每次递归返回后一定要撤销选择？",
+    "a": "否则这个选择会残留到兄弟分支，导致后续排列多一个数或少一个数，结果错误。"
+   },
+   {
+    "q": "把 res.append(path) 写成 path 而不是 path[:] 会怎样？",
+    "a": "所有答案会共享同一个列表；后续回溯把它清空后，res 里全是空列表。"
+   },
+   {
+    "q": "如果数组里有重复数字，为什么要额外去重？",
+    "a": "相同数字互换位置会生成重复排列；需排序后在同层跳过重复，保证每种排列只出现一次。"
+   }
+  ],
+  "mechanism": "排列要求「每个元素恰好用一次、顺序不同即不同解」，这正是回溯的天然场景：每一层代表排列的一个位置，在其上选择一个尚未使用的元素。递归深度等于 n，到达深度 n（path 满）即得到一个解。回溯的撤销保证了「深度优先探索一条路径」，而 for 循环遍历所有候选则保证了「枚举所有分支」，两者结合正好生成全部 n! 种顺序。",
+  "boundary": "元素互异时用 used 即可；有重复元素时必须配合排序 + 同层去重（LC47），否则会重复。n 稍大（>10）时结果数爆炸，枚举不可行，需改用「求第 k 个排列」（LC60，康托展开/逐位确定）这类不枚举全部解的方法。",
+  "analogyBoundary": "「走迷宫」的类比只体现「试错 + 退格」，但它暗示每次只选「一条岔路」；而排列的回溯在每一层要 for 循环尝试多个候选（多个岔路），类比里没有体现「同一层的兄弟分支要逐个试完」这一点，也没有体现「撤销是为了不影响兄弟」。",
+  "misconceptions": [
+   "res.append(path) 忘了深拷贝，结果全被后续回溯污染。",
+   "忘记复位 used[i]（或忘记换回交换），后续分支状态错乱。",
+   "把结果数与复杂度都写成 n!，漏掉每份结果拷贝的 O(n) 因子。"
+  ],
+  "ownAnalysis": "全排列是回溯的「Hello World」，把它写对的关键不在思路而在两个细节：深拷贝与撤销。这两个细节在子集、组合、分割、N 皇后里全都复用。（推断）面试常把 46 和 47（含重复）连问，考察你是否知道要排序 + 同层去重；再往上是 60（第 k 个排列），考察能否从「枚举」跳到「构造」。",
+  "officialNotes": [
+   {
+    "position": "全排列通过回溯算法求解，使用 used 数组标记已选择元素，递归遍历所有可能排列。",
+    "source": "https://programmercarl.com/algo/backtracking/0046-permutations.html"
+   }
+  ],
+  "interviewAnswer": "我用回溯。path 存当前排列，used 标记用过的元素。每层从没用过的数里挑一个，放进 path 后递归下一层；返回时 pop 并复位 used，这样兄弟分支互不影响。path 长度到 n 时把 path[:] 深拷贝进结果。时间 O(n·n!)，空间 O(n)。如果数组有重复元素，我会先排序并在同层跳过重复值去重。",
+  "studyPath": {
+   "prerequisites": [
+    "递归",
+    "深度优先搜索",
+    "数组增删与拷贝语义"
+   ],
+   "nextSteps": [
+    "做 LC47「全排列 II」，体会排序 + 同层去重",
+    "做 LC78「子集」/ LC77「组合」，对比「排列 vs 组合」在回溯里的差别",
+    "做 LC60「排列序列」，学习不枚举全部解的构造法"
+   ]
+  }
+ },
+ "problem": {
+  "title": "全排列",
+  "number": 46,
+  "difficulty": "medium",
+  "statement": "给定一个不含重复数字的整数数组 nums，返回其所有可能的全排列，可以按任意顺序返回答案。约束：1 <= nums.length <= 6，-10 <= nums[i] <= 10，nums 中所有整数互不相同。",
+  "examples": [
+   {
+    "input": "nums = [1,2,3]",
+    "output": "[[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]",
+    "why": "3! = 6 个排列",
+    "explanation": "3! = 6 个排列"
+   },
+   {
+    "input": "nums = [0,1]",
+    "output": "[[0,1],[1,0]]",
+    "why": "2! = 2 个排列，顺序可任意",
+    "explanation": "2! = 2 个排列，顺序可任意"
+   },
+   {
+    "input": "nums = [1]",
+    "output": "[[1]]",
+    "why": "单元素只有一种排列",
+    "explanation": "单元素只有一种排列"
+   }
+  ],
+  "approach": {
+   "idea": "把生成排列看成在递归树上做选择：第 0 位从所有数里挑一个，第 1 位从剩下的数里再挑一个……用 used 记录用过的数，path 记录当前构造的排列。走满 n 位就得到一个解；回溯时撤销选择，换一个候选继续。",
+   "steps": [
+    "初始化 res=[]、path=[]、used=[False]*n。",
+    "若 len(path)==n：把 path[:] 加入 res 后返回。",
+    "遍历 i 从 0 到 n-1：若 used[i] 则跳过。",
+    "做选择：used[i]=True、path.append(nums[i])，递归下一层。",
+    "撤销选择：path.pop()、used[i]=False，继续循环下一个候选。"
+   ],
+   "whyItWorks": "每一层递归确定排列的一个位置，并保证所选元素此前未被使用（used 约束），因此到第 n 层得到的 path 正好是 n 个互异元素的一种顺序。反向地，任意一个排列都能按其顺序在树上唯一地走出一条路径被生成。由于每层枚举了所有合法候选，解集恰好等于全部 n! 个排列，不重不漏。",
+   "alternatives": [
+    {
+     "name": "原地交换法",
+     "complexity": "O(n·n!)/O(n)",
+     "when": "想省掉 used 数组时：把当前位置与后面每个位置交换后递归，返回再换回。"
+    },
+    {
+     "name": "itertools.permutations",
+     "complexity": "O(n·n!)/O(n)",
+     "when": "工程里直接调用标准库；面试要手写原理时不推荐。"
+    },
+    {
+     "name": "含重复元素（LC47）",
+     "complexity": "O(n·n!)/O(n)",
+     "when": "nums 有重复值时需先排序，并在同层跳过相邻重复，避免重复排列。"
+    }
+   ]
+  },
+  "solution": {
+   "python": "class Solution:\n    def permute(self, nums):\n        res, path = [], []\n        used = [False] * len(nums)\n\n        def backtrack():\n            if len(path) == len(nums):\n                res.append(path[:])        # 深拷贝\n                return\n            for i in range(len(nums)):\n                if used[i]:\n                    continue\n                used[i] = True\n                path.append(nums[i])\n                backtrack()\n                path.pop()                 # 撤销\n                used[i] = False\n\n        backtrack()\n        return res\n",
+   "python_alt": "# 原地交换法：不用 used，直接在原数组上换位\nclass Solution:\n    def permute(self, nums):\n        res = []\n        n = len(nums)\n\n        def dfs(start):\n            if start == n:\n                res.append(nums[:])\n                return\n            for i in range(start, n):\n                nums[start], nums[i] = nums[i], nums[start]\n                dfs(start + 1)\n                nums[start], nums[i] = nums[i], nums[start]  # 恢复\n\n        dfs(0)\n        return res\n",
+   "notes": "used 方案可读性更好且不修改输入语义；交换法省内存但要在递归后换回。两个方案都必须用 path[:] / nums[:] 拷贝，否则结果被后续回溯污染。n 保证互异，所以不需要去重逻辑。"
+  },
+  "complexity": {
+   "time": "O(n · n!)",
+   "space": "O(n)",
+   "why": "共 n! 个结果，每个结果拷贝长度 n 的路径，故 O(n·n!)；额外空间只有 path 与 used，深度 n。"
+  },
+  "pitfalls": [
+   "res.append(path) 未深拷贝，最终所有结果都指向被清空的同一个列表。",
+   "忘记撤销 used[i]（或交换法忘记换回），使后续分支状态错乱。",
+   "used 初始化长度写成 len(nums)-1，末位永远可用。",
+   "交换法里只交换没有换回，破坏原数组导致结果缺失。"
+  ],
+  "edgeCases": [
+   "n = 1 → 返回 [[nums[0]]]。",
+   "含负数或 0 → 逻辑不变，只是数值不同。",
+   "空数组（题面保证 n>=1）→ 若允许，返回 [[]]。",
+   "含重复元素（需 LC47 处理）→ 本题不出现，但会被追问。"
+  ],
+  "interviewTips": "先说「回溯模板：选择-递归-撤销」，再写代码。边写边强调深拷贝与撤销两个坑。写完报复杂度 O(n·n!)/O(n)，并主动解释 O(n!) 之外为什么要乘 n（每份结果要拷贝）。顺势提一句交换法作为变体，以及 LC47 的去重思路，能显示厚度。"
+ }
+}

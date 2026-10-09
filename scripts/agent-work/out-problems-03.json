@@ -1,0 +1,965 @@
+{
+ "batchId": "problems-03",
+ "entries": [
+  {
+   "id": "d5f812800250910d",
+   "tldr": "一次遍历维护历史最低价，O(n) 时间 O(1) 空间求出单笔交易最大利润。",
+   "keyPoints": [
+    "只能先买后卖，最多一笔交易",
+    "答案下界为 0，即可以不交易",
+    "枚举卖出日时最优买入必是前缀最低价",
+    "一次扫描同时维护最低价与最优利润"
+   ],
+   "why": "贪心 / DP 入门模板题，字节等大厂高频；其『维护前缀最优』思想可迁移到多类数组题。",
+   "difficulty": "easy",
+   "tags": [
+    "leetcode",
+    "array",
+    "greedy",
+    "dynamic-programming",
+    "easy"
+   ],
+   "entities": [
+    "LeetCode 121",
+    "动态规划",
+    "贪心"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "一次遍历求解流程",
+    "caption": "记住最低买入价，每天只做两件事：先算卖出的收益，再把今天当成未来买入候选。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='买卖股票一次遍历流程'><rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>输入 prices</text><text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>n 天价格数组</text><line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,70 236,62 244,62' fill='var(--line-1)'/><rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>先算收益</text><text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>best = max(best, p - min)</text><line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,124 236,116 244,116' fill='var(--line-1)'/><rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>再更新最低价</text><text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>min = min(min, p)</text><line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,178 236,170 244,170' fill='var(--line-1)'/><rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>返回 best</text><text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>不交易时为 0</text></svg>",
+    "alt": "流程：读入价格数组，遍历中先算 best=max(best,p-min)，再更新 min=min(min,p)，最后返回 best。"
+   },
+   "concepts": [
+    {
+     "name": "Running Minimum（前缀最小值在线维护）",
+     "readable": "边扫描边记住到目前为止见过的最小价格，把它当买入价，用当天价格减它得到利润。",
+     "analogy": "逛跳蚤市场，一边走一边记住见过最便宜的摊位价；之后看到更贵的，就知道『在最低价买、现在卖』能赚多少。",
+     "analogyBreaksDown": "跳蚤市场的价会变、还能回头买；这里买入日必须在卖出日之前，最低价只能是当前天之前的，不能使用未来信息。",
+     "mechanism": "只维护一个前缀最小值加一个最优利润，避免为每个卖出日重新扫左侧，把 O(n²) 压到 O(n)、O(1) 空间。",
+     "visual": "横轴天数、纵轴价格折线；一条水平虚线标出已遍历区间的最低点，每天向上量到当前价即利润。",
+     "prerequisites": [
+      "数组遍历",
+      "时间复杂度基本概念"
+     ],
+     "selfTest": [
+      "为什么最优买入日一定是卖出日之前价格最低的一天？",
+      "先在遍历里更新 min 再算 profit 和反过来有区别吗？",
+      "数组严格递减时答案为什么是 0？"
+     ],
+     "formula": "\\mathrm{best}_j=\\max\\bigl(\\mathrm{best}_{j-1},\\ price_j-\\min_{0\\le i<j}price_i\\bigr)"
+    },
+    {
+     "name": "状态压缩 DP（双状态滚动）",
+     "readable": "把『第 i 天持有 / 不持有股票』两种状态的最大现金滚动更新，用两个变量代替整张 dp 表。",
+     "analogy": "像记账：今天要么手里有股票（记为负成本），要么空仓（现金为正），每天只问哪种更赚。",
+     "analogyBreaksDown": "这套状态机是为『不限次数但同一时刻只持一股、无附加费用』设计的简化版；一旦加冷冻期、手续费或最多 k 笔，转移与维度都会变，不能照搬。",
+     "mechanism": "定义 hold=持有时的最大现金、free=空仓时的最大现金，逐天转移；本题只需不断用 -p 刷新 hold、用 hold+p 刷新 free。",
+     "visual": "两个色块 hold / free 逐天向右推进，每天从上一列取值做 max 合并。",
+     "prerequisites": [
+      "动态规划状态定义"
+     ],
+     "selfTest": [
+      "hold 的初值为什么取负无穷或 0 要讲清楚？",
+      "本题 hold 的转移为何退化成 max(hold,-p)？",
+      "什么时候 free 会与贪心答案不同？"
+     ],
+     "formula": "hold=\\max(hold,-price),\\quad free=\\max(free,hold+price)"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-best-time-stock-profit",
+     "name": "单笔交易最大利润递推（Best Single-Trade Profit Recurrence）",
+     "category": "engineering",
+     "latex": "\\mathrm{best}_j=\\max\\bigl(\\mathrm{best}_{j-1},\\ price_j-\\min_{0\\le i<j}price_i\\bigr),\\quad \\mathrm{best}_{-1}=0",
+     "symbols": [
+      [
+       "price_j",
+       "第 j 天的股票价格"
+      ],
+      [
+       "best_j",
+       "前 j 天做一笔交易的最大利润"
+      ],
+      [
+       "min_{0<=i<j}",
+       "j 之前的最低价（前缀最小值）"
+      ]
+     ],
+     "derivation": [
+      "枚举卖出日 j，利润等于 price_j 减去买入价。",
+      "固定 j 时，为使利润最大，买入价取 [0,j) 内的最低价。",
+      "记前缀最小值为该最低价，则当天最优利润为 price_j 减它。",
+      "答案取所有卖出日最优值的最大值，并设下界 0（可不交易）。"
+     ],
+     "analogy": "在价格曲线上，从每个波峰往前找它前面最低的波谷，取落差最大的一对。",
+     "pitfalls": [
+      "把买入价取成全局最小值，等于用了未来价格",
+      "忘记下界 0，出现负利润"
+     ],
+     "code": "def maxProfit(prices):\n    mn = float('inf'); best = 0\n    for p in prices:\n        best = max(best, p - mn)\n        mn = min(mn, p)\n    return best",
+     "sources": [
+      {
+       "title": "买卖股票的最佳时机（LeetCode 121）· 大厂高频手撕题",
+       "url": "https://leetcode.cn/problems/best-time-to-buy-and-sell-stock"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "该题被字节 148 次、腾讯 29 次、拼多多 9 次等考过，共 192 次",
+     "难度为简单",
+     "最近一次出现 2026-07-14",
+     "本题属于动态规划类"
+    ],
+    "uncertain": [
+     "源信息未给题目示例，problem.examples 为自行构造并已用参考实现核对",
+     "各公司考频为采集层统计口径，未逐条核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "一路记住最低价，卖在最高的地方。"
+     },
+     {
+      "level": "入门",
+      "text": "遍历价格数组，用历史最低价当买入价，每天算一次卖出利润并更新答案，这就是贪心。"
+     },
+     {
+      "level": "进阶",
+      "text": "本质是 dp：当天最优利润等于 max(昨天最优, 今天价 - 之前最低价)。只用一个 min 变量加一个 best，把 O(n²) 枚举压到 O(n)、O(1) 空间。"
+     },
+     {
+      "level": "专家",
+      "text": "它是『最多 k 笔交易』系列 k=1 的特例。通用做法用 hold/free 双状态滚动，k 大于 1 时再加一维即可（对应 122/123/188）。本题贪心与 DP 等价，因为 k=1 时 hold 转移退化为始终取最小买入价。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "如果不用前缀最小值，改成对每个卖出日重新扫左边会怎样？",
+      "a": "复杂度从 O(n) 退化到 O(n²)，而且没有新增信息——每次重扫算的还是同一个前缀最小值。"
+     },
+     {
+      "q": "先更新 min 再算 profit 行不行？",
+      "a": "会用到同一根 K 线同时买和卖，利润恒为 0。必须保证买入日严格早于卖出日。"
+     }
+    ],
+    "mechanism": "核心是时间序列上的在线最优化：把一次枚举所有买卖组合的过程，改写为一次遍历里的前缀极值维护，用常数个变量承载全部历史信息，因此无需存整张 dp 表。",
+    "boundary": "只适用于『最多一笔交易且先买后卖』。若允许做空、日内多次交易，或在买入日当天卖出，递推里 best 的下界与 min 的更新时机都要改。",
+    "analogyBoundary": "把最低价类比成『曾经最便宜的摊位』忽略了时间不可逆：只能选当前天之前的低价买入，不能用后面才出现的最低点回头买。",
+    "misconceptions": [
+     "把 min 初始化成 0，导致利润算成价格本身",
+     "以为要排序或双指针，其实一次遍历即可",
+     "忽略买卖顺序约束，直接返回最大值减最小值"
+    ],
+    "ownAnalysis": "（推断）这类『维护前缀极值』的模板还能迁移到最大子数组和、接雨水等题，本题是它最简单的一维形态；面试若被追问，可顺势讲出多状态 DP 的推广路径。",
+    "officialNotes": [],
+    "interviewAnswer": "结论是维护历史最低价 mn 与最大利润 best，遍历一次即可。对每天 p，先 best=max(best,p-mn) 表示今天卖出，再 mn=min(mn,p) 把它作为未来买入候选。时间 O(n)、空间 O(1)。它也可以写成双状态 DP，方便扩展到多笔交易。",
+    "studyPath": {
+     "prerequisites": [
+      "Python 基础",
+      "数组遍历",
+      "大 O 记号"
+     ],
+     "nextSteps": [
+      "LeetCode 122 买卖股票 II（多次交易）",
+      "LeetCode 123/188（最多 k 笔）",
+      "LeetCode 309（含冷冻期）"
+     ]
+    }
+   },
+   "problem": {
+    "title": "买卖股票的最佳时机",
+    "number": 121,
+    "difficulty": "easy",
+    "statement": "给定数组 prices，prices[i] 表示某支股票第 i 天的价格。你只允许选择某一天买入、并在之后的某一天卖出（最多一笔交易），返回能获得的最大利润；若无法获利则返回 0。",
+    "examples": [
+     {
+      "input": "prices = [7,1,5,3,6,4]",
+      "output": "5",
+      "why": "第 2 天 1 买入、第 5 天 6 卖出，利润 5 最大"
+     },
+     {
+      "input": "prices = [7,6,4,3,1]",
+      "output": "0",
+      "why": "价格单调递减，任何买入都亏，只能不交易"
+     }
+    ],
+    "approach": {
+     "idea": "枚举卖出日 j，那么最优买入日必是 j 之前价格最低的一天。于是只需一次遍历，边维护『到目前为止的最低价』min，边用 price-min 更新答案。",
+     "steps": [
+      "1. 初始化 min=正无穷、best=0。",
+      "2. 遍历每个价格 p：先 best=max(best, p-min)，表示假设今天卖出。",
+      "3. 再 min=min(min, p)，把今天加入『未来买入候选』。",
+      "4. 遍历结束返回 best。"
+     ],
+     "whyItWorks": "对任一卖出日 j，利润 price_j 减去买入价，买入价越小利润越大，因此最优买入价就是 [0,j) 的最小值。一次扫描同时覆盖所有卖出日、并实时维护各自的前缀最小值，故不遗漏任何买卖组合；best 初值 0 保证不交易的情形。",
+     "alternatives": [
+      {
+       "name": "暴力双重循环",
+       "complexity": "O(n²)/O(1)",
+       "when": "数据规模很小，或面试想先要一个能跑通的 baseline"
+      },
+      {
+       "name": "双状态动态规划",
+       "complexity": "O(n)/O(n)（可压成 O(1) 空间）",
+       "when": "题目升级为多次交易、含冷冻期或手续费时，改用 hold/free 状态可平滑推广"
+      }
+     ]
+    },
+    "solution": {
+     "python": "from typing import List\n\n\ndef maxProfit(prices: List[int]) -> int:\n    min_price = float('inf')\n    best = 0\n    for p in prices:\n        best = max(best, p - min_price)  # 假设今天卖出\n        min_price = min(min_price, p)    # 更新历史最低买入价\n    return best\n\n\nif __name__ == '__main__':\n    print(maxProfit([7, 1, 5, 3, 6, 4]))  # 5\n    print(maxProfit([7, 6, 4, 3, 1]))     # 0",
+     "python_alt": "from typing import List\n\n\ndef maxProfit(prices: List[int]) -> int:\n    hold = float('-inf')  # 持有股票时的最大收益（负数记为成本）\n    free = 0              # 空仓时的最大收益\n    for p in prices:\n        hold = max(hold, -p)\n        free = max(free, hold + p)\n    return free",
+     "notes": "先算收益再更新 min，保证买入日严格早于卖出日；best 初值 0 使『不交易』成为合法答案。min 用 float('inf') 初始化可自然处理负数价格。"
+    },
+    "complexity": {
+     "time": "O(n)",
+     "space": "O(1)",
+     "why": "只遍历数组一次；额外只用 min、best 两个变量，与 n 无关。"
+    },
+    "pitfalls": [
+     "先更新 min 再算 profit，等于允许当天买当天卖，利润恒为 0",
+     "best 初值写成负无穷，单调递减时会返回负数",
+     "把买入价误用全局最小值，等于用了未来信息"
+    ],
+    "edgeCases": [
+     "prices 为空或只有一个元素时返回 0",
+     "价格单调递减时返回 0（不交易）",
+     "价格含 0 或负数时 min 需能取到，用 inf 初始化即可"
+    ],
+    "interviewTips": "开口先给 O(n)/O(1) 的贪心结论并解释为什么买入价取前缀最小，再写代码；如果面试官追问变体，主动说出双状态 DP 与 122/123 的推广，显示你掌握了这一族题的通用框架。"
+   }
+  },
+  {
+   "id": "18112dcf61f4af70",
+   "tldr": "后序递归，左右子树各找到一个目标时当前节点即为最近公共祖先，一次遍历 O(n)。",
+   "keyPoints": [
+    "空节点或等于 p/q 时直接返回当前节点",
+    "必须后序遍历：先递归左右再判定",
+    "左右返回值都非空说明当前节点是 LCA",
+    "只有一侧非空就把该侧结果原样上传"
+   ],
+   "why": "二叉树递归模板题，考察后序遍历与返回值语义设计，是字节 / 快手 / 微软高频，也是树形 DFS 的基石。",
+   "difficulty": "medium",
+   "tags": [
+    "leetcode",
+    "binary-tree",
+    "dfs",
+    "recursion",
+    "medium"
+   ],
+   "entities": [
+    "LeetCode 236",
+    "后序遍历",
+    "最近公共祖先"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "后序递归求 LCA",
+    "caption": "函数语义是『返回子树中找到的 p、q 或它们的 LCA』；左右都非空时当前节点就是最低汇合点。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='后序递归求最近公共祖先流程'><rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>递归到当前节点</text><text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>空或等于 p/q 就返回</text><line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,70 236,62 244,62' fill='var(--line-1)'/><rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>回溯左右子树</text><text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>left=dfs(L), right=dfs(R)</text><line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,124 236,116 244,116' fill='var(--line-1)'/><rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>判定是否汇合</text><text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>left 与 right 都非空 → root</text><line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,178 236,170 244,170' fill='var(--line-1)'/><rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>否则向上传递</text><text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>返回非空的那一侧</text></svg>",
+    "alt": "流程：递归到当前节点，空或等于 p/q 即返回；回溯左右子树；左右都非空则返回当前节点，否则返回非空的一侧。"
+   },
+   "concepts": [
+    {
+     "name": "后序遍历的返回值契约（Bottom-up Return Contract）",
+     "readable": "递归函数返回的不是『有没有』，而是『这棵子树里能找到的 p、q 或它们已汇合的 LCA 节点本身』。",
+     "analogy": "像逐层上报：每个小组长把小组成员往上报，谁下面同时凑齐两个人，谁就是他们的共同上级。",
+     "analogyBreaksDown": "上报模型默认成员唯一且一定在同组织内；若 p 或 q 有一个不在树里，函数会把唯一找到的那个一路当作结果上传，需要额外判存在性。",
+     "mechanism": "把查两个节点合并进一次后序 DFS：先取左右子树结果再在父节点判定。左右都非空即两目标分处两侧，父节点是唯一且最低的汇合点；否则原样上传非空一侧。",
+     "visual": "一棵树自底向上，每个节点旁标注它的返回箭头指向谁，最高处两条路径汇合的节点被高亮。",
+     "prerequisites": [
+      "二叉树遍历",
+      "递归"
+     ],
+     "selfTest": [
+      "为什么必须后序而不是前序？",
+      "把 root is p 改成比较 val 会有什么问题？",
+      "当 p 是 q 的祖先时返回值是谁？"
+     ],
+     "formula": ""
+    },
+    {
+     "name": "最近公共祖先（Lowest Common Ancestor）",
+     "readable": "两个节点所有公共祖先中最深的那个，也就是它们向上回溯路径的第一个交点。",
+     "analogy": "两个人的族谱往上追，第一个共同出现的长辈就是他们的 LCA。",
+     "analogyBreaksDown": "族谱每代唯一且有向上指针；二叉树是单向向下的，没有 parent 指针，必须先递归或额外建父指针，不能直接用『两边同时往上走』的直观做法。",
+     "mechanism": "树没有父指针，所以用后序 DFS 自底向上替代回溯；父指针版本则显式建 parent 表，从 p 往上标记再把 q 往上找第一个已标记节点。",
+     "visual": "把 p 到根的路径涂一种颜色、q 到根的路径涂另一种，两种颜色的第一个交叠点即 LCA。",
+     "prerequisites": [
+      "树的定义",
+      "哈希表"
+     ],
+     "selfTest": [
+      "父指针解法的时间与空间复杂度各是多少？",
+      "为什么 LCA 一定是 p、q 中某个节点或其祖先？",
+      "若换成二叉搜索树能否更快？怎么做？"
+     ],
+     "formula": "\\mathrm{hit}(u)=[\\,u\\in\\{p,q\\}\\,]+\\mathrm{hit}(u.l)+\\mathrm{hit}(u.r)"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-postorder-lca-hit",
+     "name": "后序 LCA 命中计数（Post-order LCA Hit Count）",
+     "category": "engineering",
+     "latex": "\\mathrm{hit}(u)=[\\,u\\in\\{p,q\\}\\,]+\\mathrm{hit}(u.l)+\\mathrm{hit}(u.r)",
+     "symbols": [
+      [
+       "hit(u)",
+       "以 u 为根的子树中命中 p、q 的个数"
+      ],
+      [
+       "u.l, u.r",
+       "u 的左右孩子"
+      ],
+      [
+       "u 属于 p,q",
+       "示性函数，命中取 1 否则取 0"
+      ]
+     ],
+     "derivation": [
+      "从叶子起算：子树命中数 = 自身命中 + 左子树命中 + 右子树命中。",
+      "按后序自底向上计算，第一次出现 hit(u)=2 的节点即最低汇合点。",
+      "父节点命中数不超过其孩子之和，故 2 最早出现在最深的汇合处。",
+      "该节点就是最近公共祖先；若 p 是 q 的祖先，则 p 自身先达到 2。"
+     ],
+     "analogy": "两级点名：底下各排先报人数，第一个凑够 2 人的上级就是共同负责人。",
+     "pitfalls": [
+      "把节点相等写成 val 相等，遇到重复值就判断错误",
+      "用前序提前判定，可能在更高层就错误返回",
+      "p、q 不保证在树中时缺少存在性保护"
+     ],
+     "code": "def hit(u, p, q):\n    if u is None:\n        return 0\n    c = (u is p) + (u is q)\n    c += hit(u.left, p, q) + hit(u.right, p, q)\n    return c\n# 后序第一个 hit == 2 的节点即 LCA",
+     "sources": [
+      {
+       "title": "二叉树的最近公共祖先（LeetCode 236）· 大厂高频手撕题",
+       "url": "https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree"
+      },
+      {
+       "title": "LeetCode 236 · 二叉树的最近公共祖先（题面与示例）",
+       "url": "https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "该题被字节 133 次、快手 22 次、微软 21 次等考过，共 179 次",
+     "难度为中等",
+     "最近一次出现 2026-09-29",
+     "本题属于二叉树 / 回溯类"
+    ],
+    "uncertain": [
+     "源信息未给题目示例，problem.examples 为自行构造并已用参考实现核对",
+     "考频为采集层统计口径，未逐条核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "左右两边各找到一个人，交汇点就是共同祖先。"
+     },
+     {
+      "level": "入门",
+      "text": "递归每个节点：若它就是 p 或 q 就返回自己；然后看左右子树各自返回了什么，两边都有人说明汇合了。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键是返回值语义：dfs 返回的是『子树中命中的那个节点或它们的 LCA』。左右都非空 → 当前节点是 LCA；只有一侧非空 → 把那一侧原样上传，因为另一目标不在这棵子树里。"
+     },
+     {
+      "level": "专家",
+      "text": "这等价于后序统计命中数第一次达到 2 的节点。对照父指针解法：先 O(n) 建 parent 表，再从 p 往上标记，q 往上找到第一个已标记节点，同样是 O(n) 时间但多 O(n) 空间。二叉搜索树版本可借有序性从根一次下行做到 O(h)。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么必须后序，先判定父节点行不行？",
+      "a": "前序时还不知道子树里有没有目标，过早判定会在更高的节点错误返回；只有拿到左右子树结果才能确认是否汇合。"
+     },
+     {
+      "q": "为什么只找到一侧不用继续找？",
+      "a": "另一侧返回空说明另一目标不在这棵子树，那么 LCA 必然已经在非空的那一侧被找到并上传，无需再判父节点。"
+     }
+    ],
+    "mechanism": "树只有向下的指针，无法从 p、q 直接上溯，于是把『找共同祖先』转成一次自底向上的后序汇总：让每个节点在拿到两棵子树的结果后再做唯一一次的汇合判定，从而用一次 DFS 同时完成搜索与求 LCA。",
+    "boundary": "前提是 p、q 都确实存在于树中。若题目允许目标不存在，则本解法会把唯一找到的节点误当作 LCA，需要额外返回是否命中的信息来兜底。",
+    "analogyBoundary": "『逐层上报』默认每个成员只属于一个小组；当 p、q 分属不同子树时类比成立，但当某目标是另一个的祖先时，『汇合』其实发生在目标自身而非它的父节点，类比会让人误以为一定要在更高的节点汇合。",
+    "misconceptions": [
+     "用节点值比较而不是节点对象比较，重复值场景出错",
+     "把 LCA 定义成数值最小的公共祖先，忽略『最低』是深度最深",
+     "忘记空节点的终止条件导致访问 None 报错"
+    ],
+    "ownAnalysis": "（推断）本题的返回值语义与『路径总和』『对称二叉树』里常见的『传布尔 / 传节点』一脉相承，面试中能主动讲清契约，比背模板更能体现对递归的理解。",
+    "officialNotes": [],
+    "interviewAnswer": "我用后序递归。dfs 的语义是：若子树里找到 p 或 q 就返回那个节点，若同时找到两者就返回它们的 LCA。终止条件是节点为空或等于 p/q。拿到 left、right 后，左右都非空说明当前节点是汇合点，返回当前节点；否则返回非空的一侧。时间 O(n)，空间最坏 O(h)。",
+    "studyPath": {
+     "prerequisites": [
+      "二叉树遍历",
+      "递归调用栈",
+      "节点对象与引用"
+     ],
+     "nextSteps": [
+      "LeetCode 235 二叉搜索树的 LCA",
+      "LeetCode 112/113 路径总和",
+      "父指针迭代写法练习"
+     ]
+    }
+   },
+   "problem": {
+    "title": "二叉树的最近公共祖先",
+    "number": 236,
+    "difficulty": "medium",
+    "statement": "给定一棵二叉树的根节点 root 与两个节点 p、q（保证都在树中），返回它们的最近公共祖先：即满足『同时是 p、q 的祖先且深度最大』的那个节点。允许一个节点是它自己的祖先。",
+    "examples": [
+     {
+      "input": "root=[3,5,1,6,2,0,8,null,null,7,4], p=5, q=1",
+      "output": "3",
+      "why": "5 在左子树、1 在右子树，汇合于根 3"
+     },
+     {
+      "input": "同上树, p=5, q=4",
+      "output": "5",
+      "why": "4 在 5 的右子树中，5 本身即为祖先"
+     }
+    ],
+    "approach": {
+     "idea": "用后序 DFS。定义 dfs(root) 返回『子树中找到的 p 或 q，或它们已汇合的 LCA』。先递归左右子树，再在 root 处判定：两边都非空则 root 是 LCA；否则上传非空一侧。",
+     "steps": [
+      "1. 终止：root 为空，或 root 就是 p / q，直接返回 root。",
+      "2. 递归 left = dfs(root.left)、right = dfs(root.right)。",
+      "3. 若 left 与 right 都非空 → 两目标分处两侧，root 就是 LCA，返回 root。",
+      "4. 否则返回 left if left is not None else right（把命中的那侧上传）。"
+     ],
+     "whyItWorks": "后序保证在判定 root 之前，左右子树的结果已就绪。root 是 p、q 的祖先当且仅当两目标一个在左一个在右，或其中一个就是 root。第一种情况下自底向上第一个左右都非空的节点必是深度最大的汇合点，即最近公共祖先；第二种情况被终止条件在 root 处直接返回。",
+     "alternatives": [
+      {
+       "name": "父指针 + 路径标记",
+       "complexity": "O(n)/O(n)",
+       "when": "p、q 可能被多次查询，或想避免递归栈溢出时，先建 parent 表再逐次上溯"
+      },
+      {
+       "name": "两次 DFS 记录路径",
+       "complexity": "O(n)/O(n)",
+       "when": "需要显式得到 p、q 到根的路径，便于讲解或进一步比较前缀"
+      }
+     ]
+    },
+    "solution": {
+     "python": "class TreeNode:\n    def __init__(self, val=0, left=None, right=None):\n        self.val = val\n        self.left = left\n        self.right = right\n\n\ndef lowestCommonAncestor(root, p, q):\n    if root is None or root is p or root is q:\n        return root\n    left = lowestCommonAncestor(root.left, p, q)\n    right = lowestCommonAncestor(root.right, p, q)\n    if left is not None and right is not None:\n        return root\n    return left if left is not None else right",
+     "python_alt": "def lowestCommonAncestor(root, p, q):\n    parent = {root: None}\n    stack = [root]\n    while p not in parent or q not in parent:\n        node = stack.pop()\n        if node.left:\n            parent[node.left] = node\n            stack.append(node.left)\n        if node.right:\n            parent[node.right] = node\n            stack.append(node.right)\n    ancestors = set()\n    while p:\n        ancestors.add(p)\n        p = parent[p]\n    while q not in ancestors:\n        q = parent[q]\n    return q",
+     "notes": "用 is 比较节点对象而非 val；递归深度等于树高，链状树最坏 O(n) 需注意栈溢出。父指针版用 parent 表替代递归。"
+    },
+    "complexity": {
+     "time": "O(n)",
+     "space": "O(h)",
+     "why": "每个节点最多访问一次；递归栈深度等于树高 h，最坏链状树为 O(n)。父指针版空间为 O(n)。"
+    },
+    "pitfalls": [
+     "用 root.val == p.val 判定，节点值重复时会误判",
+     "只判断 left 非空就返回 left，漏掉左右都非空的汇合判定",
+     "忘记 root 为空时返回 None，访问 None.left 报错"
+    ],
+    "edgeCases": [
+     "p 或 q 就是根节点：终止条件立即返回根",
+     "p 是 q 的祖先：在 p 处命中即返回 p",
+     "链状树：递归深度 O(n)，Python 默认递归上限可能不够"
+    ],
+    "interviewTips": "先说清函数返回值语义再写代码，这是本题得分点。若卡住，可退一步讲父指针解法（建 parent 表后求路径交点）作为兜底；写完后主动说明时间 O(n)、空间 O(h)，并提醒链状树递归深度的问题。"
+   }
+  },
+  {
+   "id": "a64a5cde474031d8",
+   "tldr": "用 top/bottom/left/right 四边界收缩，每层走完外圈即内缩，O(mn) 时间收集全部元素。",
+   "keyPoints": [
+    "固定 top/bottom/left/right 四条边界",
+    "每层按 上→右→下→左 走一圈",
+    "走完一圈把四条边界各内缩一步",
+    "长方形矩阵最后两段必须判边界防重复"
+   ],
+   "why": "矩阵模拟与边界控制的经典题，考察下标不越界与循环不变量，是手撕题里最容易因细节写挂的一类。",
+   "difficulty": "medium",
+   "tags": [
+    "leetcode",
+    "matrix",
+    "simulation",
+    "array",
+    "medium"
+   ],
+   "entities": [
+    "LeetCode 54",
+    "边界收缩",
+    "方向数组"
+   ],
+   "diagram": {
+    "kind": "matrix",
+    "title": "螺旋遍历次序",
+    "caption": "3×3 矩阵中数字是访问先后；走完外圈后四边界各内缩一格，再处理内层。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='螺旋矩阵遍历顺序 3x3'><text x='240' y='30' font-size='14' text-anchor='middle' fill='currentColor' font-weight='bold'>按顺时针访问次序编号</text><rect x='186' y='54' width='44' height='44' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='208' y='81' font-size='15' text-anchor='middle' fill='currentColor'>1</text><rect x='230' y='54' width='44' height='44' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='252' y='81' font-size='15' text-anchor='middle' fill='currentColor'>2</text><rect x='274' y='54' width='44' height='44' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='296' y='81' font-size='15' text-anchor='middle' fill='currentColor'>3</text><rect x='186' y='98' width='44' height='44' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='208' y='125' font-size='15' text-anchor='middle' fill='currentColor'>8</text><rect x='230' y='98' width='44' height='44' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='252' y='125' font-size='15' text-anchor='middle' fill='currentColor'>9</text><rect x='274' y='98' width='44' height='44' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='296' y='125' font-size='15' text-anchor='middle' fill='currentColor'>4</text><rect x='186' y='142' width='44' height='44' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='208' y='169' font-size='15' text-anchor='middle' fill='currentColor'>7</text><rect x='230' y='142' width='44' height='44' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='252' y='169' font-size='15' text-anchor='middle' fill='currentColor'>6</text><rect x='274' y='142' width='44' height='44' fill='none' stroke='var(--line-1)' stroke-width='1.2'/><text x='296' y='169' font-size='15' text-anchor='middle' fill='currentColor'>5</text><text x='240' y='204' font-size='13' text-anchor='middle' fill='currentColor'>右 → 下 → 左 → 上，再进内层</text><text x='240' y='226' font-size='13' text-anchor='middle' fill='currentColor'>外圈走完，四边界各内缩一格</text></svg>",
+    "alt": "3×3 网格，格内数字为访问顺序：上边向右 1-2-3，右边向下 4，下边向左 5-6-7，左边向上 8，中心 9。"
+   },
+   "concepts": [
+    {
+     "name": "边界收缩 / 循环不变量（Shrinking Boundaries）",
+     "readable": "用四个下标圈定『还没访问的矩形』，每走完最外一圈就把四条边往里收一格，直到边界交叉。",
+     "analogy": "像吃蛋糕：先把最外面的一圈吃掉，再吃紧挨着的下一圈，直到只剩中心。",
+     "analogyBreaksDown": "蛋糕每圈都是完整方环；矩阵可能是长条（单行或单列），此时『下边』和『左边』会退化成一条线甚至一个点，不判边界就会把同一格吃两遍。",
+     "mechanism": "把螺旋拆成一层一层：每层用边界变量控制四条直线段，天然避免越界；每层结束更新四边界。循环不变量是『外层已全部收集、内层尚未触碰』。",
+     "visual": "矩形外围画四段带箭头的粗线（上 / 右 / 下 / 左），内层再画一圈，箭头一律顺时针。",
+     "prerequisites": [
+      "二维数组下标",
+      "for 循环与区间"
+     ],
+     "selfTest": [
+      "单行矩阵 [1,2,3] 时下边和左边循环会发生什么？",
+      "为什么最后两段要加 top<=bottom / left<=right 判断？",
+      "循环终止条件为什么是 top<=bottom 且 left<=right？"
+     ],
+     "formula": ""
+    },
+    {
+     "name": "方向数组模拟（Direction Array Simulation）",
+     "readable": "用 (0,1)(1,0)(0,-1)(-1,0) 四个方向轮流走，撞到边界或访问过的格子就右转。",
+     "analogy": "在一个房间里贴着墙走，撞到墙就顺时针转向继续前进。",
+     "analogyBreaksDown": "房间的墙是固定的；这里『墙』还包含已经访问过的格子，必须额外维护 visited 标记才能停下，会多花 O(mn) 空间。",
+     "mechanism": "方向数组把『转向』编码成 (d+1) mod 4；每步先试探下一格是否越界、是否已访问，不合法就转向。代码更短，但需要 visited 标记，以空间换简洁。",
+     "visual": "格子按访问时间涂成渐变色，每格画出进入方向箭头，越界处画一个直角转弯符号。",
+     "prerequisites": [
+      "二维数组",
+      "取模运算"
+     ],
+     "selfTest": [
+      "visited 版本的空间复杂度是多少？",
+      "为什么外侧循环恰好执行 m×n 次？",
+      "方向数组的四个方向顺序能随意调换吗？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-spiral-boundary-shrink",
+     "name": "螺旋矩阵边界收缩递推（Spiral Boundary Shrink Recurrence）",
+     "category": "engineering",
+     "latex": "\\mathrm{top}\\mathrel{+}=1,\\ \\mathrm{right}\\mathrel{-}=1,\\ \\mathrm{bottom}\\mathrel{-}=1,\\ \\mathrm{left}\\mathrel{+}=1,\\quad \\mathrm{while}\\ \\mathrm{top}\\le \\mathrm{bottom}\\ \\wedge\\ \\mathrm{left}\\le \\mathrm{right}",
+     "symbols": [
+      [
+       "top, bottom",
+       "未访问区域的上 / 下边界行"
+      ],
+      [
+       "left, right",
+       "未访问区域的左 / 右边界列"
+      ],
+      [
+       "m, n",
+       "矩阵的行数与列数"
+      ]
+     ],
+     "derivation": [
+      "初始未访问区域为整个 m×n 矩阵。",
+      "每轮沿上边、右边、下边、左边走完当前外圈。",
+      "走完后把四条边界各内缩一步，指向新的内层矩形。",
+      "当 top 超过 bottom 或 left 超过 right 时区域为空，循环结束。"
+     ],
+     "analogy": "剥洋葱：每剥掉一层，可剥的范围就缩小一圈，直到没有可剥的。",
+     "pitfalls": [
+      "最后两段不加边界判断，单行或单列会重复输出",
+      "循环条件用 or 连接，会多走一轮造成越界",
+      "右列起点写成 top 而不是 top+1，重复左上顶点"
+     ],
+     "code": "res=[]; top,bottom,left,right=0,len(m)-1,0,len(m[0])-1\nwhile top<=bottom and left<=right:\n    for j in range(left,right+1): res.append(matrix[top][j])\n    top+=1\n    for i in range(top,bottom+1): res.append(matrix[i][right])\n    right-=1\n    # 下边、左边各需一个边界判断",
+     "sources": [
+      {
+       "title": "54.螺旋矩阵 · 题解",
+       "url": "https://programmercarl.com/algo/other/0054-spiral-matrix.html"
+      },
+      {
+       "title": "螺旋矩阵（LeetCode 54）· 大厂高频手撕题",
+       "url": "https://leetcode.cn/problems/spiral-matrix"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "本题为重排矩阵的模拟题，按顺时针螺旋顺序遍历所有元素",
+     "题解强调坚持循环不变量与左闭右开原则",
+     "需处理长方形（非正方形）矩阵的边界条件"
+    ],
+    "uncertain": [
+     "源信息未给题目示例，problem.examples 为自行构造并已用参考实现核对",
+     "考频与最近出现时间来自采集层，未逐条核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "一圈一圈从外往里剥，每层沿四边走。"
+     },
+     {
+      "level": "入门",
+      "text": "用四个下标框住还没访问的矩形区域，先走上面一行、再走右边一列、下面一行、左边一列，然后把这个框往里缩一格。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键是每条边都用左闭右开或统一的边界条件，避免顶点重复。走完一圈后 top+1、right-1、bottom-1、left+1；仅当 top<=bottom 才走底边、left<=right 才走左边，否则单行单列会重复。"
+     },
+     {
+      "level": "专家",
+      "text": "另一种写法用方向数组加 visited 标记，逻辑更直白但多 O(mn) 空间；边界收缩法额外空间 O(1)、常数更小，是面试首选。二者时间同为 O(mn)，区别在于空间与代码可读性的取舍。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "如果不加 top<=bottom 判断会怎样？",
+      "a": "只剩一行时，走完上边后 top>bottom，底边循环会重复输出同一行，导致结果里出现重复元素。"
+     },
+     {
+      "q": "换成方向数组加 visited 为什么要多花空间？",
+      "a": "需要额外矩阵记录哪些格子已访问，否则贴着边界走无法判断下一步是墙还是走过的路。"
+     }
+    ],
+    "mechanism": "模拟题的核心风险是下标越界与顶点重复，所以设计上把『螺旋』拆解为逐层的四条直线段，并用边界变量统一控制每条段的区间，使每格恰好被访问一次，无需额外标记结构。",
+    "boundary": "该方法假设矩阵非空。若矩阵为空或列为空需提前返回空列表；对于极大矩阵仍受输出规模限制，本身算法无其他失效条件，但若把题目改成顺时针生成矩阵需改用填充而非读取。",
+    "analogyBoundary": "『吃蛋糕剥圈』类比前提是每圈都是完整方环；对长条形矩阵，最内层可能只是一条线段，此时『一圈四边』退化为一条边走完，类比会让人误以为必然有四段。",
+    "misconceptions": [
+     "认为螺旋矩阵必须是方阵，忽略 m 与 n 不等",
+     "把四条边的区间都写成闭区间导致顶点重复",
+     "循环条件用 or，导致多跑一轮访问越界"
+    ],
+    "ownAnalysis": "（推断）本题的思路可直接迁移到『螺旋矩阵 II（59）』的填充与『顺时针打印』变体；面试若要求原地或节省输出空间要谨慎，因为本题本质必须输出全部元素，空间下界由输出决定。",
+    "officialNotes": [],
+    "interviewAnswer": "我用边界收缩：维护 top、bottom、left、right 四条边界。每轮先走顶行，再从右列向下，再走底行（需 top<=bottom 防重复），再走左列向上（需 left<=right），然后四边界各内缩一步，直到边界交叉。时间复杂度 O(mn)，除输出外只需 O(1) 额外空间。",
+    "studyPath": {
+     "prerequisites": [
+      "二维数组下标",
+      "循环与区间",
+      "大 O 记号"
+     ],
+     "nextSteps": [
+      "LeetCode 59 螺旋矩阵 II（生成）",
+      "LeetCode 48 旋转图像",
+      "练习方向数组的写法"
+     ]
+    }
+   },
+   "problem": {
+    "title": "螺旋矩阵",
+    "number": 54,
+    "difficulty": "medium",
+    "statement": "给定一个 m 行 n 列的矩阵 matrix，请按顺时针螺旋顺序返回矩阵中的所有元素。螺旋从左上角开始，先向右，再向下、向左、向上绕行，逐步进入内层，直到取完全部元素。",
+    "examples": [
+     {
+      "input": "matrix = [[1,2,3],[4,5,6],[7,8,9]]",
+      "output": "[1,2,3,6,9,8,7,4,5]",
+      "why": "外圈顺时针后进入中心 5"
+     },
+     {
+      "input": "matrix = [[1,2,3,4],[5,6,7,8],[9,10,11,12]]",
+      "output": "[1,2,3,4,8,12,11,10,9,5,6,7]",
+      "why": "3×4 长方形，外圈后剩内层 6,7"
+     }
+    ],
+    "approach": {
+     "idea": "用四个边界下标 top、bottom、left、right 圈定还没访问的矩形。每轮依次走顶行、右列、底行、左列，走完把四条边界各内缩一格，直到边界交叉。",
+     "steps": [
+      "1. 初始 top=0, bottom=m-1, left=0, right=n-1。",
+      "2. 从左到右走顶行，然后 top += 1。",
+      "3. 从上到下走右列，然后 right -= 1。",
+      "4. 若 top<=bottom，从右到左走底行并 bottom -= 1。",
+      "5. 若 left<=right，从下到上走左列并 left += 1；重复直到 top>bottom 或 left>right。"
+     ],
+     "whyItWorks": "循环不变量是『边界外的所有格子都已按螺旋顺序收集，边界内的格子都未被访问』。每轮恰好收集当前外圈的全部元素且不重复，随后边界内缩保证下一轮处理新的内层，最终所有 m×n 个格子各被访问一次。",
+     "alternatives": [
+      {
+       "name": "方向数组 + visited",
+       "complexity": "O(mn)/O(mn)",
+       "when": "更看重代码直白、不介意额外矩阵标记时可用，撞墙或撞已访问即转向"
+      },
+      {
+       "name": "逐层递归模拟",
+       "complexity": "O(mn)/O(min(m,n))",
+       "when": "想用递归表达分层结构时；空间是递归深度，实测不如迭代直观"
+      }
+     ]
+    },
+    "solution": {
+     "python": "from typing import List\n\n\ndef spiralOrder(matrix: List[List[int]]) -> List[int]:\n    if not matrix or not matrix[0]:\n        return []\n    top, bottom, left, right = 0, len(matrix) - 1, 0, len(matrix[0]) - 1\n    res = []\n    while top <= bottom and left <= right:\n        for j in range(left, right + 1):\n            res.append(matrix[top][j])\n        top += 1\n        for i in range(top, bottom + 1):\n            res.append(matrix[i][right])\n        right -= 1\n        if top <= bottom:\n            for j in range(right, left - 1, -1):\n                res.append(matrix[bottom][j])\n            bottom -= 1\n        if left <= right:\n            for i in range(bottom, top - 1, -1):\n                res.append(matrix[i][left])\n            left += 1\n    return res\n\n\nif __name__ == '__main__':\n    print(spiralOrder([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))",
+     "python_alt": "from typing import List\n\n\ndef spiralOrder(matrix: List[List[int]]) -> List[int]:\n    if not matrix or not matrix[0]:\n        return []\n    m, n = len(matrix), len(matrix[0])\n    dirs = [(0, 1), (1, 0), (0, -1), (-1, 0)]\n    seen = [[False] * n for _ in range(m)]\n    r = c = d = 0\n    res = []\n    for _ in range(m * n):\n        res.append(matrix[r][c])\n        seen[r][c] = True\n        nr, nc = r + dirs[d][0], c + dirs[d][1]\n        if not (0 <= nr < m and 0 <= nc < n and not seen[nr][nc]):\n            d = (d + 1) % 4\n            nr, nc = r + dirs[d][0], c + dirs[d][1]\n        r, c = nr, nc\n    return res",
+     "notes": "最后两段必须各加一次边界判断，否则单行、单列或内层只剩一条线时会重复访问。空矩阵或空列要提前返回空列表。"
+    },
+    "complexity": {
+     "time": "O(mn)",
+     "space": "O(1)",
+     "why": "每个元素恰好入结果一次；边界收缩法除输出数组外只用 4 个整型变量，方向数组法需 O(mn) 的 visited。"
+    },
+    "pitfalls": [
+     "底行、左列不加 top<=bottom / left<=right 判断，单行单列重复",
+     "while 条件用 or，导致多走一轮并越界",
+     "右列起点写成 top 而非 top+1，重复左上角顶点"
+    ],
+    "edgeCases": [
+     "矩阵为空或第一行为空：直接返回 []",
+     "只有一行或一列：最后两段需靠边界判断跳过",
+     "1×1 矩阵：只输出那个唯一元素"
+    ],
+    "interviewTips": "先明确四条边的区间取法（建议统一左闭右开），再强调边界判断是本题唯一易错点。写完用手算一个 1×3 或 3×1 的例子验证，能立刻暴露重复输出的 bug；最后给出 O(mn)/O(1) 的复杂度结论。"
+   }
+  },
+  {
+   "id": "d17aeca17c9ceb7f",
+   "tldr": "分治两两合并（或最小堆多路归并）把 k 条有序链表并成一条，时间 O(n log k)。",
+   "keyPoints": [
+    "把 k 条升序链表合并为一条升序链表",
+    "总节点数为 n，k 为链表条数",
+    "分治两两合并共 log k 轮",
+    "最小堆每次弹出当前最小头节点"
+   ],
+   "why": "链表 + 归并 + 堆的综合高频题，字节最爱；分治与堆两种写法覆盖『排序与 TopK』赛道核心套路。",
+   "difficulty": "hard",
+   "tags": [
+    "leetcode",
+    "linked-list",
+    "divide-and-conquer",
+    "heap",
+    "hard"
+   ],
+   "entities": [
+    "LeetCode 23",
+    "分治",
+    "最小堆",
+    "归并"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "分治两两合并",
+    "caption": "每轮把相邻两条链表合并，步长翻倍；每个节点每轮只被处理一次，共 log k 轮。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='分治两两合并 K 个有序链表流程'><rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>k 条有序链表</text><text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>总节点数为 n</text><line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,70 236,62 244,62' fill='var(--line-1)'/><rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>相邻两两合并</text><text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>lists[i] 与 lists[i+step]</text><line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,124 236,116 244,116' fill='var(--line-1)'/><rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>步长翻倍</text><text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>step *= 2，每轮总量 n</text><line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,178 236,170 244,170' fill='var(--line-1)'/><rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>log k 轮后剩一条</text><text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>O(n log k)</text></svg>",
+    "alt": "流程：k 条有序链表，相邻两两合并成 k/2 条，步长翻倍，log k 轮后只剩一条，复杂度 O(n log k)。"
+   },
+   "concepts": [
+    {
+     "name": "分治两两合并（Divide-and-Conquer Merge）",
+     "readable": "把 k 条链表两两配对合并，得到 k/2 条；重复这个过程直到只剩一条，共 log k 轮。",
+     "analogy": "像淘汰赛：先两两 PK 合并，胜者下一轮再两两 PK，几轮之后就只剩一个总冠军。",
+     "analogyBreaksDown": "淘汰赛每轮选手数减半且每场代价固定；而『合并两条链表』的代价与它们总长成正比，所以复杂度要按每轮总代价 O(n) 乘轮数来算，不能按比赛场数算。",
+     "mechanism": "顺序合并是 O(nk)，因为靠前的节点被反复扫描。改成分治后每个节点每轮只参与一次合并，共 log k 轮，得 O(n log k)；且不需要额外堆空间。",
+     "visual": "一棵二叉树：叶子是 k 条链表，父节点是两个孩子合并的结果，根是最终链表，树高为 log k。",
+     "prerequisites": [
+      "链表",
+      "归并两个有序链表",
+      "递归或迭代"
+     ],
+     "selfTest": [
+      "为什么顺序合并比两两分治慢？",
+      "分治迭代版的空间复杂度是多少？",
+      "为什么每轮的总代价是 O(n)？"
+     ],
+     "formula": ""
+    },
+    {
+     "name": "最小堆多路归并（Min-Heap K-way Merge）",
+     "readable": "把 k 条链表的头节点放进最小堆，每次弹出全局最小的那个，再把它所在链表的下一个节点压回堆。",
+     "analogy": "k 条队伍排成一列，每次只让各队排头中号码最小的那位出列，然后他所在队伍的新排头再进来比。",
+     "analogyBreaksDown": "排队类比假设每队人数不限且比较很便宜；这里每个节点都要入堆出堆一次，堆操作 O(log k)，总代价 O(n log k)，并额外需要 O(k) 的堆空间。",
+     "mechanism": "堆维护 k 个候选头节点，取最小为 O(log k)，共取 n 次，得 O(n log k)。Python 堆元素要加唯一序号，避免值相同时比较 ListNode 报错。",
+     "visual": "一个堆的树形结构，堆顶标红；每弹出一个节点，就从它所属链表把下一个节点补进堆。",
+     "prerequisites": [
+      "堆 / 优先队列",
+      "链表指针操作"
+     ],
+     "selfTest": [
+      "为什么堆元素要带一个索引 i？",
+      "堆版本比 分治版本多花哪部分空间？",
+      "k=1 或含空链表时堆怎么写？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-kway-merge-recurrence",
+     "name": "K 路归并分治递推（K-way Merge Divide-and-Conquer Recurrence）",
+     "category": "engineering",
+     "latex": "T(k)=2\\,T\\!\\left(\\tfrac{k}{2}\\right)+O(n)\\ \\Rightarrow\\ T(k)=O(n\\log k)",
+     "symbols": [
+      [
+       "T(k)",
+       "合并 k 条链表（总长 n）所需时间"
+      ],
+      [
+       "n",
+       "所有链表的节点总数"
+      ],
+      [
+       "k",
+       "链表条数"
+      ]
+     ],
+     "derivation": [
+      "分治把 k 条链表分成两组，各约 k/2 条，分别递归合并。",
+      "合并两组结果是遍历两条已归并链表，代价与总长成正比，即 O(n)。",
+      "递推式 T(k)=2T(k/2)+O(n) 展开 log k 层，每层总代价 O(n)。",
+      "故 T(k)=O(n log k)，即每个节点被处理 log k 次；而顺序合并是 O(nk)。"
+     ],
+     "analogy": "锦标赛：每轮所有选手各被处理一次，共 log k 轮，所以每个选手被处理 log k 次。",
+     "pitfalls": [
+      "把复杂度误算成 O(nk)（那是顺序合并的代价）",
+      "堆里直接放 ListNode，Python 比较节点对象时报错",
+      "忘记 dummy 哨兵节点，空链表场景处理出错"
+     ],
+     "code": "def merge_two(a, b):\n    d = ListNode(0); t = d\n    while a and b:\n        if a.val <= b.val:\n            t.next, a = a, a.next\n        else:\n            t.next, b = b, b.next\n        t = t.next\n    t.next = a or b\n    return d.next",
+     "sources": [
+      {
+       "title": "合并K个排序链表（LeetCode 23）· 大厂高频手撕题",
+       "url": "https://leetcode.cn/problems/merge-k-sorted-lists"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "该题被字节 112 次、快手 27 次、拼多多 8 次等考过，共 153 次",
+     "难度为困难",
+     "最近一次出现 2026-08-21",
+     "本题属于链表 / 排序与 TopK 类"
+    ],
+    "uncertain": [
+     "源信息未给题目示例，problem.examples 为自行构造并已用参考实现核对",
+     "考频为采集层统计口径，未逐条核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "把很多条有序链表两两合并，几轮后并成一条。"
+     },
+     {
+      "level": "入门",
+      "text": "先写一个合并两条有序链表的函数，然后把 k 条链表两两配对合并，重复到只剩一条；复杂度比一条条顺序合并更优。"
+     },
+     {
+      "level": "进阶",
+      "text": "顺序合并每条新结果都被反复扫描，是 O(nk)；两两分治让每个节点每轮只被处理一次，共 log k 轮，得 O(n log k)。另一种思路是用最小堆维护 k 个当前头节点，每次取全局最小。"
+     },
+     {
+      "level": "专家",
+      "text": "分治版时间 O(n log k)、额外空间 O(1)（迭代实现），适合就地合并；堆版同为 O(n log k) 但需要 O(k) 空间，胜在实现直观、便于扩展成『多路归并取前 K 小』等变体。k 很小时两者差别不大，k 很大且内存敏感时倾向分治。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "如果直接用顺序合并有什么不好？",
+      "a": "越靠前合并出来的节点会被后面多次重复扫描，总代价 O(nk)，当 k 大时明显变慢。"
+     },
+     {
+      "q": "为什么堆里要塞一个索引 i？",
+      "a": "当两个节点值相等时，Python 会比较元组的第二项，若第二项也是 ListNode 就无法比较而报错；加唯一索引即可打破平局。"
+     }
+    ],
+    "mechanism": "难点在于如何避免节点被反复扫描。分治让每个节点每轮只参与一次合并、共 log k 轮；堆则用对数时间的取最小替代线性扫描 k 个头节点，两者都把朴素的 O(nk) 降到 O(n log k)，区别是空间换取的写法简化程度。",
+    "boundary": "若 k 很小（如 2、3）而链表很长，顺序合并与分治差异不大，反而是堆版因额外空间与常数开销未必更快；另外本题假设各链表本身有序，若输入无序需先各自排序。",
+    "analogyBoundary": "『淘汰赛』类比成立的前提是每场比赛代价相同；但合并两条长度不等的链表代价随长度变化，所以不能像比赛场数那样直接数轮数之外的场次，必须回到『每轮总代价 O(n)』来算。",
+    "misconceptions": [
+     "把分治版本复杂度写成 O(nk)",
+     "堆里只放值不放节点，无法顺着 next 前进",
+     "忽略 lists 为空或元素为空链表的情况"
+    ],
+    "ownAnalysis": "（推断）本题是『外部排序多路归并』的链表版；若把链表换成数组或用 k 个游标，思路与归并排序的 merge 段一致，面试时把这两者联系起来能显示出对归并框架的整体把握。",
+    "officialNotes": [],
+    "interviewAnswer": "我给两种写法。第一种分治：写一个合并两条链表的 merge，然后两两配对、步长翻倍，共 log k 轮，时间 O(n log k)、额外空间 O(1)。第二种最小堆：把 k 个表头入堆，每次弹出最小值接到结果尾部，并把该节点的 next 压回堆，元素带索引避免比较报错，时间 O(n log k)、空间 O(k)。",
+    "studyPath": {
+     "prerequisites": [
+      "链表指针操作",
+      "归并两个有序链表",
+      "堆 / 优先队列"
+     ],
+     "nextSteps": [
+      "LeetCode 21 合并两个有序链表",
+      "LeetCode 88 合并两个有序数组",
+      "用堆实现多路归并取前 K 小"
+     ]
+    }
+   },
+   "problem": {
+    "title": "合并 K 个排序链表",
+    "number": 23,
+    "difficulty": "hard",
+    "statement": "给定一个链表数组 lists，其中每个链表都已经按升序排列。请将所有链表合并为一个升序链表并返回合并后的头节点。设所有链表的节点总数为 n、链表条数为 k。",
+    "examples": [
+     {
+      "input": "lists = [[1,4,5],[1,3,4],[2,6]]",
+      "output": "[1,1,2,3,4,4,5,6]",
+      "why": "三条升序链表整体归并成一个升序链表"
+     },
+     {
+      "input": "lists = []",
+      "output": "[]",
+      "why": "没有任何链表，返回空链表"
+     },
+     {
+      "input": "lists = [[]]",
+      "output": "[]",
+      "why": "只有空链表，合并结果仍为空"
+     }
+    ],
+    "approach": {
+     "idea": "核心是复用『合并两个有序链表』。分治做法：把 k 条链表两两配对合并，得到 k/2 条，步长翻倍重复，直到只剩一条，复杂度 O(n log k)。",
+     "steps": [
+      "1. 写 mergeTwo(a, b)：用哨兵节点逐个比较节点值，串成一条有序链表。",
+      "2. 若 lists 为空返回 None；令 step=1。",
+      "3. 当 step<k：对每对 i 与 i+step 执行 lists[i]=mergeTwo(lists[i], lists[i+step])。",
+      "4. step *= 2，重复第 3 步。",
+      "5. 循环结束返回 lists[0]。"
+     ],
+     "whyItWorks": "分治保证每条链表每轮只被合并一次，因此每个节点每轮被处理一次、共参与 log k 轮，总代价 O(n log k)。合并两有序链表的正确性来自：每次取两链表当前头部的较小者接到结果尾部，剩余节点天然有序，哨兵节点避免了对头节点的特判。",
+     "alternatives": [
+      {
+       "name": "最小堆多路归并",
+       "complexity": "O(n log k)/O(k)",
+       "when": "实现直观、便于扩展成流式归并或取前 K 小时首选"
+      },
+      {
+       "name": "顺序逐条合并",
+       "complexity": "O(nk)/O(1)",
+       "when": "k 很小或作为先讲清楚的 baseline；k 大时明显偏慢"
+      }
+     ]
+    },
+    "solution": {
+     "python": "import heapq\n\n\nclass ListNode:\n    def __init__(self, val=0, next=None):\n        self.val = val\n        self.next = next\n\n\ndef merge_two(a, b):\n    dummy = ListNode(0)\n    tail = dummy\n    while a and b:\n        if a.val <= b.val:\n            tail.next, a = a, a.next\n        else:\n            tail.next, b = b, b.next\n        tail = tail.next\n    tail.next = a if a else b\n    return dummy.next\n\n\ndef mergeKLists(lists):\n    if not lists:\n        return None\n    k = len(lists)\n    step = 1\n    while step < k:\n        for i in range(0, k - step, step * 2):\n            lists[i] = merge_two(lists[i], lists[i + step])\n        step *= 2\n    return lists[0]",
+     "python_alt": "import heapq\n\n\ndef mergeKLists(lists):\n    dummy = ListNode(0)\n    tail = dummy\n    heap = []\n    for i, node in enumerate(lists):\n        if node:\n            heapq.heappush(heap, (node.val, i, node))\n    while heap:\n        val, i, node = heapq.heappop(heap)\n        tail.next = node\n        tail = tail.next\n        if node.next:\n            heapq.heappush(heap, (node.next.val, i, node.next))\n    return dummy.next",
+     "notes": "分治用哨兵节点简化合并；步长从 1 倍增，循环内成对合并。堆版三元组 (val, i, node) 中的 i 用于在值相等时避免比较 ListNode 报错。空 lists 与含空链表都需正确处理。"
+    },
+    "complexity": {
+     "time": "O(n log k)",
+     "space": "O(1)",
+     "why": "分治共 log k 轮，每轮遍历全部 n 个节点；迭代实现只用常数个指针变量。堆版时间为 O(n log k)，空间 O(k)。"
+    },
+    "pitfalls": [
+     "复杂度误写成 O(nk)，那是顺序合并的代价",
+     "堆元素只放节点值，无法顺 next 前进",
+     "漏掉 lists 为空或元素为空链表的边界"
+    ],
+    "edgeCases": [
+     "lists 为空数组：返回 None",
+     "lists 含空链表（如 [[]]）：合并结果仍为空",
+     "k=1：不进入循环，直接返回 lists[0]",
+     "所有链表为空但长度为 k：返回 None"
+    ],
+    "interviewTips": "先说清『复用合并两条链表』这个骨架，再讲分治如何把复杂度从 O(nk) 降到 O(n log k)。若面试官追问空间或想听堆解法，可立刻给出最小堆版本，并主动提到加索引避免节点比较报错——这是堆解法的常见扣分点。"
+   }
+  }
+ ],
+ "skipped": []
+}

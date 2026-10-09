@@ -1,0 +1,170 @@
+{
+  "id": "a12b4a1a2abd9e3b",
+  "tldr": "爬 n 阶、每步走 1 或 2 阶的方案数满足 f(n)=f(n-1)+f(n-2)，即斐波那契式递推，可用滚动数组压到 O(1) 空间。",
+  "keyPoints": [
+    "每次只能走 1 阶或 2 阶，求到达第 n 阶的不同方法数",
+    "按最后一步分类：从 n-1 跨 1 阶，或从 n-2 跨 2 阶",
+    "递推 f(n) = f(n-1) + f(n-2)，边界 f(1)=1、f(2)=2",
+    "滚动数组只保留前两项，空间从 O(n) 降到 O(1)",
+    "矩阵快速幂可在 O(log n) 求第 n 项",
+    "约束 1 ≤ n ≤ 45，n 很小但仍值得讲清空间优化"
+  ],
+  "why": "斐波那契型递推是 DP 入门模板，面试常追问空间能否 O(1)、n 变大怎么办；也是理解『状态转移窗口决定能否压缩』的最佳例子。",
+  "difficulty": "easy",
+  "tags": ["leetcode", "dynamic-programming", "math", "fibonacci", "recursion"],
+  "entities": ["LeetCode 70", "斐波那契数列", "动态规划", "矩阵快速幂", "滚动数组"],
+  "diagram": {
+    "kind": "flow",
+    "title": "爬楼梯的转移推导",
+    "caption": "先定义子问题，再按最后一步分类，得到递推式，最后才谈滚动数组与快速幂这两层优化。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='爬楼梯问题的四步推导流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--accent)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>① 子问题定义</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>f(k) 到达第 k 阶的方法数</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>② 按最后一步分类</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>跨 1 阶 或 跨 2 阶</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>③ 转移方程</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>f(k) = f(k-1) + f(k-2)</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>④ 边界与优化</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>f(1)=1,f(2)=2；滚动到 O(1)</text>\n</svg>",
+    "alt": "竖排四步：定义子问题 f(k)、按最后一步分两类、写出转移方程、给出边界并说明滚动数组优化到常数空间。"
+  },
+  "concepts": [
+    {
+      "name": "重叠子问题与加法原理（Overlapping Subproblems）",
+      "readable": "到达第 k 阶的方法只取决于到 k-1 与 k-2 阶的方法数，与具体怎么到达无关；同一子问题被反复用到，所以自底向上算而不是朴素递归。",
+      "analogy": "每层楼有多少条上楼路线，只由下面两层路线数相加决定，不用关心每条路线具体怎么走。",
+      "analogyBreaksDown": "类比只对『纯计数』成立；一旦加上『不能连续走两步两阶』之类约束，最后一步就不再独立，简单相加会失效。",
+      "mechanism": "按最后一步分类：所有方案被划分成『最后一步跨 1 阶』与『最后一步跨 2 阶』两类，互不重叠、合起来覆盖全部，所以总数是两类之和——这正是 DP 转移的来源。",
+      "visual": "画一棵二叉树，根是 f(n)，两个子节点是 f(n-1) 与 f(n-2)，标出大量重复节点，再用自底向上把重复消掉。",
+      "prerequisites": ["递推", "递归与记忆化"],
+      "selfTest": ["为什么朴素递归是指数级？", "两类方案为什么不会重复计数？", "加上『不能连续走两步 2 阶』后递推怎么改？"],
+      "formula": "f(n) = f(n-1) + f(n-2),\\quad f(1)=1,\\; f(2)=2"
+    },
+    {
+      "name": "滚动数组与状态压缩（Rolling Array）",
+      "readable": "转移只依赖前两格，没必要保存整张 dp 表；只留两个变量轮流更新，空间从 O(n) 降到 O(1)。",
+      "analogy": "接力赛只传两根接力棒——拿到新值后旧值就没用了，不必把每一棒都留在地上。",
+      "analogyBreaksDown": "只有当依赖窗口固定（这里是宽度 2）时才能滚；若 f(k) 依赖前面某个任意位置，就无法用常数个变量替换整张表。",
+      "mechanism": "观察 f(n) 只引用 f(n-1)、f(n-2)，用两个变量保存这两项，每步算出 new = a + b 后把 a、b 整体后移一位，等价于丢弃再也不被引用的历史状态。",
+      "visual": "画一行 dp 格子，一个宽度为 2 的滑动窗口覆盖最近两格，窗口随计算不断右移。",
+      "prerequisites": ["递推公式", "并行赋值语义"],
+      "selfTest": ["为什么可以只保留两个变量？", "写成 a=b 后 b=a+b 两行错在哪？", "哪种递推不能这样压缩？"],
+      "formula": ""
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-climbing-stairs-recurrence",
+      "name": "爬楼梯递推（Climbing Stairs Recurrence）",
+      "category": "engineering",
+      "latex": "f(n) = f(n-1) + f(n-2),\\quad f(1)=1,\\; f(2)=2",
+      "symbols": [["f(n)", "到达第 n 阶的不同方法数"], ["n", "目标台阶数"], ["f(1), f(2)", "边界：1 阶只有 1 种、2 阶有 2 种"]],
+      "derivation": [
+        "第 1 步：所有走法按最后一步分类，要么从 n-1 跨 1 阶，要么从 n-2 跨 2 阶",
+        "第 2 步：这两类不重叠且覆盖全部走法，由加法原理总数等于两类之和",
+        "第 3 步：边界由手工枚举得到 f(1)=1、f(2)=2，从 k=3 起按递推填写"
+      ],
+      "analogy": "像走迷宫出口前只有两条通道：要么从隔壁一格直着过来，要么从左两格斜跨过来，能到出口的路就等于两条路上能到各自起点的路之和。",
+      "pitfalls": ["边界设成 f(0)=1、f(1)=1 时容易与本题 n=1 的答案混淆，务必用 n=1→1、n=2→2 校验", "误以为是组合数或 2 的幂，忽略『顺序不同算不同方案』"],
+      "code": "def climb_stairs(n: int) -> int:\n    if n <= 2:\n        return n\n    a, b = 1, 2          # f(1), f(2)\n    for _ in range(3, n + 1):\n        a, b = b, a + b  # 滚动数组，O(1) 空间\n    return b",
+      "sources": [{"title": "爬楼梯（LeetCode 70）· 大厂高频手撕题", "url": "https://leetcode.cn/problems/climbing-stairs"}]
+    },
+    {
+      "id": "f-fibonacci-matrix-power",
+      "name": "斐波那契矩阵快速幂（Matrix Exponentiation）",
+      "category": "engineering",
+      "latex": "\\begin{pmatrix} f_{n+1} \\\\ f_{n} \\end{pmatrix} = \\begin{pmatrix} 1 & 1 \\\\ 1 & 0 \\end{pmatrix}^{\\,n-1} \\begin{pmatrix} f_{2} \\\\ f_{1} \\end{pmatrix}",
+      "symbols": [["f_n", "到达第 n 阶的方法数"], ["M", "2×2 转移矩阵 [[1,1],[1,0]]"], ["M^{n-1}", "用二分快速幂在 O(log n) 求出"], ["[f_2; f_1]", "初值向量 [2, 1]"]],
+      "derivation": [
+        "第 1 步：把 f(k)=f(k-1)+f(k-2) 写成状态向量的线性变换，取状态 [f(k+1); f(k)]",
+        "第 2 步：验证 [f(k+1); f(k)] = M·[f(k); f(k-1)]，其中 M = [[1,1],[1,0]]",
+        "第 3 步：连续展开得 [f(n+1); f(n)] = M^{n-1}·[f(2); f(1)] = M^{n-1}·[2; 1]",
+        "第 4 步：用二分快速幂把矩阵乘次数降到 O(log n)，n 很大时也只需几十次乘法"
+      ],
+      "analogy": "把『每加一步』看成一个固定动作，做 n 次等于重复这个动作 n 次；快速幂让你一次跨很多步，而不是老老实实一步一步走。",
+      "pitfalls": ["矩阵乘法不可交换，M^{n-1} 必须写在初值向量左边", "n=1 时幂为 0，需让快速幂把单位阵当作 M^0 返回，或特判 n≤2"],
+      "code": "def climb_matrix(n: int) -> int:\n    if n <= 2:\n        return n\n    def mul(A, B):\n        return [[A[0][0]*B[0][0]+A[0][1]*B[1][0], A[0][0]*B[0][1]+A[0][1]*B[1][1]],\n                [A[1][0]*B[0][0]+A[1][1]*B[1][0], A[1][0]*B[0][1]+A[1][1]*B[1][1]]]\n    M, R, e = [[1, 1], [1, 0]], [[1, 0], [0, 1]], n - 1\n    while e:\n        if e & 1:\n            R = mul(R, M)\n        M = mul(M, M)\n        e >>= 1\n    return R[1][0] * 2 + R[1][1] * 1   # [f(n+1); f(n)] 的第二行",
+      "sources": [{"title": "爬楼梯（LeetCode 70）· 大厂高频手撕题", "url": "https://leetcode.cn/problems/climbing-stairs"}]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "题目：每次可爬 1 或 2 阶，求到达 n 阶的不同方法数",
+      "示例 1：n = 2 输出 2（1+1 与 2）",
+      "示例 2：n = 3 输出 3（1+1+1、1+2、2+1）",
+      "约束：1 ≤ n ≤ 45"
+    ],
+    "uncertain": [
+      "摘要未显式给出 f(1)、f(2) 定义，本条目按 LeetCode 70 惯例取 f(1)=1、f(2)=2，并用参考代码对 n=2、n=3 校验一致（待核实）",
+      "矩阵快速幂为按递推式扩展的通用解法，非摘要原文内容（推断），已本地验证 n=3→3、n=4→5"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "每次走 1 或 2 阶，走到第 n 阶一共有多少种走法。"},
+      {"level": "入门", "text": "到第 n 阶的最后一步，要么从 n-1 跨 1 阶，要么从 n-2 跨 2 阶。这两种情况互不重叠，所以方法数等于到 n-1 的方法数加上到 n-2 的方法数，边界是 f(1)=1、f(2)=2。"},
+      {"level": "进阶", "text": "直接递归会重复计算同一子问题，规模一大就指数爆炸；改成自底向上填表，时间 O(n)。又因为 f(k) 只依赖前两项，可以用两个变量滚动更新，把空间降到 O(1)，这就是常被追问的空间优化。"},
+      {"level": "专家", "text": "本题本质是斐波那契的线性递推。递推式可写成一次矩阵乘法，用快速幂在 O(log n) 求第 n 项，适合 n 很大时。n≤45 时三法都能过，但面试更想听『为什么能滚动』——因为依赖窗口固定为 2。若加约束（不能连续跨 2 阶），转移窗口变宽，滚动与矩阵都要相应改。"}
+    ],
+    "socratic": [
+      {"q": "为什么不能只用朴素递归？", "a": "同一 f(k) 会被多条路径重复调用，调用树是指数级；n=45 就明显变慢，所以要记忆化或自底向上。"},
+      {"q": "为什么可以只保留两个变量而不是整张 dp 表？", "a": "因为 f(k) 只引用 f(k-1) 和 f(k-2)，更早的状态之后不会再被用到，丢弃它们不影响正确性。"}
+    ],
+    "mechanism": "核心是按最后一步分类：所有合法走法按最后一步是 1 阶还是 2 阶分成两类，两类不重不漏，于是总数相加。这个分类同时给出了依赖窗口只有 2 的事实——正因为窗口固定，才能既做到时间 O(n) 又做到空间 O(1)。",
+    "boundary": "加法原理只在『最后一步可选集合固定』时成立。一旦加约束（如禁止连续两步 2 阶、每步代价不同），最后一步不再独立，需要扩展状态维度（记上一步走了几阶）。n≤2 的边界要单独处理。",
+    "analogyBoundary": "『只关心路线数、不关心路线本身』在纯计数题成立；但若要输出所有方案或求最小代价，就必须保留具体路线或状态，类比失效，需要带状态的 DP 或搜索。",
+    "misconceptions": [
+      "把 f(1) 设成 0 或把 f(0) 设成 1 后又混用，导致 n=1、n=2 结果错。",
+      "用递归但忘记忆化，面试时超时。",
+      "以为滚动数组万能——只有依赖窗口固定时才对。"
+    ],
+    "ownAnalysis": "（推断）爬楼梯是斐波那契的伪装题，面试常追三连：能不能空间 O(1)？n 很大怎么办？加个『不能连续走 2 阶』怎么改？能答出矩阵快速幂与『加状态维度』，就说明理解的是状态转移而不是背公式。这套按步转移的心智模型与序列生成任务相通。",
+    "officialNotes": [
+      {"position": "题目要求统计爬到 n 阶的不同方法数，n 满足 1 ≤ n ≤ 45", "source": "https://leetcode.cn/problems/climbing-stairs"}
+    ],
+    "interviewAnswer": "这是斐波那契型递推。我用最后一步分类：到第 n 阶要么从 n-1 跨 1 阶，要么从 n-2 跨 2 阶，所以 f(n)=f(n-1)+f(n-2)，边界 f(1)=1、f(2)=2。自底向上填表是 O(n) 时间；因为只用到前两项，我用两个变量滚动更新，空间降到 O(1)。如果 n 特别大，我会改用转移矩阵加快速幂做 O(log n)。",
+    "studyPath": {
+      "prerequisites": ["递推与递归", "动态规划基础"],
+      "nextSteps": ["斐波那契数（LeetCode 509）", "矩阵快速幂模板题", "带约束的爬楼梯变体（如不能连续 2 阶）"]
+    }
+  },
+  "problem": {
+    "title": "爬楼梯",
+    "number": 70,
+    "difficulty": "easy",
+    "statement": "你正在爬一段 n 阶的楼梯，每次可以爬 1 阶或 2 阶。求爬到楼顶一共有多少种不同的方法。只要某一步迈的阶数不同就算不同方法。返回方法总数。约束：1 ≤ n ≤ 45。",
+    "examples": [
+      {"input": "n = 2", "output": "2", "why": "1+1 与 2 两种"},
+      {"input": "n = 3", "output": "3", "why": "1+1+1、1+2、2+1 三种"}
+    ],
+    "approach": {
+      "idea": "用最后一步分类：到达第 k 阶的方案等于『从 k-1 跨 1 阶』加『从 k-2 跨 2 阶』，即 f(k)=f(k-1)+f(k-2)，边界 f(1)=1、f(2)=2。",
+      "steps": [
+        "1. 处理边界：n==1 返回 1，n==2 返回 2",
+        "2. 令 a = f(1) = 1，b = f(2) = 2",
+        "3. 从 k=3 循环到 n：new = a + b",
+        "4. 滚动更新：a = b，b = new",
+        "5. 循环结束返回 b"
+      ],
+      "whyItWorks": "任意方案按最后一步的步长被唯一分到『跨 1 阶』或『跨 2 阶』两类，两类不重叠且覆盖全部，故总数相加；对每个 k 归纳成立，最终 f(n) 即答案。",
+      "alternatives": [
+        {"name": "基础 DP 数组", "complexity": "O(n) / O(n)", "when": "想先写清状态定义、再谈优化时"},
+        {"name": "带记忆化递归", "complexity": "O(n) / O(n)", "when": "从暴力递归出发推导递推式时"},
+        {"name": "矩阵快速幂", "complexity": "O(log n) / O(1)", "when": "n 极大、需要亚线性时间时"}
+      ]
+    },
+    "solution": {
+      "python": "def climbStairs(n: int) -> int:\n    if n <= 2:\n        return n\n    dp = [0] * (n + 1)\n    dp[1], dp[2] = 1, 2\n    for k in range(3, n + 1):\n        dp[k] = dp[k - 1] + dp[k - 2]\n    return dp[n]",
+      "python_alt": "def climbStairs(n: int) -> int:\n    if n <= 2:\n        return n\n    a, b = 1, 2          # f(1), f(2)\n    for _ in range(3, n + 1):\n        a, b = b, a + b  # 滚动数组，O(1) 空间\n    return b",
+      "notes": "主实现用 dp 数组，状态定义最清楚；备用版用两个变量滚动。注意并行赋值 a, b = b, a + b 必须写成一行，拆成 a=b 后 b=a+b 会用到已被覆盖的 a。"
+    },
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "时间由 n-2 次相加决定；滚动版只保留两个变量故空间 O(1)（基础 DP 表版为 O(n)）。"
+    },
+    "pitfalls": [
+      "n=1、n=2 边界没特判，或把 f(0) 设为 1 导致结果偏移",
+      "滚动更新拆成两行 a=b 后 b=a+b，第二次用到已被覆盖的 a，结果错",
+      "朴素递归忘记忆化导致指数级超时"
+    ],
+    "edgeCases": [
+      "n = 1 返回 1",
+      "n = 2 返回 2",
+      "n = 45 为约束上界，结果仍在 Python 整数范围内"
+    ],
+    "interviewTips": "先讲清『按最后一步分类』再写代码，边界 f(1)=1、f(2)=2 要口头报出来。写完 O(n) 表版本后主动补一句『其实只用两个变量』，把滚动版写出来。若被问 n 很大，就说转移矩阵加快速幂到 O(log n)。卡住时先写出 f(n)=f(n-1)+f(n-2) 这行，通常就能补齐边界与循环。"
+  }
+}

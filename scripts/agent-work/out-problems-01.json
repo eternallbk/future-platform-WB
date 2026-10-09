@@ -1,0 +1,1129 @@
+{
+ "batchId": "problems-01",
+ "entries": [
+  {
+   "id": "a77b0b38fd1be916",
+   "tldr": "设计 O(1) 的 get/put 缓存：哈希表定位节点 + 双向链表维护访问顺序，超容量淘汰尾部最久未用项。",
+   "keyPoints": [
+    "get/put 都要 O(1)，不能用数组搬移元素",
+    "哈希表存 key → 节点，负责 O(1) 定位",
+    "双向链表按访问顺序排列，头部最新、尾部最旧",
+    "命中后把节点移到头部；满容量删尾部并同步删 key",
+    "Python 可用 OrderedDict.move_to_end 表达同一机制"
+   ],
+   "why": "LRU 是设计题模板，考「哈希 + 链表」的 O(1) 组合，字节/腾讯高频；也是推理服务 KV cache 淘汰的基础模型。",
+   "difficulty": "medium",
+   "tags": [
+    "leetcode",
+    "linked-list",
+    "hash-map",
+    "design",
+    "lru"
+   ],
+   "entities": [
+    "LRUCache",
+    "OrderedDict",
+    "双向链表",
+    "哈希表"
+   ],
+   "diagram": {
+    "kind": "architecture",
+    "title": "LRU 的双结构协作",
+    "caption": "哈希表只负责定位，双向链表只负责顺序，两者各自 O(1)，合起来才满足要求。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='LRU：哈希表定位节点，双向链表按访问顺序排列，尾部即淘汰目标'>\n<rect x='30' y='20' width='420' height='52' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='46' y='42' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>哈希表 key → 节点（O(1) 定位）</text>\n<text x='46' y='62' font-size='13' text-anchor='start' fill='currentColor'>命中后把该节点摘出并插到链表头部</text>\n<line x1='240' y1='72' x2='240' y2='90' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,98 236,90 244,90' fill='var(--line-1)'/>\n<text x='30' y='126' font-size='13' text-anchor='start' fill='currentColor'>head / MRU</text>\n<text x='450' y='126' font-size='13' text-anchor='end' fill='currentColor'>tail / LRU → 淘汰</text>\n<rect x='95' y='134' width='70' height='40' rx='6' fill='none' stroke='var(--accent)' stroke-width='1.6'/>\n<text x='130' y='159' font-size='14' text-anchor='middle' fill='currentColor'>A</text>\n<rect x='195' y='134' width='70' height='40' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='230' y='159' font-size='14' text-anchor='middle' fill='currentColor'>B</text>\n<rect x='295' y='134' width='70' height='40' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='330' y='159' font-size='14' text-anchor='middle' fill='currentColor'>C</text>\n<line x1='165' y1='154' x2='193' y2='154' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='195,154 188,150 188,158' fill='var(--line-1)'/>\n<line x1='265' y1='154' x2='293' y2='154' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='295,154 288,150 288,158' fill='var(--line-1)'/>\n<text x='240' y='200' font-size='13' text-anchor='middle' fill='currentColor'>满容量时删尾部 C，新节点插入头部</text>\n<text x='240' y='222' font-size='13' text-anchor='middle' fill='currentColor'>get/put 都是 O(1)：定位 → 摘链 → 插头</text>\n</svg>",
+    "alt": "上方是 key 到节点的哈希表，下方是 head(MRU) 到 tail(LRU) 的双向链表，尾部为淘汰目标。"
+   },
+   "concepts": [
+    {
+     "name": "哈希表 + 双向链表（Hash Map + Doubly Linked List）",
+     "readable": "用哈希表把 key 直接映射到链表节点，用双向链表保存访问顺序；定位和调整顺序各只花 O(1)。",
+     "analogy": "图书馆索引卡加一排能随手抽插的书：卡片直接告诉你书在哪，你还能把刚看的书抽出来插到最前面。",
+     "analogyBreaksDown": "现实抽插书要挪动整排，代价 O(n)；链表只改常数条 prev/next 指针。别把物理挪动当成模型成本。",
+     "mechanism": "单用哈希表不知道谁最旧，单用链表定位要 O(n)。把 key→节点 存在哈希表、节点同时挂在双向链表上，删除与插入只改指针，才同时拿到 O(1) 定位与 O(1) 淘汰。",
+     "visual": "上半画哈希表格子指向下半的双向链表节点，链表头标 MRU、尾标 LRU，一条箭头指向尾部表示淘汰。",
+     "prerequisites": [
+      "哈希表原理",
+      "链表节点与指针操作"
+     ],
+     "selfTest": [
+      "为什么单用双向链表做不到 O(1) 的 get？",
+      "get 命中后为什么必须把节点移到头部？",
+      "容量为 1 时连续 put 两个键会发生什么？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-lru-eviction-argmin",
+     "name": "LRU 淘汰规则（Argmin Eviction）",
+     "category": "engineering",
+     "latex": "k^{*} = \\arg\\min_{k \\in \\mathcal{K}} t_{k}",
+     "symbols": [
+      [
+       "k^{*}",
+       "被淘汰的键"
+      ],
+      [
+       "\\mathcal{K}",
+       "当前缓存中键的集合"
+      ],
+      [
+       "t_{k}",
+       "键 k 最近一次被访问的时间戳"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：缓存容量固定为 C，键数超过 C 时必须删除一个键",
+      "第 2 步：LRU 假设最近最少使用的键，最不可能马上被再次访问",
+      "第 3 步：因此淘汰目标取最近访问时间最早、即 t_k 最小的键",
+      "第 4 步：在双向链表中它恰好是尾部节点，删除只改常数条指针"
+     ],
+     "analogy": "书桌只能摆 C 本书，要放新书就先收起最久没翻的那一本。",
+     "pitfalls": [
+      "把淘汰目标说成「访问次数最少」，那是 LFU，不是 LRU",
+      "get 命中后忘记把节点移到头部，导致顺序失真、误淘汰"
+     ],
+     "code": "from collections import OrderedDict\n\ndef evict(cache: OrderedDict, cap: int) -> None:\n    while len(cache) > cap:\n        cache.popitem(last=False)  # 弹出最早被使用（最久未用）的键",
+     "sources": [
+      {
+       "title": "LRU缓存机制（LeetCode 146）· 大厂高频手撕题",
+       "url": "https://leetcode.cn/problems/lru-cache"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "该题被记录为字节跳动 367 次、腾讯 193 次、阿里巴巴 99 次等合计 896 次",
+     "难度标注为中等；bankTopics 为哈希表",
+     "最近一次出现于 2026-09-28"
+    ],
+    "uncertain": [
+     "源 summary 未给完整题面，statement 依 LeetCode 146 惯例重述（待核实原题约束措辞）",
+     "examples 为自行构造，已用参考代码逐步验证"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "做一个容量有限的缓存，满了就扔掉最久没用过的那个。"
+     },
+     {
+      "level": "入门",
+      "text": "缓存只有 C 个位置。get 取出值并把它标记为刚用过；put 写入值，若超出 C 就删掉最久没被用的键。要求两种操作都 O(1)。"
+     },
+     {
+      "level": "进阶",
+      "text": "数组删除要搬元素、单链表删除要找前驱，都做不到 O(1)。解法是哈希表存 key 到节点提供 O(1) 定位，双向链表提供 O(1) 摘除与插头，再用哨兵节点消掉大量空指针判断。"
+     },
+     {
+      "level": "专家",
+      "text": "本质是「定位结构 + 顺序结构」的组合：哈希表只管 key→节点，双向链表只管时序。命中先定位再移到头部，超容量先定位尾部再删除。Python 的 OrderedDict 正是 dict 加双向链表，move_to_end 与 popitem(last=False) 直接对应这两步。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "如果只用哈希表，淘汰谁？",
+      "a": "哈希表只存映射不记访问先后，无法判断谁最久未用，只能随机删或整体扫描，失去 LRU 语义。"
+     },
+     {
+      "q": "为什么不用普通单链表？",
+      "a": "删除当前节点要知道它的前驱，单链表找前驱要 O(n)，加上 prev 变成双向才能在 O(1) 内摘除任意节点。"
+     }
+    ],
+    "mechanism": "关键是让定位与顺序维护各自 O(1) 且互不拖累：哈希表给出节点地址，节点的 prev/next 让顺序调整只改常数条指针。若把两者合成有序数组，任一操作都会退化到 O(n)。",
+    "boundary": "LRU 假设最久未用最不可能再用，对顺序扫描、周期性访问的负载命中率会明显下降，此时应换 LFU 或 ARC。并发与线程安全需额外加锁。",
+    "analogyBoundary": "卡片—书架类比忽略了挪动成本：真实书架抽插要移动整排书，链表只改指针；同时现实里没有访问时间字段，顺序靠节点位置隐式表达。",
+    "misconceptions": [
+     "把淘汰对象说成访问次数最少，那是 LFU",
+     "get 命中后忘记更新顺序，导致它按插入时间被误淘汰",
+     "用 list.pop(0) 当 LRU，误以为 O(1)，其实是 O(n)"
+    ],
+    "ownAnalysis": "这道题真正考的是 O(1) 组合思维：凡是要既快查又快速改顺序的需求，都可拆成哈希加链表。（推断）大模型推理服务里的 KV cache 淘汰常复用同一结构，理解本题有助于读 vLLM 之类实现。",
+    "officialNotes": [
+     {
+      "position": "LeetCode 146 要求 get 与 put 的平均时间复杂度为 O(1)",
+      "source": "https://leetcode.cn/problems/lru-cache"
+     }
+    ],
+    "interviewAnswer": "我拆成两个结构：哈希表负责 O(1) 找到节点，双向链表维护访问顺序，头部最新、尾部最旧。get 命中后把节点移到头部返回其值，未命中返回 -1。put 时若 key 存在就更新值并移到头部，否则在头部插入新节点；若长度超过容量，就删掉尾部节点并同步删掉哈希表里的 key。加哨兵头尾能省掉大量空指针判断。",
+    "studyPath": {
+     "prerequisites": [
+      "链表指针操作",
+      "哈希表"
+     ],
+     "nextSteps": [
+      "LFU 缓存（LeetCode 460）",
+      "手写带哨兵的双向链表",
+      "并发安全缓存的加锁方案"
+     ]
+    }
+   },
+   "problem": {
+    "title": "LRU缓存机制",
+    "number": 146,
+    "difficulty": "medium",
+    "statement": "设计一个满足最近最少使用（LRU）策略的缓存类 LRUCache：初始化给定正整数容量 capacity。get(key)：若 key 存在返回其 value 并把该项标记为最近使用，否则返回 -1。put(key, value)：写入或更新键值；若写入后键数超过 capacity，则淘汰最久未使用的键。要求 get 与 put 的平均时间复杂度均为 O(1)。key、value 均为整数。",
+    "examples": [
+     {
+      "input": "capacity=1; put(1,1); put(2,2); get(1)",
+      "output": "get(1) 返回 -1",
+      "why": "容量 1，put(2,2) 淘汰最久未用的 key=1"
+     },
+     {
+      "input": "capacity=2; put(1,1); put(2,2); get(1); put(3,3); get(2); get(3)",
+      "output": "依次得到 1, -1, 3",
+      "why": "get(1) 后 2 变最旧，put(3,3) 淘汰 key=2"
+     }
+    ],
+    "approach": {
+     "idea": "用哈希表存 key→节点实现 O(1) 定位，用双向链表维护访问顺序：头部最新、尾部最旧。任何一次读写都把对应节点移到头部，容量溢出就删尾节点。",
+     "steps": [
+      "1. 建哈希表 self.cache 与容量 self.cap（Python 可用 OrderedDict）",
+      "2. get：key 不存在返回 -1；存在则把该键移到末尾（最近使用），返回其值",
+      "3. put：key 已存在则更新值并移到末尾；否则写入",
+      "4. 每次写入后检查长度是否超过 capacity",
+      "5. 超容量时弹掉链表头（OrderedDict 中 last=False 的那端，即最久未用）"
+     ],
+     "whyItWorks": "任一时刻链表从头到尾严格按最近访问时间递减排列，容量只在 put 后可能超限，此时被弹出的头部节点必是全局最久未使用项，淘汰选择正确；且定位与改序都是常数次指针/字典操作。",
+     "alternatives": [
+      {
+       "name": "手写双向链表 + 哨兵头尾",
+       "complexity": "O(1) / O(capacity)",
+       "when": "面试要求不依赖标准库、要展示指针功底时"
+      },
+      {
+       "name": "哈希表 + 数组时间戳全扫描淘汰",
+       "complexity": "O(n) / O(capacity)",
+       "when": "数据规模极小、只求最快写出可跑版本时"
+      }
+     ]
+    },
+    "solution": {
+     "python": "from collections import OrderedDict\n\nclass LRUCache:\n    def __init__(self, capacity: int):\n        self.cap = capacity\n        self.cache = OrderedDict()  # 头部=最久未用, 末尾=最近使用\n\n    def get(self, key: int) -> int:\n        if key not in self.cache:\n            return -1\n        self.cache.move_to_end(key)  # 标记为最近使用\n        return self.cache[key]\n\n    def put(self, key: int, value: int) -> None:\n        if key in self.cache:\n            self.cache.move_to_end(key)\n        self.cache[key] = value\n        if len(self.cache) > self.cap:\n            self.cache.popitem(last=False)  # 淘汰最久未用",
+     "python_alt": "class Node:\n    __slots__ = ('key', 'val', 'prev', 'nxt')\n    def __init__(self, key=0, val=0):\n        self.key, self.val = key, val\n        self.prev = self.nxt = None\n\nclass LRUCache:\n    def __init__(self, capacity: int):\n        self.cap = capacity\n        self.map = {}\n        self.head, self.tail = Node(), Node()  # 哨兵\n        self.head.nxt, self.tail.prev = self.tail, self.head\n\n    def _remove(self, node):\n        node.prev.nxt, node.nxt.prev = node.nxt, node.prev\n\n    def _add_front(self, node):\n        node.nxt = self.head.nxt\n        node.prev = self.head\n        self.head.nxt.prev = node\n        self.head.nxt = node\n\n    def get(self, key: int) -> int:\n        if key not in self.map:\n            return -1\n        node = self.map[key]\n        self._remove(node)\n        self._add_front(node)\n        return node.val\n\n    def put(self, key: int, value: int) -> None:\n        if key in self.map:\n            node = self.map[key]\n            node.val = value\n            self._remove(node)\n            self._add_front(node)\n        else:\n            node = Node(key, value)\n            self.map[key] = node\n            self._add_front(node)\n            if len(self.map) > self.cap:\n                lru = self.tail.prev\n                self._remove(lru)\n                del self.map[lru.key]",
+     "notes": "主实现用 OrderedDict 最简洁：move_to_end 表示「标记最近使用」，popitem(last=False) 表示「淘汰最久未用」。手写版用两个哨兵节点 head/tail，避免对空链表的特判；删除节点时务必同时从 map 中 del。"
+    },
+    "complexity": {
+     "time": "O(1)",
+     "space": "O(capacity)",
+     "why": "get/put 只做字典定位与常数次引用改序；空间存放至多 capacity 个键值节点。"
+    },
+    "pitfalls": [
+     "put 更新已存在的 key 时忘记 move_to_end，导致顺序错误",
+     "淘汰后忘记从哈希表删除对应 key，形成脏数据",
+     "capacity 为 0 或极小值时越界，未做保护"
+    ],
+    "edgeCases": [
+     "capacity = 1 时连续 put 两个不同 key",
+     "get 不存在的 key 必须返回 -1",
+     "反复 put 同一个 key 不应算作新增"
+    ],
+    "interviewTips": "先讲清「两个结构各管一件事」，再写代码。被问「能不能不用 OrderedDict」就切到手写双向链表版本，边说边画头部插入、尾部删除两个动作。卡住时先写出 get 与 put 的骨架，再补私有方法 _remove/_add_front，通常能拿到大部分分。"
+   }
+  },
+  {
+   "id": "218d3e48bbac3784",
+   "tldr": "用双指针迭代把链表每个节点的 next 反向，O(n) 时间 O(1) 空间；递归版则靠栈回溯改指针。",
+   "keyPoints": [
+    "核心动作：保存 cur.next，再把 cur.next 指向 prev",
+    "三个指针 prev / cur / nxt 依次右移，直到 cur 为空",
+    "迭代法空间 O(1)，返回值为新的头节点 prev",
+    "递归法写法短但递归栈占 O(n) 空间",
+    "双指针与递归是该题最常见的两种解法"
+   ],
+   "why": "反转链表指针操作是链表题的基本功，206 是字节/腾讯高频；K 个一组翻转、回文链表都建立在它之上。",
+   "difficulty": "easy",
+   "tags": [
+    "leetcode",
+    "linked-list",
+    "two-pointers",
+    "recursion"
+   ],
+   "entities": [
+    "ListNode",
+    "双指针",
+    "递归"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "反转链表的指针移动",
+    "caption": "每一轮固定三件事：存 nxt、反转 cur.next、prev 与 cur 一起右移一格。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='反转链表的双指针过程：prev 与 cur 之间箭头反向，三指针逐格右移'>\n<text x='24' y='30' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>初始：prev=None, cur=1, nxt=2</text>\n<rect x='60' y='46' width='60' height='36' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='90' y='69' font-size='14' text-anchor='middle' fill='currentColor'>1</text>\n<rect x='150' y='46' width='60' height='36' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='180' y='69' font-size='14' text-anchor='middle' fill='currentColor'>2</text>\n<rect x='240' y='46' width='60' height='36' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='270' y='69' font-size='14' text-anchor='middle' fill='currentColor'>3</text>\n<line x1='120' y1='64' x2='148' y2='64' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='150,64 143,60 143,68' fill='var(--line-1)'/>\n<line x1='210' y1='64' x2='238' y2='64' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,64 233,60 233,68' fill='var(--line-1)'/>\n<line x1='240' y1='104' x2='126' y2='104' stroke='var(--accent)' stroke-width='1.6'/>\n<polygon points='120,104 128,100 128,108' fill='var(--accent)'/>\n<text x='184' y='120' font-size='13' text-anchor='middle' fill='currentColor'>把 1.next 反向指向 prev(None)</text>\n<text x='24' y='152' font-size='13' text-anchor='start' fill='currentColor'>右移后：prev=1, cur=2, nxt=3，再重复同一动作</text>\n<rect x='60' y='168' width='60' height='36' rx='6' fill='none' stroke='var(--accent)' stroke-width='1.6'/>\n<text x='90' y='191' font-size='14' text-anchor='middle' fill='currentColor'>1</text>\n<rect x='150' y='168' width='60' height='36' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='180' y='191' font-size='14' text-anchor='middle' fill='currentColor'>2</text>\n<rect x='240' y='168' width='60' height='36' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='270' y='191' font-size='14' text-anchor='middle' fill='currentColor'>3</text>\n<line x1='150' y1='186' x2='122' y2='186' stroke='var(--accent)' stroke-width='1.6'/>\n<polygon points='120,186 128,182 128,190' fill='var(--accent)'/>\n<text x='240' y='226' font-size='13' text-anchor='middle' fill='currentColor'>cur 走到空时，prev 就是反转后的新头节点</text>\n</svg>",
+    "alt": "链表 1→2→3 中 prev 与 cur 双指针逐格右移，每步把 cur.next 反向指回 prev，最终 prev 成为新头。"
+   },
+   "concepts": [
+    {
+     "name": "双指针原地反转（In-place Pointer Reversal）",
+     "readable": "用 prev 表示已反转部分的头、cur 表示待处理节点；每轮先存好 cur.next，再把 cur.next 指向 prev，然后两指针一起前移。",
+     "analogy": "把一列手拉手的队伍掉头：你只需要让每个人改牵身后那个人，从头一个个改过去，队伍就整条反向，不用重新排队。",
+     "analogyBreaksDown": "真人换手可以同时松两手抓两手，链表必须先存住原 next 再改写，否则后面的链会断掉再也找不到。",
+     "mechanism": "反转会在改写 cur.next 的瞬间丢失去路，所以必须先用 nxt 暂存后继节点；有了暂存，改指与推进就能安全进行，全程只用三个指针。",
+     "visual": "画一排方框表示节点，用两种箭头颜色区分已反转边与未反转边，标出 prev、cur、nxt 三个指针随步骤右移。",
+     "prerequisites": [
+      "链表节点与 next 指针",
+      "循环写法"
+     ],
+     "selfTest": [
+      "为什么改写 cur.next 之前必须先保存 cur.next？",
+      "循环结束时应该返回 prev 还是 cur？",
+      "空链表或单节点时循环会怎么走？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-reverse-list-state-transition",
+     "name": "反转链表的指针状态转移（Pointer State Transition）",
+     "category": "engineering",
+     "latex": "(\\mathrm{prev}, \\mathrm{cur}, \\mathrm{nxt}) \\leftarrow (\\mathrm{cur},\\ \\mathrm{nxt},\\ \\mathrm{cur.next})",
+     "symbols": [
+      [
+       "\\mathrm{prev}",
+       "已反转部分的头节点"
+      ],
+      [
+       "\\mathrm{cur}",
+       "当前待处理节点"
+      ],
+      [
+       "\\mathrm{nxt}",
+       "cur 的原始后继节点"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：反转前先暂存 nxt = cur.next，保住后续链表入口",
+      "第 2 步：改写 cur.next = prev，把当前节点并入已反转部分",
+      "第 3 步：把 prev 推进到 cur，cur 推进到 nxt，循环不变量保持成立",
+      "第 4 步：当 cur 为空时，prev 指向整条链表的新头，返回 prev"
+     ],
+     "analogy": "传递接力棒：先握住下一棒，再把身体转向后方，然后前进一个人位。",
+     "pitfalls": [
+      "先写 cur.next = prev 再存 nxt，链表断在半路",
+      "循环结束后返回 cur（此时是 None）而不是 prev"
+     ],
+     "code": "prev, cur = None, head\nwhile cur:\n    nxt = cur.next\n    cur.next = prev\n    prev, cur = cur, nxt\nreturn prev",
+     "sources": [
+      {
+       "title": "206.反转链表 · 题解",
+       "url": "https://programmercarl.com/algo/linked-list/0206-reverse-linked-list.html"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "该题摘要明确提到用双指针法与递归法实现指针方向的反转",
+     "bankTopics 为双指针与链表；被记录为字节跳动/腾讯等合计 721 次",
+     "难度标注为简单；最近一次出现于 2026-09-21"
+    ],
+    "uncertain": [
+     "源 summary 未给完整题面与示例，statement 与 examples 依 LeetCode 206 惯例重述并自行构造，代码已验证",
+     "每题在各公司的具体次数以采集层为准（待核实）"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "把一条单向链表的箭头全部掉头，像把一整列火车反向接起来。"
+     },
+     {
+      "level": "入门",
+      "text": "用两个指针：prev 指向已反转部分的头，cur 指向还没处理的节点。每轮先记下 cur 的下一个，再把 cur 指回 prev，最后两个指针都往前挪一格。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键顺序是先存 nxt 再改 cur.next，否则会丢掉后面整条链。改完并推进后，prev 始终是已反转部分的头；cur 走空时，prev 就是新链表的头。全程只用常数个指针。"
+     },
+     {
+      "level": "专家",
+      "text": "迭代法时间 O(n)、额外空间 O(1)，是标准答案；递归法 reverseList(head.next) 后让 head.next.next=head、head.next=None，写法优雅但递归栈占 O(n)。K 个一组翻转只是在本题外面套一层分组，回文链表则用快慢指针找到中点后反转后半段再比较。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "如果先写 cur.next = prev 再保存后继会怎样？",
+      "a": "cur 与后方的连接被切断，nxt 位置丢失，剩余节点再也访问不到，链表从中间断裂。"
+     },
+     {
+      "q": "为什么返回 prev 而不是 head？",
+      "a": "head 是原头节点，反转后它变成尾部、next 为 None；prev 才是走到最后的新头节点。"
+     }
+    ],
+    "mechanism": "反转的难点不是改指针，而是改指针会丢失去路。因此设计一定先声明 nxt 暂存后继，再改指，最后推进——用一次额外变量换取整条链的可达性。",
+    "boundary": "迭代法对任意长度链表都成立。递归法在链表很长时会因递归深度爆栈（Python 默认约 1000 层），工程上长链应改用迭代。",
+    "analogyBoundary": "队伍掉头类比里每个人可以同时松开并重新牵手，而链表一次只能改一个 next，必须先暂存后继；两者对操作顺序的容错完全不同。",
+    "misconceptions": [
+     "把 prev 初值写成 head，导致第一个节点自指成环",
+     "循环条件写成 while cur.next 而漏掉最后一个节点",
+     "递归版忘记把 head.next 置为 None，结果原头和新头成环"
+    ],
+    "ownAnalysis": "这道题是链表题的「hello world」，但暗含一个通用模式：凡是原地改写指针的操作，都要先保住未处理部分的入口。（推断）刷完本题应立即做 K 个一组翻转（LC 25）与回文链表（LC 234），三题共享同一套「存后继—反向—推进」骨架。",
+    "officialNotes": [
+     {
+      "position": "代码随想录该题解给出双指针法与递归法两种实现",
+      "source": "https://programmercarl.com/algo/linked-list/0206-reverse-linked-list.html"
+     }
+    ],
+    "interviewAnswer": "我用双指针迭代。prev 初始为 None，cur 初始为 head。循环里先存 nxt = cur.next，把 cur.next 指向 prev，再把 prev 和 cur 一起右移；循环结束 cur 为空，prev 就是反转后的头节点。全程只改指针，时间 O(n)、额外空间 O(1)。如果面试官想看递归，我可以再给一版：先递归反转 head.next，让 head.next.next 指回 head，并把 head.next 置空。",
+    "studyPath": {
+     "prerequisites": [
+      "链表基本操作",
+      "循环与指针"
+     ],
+     "nextSteps": [
+      "K 个一组翻转链表（LC 25）",
+      "回文链表（LC 234）",
+      "两两交换链表中的节点（LC 24）"
+     ]
+    }
+   },
+   "problem": {
+    "title": "反转链表",
+    "number": 206,
+    "difficulty": "easy",
+    "statement": "给定单链表的头节点 head，请反转整条链表并返回反转后的头节点。链表节点定义为含有 val 与 next 指针的结构；输入可能为空链表。要求尽量原地完成，不去新建等量节点（因此额外空间应为 O(1)）。",
+    "examples": [
+     {
+      "input": "head = [1,2,3,4,5]",
+      "output": "[5,4,3,2,1]",
+      "why": "每个节点的 next 指向反转，原头 1 变尾"
+     },
+     {
+      "input": "head = []",
+      "output": "[]",
+      "why": "空链表直接返回 None"
+     }
+    ],
+    "approach": {
+     "idea": "维护 prev（已反转部分头）与 cur（待处理节点）。每轮先暂存 cur.next，再把 cur.next 指向 prev，随后 prev 与 cur 一起前移一格；cur 为空时 prev 即新头。",
+     "steps": [
+      "1. 初始化 prev = None，cur = head",
+      "2. 当 cur 不为空时循环",
+      "3. 暂存 nxt = cur.next 保住后继",
+      "4. 改写 cur.next = prev，把当前节点接到已反转部分前面",
+      "5. prev = cur，cur = nxt，两指针右移",
+      "6. 循环结束返回 prev"
+     ],
+     "whyItWorks": "循环不变量：prev 指向原链表中已处理区间反转后的头，且其尾部 next 为 None；每轮把 cur 并入该区间，区间左端后移一位。区间覆盖全链后 prev 即整条链的新头。",
+     "alternatives": [
+      {
+       "name": "递归",
+       "complexity": "O(n) / O(n)",
+       "when": "想写更短代码、链表不长且允许递归栈时"
+      },
+      {
+       "name": "头插法重建",
+       "complexity": "O(n) / O(n)",
+       "when": "允许新建节点、或需要保留原链表时（面试一般不要求）"
+      }
+     ]
+    },
+    "solution": {
+     "python": "class ListNode:\n    def __init__(self, val=0, next=None):\n        self.val = val\n        self.next = next\n\ndef reverseList(head: ListNode) -> ListNode:\n    prev = None\n    cur = head\n    while cur:\n        nxt = cur.next      # 1) 暂存后继\n        cur.next = prev     # 2) 反向\n        prev = cur          # 3) 推进\n        cur = nxt\n    return prev",
+     "python_alt": "def reverseList(head: ListNode) -> ListNode:\n    if not head or not head.next:\n        return head\n    new_head = reverseList(head.next)\n    head.next.next = head\n    head.next = None\n    return new_head",
+     "notes": "迭代版用常数空间，是面试首选。递归版终止条件是空节点或单节点；注意 must 把 head.next 置为 None，否则新尾节点仍指向 head，链表会成环。"
+    },
+    "complexity": {
+     "time": "O(n)",
+     "space": "O(1)",
+     "why": "每个节点访问并改一次指针，共 n 次；迭代只额外用 prev、cur、nxt 三个变量（递归版栈空间为 O(n)）。"
+    },
+    "pitfalls": [
+     "改写 cur.next 前没保存 cur.next，链表断裂",
+     "返回 cur（此时为 None）而不是 prev",
+     "递归版忘记 head.next = None 导致成环"
+    ],
+    "edgeCases": [
+     "head 为空，应返回 None",
+     "只有一个节点，应原样返回",
+     "两个节点，验证 prev/cur 推进是否正确"
+    ],
+    "interviewTips": "先说清三个指针各自含义，再写循环体，边写边强调「先存后继再反向」。写完主动讲一句「返回的是 prev，因为 cur 最后是 None」。若面到回文链表等变体，可顺势提「这套骨架可复用在 K 个一组翻转上」加分。"
+   }
+  },
+  {
+   "id": "ce0ad6ab3e2e154a",
+   "tldr": "求数组中第 K 大元素：快速选择（Quickselect）平均 O(n)、原地；小根堆 O(n log k) 适合流式数据。",
+   "keyPoints": [
+    "第 k 大等价于升序排序中下标 n-k 的元素",
+    "快速选择借用快排划分，每次只递归一侧",
+    "期望时间 O(n)，最坏 O(n²)（可随机选轴缓解）",
+    "小根堆维护 k 个最大元，时间 O(n log k)、空间 O(k)",
+    "本题核心是 TopK，不必完全排序"
+   ],
+   "why": "TopK 是大厂手撕常客，字节/美团高频；快速选择的「只递归一侧」思想在分治与大数据选取题里反复出现。",
+   "difficulty": "medium",
+   "tags": [
+    "leetcode",
+    "sorting",
+    "quickselect",
+    "heap",
+    "divide-and-conquer"
+   ],
+   "entities": [
+    "Quickselect",
+    "Heap",
+    "随机化划分"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "快速选择只递归一侧",
+    "caption": "快排两侧都递归是 O(n log n)，快速选择每轮只进入含目标下标的那一侧，期望降到 O(n)。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='快速选择：按轴划分数组，只在包含第 k 大下标的一侧继续划分，逐步缩小范围'>\n<text x='24' y='28' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>目标下标 target = n - k = 4</text>\n<rect x='40' y='44' width='80' height='34' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='80' y='66' font-size='13' text-anchor='middle' fill='currentColor'>3 2 1</text>\n<rect x='120' y='44' width='60' height='34' rx='6' fill='none' stroke='var(--accent)' stroke-width='1.6'/>\n<text x='150' y='66' font-size='13' text-anchor='middle' fill='currentColor'>4</text>\n<rect x='180' y='44' width='120' height='34' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='240' y='66' font-size='13' text-anchor='middle' fill='currentColor'>6 5</text>\n<text x='150' y='94' font-size='13' text-anchor='middle' fill='currentColor'>轴就位</text>\n<line x1='270' y1='78' x2='300' y2='104' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='304,108 296,104 302,98' fill='var(--line-1)'/>\n<text x='330' y='100' font-size='13' text-anchor='middle' fill='currentColor'>target 在右侧</text>\n<rect x='260' y='118' width='120' height='34' rx='6' fill='none' stroke='var(--accent)' stroke-width='1.6'/>\n<text x='320' y='140' font-size='13' text-anchor='middle' fill='currentColor'>6 5</text>\n<text x='24' y='176' font-size='13' text-anchor='start' fill='currentColor'>只对这一侧再划分，左侧区间整体丢弃</text>\n<rect x='260' y='190' width='120' height='34' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='320' y='212' font-size='13' text-anchor='middle' fill='currentColor'>5 6 → 下标4=5</text>\n</svg>",
+    "alt": "数组按轴元素划分，目标下标在右侧时只对右侧子区间继续划分，左侧整体丢弃，最终定位到第 k 大元素。"
+   },
+   "concepts": [
+    {
+     "name": "快速选择（Quickselect）",
+     "readable": "借用快排的划分：选一个轴，把数组分成小于/等于/大于轴三段，看目标下标落在哪段，只对那一段继续划分。",
+     "analogy": "在一摞没排序的考卷里找第 5 名的分数：你先随便抽一张当基准，把比它高的和低的各放一堆，看第 5 名在哪堆，只翻那一堆，其余整堆不用管。",
+     "analogyBreaksDown": "现实中你仍要扫完整摞才能分成两堆（每轮都是 O(n)），而且若每次都抽到最极端的分值，会退化成逐张翻找，这正是最坏 O(n²) 的来源。",
+     "mechanism": "快排两边都递归得到全序是 O(n log n)；快速选择每轮只进入含目标下标的一侧，递归深度期望 O(log n)、每层工作量线性，因此总期望时间 O(n)。",
+     "visual": "画一条数组条，正中标记 pivot 与 target 下标，箭头只指向 target 所在的那一半，另一半画成灰色表示丢弃。",
+     "prerequisites": [
+      "快速排序的划分过程",
+      "数组下标与递归"
+     ],
+     "selfTest": [
+      "为什么要随机选轴？",
+      "第 k 大对应升序中的哪个下标？",
+      "为什么只递归一侧能把 O(n log n) 降到 O(n)？"
+     ],
+     "formula": "T(n) = T(n/2) + O(n) \\Rightarrow T(n) = O(n)"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-quickselect-recurrence",
+     "name": "快速选择的期望复杂度（Expected Time of Quickselect）",
+     "category": "engineering",
+     "latex": "T(n) = T\\left(\\tfrac{n}{2}\\right) + O(n) \\Rightarrow T(n) = O(n)",
+     "symbols": [
+      [
+       "T(n)",
+       "规模为 n 时的划分工作量"
+      ],
+      [
+       "\\tfrac{n}{2}",
+       "随机轴下目标所在子区间的期望规模"
+      ],
+      [
+       "O(n)",
+       "单轮划分扫描整段的代价"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：单轮划分要扫描整段 n 个元素，代价 O(n)",
+      "第 2 步：随机选轴时目标期望落在约一半规模的子区间里",
+      "第 3 步：递归式 T(n)=T(n/2)+O(n)",
+      "第 4 步：等比求和 n + n/2 + n/4 + ... = 2n，故期望 O(n)"
+     ],
+     "analogy": "每次把要翻的考卷数量砍一半，总工作量是 n 加上它的一半再加上四分之一，收敛到 2n。",
+     "pitfalls": [
+      "把最坏 O(n²) 说成必然，忽略随机化后的期望 O(n)",
+      "误以为第 k 大下标是 k，忽略 n-k 的换算"
+     ],
+     "code": "import random\n\ndef kth(nums, target):\n    lo, hi = 0, len(nums) - 1\n    while True:\n        p = nums[random.randint(lo, hi)]\n        i, j = lo, hi\n        while i <= j:\n            while nums[i] < p: i += 1\n            while nums[j] > p: j -= 1\n            if i <= j:\n                nums[i], nums[j] = nums[j], nums[i]\n                i += 1; j -= 1\n        if target <= j: hi = j\n        elif target >= i: lo = i\n        else: return nums[target]",
+     "sources": [
+      {
+       "title": "数组中的第K个最大元素（LeetCode 215）· 大厂高频手撕题",
+       "url": "https://leetcode.cn/problems/kth-largest-element-in-an-array"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "该题被记录为字节跳动 205 次、美团 103 次、腾讯 62 次等合计 567 次",
+     "难度标注为中等；bankTopics 为排序与TopK",
+     "最近一次出现于 2026-09-17"
+    ],
+    "uncertain": [
+     "源 summary 未给题面与示例，statement 与 examples 依 LeetCode 215 惯例重述并自行构造，代码已逐步验证",
+     "是否允许多种解法（堆/快速选择/计数）取决于本题默认约束（待核实是否限定 O(n)）"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "在一堆数字里找出第 K 大的那个，不用把整堆排好序。"
+     },
+     {
+      "level": "入门",
+      "text": "把数组按升序排好后，第 k 大就是下标 n-k 的元素。但完全排序要 O(n log n)。快速选择只关心这个下标，每轮划分后只进入它所在的一侧，平均能到 O(n)。"
+     },
+     {
+      "level": "进阶",
+      "text": "划分采用三路（小于/等于/大于轴），随机选轴避免最坏退化。维护一个只有 k 个元素的小根堆也行：堆顶就是当前第 k 大，适合数据流式到达。前者更快但不稳定，后者 O(n log k) 且可在线。"
+     },
+     {
+      "level": "专家",
+      "text": "考点其实是「不必全排序」。快速选择期望 O(n)、最坏 O(n²)（可用中位数的中位数做到确定 O(n)，但常数大）；堆法 O(n log k)、空间 O(k)，当 k 远小于 n 或数据无法一次装入内存时更优。面试一般先给快速选择，再用堆作对比。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不直接排序？",
+      "a": "排序把 O(n log n) 花在恢复全序上，而题目只要一个位置，快速选择用划分丢掉无关的一半，平均省到 O(n)。"
+     },
+     {
+      "q": "小根堆为什么大小为 k 而不是 n？",
+      "a": "只需保留当前最大的 k 个元素；堆顶即其中最小者＝整体第 k 大，堆再大就浪费空间与时间。"
+     }
+    ],
+    "mechanism": "快速选择的正确性来自划分不变量：轴就位后，其左侧都比它小、右侧都比它大，因此一旦目标下标等于轴位置即可返回；否则目标只可能在某一侧，另一侧可整体舍弃。每轮 O(n) 且规模期望减半，构成 O(n) 期望。",
+    "boundary": "快速选择最坏 O(n²)，对已排序或对抗性输入（未随机化时）会退化；要求确定性 O(n) 或严格在线（流式）时应用堆法。数据全部不可一次载入内存时，原地快速选择也不适用。",
+    "analogyBoundary": "考卷类比中你能一眼把整摞分成两堆且不花额外工夫，而算法每轮都必须扫描当前整段才能完成划分，最坏情况下抽到极端基准会逐张退化为 O(n²)。",
+    "misconceptions": [
+     "把「第 k 大」当成下标 k 直接取，忽略升序下标应为 n-k",
+     "用大根堆却取堆顶，其实就是最大值而非第 k 大",
+     "声称快速选择稳定为 O(n)，忽略最坏的 O(n²)"
+    ],
+    "ownAnalysis": "本题与「前 K 个高频元素」（LC 347）共享同一套 TopK 框架，区别在比较的「大小」来源不同。（推断）面试若追问数据规模与内存，把堆法作为流式场景的答案能体现工程判断；随机化轴是避免最坏退化的常用工程手段。",
+    "officialNotes": [
+     {
+      "position": "LeetCode 215 标记为中等，常见解法为快速选择与堆",
+      "source": "https://leetcode.cn/problems/kth-largest-element-in-an-array"
+     }
+    ],
+    "interviewAnswer": "我首选快速选择。把第 k 大转成升序下标 target=n-k，随机选轴做三路划分；若 target 落在右段就只递归右段，左段整体丢弃，落在左段同理，正好落在轴位置就返回。期望时间 O(n)、原地空间 O(1)。如果面试官偏好稳定或数据是流式的，我会改用大小为 k 的小根堆，时间 O(n log k)、空间 O(k)，堆顶就是第 k 大。",
+    "studyPath": {
+     "prerequisites": [
+      "快速排序与划分",
+      "堆（优先队列）"
+     ],
+     "nextSteps": [
+      "前 K 个高频元素（LC 347）",
+      "数据流中的第 K 大元素（LC 703）",
+      "最小的 k 个数（LC 面试题 17.14）"
+     ]
+    }
+   },
+   "problem": {
+    "title": "数组中的第K个最大元素",
+    "number": 215,
+    "difficulty": "medium",
+    "statement": "给定整数数组 nums 和整数 k，返回数组中第 k 个最大的元素。注意是「排序后的第 k 个最大」，不是第 k 个不同的元素。数组长度至少为 1 且 k 满足 1 ≤ k ≤ nums.length。要求尽量优于完全排序的复杂度。",
+    "examples": [
+     {
+      "input": "nums = [3,2,1,5,6,4], k = 2",
+      "output": "5",
+      "why": "降序为 6,5,4,...，第二大是 5"
+     },
+     {
+      "input": "nums = [3,2,3,1,2,4,5,5,6], k = 4",
+      "output": "4",
+      "why": "降序前四为 6,5,5,4"
+     }
+    ],
+    "approach": {
+     "idea": "第 k 大即升序排序后下标 n-k 的元素。用快速选择：随机选轴做三路划分，只对含目标下标的子区间继续划分，不做全排序。",
+     "steps": [
+      "1. 计算目标下标 target = len(nums) - k",
+      "2. 在当前区间 [lo, hi] 内随机选一个轴值 pivot",
+      "3. 三路划分：小于 pivot 放左、等于居中、大于放右，得到边界 i、j",
+      "4. 若 target ≤ j，目标在左侧，缩小到 [lo, j]",
+      "5. 若 target ≥ i，目标在右侧，缩小到 [i, hi]",
+      "6. 否则轴元素已就位，返回 nums[target]"
+     ],
+     "whyItWorks": "划分后区间严格满足「左 < 轴 < 右」，轴元素处于其最终排序位置；目标下标若不在轴上，就只能在唯一的一侧，另一侧整体弃用仍正确。反复缩小直到命中，返回值必为第 k 大。",
+     "alternatives": [
+      {
+       "name": "小根堆维护 k 个最大元",
+       "complexity": "O(n log k) / O(k)",
+       "when": "数据流式到达、k 远小于 n 或要求稳定复杂度时"
+      },
+      {
+       "name": "完全排序后取 nums[n-k]",
+       "complexity": "O(n log n) / O(log n)",
+       "when": "n 很小或只想先写一个可跑的正确版本"
+      }
+     ]
+    },
+    "solution": {
+     "python": "import random\n\ndef findKthLargest(nums, k: int) -> int:\n    target = len(nums) - k  # 第 k 大 = 升序下标 n-k\n\n    def quickselect(lo, hi):\n        pivot = nums[random.randint(lo, hi)]\n        i, j = lo, hi\n        while i <= j:\n            while nums[i] < pivot:\n                i += 1\n            while nums[j] > pivot:\n                j -= 1\n            if i <= j:\n                nums[i], nums[j] = nums[j], nums[i]\n                i += 1\n                j -= 1\n        if target <= j:\n            return quickselect(lo, j)\n        if target >= i:\n            return quickselect(i, hi)\n        return nums[target]\n\n    return quickselect(0, len(nums) - 1)",
+     "python_alt": "import heapq\n\ndef findKthLargest(nums, k: int) -> int:\n    heap = []\n    for x in nums:\n        heapq.heappush(heap, x)\n        if len(heap) > k:\n            heapq.heappop(heap)  # 只保留最大的 k 个\n    return heap[0]  # 堆顶即第 k 大",
+     "notes": "三路划分把「等于轴」的段一次性就位，能高效处理大量重复元素。随机选轴避免已排序输入退化。堆法逐元素进出堆，天然支持在线，但注意堆里存的是最大 k 个中的最小者——即答案。"
+    },
+    "complexity": {
+     "time": "O(n) 期望，最坏 O(n²)（堆法 O(n log k)）",
+     "space": "O(1)（堆法 O(k)）",
+     "why": "快速选择每轮 O(n) 划分、期望只递归一半，求和收敛到 O(n)；原地划分不需额外数组。"
+    },
+    "pitfalls": [
+     "下标换算错误：把 target 写成 k 而不是 n-k",
+     "划分边界写成 i<=j 之外，导致死循环或漏元素",
+     "声称快速选择稳定 O(n)，忽略最坏 O(n²)"
+    ],
+    "edgeCases": [
+     "k = 1（找最大）或 k = n（找最小）",
+     "数组中存在大量重复元素",
+     "已完全升序或降序的输入（检验随机轴）"
+    ],
+    "interviewTips": "先口头说明「第 k 大＝升序下标 n-k」，再写三路划分，边写边说随机轴是为了防退化。写完主动补一句堆法及其适用场景（流式、k 小）以示全面。若面试官要求确定 O(n)，可提中位数的中位数算法作为延伸。"
+   }
+  },
+  {
+   "id": "4850800a9f8bfcd8",
+   "tldr": "每 k 个节点为一组原地翻转链表，不足 k 的最后一组保持原序；用哑结点 + 组前驱/组后驱指针，O(n)/O(1)。",
+   "keyPoints": [
+    "先用哑结点统一头节点可能改变的情况",
+    "每轮先探测是否还有完整 k 个节点，不够就停止",
+    "对组内 k 个节点做一次反转，再接回组前驱与组后驱",
+    "组前驱右移成为下一组的组前驱",
+    "整体只走一遍链表，时间 O(n)、空间 O(1)"
+   ],
+   "why": "本题是「反转链表」的分组升级版，字节高频（303 次）；考察指针边界与分组不变量的把控，是链表 hard 题代表。",
+   "difficulty": "hard",
+   "tags": [
+    "leetcode",
+    "linked-list",
+    "recursion",
+    "two-pointers"
+   ],
+   "entities": [
+    "ListNode",
+    "哑结点",
+    "分组反转"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "K 个一组翻转的指针接力",
+    "caption": "先定位第 k 个节点与组后驱，再把组内 k 个节点反向，最后把 group_prev 接到 kth、组尾接到组后驱。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='K 个一组翻转：哑结点、组前驱、第 k 个节点、组后驱四个关键指针，组内整体反向'>\n<text x='24' y='28' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>k=2：head=[1,2,3,4,5]</text>\n<rect x='30' y='46' width='52' height='34' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='68' font-size='13' text-anchor='middle' fill='currentColor'>dummy</text>\n<rect x='102' y='46' width='52' height='34' rx='6' fill='none' stroke='var(--accent)' stroke-width='1.6'/>\n<text x='128' y='68' font-size='13' text-anchor='middle' fill='currentColor'>1</text>\n<rect x='174' y='46' width='52' height='34' rx='6' fill='none' stroke='var(--accent)' stroke-width='1.6'/>\n<text x='200' y='68' font-size='13' text-anchor='middle' fill='currentColor'>2</text>\n<rect x='246' y='46' width='52' height='34' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='272' y='68' font-size='13' text-anchor='middle' fill='currentColor'>3</text>\n<rect x='318' y='46' width='52' height='34' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='344' y='68' font-size='13' text-anchor='middle' fill='currentColor'>4</text>\n<rect x='390' y='46' width='52' height='34' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='416' y='68' font-size='13' text-anchor='middle' fill='currentColor'>5</text>\n<text x='128' y='98' font-size='13' text-anchor='middle' fill='currentColor'>group_prev</text>\n<text x='200' y='114' font-size='13' text-anchor='middle' fill='currentColor'>kth</text>\n<text x='272' y='98' font-size='13' text-anchor='middle' fill='currentColor'>group_next</text>\n<text x='24' y='146' font-size='13' text-anchor='start' fill='currentColor'>翻转第一组 1,2 → 2,1，并把两端接回</text>\n<rect x='30' y='162' width='52' height='34' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='184' font-size='13' text-anchor='middle' fill='currentColor'>dummy</text>\n<rect x='102' y='162' width='52' height='34' rx='6' fill='none' stroke='var(--accent)' stroke-width='1.6'/>\n<text x='128' y='184' font-size='13' text-anchor='middle' fill='currentColor'>2</text>\n<rect x='174' y='162' width='52' height='34' rx='6' fill='none' stroke='var(--accent)' stroke-width='1.6'/>\n<text x='200' y='184' font-size='13' text-anchor='middle' fill='currentColor'>1</text>\n<rect x='246' y='162' width='104' height='34' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='298' y='184' font-size='13' text-anchor='middle' fill='currentColor'>3 4 5</text>\n<text x='240' y='222' font-size='13' text-anchor='middle' fill='currentColor'>不足 k 的组（如剩 1 个）原样保留</text>\n</svg>",
+    "alt": "哑结点后接 [1,2,3,4,5]，标出组前驱、第 k 个节点与组后驱；组内翻转后仍是哑结点接 2→1→3→4→5，不足 k 的组保留原序。"
+   },
+   "concepts": [
+    {
+     "name": "哑结点与组边界（Dummy Node and Group Boundary）",
+     "readable": "在头节点前放一个 dummy，它的 next 指向真正的头；再用 group_prev 表示「上一组末尾」，用它来定位并接回每一组，从而避免对头节点的特判。",
+     "analogy": "给队伍最前面站一个领队，无论后面的人怎么换位，你总能从领队开始数人、插入新队伍，不用管第一个是不是换了人。",
+     "analogyBreaksDown": "领队类比里领队本身会随队伍移动，而 dummy 是固定不动的哨兵，永远指向结果链表的第一个真实节点，最终要返回 dummy.next。",
+     "mechanism": "翻转会让每组的头尾互换，头节点也可能改变，导致「谁是新头」的边界情况剧增。dummy 把「头节点」统一成「dummy 的 next」，group_prev 把「上一组的末尾」固定成操作锚点，使拼接只需两次赋值。",
+     "visual": "画含 dummy 的链表，用不同颜色标出 group_prev、kth、group_next 三个锚点，先画未翻转状态再画翻转后两条新连接。",
+     "prerequisites": [
+      "反转链表（LC 206）",
+      "链表哑结点技巧"
+     ],
+     "selfTest": [
+      "为什么最后返回 dummy.next 而不是 head？",
+      "如何判断剩余节点不足 k 个？",
+      "翻转后 group_prev 应该更新成哪个节点？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-reverse-k-group-ops",
+     "name": "分组翻转的指针改写次数（Pointer Rewrites in K-Group Reverse）",
+     "category": "engineering",
+     "latex": "W(n, k) = k \\left\\lfloor \\dfrac{n}{k} \\right\\rfloor",
+     "symbols": [
+      [
+       "n",
+       "链表节点总数"
+      ],
+      [
+       "k",
+       "每组节点数"
+      ],
+      [
+       "W(n,k)",
+       "被改写的 next 指针总数"
+      ],
+      [
+       "\\left\\lfloor \\dfrac{n}{k} \\right\\rfloor",
+       "被完整翻转的组数（向下取整）"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：只有完整含 k 个节点的组才翻转，组数上取整向下即 floor(n/k)",
+      "第 2 步：每个被翻转的组内，k 条 next 指针全部反向，共 k 条",
+      "第 3 步：末尾不足 k 的 n mod k 个节点保持原样，指针不改写",
+      "第 4 步：因此被改写的指针数为 k·floor(n/k) = n - (n mod k)，整体仍是线性"
+     ],
+     "analogy": "一班 k 个人一组向后转，最后如果凑不满一组就原地不动，转过的总人数就是 k 乘以完整组数。",
+     "pitfalls": [
+      "把不足 k 的尾组也翻转，违反题意",
+      "误把复杂度写成 O(n log k)，实际是 O(n)"
+     ],
+     "code": "def groups(n: int, k: int) -> int:\n    # 会被完整翻转的节点数\n    return n - (n % k)\n\nassert groups(5, 2) == 4    # 前 4 个翻转，剩 1 个不动\nassert groups(5, 3) == 3    # 只翻转前 3 个",
+     "sources": [
+      {
+       "title": "K 个一组翻转链表（LeetCode 25）· 大厂高频手撕题",
+       "url": "https://leetcode.cn/problems/reverse-nodes-in-k-group"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "该题被记录为字节跳动 303 次、美团 68 次、腾讯 39 次等合计 470 次",
+     "难度标注为困难；bankTopics 含链表与字符串",
+     "最近一次出现于 2026-09-16"
+    ],
+    "uncertain": [
+     "源 summary 未给题面与示例，statement 与 examples 依 LeetCode 25 惯例重述并自行构造，代码已逐步验证",
+     "按题意最后不足 k 个节点是否保持原序以官方题面为准（本解析按 LeetCode 25 的「保持原序」处理）"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "把链表每 k 个节点作为一组局部翻转，最后凑不满一组就原样留着。"
+     },
+     {
+      "level": "入门",
+      "text": "先从头数 k 个节点，如果不足 k 个就结束；够的话把这一组整体反向，再接着数下一组。因为头节点可能变，我们在最前面加一个 dummy 简化边界。"
+     },
+     {
+      "level": "进阶",
+      "text": "维护三个锚点：group_prev 是上一组末尾，group_next 是本组之后的第一个节点。翻转时把本组节点的 next 反向，并让组头指向 group_next、group_prev 指向本组原来的第 k 个节点；然后 group_prev 更新为本组原来的头。"
+     },
+     {
+      "level": "专家",
+      "text": "本题是 LC 206 的分组封装：先探测组是否完整（不够就返回），再复用反转骨架并在两端接回。指针操作总数是 n-(n mod k)，整体 O(n)、额外空间 O(1)。递归写法更短但栈深度为 O(n/k)；迭代版把 dummy 与 group_prev 的接力关系写清楚，是面试更稳的选择。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么要先探测这一组是否够 k 个？",
+      "a": "因为不足 k 的尾组不能翻转，必须提前发现并直接结束，否则会把不该动的节点也反向。"
+     },
+     {
+      "q": "翻转后为什么接回时要分成两次赋值？",
+      "a": "group_prev 原本指向的组头在翻转后变成了组尾，需要先把它的 next 指向 group_next 断掉旧链，再让 group_prev 指向新的组头。"
+     }
+    ],
+    "mechanism": "翻转会同时改变「组的首尾身份」和「相邻组的连接点」，如果不固定锚点，每轮都要重新判断头尾。用 dummy 固定整个结果的头、用 group_prev 固定上一组末位、用 group_next 固定下一组入口，拼接退化成两次赋值，边界情况被消掉。",
+    "boundary": "当 k=1 时链表不变；当剩余节点不足 k 个时不做任何翻转（若题目改为「不足 k 也翻转」需调整探测逻辑）。链表过长时递归版会爆栈，应用迭代。k ≤ 0 属非法输入需另行约定。",
+    "analogyBoundary": "队伍分组向后转类比默认每组人数恰好整除，而链表常出现尾组不满，算法必须在翻转前先探测，否则会把尾组错误翻转——这与现实中「剩几个人就剩几个人」的直觉不同。",
+    "misconceptions": [
+     "把不足 k 的尾组也翻转",
+     "忘记用 dummy，导致 head 被翻转后返回错误的节点",
+     "翻转后 group_prev 更新成新的组头（应为原组头，即翻转后的组尾）"
+    ],
+    "ownAnalysis": "它与 LC 24（两两交换）思想同源：都是「按固定长度切片 + 局部反转 + 接回」。（推断）面试若要求手写，先写出「数 k 个 → 反转 → 接回」三段式框架最不容易乱；把 group_prev 当作每轮的游标是理解关键。",
+    "officialNotes": [
+     {
+      "position": "LeetCode 25 标记为困难，要求每 k 个一组翻转，不足 k 个保持原序",
+      "source": "https://leetcode.cn/problems/reverse-nodes-in-k-group"
+     }
+    ],
+    "interviewAnswer": "我加一个 dummy 指向 head，用 group_prev 表示上一组末尾。每轮先从 group_prev 往后走 k 步，如果中途走空说明不够一组，直接返回 dummy.next。否则记下 group_next = 第 k 个节点的 next，把这 k 个节点按反转链表的写法整体反向，再把 group_prev.next 指向新的组头、原组头（现组尾）指向 group_next，最后把 group_prev 移到原组头，继续下一轮。全程 O(n) 时间、O(1) 空间。",
+    "studyPath": {
+     "prerequisites": [
+      "反转链表（LC 206）",
+      "链表哑结点技巧"
+     ],
+     "nextSteps": [
+      "两两交换链表中的节点（LC 24）",
+      "旋转链表（LC 61）",
+      "重排链表（LC 143）"
+     ]
+    }
+   },
+   "problem": {
+    "title": "K 个一组翻转链表",
+    "number": 25,
+    "difficulty": "hard",
+    "statement": "给定链表头节点 head 和整数 k，每 k 个节点为一组进行翻转，返回翻转后的链表。若剩余节点不足 k 个，则保持它们的原顺序。不能只改变节点内部的值，必须实际交换节点（即改写指针）。k 为正整数。",
+    "examples": [
+     {
+      "input": "head = [1,2,3,4,5], k = 2",
+      "output": "[2,1,4,3,5]",
+      "why": "前两组各 2 个翻转，最后单个 5 保留"
+     },
+     {
+      "input": "head = [1,2,3,4,5], k = 3",
+      "output": "[3,2,1,4,5]",
+      "why": "第一组 3 个翻转，剩 4,5 不足 3 保留"
+     }
+    ],
+    "approach": {
+     "idea": "用 dummy 统一头节点边界，group_prev 指向上一组末尾。每轮先探测是否有完整 k 个节点，再对组内 k 个节点整体反向，并把组头接到 group_next、group_prev 接到新组头。",
+     "steps": [
+      "1. 建 dummy 指向 head，group_prev = dummy",
+      "2. 从 group_prev 出发向后走 k 步得到 kth；若中途为空则返回 dummy.next",
+      "3. 记下 group_next = kth.next",
+      "4. 反转 group_prev.next 到 kth 之间的 k 个节点（沿用 LC 206 骨架，终点为 group_next）",
+      "5. 令 group_prev.next = kth，原组头.next = group_next 完成接回",
+      "6. group_prev 移到原组头（现为组尾），回到第 2 步"
+     ],
+     "whyItWorks": "每轮翻转后，该组内部顺序严格反向且两端与原链表其余部分正确相连，不变量「group_prev 是已处理部分末尾、其后接未处理部分」得以保持；探测保证只有完整 k 组才被翻转，故最终整体正确。",
+     "alternatives": [
+      {
+       "name": "递归（不足 k 直接返回 head）",
+       "complexity": "O(n) / O(n/k)",
+       "when": "想写更短代码、链表不长时"
+      },
+      {
+       "name": "头插法逐组构建",
+       "complexity": "O(n) / O(1)",
+       "when": "熟悉头插、想避免显式反转循环时（同样只改指针）"
+      }
+     ]
+    },
+    "solution": {
+     "python": "class ListNode:\n    def __init__(self, val=0, next=None):\n        self.val = val\n        self.next = next\n\ndef reverseKGroup(head: ListNode, k: int) -> ListNode:\n    dummy = ListNode(0, head)\n    group_prev = dummy\n    while True:\n        kth = group_prev\n        for _ in range(k):\n            kth = kth.next\n            if not kth:\n                return dummy.next\n        group_next = kth.next\n        prev, cur = group_next, group_prev.next\n        while cur is not group_next:\n            nxt = cur.next\n            cur.next = prev\n            prev = cur\n            cur = nxt\n        tmp = group_prev.next      # 原组头，翻转后成为组尾\n        group_prev.next = kth      # 接到新的组头\n        group_prev = tmp\n    return dummy.next",
+     "python_alt": "def reverseKGroup(head: ListNode, k: int) -> ListNode:\n    # 先看是否还有 k 个节点\n    node = head\n    for _ in range(k):\n        if not node:\n            return head\n        node = node.next\n    # 翻转前 k 个\n    prev, cur = None, head\n    for _ in range(k):\n        nxt = cur.next\n        cur.next = prev\n        prev, cur = cur, nxt\n    # head 现在是组尾，接上后面已处理好的部分\n    head.next = reverseKGroup(cur, k)\n    return prev",
+     "notes": "迭代版把「探测 — 翻转 — 接回」三段写清最稳。翻转内层循环的终止条件是 cur 走到 group_next（哨兵值），避免多翻一个节点。注意 group_prev 更新为 tmp（原组头），而不是新的组头 kth。"
+    },
+    "complexity": {
+     "time": "O(n)",
+     "space": "O(1)",
+     "why": "每个节点最多被探测与改指常数次，总操作 n-(n mod k) 量级；迭代只用了常数个指针（递归版栈深 O(n/k)）。"
+    },
+    "pitfalls": [
+     "把不足 k 的尾组也翻转",
+     "忘记 dummy，头节点被翻转后返回了错误的头",
+     "翻转后 group_prev 更新错误，导致下一组起点不对"
+    ],
+    "edgeCases": [
+     "k = 1，链表应保持不变",
+     "链表长度小于 k，应整体返回原链表",
+     "链表长度恰好是 k 的整数倍，最后一组也要翻转"
+    ],
+    "interviewTips": "先讲三个锚点（group_prev / kth / group_next）再动手，能明显减少出错。写完主动跑一遍 k=2 的小例子验证接回。若时间紧，可先给递归版保证正确，再补迭代版；被问空间就强调迭代才是 O(1)。"
+   }
+  },
+  {
+   "id": "bbf388bcc19ae05a",
+   "tldr": "排序后固定一个数，左右双指针夹逼找另外两数；跳过重复元素去重，时间 O(n²)、额外空间 O(1)。",
+   "keyPoints": [
+    "先排序，才能用双指针与有序去重",
+    "固定 i，对右侧区间用 l/r 夹逼求和",
+    "和偏小则 l 右移，偏大则 r 左移",
+    "找到解后跳过相邻重复值，避免重复三元组",
+    "答案集不重复，故必须去重而非简单枚举"
+   ],
+   "why": "三数之和是双指针 + 去重的经典组合，字节/美团高频；同类思路可推广到四数之和、最接近的三数之和等面试变体。",
+   "difficulty": "medium",
+   "tags": [
+    "leetcode",
+    "two-pointers",
+    "sorting",
+    "array",
+    "hash-map"
+   ],
+   "entities": [
+    "双指针",
+    "排序去重",
+    "三数之和"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "三数之和的双指针夹逼",
+    "caption": "枚举最小的那一个数 i 后，l 与 r 从两端夹逼：和小于 0 就右移 l，和大于 0 就左移 r。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='排序数组上固定 i 后，l 与 r 双指针夹逼求和，和偏小右移 l，偏大左移 r'>\n<text x='24' y='28' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>nums 排序后：[-4, -1, -1, 0, 1, 2]</text>\n<rect x='40' y='46' width='60' height='36' rx='6' fill='none' stroke='var(--accent)' stroke-width='1.6'/>\n<text x='70' y='69' font-size='14' text-anchor='middle' fill='currentColor'>-4</text>\n<rect x='106' y='46' width='60' height='36' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='136' y='69' font-size='14' text-anchor='middle' fill='currentColor'>-1</text>\n<rect x='172' y='46' width='60' height='36' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='202' y='69' font-size='14' text-anchor='middle' fill='currentColor'>-1</text>\n<rect x='238' y='46' width='60' height='36' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='268' y='69' font-size='14' text-anchor='middle' fill='currentColor'>0</text>\n<rect x='304' y='46' width='60' height='36' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='334' y='69' font-size='14' text-anchor='middle' fill='currentColor'>1</text>\n<rect x='370' y='46' width='60' height='36' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='400' y='69' font-size='14' text-anchor='middle' fill='currentColor'>2</text>\n<text x='70' y='100' font-size='13' text-anchor='middle' fill='currentColor'>i</text>\n<text x='136' y='100' font-size='13' text-anchor='middle' fill='currentColor'>l →</text>\n<text x='400' y='100' font-size='13' text-anchor='middle' fill='currentColor'>← r</text>\n<text x='24' y='136' font-size='13' text-anchor='start' fill='currentColor'>i 固定在 -1：l 指 -1, r 指 2，和 = 0 → 记 [-1,-1,2]</text>\n<line x1='136' y1='112' x2='200' y2='112' stroke='var(--accent)' stroke-width='1.6'/>\n<polygon points='204,112 196,108 196,116' fill='var(--accent)'/>\n<text x='24' y='170' font-size='13' text-anchor='start' fill='currentColor'>l 右移、r 左移后：l 指 0, r 指 1，和 = 0 → 记 [-1,0,1]</text>\n<text x='24' y='202' font-size='13' text-anchor='start' fill='currentColor'>i 跳到下一个不同的 -1 时跳过，避免重复三元组</text>\n<text x='24' y='228' font-size='13' text-anchor='start' fill='currentColor'>结果：[[-1,-1,2], [-1,0,1]]</text>\n</svg>",
+    "alt": "排序数组 [-4,-1,-1,0,1,2] 上固定 i=-1，l 从 -1 右移、r 从 2 左移，分别命中 [-1,-1,2] 与 [-1,0,1]。"
+   },
+   "concepts": [
+    {
+     "name": "排序 + 双指针夹逼（Sort + Two-Pointer Converging）",
+     "readable": "先把数组排序，枚举一个数 i 作为最小值，剩下两数用左右指针从目标区间的两端夹逼：和偏小就右移左指针，偏大就左移右指针。",
+     "analogy": "在书架上找两本书厚度加起来恰好等于某个值：把书按厚度排好，从最薄和最厚各取一本，厚了就把最厚的换薄一点，薄了就把最薄的换厚一点。",
+     "analogyBreaksDown": "真实书架上换一本是随手一抽，而算法里 l 与 r 只能单向移动；一旦某对组合被跳过就不会回头，正确性完全依赖「数组已排序」这个前提。",
+     "mechanism": "排序后数组具有单调性：固定 i 时，sum = nums[i]+nums[l]+nums[r] 对 l 单调不减、对 r 单调不增。因此可以「和偏小就动 l、和偏大就动 r」而不会漏解，把每个 i 的配对从 O(n²) 降到 O(n)。",
+     "visual": "画一条有序数轴，i 在左端固定不动，l 与 r 分别从 i 右侧的两端相向收拢，每步在一个方框里显示当前三数之和的正负号。",
+     "prerequisites": [
+      "排序",
+      "双指针基础"
+     ],
+     "selfTest": [
+      "为什么和小于 0 时只能右移 l、不能左移 r？",
+      "为什么 i 与 l 都要跳过重复值？",
+      "结果为什么天然有序、不需要额外排序？"
+     ],
+     "formula": "\\text{if } s < 0:\\ l{+}{+};\\quad \\text{if } s > 0:\\ r{-}{-}"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-3sum-monotonic-shrink",
+     "name": "三数之和的双指针收缩规则（Monotonic Two-Pointer Shrink）",
+     "category": "engineering",
+     "latex": "s = a_{i} + a_{l} + a_{r};\\quad l \\leftarrow l{+}1 \\text{ if } s<0,\\quad r \\leftarrow r{-}1 \\text{ if } s>0",
+     "symbols": [
+      [
+       "a",
+       "升序排列后的数组"
+      ],
+      [
+       "i",
+       "固定的最小下标"
+      ],
+      [
+       "l, r",
+       "区间内左右双指针"
+      ],
+      [
+       "s",
+       "当前三数之和"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：数组升序后，固定 i，则 a_l 越大、a_r 越小，和随之单调变化",
+      "第 2 步：若 s<0，需要增大和，而 r 已在区间右端最大处，只能右移 l",
+      "第 3 步：若 s>0，需要减小和，而 l 已在左端最小处，只能左移 r",
+      "第 4 步：s=0 时记录答案并按值跳过重复；l≥r 时该 i 枚举结束"
+     ],
+     "analogy": "天平两端调平：左边轻了就加左边，右边重了就减右边，方向永远由当前偏向决定。",
+     "pitfalls": [
+      "未排序就套双指针，单调性不成立导致漏解",
+      "找到解后只移动一个指针，陷入重复或死循环",
+      "把去重做在最后用 set，忽略了 O(n²) 的额外开销与无序性"
+     ],
+     "code": "nums.sort()\nres = []\nfor i in range(len(nums) - 2):\n    if nums[i] > 0:\n        break\n    if i > 0 and nums[i] == nums[i - 1]:\n        continue\n    l, r = i + 1, len(nums) - 1\n    while l < r:\n        s = nums[i] + nums[l] + nums[r]\n        if s < 0: l += 1\n        elif s > 0: r -= 1\n        else:\n            res.append([nums[i], nums[l], nums[r]])\n            l += 1; r -= 1",
+     "sources": [
+      {
+       "title": "三数之和（LeetCode 15）· 大厂高频手撕题",
+       "url": "https://leetcode.cn/problems/3sum"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "该题被记录为字节跳动 187 次、美团 66 次、百度 46 次等合计 465 次",
+     "难度标注为中等；bankTopics 含双指针、哈希表、排序与TopK",
+     "最近一次出现于 2026-10-06"
+    ],
+    "uncertain": [
+     "源 summary 未给题面与示例，statement 与 examples 依 LeetCode 15 惯例重述并自行构造，代码已逐步验证",
+     "本题对「重复三元组」的判定以官方题面为准（本解析按不重复三元组处理）"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "找出数组里所有和为 0 的三个数，答案里不能有重复的三元组。"
+     },
+     {
+      "level": "入门",
+      "text": "三层循环枚举所有三元组太慢。先把数组排序，然后固定第一个数，用左右两个指针在它右边夹逼，找另外两个数；和太小就右移左指针，和太大就左移右指针。"
+     },
+     {
+      "level": "进阶",
+      "text": "排序带来两个好处：一是可以让双指针单调收缩而不漏解，二是重复的数排在一起，跳过相邻相同值就能天然去重。枚举 i 时也要跳过与前一个相同的值，否则会产生重复三元组。"
+     },
+     {
+      "level": "专家",
+      "text": "复杂度 O(n²)：外层枚举 i 是 O(n)，内层双指针每轮共走 O(n)。也可以对每个 i 用哈希表找两数之和，但去重更麻烦且空间 O(n)。排序版额外空间只有排序栈的 O(log n)。面试常把它与四数之和、最接近的三数之和串起来考同一套「排序 + 固定 + 夹逼」骨架。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "不排序能不能用双指针？",
+      "a": "不能。双指针收缩依赖「数组有序」带来的单调性，无序时和的大小与指针移动方向没有确定关系，会漏解。"
+     },
+     {
+      "q": "去重为什么可以靠跳过相邻相同值实现？",
+      "a": "排序后相同的数紧挨在一起，连续相同值只会产生完全一样的三元组，跳过它们就把重复答案一次性排除。"
+     }
+    ],
+    "mechanism": "关键在于把「三数等于 0」降维成「固定一数后找两数等于其相反数」。排序提供单调解，使两数搜索可以在 O(n) 内完成；同时排序把重复值聚拢，让去重从「哈希集合比对」变成简单的相邻比较。",
+    "boundary": "本题求解集为不重复三元组，若有重复元素会天然产生大量重复候选，因此去重不可省。若题目要求统计所有带下标的三元组个数（允许相同值重复计入），则不能跳重复，需改用计数方案。数值极大时注意整数溢出（Python 无此问题）。",
+    "analogyBoundary": "薄厚两本书的类比默认每本书唯一；而数组中存在相同值会出现多本书厚度一样，算法必须靠「跳过相邻相同值」处理，否则同一组合会被反复计入，这是类比没覆盖的部分。",
+    "misconceptions": [
+     "用三重循环后用 set 去重，既慢又忽略了下标不同但值相同的合法情形",
+     "和等于 0 后只移动一个指针，导致重复或死循环",
+     "把 nums[i]>0 的提前终止条件漏掉，多做无谓枚举"
+    ],
+    "ownAnalysis": "它与「两数之和」（LC 1）是同一族的递进：两数之和可用哈希 O(n)，三数之和因需去重与无序集合，排序双指针更简洁。（推断）掌握「排序 + 固定 + 夹逼」后，四数之和只需再加一层循环与剪枝，可视为同一模板的参数化推广。",
+    "officialNotes": [
+     {
+      "position": "LeetCode 15 要求返回不重复的三元组，使其和为 0",
+      "source": "https://leetcode.cn/problems/3sum"
+     }
+    ],
+    "interviewAnswer": "我先对数组排序。外层枚举第一个数 i，如果 nums[i] 大于 0 就可以提前结束，因为它已是最小数，后面不可能凑出 0；如果 nums[i] 和前一个相同就跳过避免重复。内层用左右指针 l、r 在 i 右边夹逼：三数和小于 0 就右移 l，大于 0 就左移 r，等于 0 就记录并按值跳过重复的 l 和 r，再同时收缩。整体 O(n²) 时间，额外空间只有排序开销。",
+    "studyPath": {
+     "prerequisites": [
+      "排序",
+      "双指针",
+      "两数之和（LC 1）"
+     ],
+     "nextSteps": [
+      "最接近的三数之和（LC 16）",
+      "四数之和（LC 18）",
+      "三数之和的哈希表解法与去重对比"
+     ]
+    }
+   },
+   "problem": {
+    "title": "三数之和",
+    "number": 15,
+    "difficulty": "medium",
+    "statement": "给定整数数组 nums，返回所有和为 0 且下标互不相同的三元组 [nums[i], nums[j], nums[k]]。答案中不能包含重复的三元组（即按值去重）。可以按任意顺序返回结果，但同一组值只能出现一次。数组长度可为 3 及以上。",
+    "examples": [
+     {
+      "input": "nums = [-1,0,1,2,-1,-4]",
+      "output": "[[-1,-1,2],[-1,0,1]]",
+      "why": "排序后双指针找到两组和为 0 的三元组"
+     },
+     {
+      "input": "nums = [0,1,1]",
+      "output": "[]",
+      "why": "不存在和为 0 的三元组"
+     }
+    ],
+    "approach": {
+     "idea": "先排序。枚举第一个数 i，问题化为在 i 右侧找两个数之和等于 -nums[i]，用左右双指针夹逼；排序同时让相邻重复值可被跳过，实现去重。",
+     "steps": [
+      "1. 对 nums 升序排序",
+      "2. 枚举 i 从 0 到 n-3；若 nums[i] > 0 直接结束",
+      "3. 若 i > 0 且 nums[i] == nums[i-1]，跳过（避免重复三元组）",
+      "4. 令 l = i+1，r = n-1，循环当 l < r",
+      "5. 计算 s = nums[i]+nums[l]+nums[r]；s<0 时 l++，s>0 时 r--",
+      "6. s==0 时记录三元组，并按值跳过重复的 l 与 r，再同时收缩"
+     ],
+     "whyItWorks": "排序后固定 i 时，和随 l 增大而单调不减、随 r 减小而单调不增，因此「偏小动 l、偏大动 r」既不会错过任何配对，也不会重复配对。跳过相邻相同值保证每个值组合至多被记录一次。nums[i]>0 时后面都为正，和不可能为 0，可安全提前结束。",
+     "alternatives": [
+      {
+       "name": "哈希表两数之和",
+       "complexity": "O(n²) / O(n)",
+       "when": "不想排序、或需保留原下标语义时；但去重逻辑更繁琐"
+      },
+      {
+       "name": "三重暴力枚举 + set 去重",
+       "complexity": "O(n³) / O(n)",
+       "when": "n 很小、只为快速写出正确基线时"
+      }
+     ]
+    },
+    "solution": {
+     "python": "def threeSum(nums):\n    nums.sort()\n    res, n = [], len(nums)\n    for i in range(n - 2):\n        if nums[i] > 0:\n            break                       # 最小数已 > 0，后面无解\n        if i > 0 and nums[i] == nums[i - 1]:\n            continue                    # 跳过重复的第一个数\n        l, r = i + 1, n - 1\n        while l < r:\n            s = nums[i] + nums[l] + nums[r]\n            if s < 0:\n                l += 1\n            elif s > 0:\n                r -= 1\n            else:\n                res.append([nums[i], nums[l], nums[r]])\n                while l < r and nums[l] == nums[l + 1]:\n                    l += 1              # 跳过重复的第二个数\n                while l < r and nums[r] == nums[r - 1]:\n                    r -= 1              # 跳过重复的第三个数\n                l += 1\n                r -= 1\n    return res",
+     "python_alt": "def threeSum(nums):\n    nums.sort()\n    res = set()\n    for i in range(len(nums) - 2):\n        if nums[i] > 0:\n            break\n        seen = set()                    # 处理 i 时记录出现过的数\n        target = -nums[i]\n        for j in range(i + 1, len(nums)):\n            if target - nums[j] in seen:\n                res.add((nums[i], target - nums[j], nums[j]))\n            seen.add(nums[j])\n    return [list(t) for t in res]",
+     "notes": "主解法用排序 + 双指针，天然去重且无额外集合。两个跳过重复的 while 必须写在 l<r 保护下。提前 break 条件是 nums[i] > 0，注意是严格大于。哈希版虽也 O(n²)，但集合去重更耗时，面试首选双指针版。"
+    },
+    "complexity": {
+     "time": "O(n²)",
+     "space": "O(1)（不含排序与输出）",
+     "why": "外层枚举 i 共 O(n) 次，内层双指针在一次 i 内总共移动 O(n) 步，故整体 O(n²)；原地修改数组，排序栈空间 O(log n)。"
+    },
+    "pitfalls": [
+     "忘记排序就套双指针，单调性不成立导致漏解",
+     "找到解后只移动一个指针，产生重复或死循环",
+     "去重条件写成 nums[i] == nums[i+1]，会漏掉不重复的解"
+    ],
+    "edgeCases": [
+     "全部为 0，应只返回一个 [0,0,0]",
+     "数组长度小于 3，应返回空列表",
+     "存在多组重复值，检验去重是否彻底"
+    ],
+    "interviewTips": "先声明「排序是为了双指针单调性与去重」再动手。写去重时逐处说明：i 跳过与前一个相同、找到解后 l 与 r 各自跳过相同值。跑一个含重复值的小例子验证。若被要求不用排序，再给哈希表版本并解释其去重代价。"
+   }
+  }
+ ],
+ "skipped": []
+}

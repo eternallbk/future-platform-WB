@@ -1,0 +1,161 @@
+{
+  "id": "d8f5c2a4bdc33bac",
+  "tldr": "SlimWise 按推理阶段分配专家池：预填充用全量模型，解码用剪枝模型并直接复用预填充 KV，解码吞吐最高提升 1.81x。",
+  "keyPoints": [
+    "MoE 每 token 激活少量专家，但批量解码几乎访问整个专家池，专家权重流量成瓶颈",
+    "常规专家剪枝连计算受限的预填充也剪，牺牲质量却换不来吞吐",
+    "SlimWise 分阶段：预填充用全量，解码用剪枝并直接复用预填充 KV，无需转换",
+    "免训练的 KV 交接在多种设置下显著缩小与全量模型的精度差",
+    "低开销蒸馏只在全模型 KV 上继续生成并更新少量参数；vLLM 实现，支持 PD 分离与共置"
+  ],
+  "why": "MoE 推理服务与专家剪枝是 infra 方向高频题；「按阶段区分计算/访存瓶颈」和「复用 KV」是面试常问的系统级权衡。",
+  "difficulty": "medium",
+  "tags": ["engineering", "moe", "serving", "pruning", "kv-cache", "distillation"],
+  "entities": [
+    "SlimWise",
+    "Mixture-of-Experts (MoE)",
+    "expert pruning",
+    "KV cache handoff",
+    "vLLM",
+    "PD disaggregation",
+    "Qwen3.6-35B-A3B"
+  ],
+  "diagram": {
+    "kind": "flow",
+    "title": "SlimWise 分阶段服务",
+    "caption": "预填充用全量专家池、解码用剪枝专家池并直接复用 KV，针对两阶段的不同瓶颈分别优化。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='SlimWise 分阶段服务四层'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>Prefill：完整专家池</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>计算受限，不剪</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>产出全模型 KV cache</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>供解码直接复用</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>Decode：剪枝专家池（免转换 KV）</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>访存受限</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>低开销蒸馏校正</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>解码吞吐最高 1.81x</text>\n</svg>",
+    "alt": "四层竖排流程：预填充用完整专家池→产出全模型 KV cache→解码用剪枝专家池并免转换复用 KV→低开销蒸馏校正。"
+  },
+  "concepts": [
+    {
+      "name": "Phase-Aware Expert Pruning（分阶段专家剪枝）",
+      "readable": "同一个 MoE 模型，在预填充阶段用全部专家、在解码阶段才用剪过的专家池。因为两个阶段的瓶颈不同：预填充算力不够，解码是专家权重搬运太慢。",
+      "analogy": "像搬家和日常取用：搬家时把仓库全开、一趟趟搬（算力受限）；平时只留常用物品在手边的小柜子（省得每次去大仓库翻）。",
+      "analogyBreaksDown": "搬家和取用是不同物品集合，而这里两个阶段用的是同一个模型、同一套权重，只是解码时换了个更小的专家子集；两者的输入表示必须一致，否则解码会因分布不匹配而失准。",
+      "mechanism": "常规剪枝对预填充和解码一视同仁，但预填充是计算受限，剪枝省不了多少且伤质量。SlimWise 只剪访存受限的解码阶段，预填充保持全量，从而把剪枝收益集中到真正的瓶颈上，避免无谓的质量损失。",
+      "visual": "画两列专家方块堆：左列「预填充」全满（每个专家都亮），右列「解码」只点亮一半方块，用箭头标出这一半是解码时的专家池，预填充那列不剪。",
+      "prerequisites": ["MoE 架构与 top-k 路由", "LLM 推理两阶段（prefill/decode）的瓶颈差异"],
+      "selfTest": ["为什么预填充不该剪？", "分阶段剪枝的前提假设是什么？", "解码剪枝的收益来自减少什么流量？"],
+      "formula": "y=\\sum_{e\\in \\mathrm{TopK}(g(x))}g_{e}(x)\\,E_{e}(x),\\quad e\\in \\mathcal{S}\\subset\\{1,\\dots,N\\}"
+    },
+    {
+      "name": "Training-Free KV Cache Handoff（免训练 KV 缓存交接）",
+      "readable": "预填充用全量模型算出的 KV 缓存，解码阶段直接拿来用，不做任何转换或重新计算，就让剪枝后的解码模型接着生成。",
+      "analogy": "像接力赛交接棒：前一棒跑完手里就有棒，下一棒直接握住继续跑，不需要把棒重新做一遍。",
+      "analogyBreaksDown": "接力棒对两棒都通用，而 KV 是预填充「全量专家池」产出的中间量；解码用剪枝池，专家子集不一致，KV 与解码模型并非天然匹配，交接能成立依赖于实验验证的兼容性，换模型需重验。",
+      "mechanism": "若解码需要重算或转换 KV，就抵消了剪枝省下的开销。作者让解码直接复用预填充的 KV，跳过转换，这既省算力又保持上下文一致；再用低开销蒸馏让解码器学会从全模型 KV 继续，弥补残余精度损失。",
+      "visual": "画一条时间线：预填充段通过全量专家池并写出 KV 方块，箭头把 KV 方块原样搬进解码段，解码段用较少的专家方块消费该 KV，中间没有「转换」方块。",
+      "prerequisites": ["Transformer 注意力与 KV cache", "MoE 服务与 PD 分离部署"],
+      "selfTest": ["为什么交接要「免转换」？", "KV 与剪枝解码模型为何可能不匹配？", "蒸馏阶段想弥补什么？"],
+      "formula": "\\mathrm{Attn}_{\\mathrm{dec}}(q_{t})=\\mathrm{softmax}\\!\\left(\\frac{q_{t}K^{\\top}}{\\sqrt{d}}\\right)V,\\quad (K,V)=\\mathrm{KV}_{\\mathrm{prefill}}"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-moe-topk-routing-pruning",
+      "name": "MoE 路由与专家池剪枝（Top-K Routing with Pruned Expert Pool）",
+      "category": "engineering",
+      "latex": "y=\\sum_{e\\in \\mathrm{TopK}(g(x))}g_{e}(x)\\,E_{e}(x),\\quad e\\in \\mathcal{S}\\subset\\{1,\\dots,N\\}",
+      "symbols": [
+        ["x", "当前 token 的隐状态"],
+        ["g(x)", "路由打分（门控网络输出）"],
+        ["\\mathrm{TopK}(\\cdot)", "取分数最高的 k 个专家"],
+        ["g_{e}(x)", "专家 e 的门控权重"],
+        ["E_{e}", "第 e 个专家的前向函数"],
+        ["\\mathcal{S}", "解码阶段保留的专家子集（剪枝后的池）"],
+        ["N", "专家总数"]
+      ],
+      "derivation": [
+        "第 1 步：MoE 每 token 只激活 top-k 专家，但批量解码会命中几乎整个专家池，专家权重搬运成瓶颈。",
+        "第 2 步：缩小专家池 S 可直接减少访存量，从而提升解码吞吐。",
+        "第 3 步：常规做法连预填充一起剪，但预填充是计算受限，收益小而伤质量。",
+        "第 4 步：只在解码阶段限制 e∈S，预填充保留全量 N，把收益集中到访存瓶颈。"
+      ],
+      "analogy": "像图书馆：借阅高峰期（解码）只把你常看的书架开放以加快取书，编目整理期（预填充）仍开放全部书架。",
+      "pitfalls": [
+        "以为剪枝总是省时间——预填充阶段剪枝几乎不增益还掉点",
+        "忽略批量解码会命中大部分专家这一事实，低估访存瓶颈",
+        "剪枝后不做任何校正，残余精度损失累积到下游任务"
+      ],
+      "code": "import torch, torch.nn.functional as F\ndef moe_forward(x, gate, experts, S):\n    # x:[B,d], gate:[B,N], experts:list of fns\n    logits = gate(x)\n    topk = logits.topk(k=2, dim=-1)\n    out = torch.zeros_like(x)\n    for idx, w in zip(topk.indices.T, topk.values.T):\n        for i, ei in enumerate(idx):\n            if int(ei) in S:\n                out[i] += w[i] * experts[int(ei)](x[i])\n    return out, topk",
+      "sources": [
+        {"title": "SlimWise: Decoupling Expert Pruning Across Prefill and Decode for Efficient MoE Serving", "url": "https://huggingface.co/papers/2609.34117"},
+        {"title": "SlimWise (canonical)", "url": "https://arxiv.org/abs/2609.34117"}
+      ]
+    },
+    {
+      "id": "f-slimwise-kv-handoff",
+      "name": "免转换 KV 交接与蒸馏校正（KV Handoff and Distillation）",
+      "category": "engineering",
+      "latex": "\\mathcal{L}_{\\mathrm{distill}}=\\mathrm{KL}\\!\\left(p_{\\mathrm{full}}(\\cdot\\mid \\mathrm{KV}_{\\mathrm{prefill}})\\,\\|\\,p_{\\mathrm{dec}}(\\cdot\\mid \\mathrm{KV}_{\\mathrm{prefill}})\\right)",
+      "symbols": [
+        ["\\mathrm{KV}_{\\mathrm{prefill}}", "预填充阶段由全量模型产出的 KV 缓存"],
+        ["p_{\\mathrm{full}}", "全量模型在给定 KV 下的下一 token 分布（教师）"],
+        ["p_{\\mathrm{dec}}", "剪枝解码模型的下一 token 分布（学生）"],
+        ["\\mathcal{L}_{\\mathrm{distill}}", "蒸馏损失（KL 散度）"]
+      ],
+      "derivation": [
+        "第 1 步：解码若需重算或转换预填充 KV，会抵消剪枝省下的开销，所以要求免转换直接复用。",
+        "第 2 步：复用会带来全量 KV 与剪枝解码器之间的分布不匹配与残余精度损失。",
+        "第 3 步：用全量模型作教师，让学生从同一份全量 KV 继续生成。",
+        "第 4 步：只更新少量参数，低开销地把解码器对齐回教师分布。"
+      ],
+      "analogy": "像接棒后先照原队员的节奏跑一会儿（蒸馏对齐），再按自己更省力的姿势继续。",
+      "pitfalls": [
+        "对 KV 做投影或重算——违背免转换初衷，抵消吞吐收益",
+        "蒸馏更新全部参数，成本高且可能破坏剪枝结构",
+        "忽略「基准精度可能掩盖生成长度变化」，只看准确率会误判剪枝影响"
+      ],
+      "code": "import torch, torch.nn.functional as F\ndef distill_loss(p_full, p_dec):\n    # 均为对词表的 log-prob 分布\n    return F.kl_div(p_dec, p_full.exp(),\n                    reduction='batchmean')\n\nlogits_t = torch.randn(4, 100)\nlogits_s = torch.randn(4, 100)\nlt = F.log_softmax(logits_t, -1)\nls = F.log_softmax(logits_s, -1)\nprint(float(distill_loss(lt, ls)))",
+      "sources": [
+        {"title": "SlimWise: Decoupling Expert Pruning Across Prefill and Decode for Efficient MoE Serving", "url": "https://huggingface.co/papers/2609.34117"}
+      ]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "MoE 每 token 激活少量专家，但批量解码可访问几乎整个专家池，使专家权重流量成为主要瓶颈",
+      "常规专家剪枝也会剪计算受限的预填充，牺牲质量却换不来多少吞吐",
+      "SlimWise 按推理阶段定制专家池：预填充用全量模型，解码用剪枝模型并直接复用预填充 KV，无需转换",
+      "在两种 MoE 骨干与三种剪枝准则下，免训练 KV 交接在多种设置下显著缩小与全量模型的精度差",
+      "基准精度可能掩盖剪枝引起的生成长度变化",
+      "SlimWise 引入低开销蒸馏阶段，让解码器从全模型 KV 继续，仅更新少量参数；在 vLLM 实现，支持 PD 分离与共置",
+      "在 Qwen3.6-35B-A3B 上，50% 专家剪枝时解码吞吐最高提升 1.81x，精度损失极小"
+    ],
+    "uncertain": [
+      "KV 交接能免转换复用的前提（如 KV 维度/布局一致、是否只对部分层生效）摘要未给，待核实",
+      "蒸馏更新的「少量子集」具体指哪些参数（路由/注意力/部分专家）与更新比例摘要未给，待核实",
+      "1.81x 对应的批大小、序列长度与硬件摘要未给，待核实"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "MoE 服务里，只在真正费流量的解码阶段剪专家，预填充照旧用全部专家。"},
+      {"level": "入门", "text": "MoE 每个 token 只点亮少数专家，但一次解码很多 token 时几乎会用到所有专家，把专家权重搬进显存成了瓶颈。常规剪枝连算力受限的预填充也剪，得不偿失。SlimWise 让预填充跑全量模型、解码跑剪枝模型，并让解码直接复用预填充算好的 KV，不做转换，再用一点蒸馏补精度，解码吞吐最高提升 1.81x。"},
+      {"level": "进阶", "text": "核心判断是：预填充是计算受限、解码是访存受限，所以剪枝只对解码有意义。工程上的关键是「免转换 KV 交接」——如果解码还要重算或投影 KV，省下的开销就被抵消。它还用基准之外的观察指出：剪枝会改变生成长度，光看准确率会误判。最后用低开销蒸馏让学生解码器从全模型 KV 继续，弥补残余损失。"},
+      {"level": "专家", "text": "与「统一剪枝」相比，SlimWise 的贡献是把剪枝收益绑定到正确的瓶颈阶段，并解决阶段切换时的 KV 一致性。与「重新训练小 MoE」相比，它训练免费得多，只在解码器上做少量参数蒸馏。与「不改模型只调调度」相比，它是权重级的改造。边界是免转换交接依赖 KV 与剪枝解码器兼容，且蒸馏需要教师模型在线或预先缓存 KV，部署形态（PD 分离/共置）会影响实现。"}
+    ],
+    "socratic": [
+      {"q": "为什么常规剪枝在预填充上没用？", "a": "预填充是计算受限而非访存受限，剪专家省不到关键资源，却降低了模型容量，质量下降而吞吐几乎不变。"},
+      {"q": "为什么 KV 交接必须免转换？", "a": "若解码要转换或重算 KV，就要再跑一遍注意力相关计算，正好把剪枝省下的访存时间还回去，收益归零。"}
+    ],
+    "mechanism": "MoE 推理的两个阶段瓶颈不同：预填充吃算力，解码吃专家权重带宽。剪枝只对带宽瓶颈有效，因此作者把剪枝限定在解码阶段，预填充保持全量以避免无谓降质。真正的工程难点是阶段切换时的中间量一致性——解码若不重算 KV 就要直接复用预填充的 KV，这要求两者表示兼容；残余的不匹配再用针对解码器的低开销蒸馏补上，形成「分阶段剪枝 + KV 交接 + 蒸馏校正」的闭环。",
+    "boundary": "当解码负载很轻（小批量、短序列）时专家权重流量不是瓶颈，剪枝收益有限；当预填充本身也是瓶颈（如超长上下文）时保留全量预填充成本较高。免转换 KV 交接依赖 KV 维度与解码器结构兼容，跨模型或改结构后需重新验证；蒸馏还引入教师推理或 KV 存储开销。",
+    "analogyBoundary": "「只开常用书架」类比假设常用专家子集稳定；实际不同请求触发的专家不同，固定子集可能对某些输入次优，剪枝准则若选得不好会伤特定任务。类比也掩盖了 KV 必须是预填充全量产出的这一强约束。",
+    "misconceptions": [
+      "以为剪枝越多越快——预填充阶段剪枝几乎不增吞吐还掉质量。",
+      "把 KV 交接理解成可以任意换模型——它要求 KV 与解码器兼容。",
+      "只看 benchmark 准确率判断剪枝好坏——摘要明确精度会掩盖生成长度变化。"
+    ],
+    "ownAnalysis": "这篇最有价值的是「按瓶颈归因来分配优化」这一系统思路（推断），它把模型压缩从「一刀切」变成「阶段自适应」，与 PD 分离、chunked prefill 等 serving 技术一脉相承。可疑处：摘要说「免训练 KV 交接」但未说明 KV 与剪枝解码器为何兼容（是否因为剪枝不改注意力维度），也未给 1.81x 的批大小与序列长度（待核实）；此外「精度损失极小」缺具体数值。",
+    "officialNotes": [
+      {"position": "SlimWise 预填充用全量模型、解码用剪枝模型并直接复用预填充 KV（免转换），并用低开销蒸馏校正；在 Qwen3.6-35B-A3B 上 50% 专家剪枝时解码吞吐最高提升 1.81x 且精度损失极小", "source": "hf_papers: 2609.34117"}
+    ],
+    "interviewAnswer": "MoE 推理里有个反直觉的点：单 token 只激活几个专家，但批量解码几乎会用到全部专家，专家权重流量就成了瓶颈。常规专家剪枝连预填充一起剪，可预填充是计算受限，剪了既省不到关键资源又掉质量。SlimWise 的做法是按阶段裁剪：预填充用全量模型，解码用剪枝模型，而且解码直接复用预填充产出的 KV、不做转换，否则省下的开销又被换算回去；最后用一个低开销蒸馏阶段，让学生在老师 KV 上继续生成，只更新少量参数。在 Qwen3.6-35B-A3B 上 50% 剪枝还能把解码吞吐提到 1.81x，精度损失很小。",
+    "studyPath": {
+      "prerequisites": ["Transformer 注意力与 KV cache", "MoE 架构与路由", "LLM 推理两阶段的显存/算力特性与 vLLM 部署"],
+      "nextSteps": ["读原文，核对 KV 交接前提与蒸馏更新范围", "在自己的 MoE 服务里对比统一剪枝与分阶段剪枝", "调研 PD 分离/共置下 KV 传输的实现"]
+    }
+  }
+}

@@ -1,0 +1,1169 @@
+{
+ "batchId": "queue-08",
+ "entries": [
+  {
+   "id": "83ddb4ab1baca69d",
+   "tldr": "把静态 3D 高斯场景变成任意视角都能无缝循环的动态 3D 影视图，全程无需掩码标注。",
+   "keyPoints": [
+    "现有 3D 世界模型真实可探索，但场景冻结在时间里没有运动",
+    "无掩码框架：视觉语言模型推断合理动态，引导视频模型合成参考视频",
+    "把参考视频抬升并补全为多视图视频，当作不完美监督来学",
+    "IRP-4DGS：傅里叶级数形变场按构造保证循环，漂移场吸收跨视图不一致",
+    "39 个场景上胜出，用户研究 70.8%–99.0% 的对比中被优先选择"
+   ],
+   "why": "世界模型正从「静态可探索」走向「可动且可复现」；周期形变场与跨视图一致性处理是可迁移的 4D 生成基建。",
+   "difficulty": "hard",
+   "tags": [
+    "worldmodel",
+    "3d-gaussian-splatting",
+    "4d",
+    "video-generation",
+    "looping"
+   ],
+   "entities": [
+    "OuroWorld",
+    "Inconsistency-Robust Periodic 4DGS",
+    "Grounded Drift Field",
+    "3D Gaussian Splatting"
+   ],
+   "diagram": {
+    "kind": "architecture",
+    "title": "OuroWorld 五级流水线",
+    "caption": "从冻结的静态 3DGS 出发，用 VLM+视频模型造参考视频，再升维成可循环的 4D 场景。",
+    "svg": "<svg viewBox='0 0 480 280' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='OuroWorld 从静态 3DGS 到无缝循环 4D 场景的五级流水线'>\n<rect x='40' y='12' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='36' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>静态 3DGS 场景</text>\n<text x='424' y='36' font-size='13' text-anchor='end' fill='currentColor'>冻结在时间里</text>\n<line x1='240' y1='50' x2='240' y2='58' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,66 236,58 244,58' fill='var(--line-1)'/>\n<rect x='40' y='66' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='90' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>VLM 推断动态</text>\n<text x='424' y='90' font-size='13' text-anchor='end' fill='currentColor'>引导视频模型合成参考视频</text>\n<line x1='240' y1='104' x2='240' y2='112' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,120 236,112 244,112' fill='var(--line-1)'/>\n<rect x='40' y='120' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='144' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>抬升并补全多视图</text>\n<text x='424' y='144' font-size='13' text-anchor='end' fill='currentColor'>参考视频→多视图监督</text>\n<line x1='240' y1='158' x2='240' y2='166' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,174 236,166 244,166' fill='var(--line-1)'/>\n<rect x='40' y='174' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='198' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>IRP-4DGS 学习</text>\n<text x='424' y='198' font-size='13' text-anchor='end' fill='currentColor'>傅里叶循环 + 漂移场</text>\n<line x1='240' y1='212' x2='240' y2='220' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,228 236,220 244,220' fill='var(--line-1)'/>\n<rect x='40' y='228' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='252' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>任意视角无缝循环</text>\n<text x='424' y='252' font-size='13' text-anchor='end' fill='currentColor'>3D 影视图输出</text>\n</svg>",
+    "alt": "五级竖排流程：静态 3DGS 场景→VLM 推断动态合成参考视频→抬升补全多视图→IRP-4DGS 学习→任意视角无缝循环。"
+   },
+   "concepts": [
+    {
+     "name": "3D Cinemagraph (3D 影视图)",
+     "readable": "给一个可自由探索的静态 3D 场景叠加局部、可无缝接回起点的运动，从头到尾看不出接缝，换任何视角看都连贯。",
+     "analogy": "像给 3D 房间模型里的窗帘和咖啡热气单独加上循环动画，而墙壁与地板完全静止。",
+     "analogyBreaksDown": "真实房间的动静由物理决定；这里的运动是模型「猜」出来再合成的，允许出现现实中不存在的运动，只要连贯自然即可。",
+     "mechanism": "用 VLM 从静态场景推断「哪里、什么该动」，交给视频模型合成一段参考视频，再把这段视频抬升成多视图监督去训练动态 3D 表示，从而既有运动又可换视角。",
+     "visual": "横轴视角旋转角度、纵轴时间；画一族闭合的环形运动轨迹，环在首尾自动接上，不同视角看到同一环的不同剖面。",
+     "prerequisites": [
+      "3D Gaussian Splatting 基础",
+      "视频扩散模型",
+      "多视图几何"
+     ],
+     "selfTest": [
+      "为什么叫「影视图」而不是普通视频？",
+      "为什么必须多视图而不只是一段视频？",
+      "循环无缝对下游有什么用？"
+     ],
+     "formula": ""
+    },
+    {
+     "name": "Inconsistency-Robust Periodic 4DGS",
+     "readable": "一种 4D 高斯表示：用周期基函数让运动天然首尾相接，再用一个锚定在参考视角的漂移场，把不同视角之间的不一致「吸收」掉。",
+     "analogy": "像乐团演奏：节拍器保证每个小节首尾对齐（周期基），指挥站在某个固定位置校准，让各声部的小偏差不破坏整体。",
+     "analogyBreaksDown": "乐团会实时互相听；这里的漂移场只在参考视角被钉死为零，其他视角的偏差靠空间门控吸收，无法像真人一样全局协商。",
+     "mechanism": "形变用傅里叶级数表示，周期性由基函数按构造保证，省掉额外的循环损失；跨视图不一致来自「参考视频升维」的不完美监督，交给锚定参考视图的漂移场承担。",
+     "visual": "两栏：左栏时间轴上一个正弦叠加波形，首尾自动重合；右栏参考视角处漂移量钉在 0，越远离参考视角漂移幅度按空间门控放大。",
+     "prerequisites": [
+      "4D 动态高斯",
+      "傅里叶级数",
+      "可微渲染"
+     ],
+     "selfTest": [
+      "循环为什么是「按构造」保证的？",
+      "漂移场为何要锚在参考视图？",
+      "相比欧拉式流体方法它多能表达什么？"
+     ],
+     "formula": "\\Delta\\mu(t)=\\sum_{k=1}^{K}\\left[a_k\\cos\\!\\left(\\tfrac{2\\pi k t}{T}\\right)+b_k\\sin\\!\\left(\\tfrac{2\\pi k t}{T}\\right)\\right]"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-ouroworld-fourier-deform",
+     "name": "傅里叶级数周期形变场（Periodic Fourier Deformation Field）",
+     "category": "worldmodel",
+     "latex": "\\Delta\\mu(t)=\\sum_{k=1}^{K}\\left[a_k\\cos\\!\\left(\\tfrac{2\\pi k t}{T}\\right)+b_k\\sin\\!\\left(\\tfrac{2\\pi k t}{T}\\right)\\right]",
+     "symbols": [
+      [
+       "t",
+       "时间（相位）"
+      ],
+      [
+       "T",
+       "循环周期"
+      ],
+      [
+       "K",
+       "保留的谐波个数"
+      ],
+      [
+       "a_k, b_k",
+       "第 k 阶余弦/正弦系数，可学习"
+      ],
+      [
+       "\\Delta\\mu(t)",
+       "高斯基元在时刻 t 的位移"
+      ]
+     ],
+     "derivation": [
+      "4D 高斯把静态基元搬到时刻 t 靠一个形变场，即 μ(t)=μ_0+Δμ(t)。",
+      "要无缝循环，必须满足 Δμ(t+T)=Δμ(t)，即形变关于时间以 T 为周期。",
+      "周期函数可用傅里叶级数展开：以 sin/cos 为基叠加，天然满足周期性。",
+      "训练只需学有限系数 a_k,b_k，循环性由基函数按构造保证，无需额外的循环正则项。"
+     ],
+     "analogy": "像只用几个固定频率的振动去合成钟摆轨迹，走满一个周期自然回到原点。",
+     "pitfalls": [
+      "误以为循环是某项损失约束出来的，其实是基函数本身的性质",
+      "K 太小运动呆板，K 太大容易拟合噪声导致抖动"
+     ],
+     "code": "import torch, math\ndef deform(t, coef, T):\n    k = torch.arange(1, coef.shape[-1] // 2 + 1, dtype=t.dtype)\n    w = 2 * math.pi * k / T\n    a, b = coef.chunk(2, dim=-1)\n    return (a * torch.cos(w * t) + b * torch.sin(w * t)).sum(-1)",
+     "sources": [
+      {
+       "title": "OuroWorld: Bringing Any 3D World Alive as Diverse, Endlessly Looping 3D Cinemagraphs",
+       "url": "https://arxiv.org/abs/2610.12461"
+      }
+     ]
+    },
+    {
+     "id": "f-ouroworld-grounded-drift",
+     "name": "锚定参考视图的漂移场（Grounded Drift Field）",
+     "category": "worldmodel",
+     "latex": "\\Delta_{\\mathrm{view}}(t, x)=s(x)\\,d(t),\\qquad \\Delta_{\\mathrm{view}}(t, x_r)=0",
+     "symbols": [
+      [
+       "x",
+       "空间位置（视图相关坐标）"
+      ],
+      [
+       "x_r",
+       "参考视图所在位置"
+      ],
+      [
+       "s(x)",
+       "空间门控，非负、在 x_r 处为零"
+      ],
+      [
+       "d(t)",
+       "漂移随时间的幅度"
+      ],
+      [
+       "\\Delta_{\\mathrm{view}}",
+       "跨视图一致性修正项"
+      ]
+     ],
+     "derivation": [
+      "参考视频升维成多视图时会带来跨视图不一致，需要一项修正来吸收。",
+      "把参考视图当作可信锚点：在该视角处不允许修正，令 Δ=0。",
+      "用空间门控 s(x) 控制修正强度，离参考视图越远可修正越多。",
+      "（按摘要重建的通用形式）训练时与周期形变场一起优化，保证锚点处不破坏原监督。"
+     ],
+     "analogy": "像合唱时以站在中央的领唱为准，离他越远的声部允许微调音准去对齐。",
+     "pitfalls": [
+      "把漂移场当作全局运动，误以为它也让场景动起来——它只负责吸收不一致",
+      "忘记在参考视图处置零，会让可信锚点也被改坏"
+     ],
+     "code": "def drift(s, d):\n    # s: 空间门控(s(xr)=0), d: 时间幅度\n    return s * d  # 参考视图处 s=0 => 无修正",
+     "sources": [
+      {
+       "title": "OuroWorld: Bringing Any 3D World Alive as Diverse, Endlessly Looping 3D Cinemagraphs",
+       "url": "https://arxiv.org/abs/2610.12461"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "现有 3D 世界模型生成的场景真实可探索，但冻结在时间里没有运动",
+     "OuroWorld 是无掩码框架，可把任意静态 3DGS 场景转成 3D 影视图",
+     "VLM 推断合理动态并引导视频模型合成参考视频，再抬升补全为多视图视频",
+     "IRP-4DGS 用傅里叶级数形变场保证循环，用 Grounded Drift Field 吸收跨视图不一致",
+     "相比欧拉式方法只擅长流体类运动，本方法能表达一般形变、物体运动与光照变化",
+     "在 39 个重建与生成场景上优于全部基线，用户研究胜率 70.8%–99.0%"
+    ],
+    "uncertain": [
+     "傅里叶形变场与漂移场的精确公式、谐波数与损失形式摘要未给，两条公式均为按摘要重建的通用形式，需核对原文",
+     "评估指标「生动性/自然度/循环接缝/场景质量」的具体计算方式摘要未说明，待核实",
+     "39 个场景中「重建」与「生成」各占多少、基线具体是哪些摘要未列全，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "它让本来是静止的 3D 场景动起来，而且循环播放看不出接缝。"
+     },
+     {
+      "level": "入门",
+      "text": "以前 3D 世界模型能让你走进一个真实场景，但里面是定格静止的。OuroWorld 不用人工标注掩码：先让视觉语言模型判断该动的地方，再让视频模型生成一段参考视频，把这段视频升成多视角监督，去训练一个可换视角、可循环的动态 4D 表示。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键取舍是「循环怎么保证」和「不完美监督怎么消化」。作者用傅里叶级数表示形变，周期性由基函数按构造保证，省掉循环损失；参考视频升维会产生跨视图不一致，就用一个锚定在参考视图、在别处按空间门控放开的漂移场来吸收。相比只擅长流体的欧拉式方法，它能覆盖一般形变、物体运动与光照变化。"
+     },
+     {
+      "level": "专家",
+      "text": "它把 4D 生成拆成「语义推断 → 视频合成 → 升维监督 → 鲁棒拟合」四段，避免了对逐帧 3D 掩码的依赖。与逐场景优化不同，循环性是表示层的先验而非训练目标，因此更稳；漂移场则把监督噪声从几何上隔离到参考视图之外。边界在于其运动是「貌似合理」而非严格物理，多视图监督仍源自单段参考视频，视角跨度大时一致性压力会落在漂移场上。摘要自述在 39 个场景、用户研究 70.8%–99.0% 上占优。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不像普通视频那样直接给一段会动的场景？",
+      "a": "普通视频只有单视角、不能换角度看。3D 影视图要在任意视角下都连贯，所以必须把视频升维成多视图再拟合进 3D 表示。"
+     },
+     {
+      "q": "循环为什么不额外加一个循环损失？",
+      "a": "形变本身用周期基函数（傅里叶级数）表示，Δμ(t+T)=Δμ(t) 由构造自动成立，加损失反而多余且难调权重。"
+     },
+     {
+      "q": "为什么需要漂移场而不是直接相信多视图监督？",
+      "a": "参考视频抬升成多视图时各视角不一致，若不吸收会破坏几何；锚定参考视图可保住可信监督，差别再由门控项吃掉。"
+     }
+    ],
+    "mechanism": "难点是拿不到逐帧多视图真值，只有一段从静态场景「猜」出来的参考视频。OuroWorld 没有回避这个不完美监督，而是把问题拆开：运动该长什么样由 VLM 决定（语义层），循环性交给周期基函数按构造保证（表示层），跨视图不一致交给锚定参考视图的漂移场吸收（几何层）。三层各管一类误差，所以不需要掩码标注也能训出可换视角、可循环的动态场景。",
+    "boundary": "运动是「貌似合理」而非物理仿真，物理严谨场景会失真；多视图监督源自单段参考视频，超大视角跨度下一致性压力全落在漂移场；更适用于可自由环视的静态重建场景，对需要长期状态演化的任务序列不适用。",
+    "analogyBoundary": "「给 3D 房间加循环动画」类比成立，但真实房间的动由物理决定、且运动不会主动首尾对齐；这里是模型猜出来的运动并被强制周期化，可能出现现实中不合物理但视觉连贯的动画。",
+    "misconceptions": [
+     "以为要人工掩码标注——它是无掩码框架，动态由 VLM 推断。",
+     "以为循环是无缝播放器做的——循环性写进了形变的基函数里。",
+     "以为它只是 2D 视频滤镜——输出是可换视角的 3D/4D 表示。"
+    ],
+    "ownAnalysis": "最可迁移的是「把硬约束做成表示层先验」（推断）：把「必须循环」交给傅里叶基而不是损失，思路类似用周期位置编码处理周期性任务。可疑处：漂移场只在参考视图置零，若参考视频本身有偏差，误差会沿视角扩散（推断）。另外摘要只给了胜率区间，未说明 70.8% 这一低值对应哪类场景，可能是快速运动或强光照变化（待核实）。",
+    "officialNotes": [
+     {
+      "position": "OuroWorld 是无掩码框架，把任意静态 3DGS 场景转为可无缝循环的 3D 影视图；IRP-4DGS 用傅里叶形变场保证循环、Grounded Drift Field 吸收跨视图不一致；39 场景上用户研究胜率 70.8%–99.0%",
+      "source": "arxiv: 2610.12461"
+     }
+    ],
+    "interviewAnswer": "这篇解决的是 3D 世界模型「真实但静止」的问题。做法不用掩码：先让 VLM 推断场景里合理该动的部分，引导视频模型生成一段参考视频，再把它抬升、补全成多视图视频。难点是这份监督不完美，作者用 IRP-4DGS 应对——形变用傅里叶级数表示，周期性按构造保证所以循环天然无缝；跨视图不一致用一个锚定在参考视图、其他位置按空间门控放开的漂移场吸收。相比只擅长流体的欧拉式方法，它能表达一般形变、物体运动和光照变化，在 39 个场景上用户研究胜率 70.8% 到 99%。",
+    "studyPath": {
+     "prerequisites": [
+      "3D Gaussian Splatting 与可微渲染",
+      "视频扩散模型基础",
+      "傅里叶级数与周期函数表示"
+     ],
+     "nextSteps": [
+      "读原文与项目页确认两条公式的精确形式",
+      "在 4DGS 代码库上复现周期形变场的最小实现"
+     ]
+    }
+   }
+  },
+  {
+   "id": "f337a0e7a6db2da2",
+   "tldr": "面向用户指定加速目标，用离线到在线强化学习自适应决定视频扩散缓存的复用还是重算。",
+   "keyPoints": [
+    "视频 DiT 迭代去噪延迟高，缓存复用步间冗余可加速",
+    "既有动态缓存用「步误差」指导决策，但步误差不等于「终端误差」",
+    "潜变量信息能刻画步误差与终端误差之间的关系",
+    "阈值法无法精确控制加速比，难以命中用户指定目标",
+    "MORCA 用离线到在线 RL 在加速目标下学习复用/重算策略"
+   ],
+   "why": "视频扩散推理加速是生成式落地的核心工程问题；把优化目标从中间误差改到终端质量，是 RL 在生成推理上很值得迁移的范式。",
+   "difficulty": "hard",
+   "tags": [
+    "generative",
+    "video-diffusion",
+    "caching",
+    "reinforcement-learning",
+    "inference-acceleration"
+   ],
+   "entities": [
+    "MORCA",
+    "Diffusion Transformers",
+    "DiT"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "MORCA 缓存调度闭环",
+    "caption": "把每步的复用/重算当序列决策，用潜变量观测与终端质量奖励，在指定加速目标下训练策略。",
+    "svg": "<svg viewBox='0 0 480 226' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='MORCA 从去噪序列到离线到在线强化学习缓存调度的四层闭环'>\n<rect x='40' y='14' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='38' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>视频 DiT 去噪序列</text>\n<text x='424' y='38' font-size='13' text-anchor='end' fill='currentColor'>多步迭代，存在步间冗余</text>\n<line x1='240' y1='52' x2='240' y2='60' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,68 236,60 244,60' fill='var(--line-1)'/>\n<rect x='40' y='68' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='92' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>缓存调度决策</text>\n<text x='424' y='92' font-size='13' text-anchor='end' fill='currentColor'>每步复用 or 重算</text>\n<line x1='240' y1='106' x2='240' y2='114' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,122 236,114 244,114' fill='var(--line-1)'/>\n<rect x='40' y='122' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='146' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>潜变量感知观测</text>\n<text x='424' y='146' font-size='13' text-anchor='end' fill='currentColor'>刻画步误差→终端误差</text>\n<line x1='240' y1='160' x2='240' y2='168' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,176 236,168 244,168' fill='var(--line-1)'/>\n<rect x='40' y='176' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='200' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>离线→在线 RL 训练</text>\n<text x='424' y='200' font-size='13' text-anchor='end' fill='currentColor'>对齐用户指定加速目标</text>\n</svg>",
+    "alt": "四层竖排流程：视频 DiT 去噪序列→每步缓存调度决策→潜变量感知观测→离线到在线强化学习训练对齐加速目标。"
+   },
+   "concepts": [
+    {
+     "name": "Step Error vs Terminal Error（步误差与终端误差）",
+     "readable": "步误差是「这一步复用缓存会引入多少偏差」，终端误差是「最终生成的视频质量掉了多少」。两者并不直接对应。",
+     "analogy": "像滚雪球：某一小段路多粘的雪（步误差）不直接等于最终雪球大小，因为后面还会滚动、塑造、消融。",
+     "analogyBreaksDown": "雪球只会变大；扩散去噪后期的步可能对视觉质量更关键，早期误差可能被后续步骤修正甚至放大，方向并不单调。",
+     "mechanism": "作者指出仅用步误差做缓存决策会误导，改而把「终端质量损失」当目标；并用潜变量携带当前生成状态，帮助从步误差推断终端误差，使决策更贴近最终结果。",
+     "visual": "横轴去噪步、纵轴两条曲线：一条是步误差（逐点抖动），一条是终端误差（事后累积）；两曲线形态不重合，交叉处标出决策误判。",
+     "prerequisites": [
+      "扩散去噪过程",
+      "缓存/复用推理加速",
+      "回归代理模型"
+     ],
+     "selfTest": [
+      "为什么步误差不能直接代表终端误差？",
+      "潜变量为什么有助于刻画二者关系？",
+      "若只优化步误差会遇到什么？"
+     ],
+     "formula": "\\hat{E}_{\\mathrm{term}}=g_{\\phi}\\!\\left(z_t,\\ E_{\\mathrm{step}}^{(t)}\\right)"
+    },
+    {
+     "name": "Offline-to-Online RL for Cache Scheduling（离线到在线强化学习缓存调度）",
+     "readable": "先用已有的离线轨迹训一个初始缓存策略，再在真实生成过程里在线微调，让它在用户指定的加速比下尽量保住画质。",
+     "analogy": "像学开车：先在模拟器里练（离线），上路后再根据真实路况微调（在线）。",
+     "analogyBreaksDown": "开车风险由人承担；这里在线探索只会影响生成质量与耗时，可以大量试错，但仍受在线采样的算力成本限制。",
+     "mechanism": "把「每步复用/重算」建模为序列决策，奖励同时考虑生成质量与是否达到目标加速比；离线阶段用已有数据预训练策略，在线阶段针对具体模型与加速目标微调，从而摆脱阈值法无法精确控速的问题。",
+     "visual": "横轴训练阶段（离线→在线）、纵轴两个指标：生成质量与加速比达标率；两条曲线在切换到在线后质量回升、达标率趋近 1。",
+     "prerequisites": [
+      "强化学习基础（策略/奖励）",
+      "off-policy 与 on-policy 区别",
+      "扩散模型推理流程"
+     ],
+     "selfTest": [
+      "为什么要离线到在线两阶段？",
+      "奖励里为什么必须含加速目标？",
+      "相比阈值法优势在哪？"
+     ],
+     "formula": "\\max_{\\pi}\\ \\mathbb{E}\\big[\\mathcal{Q}(x_0)\\big]\\quad \\mathrm{s.t.}\\ \\mathrm{Acc}(\\pi)\\ge A_{\\mathrm{tgt}}"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-morca-cache-objective",
+     "name": "面向加速目标的缓存调度目标（Acceleration-Targeted Cache Scheduling）",
+     "category": "generative",
+     "latex": "\\max_{\\pi\\in\\Pi}\\ \\mathbb{E}_{x_0\\sim\\mathcal{D}}\\big[\\mathcal{Q}(x_0)\\big]\\quad \\mathrm{s.t.}\\ \\mathrm{Acc}(\\pi)\\ge A_{\\mathrm{tgt}}",
+     "symbols": [
+      [
+       "\\pi",
+       "缓存调度策略：每步选复用或重算"
+      ],
+      [
+       "\\Pi",
+       "策略空间"
+      ],
+      [
+       "\\mathcal{Q}(x_0)",
+       "生成视频的质量/保真度"
+      ],
+      [
+       "\\mathrm{Acc}(\\pi)",
+       "该策略带来的实际加速比"
+      ],
+      [
+       "A_{\\mathrm{tgt}}",
+       "用户指定的加速目标"
+      ],
+      [
+       "\\mathcal{D}",
+       "生成任务/提示分布"
+      ]
+     ],
+     "derivation": [
+      "把去噪的每一步「复用缓存还是重算」看成一个动作，整段去噪就是一条轨迹。",
+      "学习一个策略 π，在给定初始噪声与提示下逐步做决策。",
+      "目标是在满足用户指定加速比的前提下最大化生成质量。",
+      "阈值法只能间接影响加速比，无法精确命中 A_tgt，故用 RL 直接优化这个带约束目标。"
+     ],
+     "analogy": "像既要省油又要准时到：不固定某个油门，而是随路况在「省油」和「够快」之间动态取舍。",
+     "pitfalls": [
+      "把加速目标当成软提示而非硬约束，导致实际速度与用户要求不符",
+      "以为调一个阈值就能精确控制加速比，忽略它与模型、步数强耦合"
+     ],
+     "code": "def reward(quality, acc, a_tgt):\n    # 质量为主，未达加速目标时给惩罚\n    return quality - 10.0 * max(0.0, a_tgt - acc)",
+     "sources": [
+      {
+       "title": "MORCA: Offline-to-Online Reinforcement Learning for Adaptive Cache Reuse in Video Diffusion Acceleration",
+       "url": "https://arxiv.org/abs/2610.10457v1"
+      }
+     ]
+    },
+    {
+     "id": "f-morca-terminal-error",
+     "name": "潜变量感知的终端误差代理（Latent-Aware Terminal Error）",
+     "category": "generative",
+     "latex": "\\hat{E}_{\\mathrm{term}}=g_{\\phi}\\!\\left(z_t,\\ E_{\\mathrm{step}}^{(t)}\\right)",
+     "symbols": [
+      [
+       "z_t",
+       "第 t 步的潜变量（当前生成状态）"
+      ],
+      [
+       "E_{\\mathrm{step}}^{(t)}",
+       "第 t 步复用缓存会引入的步误差"
+      ],
+      [
+       "g_{\\phi}",
+       "可学习的代理网络"
+      ],
+      [
+       "\\hat{E}_{\\mathrm{term}}",
+       "对最终视频质量损失的估计"
+      ]
+     ],
+     "derivation": [
+      "常见动态缓存做法用步误差 E_step 估计该步复用的代价。",
+      "但摘要指出步误差与终端误差并非直接对应，单看它会产生误判。",
+      "潜变量 z_t 携带当前生成状态，能帮助刻画二者之间的映射关系。",
+      "于是用代理网络 g_phi 以 (z_t, E_step) 为输入预测终端误差，作为缓存决策依据。"
+     ],
+     "analogy": "像体检：单项指标正常不代表最终健康，要结合整体状态一起判断。",
+     "pitfalls": [
+      "直接用步误差阈值代替终端误差判断，忽略二者的非线性关系",
+      "省掉潜变量只用统计量做决策，丢掉当前生成状态信息"
+     ],
+     "code": "import torch.nn as nn\nclass TermErrProxy(nn.Module):\n    def __init__(self, dz, de=1, h=128):\n        super().__init__()\n        self.net = nn.Sequential(nn.Linear(dz + de, h), nn.ReLU(), nn.Linear(h, 1))\n    def forward(self, z_t, e_step):\n        return self.net(torch.cat([z_t, e_step], dim=-1))",
+     "sources": [
+      {
+       "title": "MORCA: Offline-to-Online Reinforcement Learning for Adaptive Cache Reuse in Video Diffusion Acceleration",
+       "url": "https://arxiv.org/abs/2610.10457v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "视频扩散 Transformer 的迭代去噪推理延迟高，缓存复用步间冗余是有效加速手段",
+     "既有动态缓存方法通常估计步误差来指导缓存决策",
+     "作者主张步误差不直接对应终端误差，且潜变量有助于刻画二者关系",
+     "阈值类方法无法提供精确的加速控制，难以满足用户指定的加速目标",
+     "MORCA 用离线到在线强化学习在用户指定加速目标下做潜变量感知的复用/重算决策",
+     "在多种视频生成模型与多个目标加速比下，MORCA 在可比算力预算内保真度优于 SOTA 缓存方法"
+    ],
+    "uncertain": [
+     "两条公式（调度目标与终端误差代理）摘要未给具体形式，均为按摘要重建的通用形式，需核对原文",
+     "离线数据来源与在线微调的交互细节、奖励具体定义摘要未说明，待核实",
+     "「可比算力预算」的度量与基线清单摘要未列全，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "它让视频生成模型按你要的速度跑，用强化学习决定哪些去噪步可以省。"
+     },
+     {
+      "level": "入门",
+      "text": "视频扩散模型要迭代很多次去噪，慢。有人发现相邻步很像，可以复用上一步的中间结果（缓存）来省算力。MORCA 不满足于「这一步复用会差多少」，它关心「最终视频会差多少」，并用强化学习在用户给定的加速比下学习何时复用、何时重算。"
+     },
+     {
+      "level": "进阶",
+      "text": "两个关键洞察：一是步误差和终端误差不成正比，所以用步误差做阈值会误判，需要借助潜变量估计终端误差；二是阈值法无法精确控制加速比，满足不了用户指定目标。于是把缓存决策建模成序列决策，用离线数据预训练、再在线微调，奖励里同时含质量与加速目标，从而在指定加速比下最大化保真度。"
+     },
+     {
+      "level": "专家",
+      "text": "对比同期的动态缓存：主流做法是给每步算一个复用代价（步误差）再设阈值，缺点是目标与决策不一致、且速度不可控。MORCA 把目标改成终端质量，用潜变量感知的代理把「中间状态」与「最终损失」连起来，再用离线到在线的 RL 直接优化带加速约束的目标。意义是把缓存调度从「启发式阈值」升级为「可指定的目标导向策略」，代价是需要训练与推理时的策略网络开销。摘要自述在多种模型与多个加速比下均优于 SOTA。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不直接给每步设一个误差阈值？",
+      "a": "摘要指出阈值法无法精确控制加速比，且步误差与终端误差不对应，阈值选不好会既慢又掉画质。"
+     },
+     {
+      "q": "为什么要两阶段（离线到在线）？",
+      "a": "离线数据能快速预训练出一个可用策略，在线阶段再针对具体模型与加速目标微调，弥补离线数据与真实推理分布之间的差距。"
+     },
+     {
+      "q": "潜变量在这里到底起什么作用？",
+      "a": "它是当前生成状态的紧凑描述，能把「这一步的误差」与「最终视频的损失」关联起来，让决策基于终端影响而非局部量。"
+     }
+    ],
+    "mechanism": "缓存加速的本质是「省掉某些步骤」，但省哪一步的代价取决于当前生成状态，而非一步到位的固定规则。MORCA 把决策目标对齐到终端质量，并用潜变量补上「当前状态」这一缺失信息；同时因为加速比与模型、步数强耦合，固定阈值管不住速度，所以改用带加速约束的 RL 目标，并在离线预训练后在线微调，让策略能在用户给定加速目标下稳定产出。",
+    "boundary": "依赖可训练的策略/代理网络，需额外训练与在线采样成本；对训练时未覆盖的模型或极端加速比，泛化可能下降。若任务对画质极其敏感、不接受任何缓存近似，则缓存类方法本身不适用。",
+    "analogyBoundary": "「省油又准时」类比成立，但开车是在连续控制里权衡，这里的动作是离散的复用/重算，且奖励在视频生成结束后才结算，本质上更接近稀疏回报的序列决策。",
+    "misconceptions": [
+     "以为它是无损加速——缓存复用是近似，必然有质量代价，只是被最小化。",
+     "以为步误差最小就等于效果最好——摘要把这当作要纠正的误区。",
+     "以为阈值调参能精确控速——摘要明确说阈值法做不到精确加速控制。"
+    ],
+    "ownAnalysis": "最可迁移的是「把决策目标从局部代理量换成终端目标 + 用状态信息补全映射」（推断），这与 RL 里用 value function 替代即时奖励的思路同构。可疑处：在线阶段若对每个新模型都需微调，工程成本是否可接受，摘要未提（待核实）；另外「终端误差代理」的准确性直接决定策略上限，若代理本身有偏，在线微调可能被带偏（推断）。",
+    "officialNotes": [
+     {
+      "position": "步误差不直接对应终端误差，潜变量有助于刻画二者关系；阈值法无法精确控制加速比；MORCA 用离线到在线 RL 在用户指定加速目标下做缓存决策，在多种视频模型与多个加速比下优于 SOTA 缓存方法",
+      "source": "arxiv: 2610.10457v1"
+     }
+    ],
+    "interviewAnswer": "视频扩散 Transformer 迭代去噪很慢，缓存复用步间冗余能加速。现有动态缓存用「步误差」决定哪步复用，但论文指出步误差和最终视频的质量损失（终端误差）并不直接对应，中间还会被后续步骤修正或放大；而且阈值法控制不了精确的加速比。MORCA 把每步复用/重算建模成序列决策，用潜变量辅助估计终端误差，再用离线到在线的强化学习，在用户指定的加速比约束下最大化生成保真度。实验在多种视频生成模型、多个目标加速比下都优于同期缓存方法。",
+    "studyPath": {
+     "prerequisites": [
+      "扩散模型与 DiT 去噪流程",
+      "缓存/复用式推理加速（如特征复用）",
+      "强化学习基础：策略、奖励、off-policy 与 on-policy"
+     ],
+     "nextSteps": [
+      "读原文确认调度目标与终端误差代理的精确形式",
+      "对照代码仓库复现一个最小缓存策略，比较步误差与终端误差的相关性"
+     ]
+    }
+   }
+  },
+  {
+   "id": "3d393b3e98f36756",
+   "tldr": "提出用「认知谦逊」评估 LLM 智能体处理证据冲突，发现高任务准确率并不等于会坦诚承认不确定性。",
+   "keyPoints": [
+    "现有智能体评测只看任务成功率，看不出它如何处理证据冲突",
+    "定义认知谦逊 EH：识别、行动、沟通执行过程中的不确定性",
+    "用轨迹级的 Identify / Solve / Escalate 三个行为维度操作化 EH",
+    "设受控冲突与自然冲突两类场景，各配无冲突对照",
+    "高准确率配置能识别冲突，却不把未解不确定写进错误答案"
+   ],
+   "why": "智能体可靠性是 agent 与后训练岗位的核心议题；「准确率之外的评测维度」是面试常被追问的点。",
+   "difficulty": "medium",
+   "tags": [
+    "agent",
+    "llm-agent",
+    "evaluation",
+    "epistemic-humility",
+    "knowledge-conflict"
+   ],
+   "entities": [
+    "Epistemic Humility (EH)",
+    "Identify",
+    "Solve",
+    "Escalate",
+    "ISE"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "认知谦逊的评测闭环",
+    "caption": "从知识冲突触发，到轨迹级三维度判定，再到「准确率≠谦逊」这一核心发现。",
+    "svg": "<svg viewBox='0 0 480 226' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='认知谦逊评测：冲突触发、三维度识别、设置对照、得出准确率不等于谦逊'>\n<rect x='40' y='14' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='38' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>知识冲突触发</text>\n<text x='424' y='38' font-size='13' text-anchor='end' fill='currentColor'>参数知识 vs 检索证据；两源矛盾</text>\n<line x1='240' y1='52' x2='240' y2='60' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,68 236,60 244,60' fill='var(--line-1)'/>\n<rect x='40' y='68' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='92' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>识别 Identify</text>\n<text x='424' y='92' font-size='13' text-anchor='end' fill='currentColor'>轨迹中意识到存在冲突</text>\n<line x1='240' y1='106' x2='240' y2='114' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,122 236,114 244,114' fill='var(--line-1)'/>\n<rect x='40' y='122' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='146' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>解决 Solve / 升级 Escalate</text>\n<text x='424' y='146' font-size='13' text-anchor='end' fill='currentColor'>行动处理或上报不确定</text>\n<line x1='240' y1='160' x2='240' y2='168' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,176 236,168 244,168' fill='var(--line-1)'/>\n<rect x='40' y='176' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='200' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>发现：准确率 ≠ 谦逊</text>\n<text x='424' y='200' font-size='13' text-anchor='end' fill='currentColor'>早期识别、后期丢失</text>\n</svg>",
+    "alt": "四层竖排流程：知识冲突触发→轨迹中识别冲突→解决或升级→得出准确率不等于谦逊的结论。"
+   },
+   "concepts": [
+    {
+     "name": "Epistemic Humility (认知谦逊)",
+     "readable": "智能体在任务执行中，愿不愿意承认「我不确定」、据此改变行为、并把这份不确定如实告诉用户，而不是硬给一个错误答案。",
+     "analogy": "像医生面对互相矛盾的检查报告：好的医生会说「这里对不上，我建议再做一项确认」，而不是挑一个数字硬下诊断。",
+     "analogyBreaksDown": "医生有执业责任和追责机制；智能体只在一次对话里回答，没有持续后果，所以「谦逊」更像一种行为倾向，而非职业规范约束。",
+     "mechanism": "把抽象的「谦逊」拆成三个可观测的轨迹级行为：是否识别出冲突、是否采取行动处理、是否把未解的不确定上报出来。只有三步都做到才算真正谦逊，避免只看最终对错的自欺。",
+     "visual": "横轴执行步数、纵轴「不确定性信号强度」；画一条曲线，早期骤升（识别到冲突）但后期回落到零（丢失/未上报），对照曲线应在结尾保持高位。",
+     "prerequisites": [
+      "LLM 智能体基础流程",
+      "检索增强与知识冲突概念",
+      "轨迹级评测思路"
+     ],
+     "selfTest": [
+      "为什么只测任务成功率看不出谦逊？",
+      "「识别到冲突」与「上报不确定」为何要分开测？",
+      "什么样的行为算 Escalate？"
+     ],
+     "formula": ""
+    },
+    {
+     "name": "ISE Trajectory Dimensions (识别-解决-升级)",
+     "readable": "把「认知谦逊」落成三个能数出来的行为维度：Identify（识别冲突）、Solve（在冲突下仍正确求解）、Escalate（无法解决时如实上报不确定）。",
+     "analogy": "像分诊三问：看出症状矛盾吗？能当场处理吗？处理不了会不会转诊？",
+     "analogyBreaksDown": "分诊由人按规程执行；这里的判定要从智能体的自然语言轨迹里读出来，边界模糊、可能有假阳性（嘴上说注意但行为没变）。",
+     "mechanism": "三个维度都定义在整条执行轨迹上而非单步，配合受控/自然两类冲突与配对的无冲突对照，从而把「冲突导致的困难」与「谦逊与否」区分开。",
+     "visual": "一个 3×2 的矩阵：行是 Identify/Solve/Escalate，列是「有冲突」与「无冲突对照」；单元格填达标率，冲突列低而对照列高即暴露谦逊缺口。",
+     "prerequisites": [
+      "轨迹级行为标注",
+      "对照实验设计",
+      "多步智能体执行"
+     ],
+     "selfTest": [
+      "为何要用配对的无冲突对照？",
+      "三维度能否合并成一个分数？",
+      "哪些行为容易被误判为 Escalate？"
+     ],
+     "formula": "\\mathrm{EH}=\\alpha\\,I+\\beta\\,S+\\gamma\\,E"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-eh-ise-score",
+     "name": "认知谦逊 ISE 评分（Epistemic Humility ISE Score）",
+     "category": "agent",
+     "latex": "\\mathrm{EH}=\\alpha\\,I+\\beta\\,S+\\gamma\\,E",
+     "symbols": [
+      [
+       "I",
+       "Identify：轨迹中是否识别出知识冲突（0/1 或达标率）"
+      ],
+      [
+       "S",
+       "Solve：冲突下是否仍正确求解"
+      ],
+      [
+       "E",
+       "Escalate：未解决时是否如实上报不确定"
+      ],
+      [
+       "\\alpha,\\beta,\\gamma",
+       "三个维度的权重"
+      ]
+     ],
+     "derivation": [
+      "抽象的「谦逊」无法直接测量，先拆成三个可观测的轨迹级行为。",
+      "对每条执行轨迹分别判定 I、S、E 是否满足。",
+      "按权重线性组合得到单条轨迹的 EH 分。",
+      "再与配对的无冲突对照相减，剥离冲突本身带来的难度差异，得到纯粹的谦逊缺口。"
+     ],
+     "analogy": "像给学生打分：看出错题、改对、改不动时举手问，三样各占一定权重。",
+     "pitfalls": [
+      "只统计 I（识别）就下结论，忽略「识别了但没上报」这一摘要强调的缺口",
+      "不做无冲突对照，把任务本身变难误当成不谦逊"
+     ],
+     "code": "def eh_score(I, S, E, w=(1.0, 1.0, 1.0)):\n    # I,S,E in {0,1} or rates; w: weights for Identify/Solve/Escalate\n    a, b, c = w\n    return (a * I + b * S + c * E) / (a + b + c)",
+     "sources": [
+      {
+       "title": "Accurate but Not Humble: Evaluating Epistemic Humility in LLM Agents under Knowledge Conflict",
+       "url": "https://arxiv.org/abs/2610.12360"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "论文指出既有智能体评测主要看任务成功，对冲突处理洞察有限",
+     "EH 被定义为智能体在任务执行中识别、行动于、并沟通不确定性的意愿",
+     "EH 通过轨迹级的 Identify、Solve、Escalate 三个维度操作化",
+     "知识冲突包含「参数知识 vs 遇见证据」与「两个上下文来源不一致」两类",
+     "评测设受控冲突与多步执行中的自然冲突两类场景，各配匹配的无冲突对照",
+     "评测四个智能体发现高准确率不一定对应高谦逊，一些高准确率配置识别到冲突却不沟通未解不确定",
+     "轨迹分析显示智能体常在早期步骤识别冲突，却在后续步骤中未能保持或解决",
+     "模型级干预能提升 EH，但往往以任务准确率为代价，说明 EH 来自骨干模型、智能体框架与评测环境的交互"
+    ],
+    "uncertain": [
+     "ISE 评分的精确公式与权重摘要未给，f-eh-ise-score 为按摘要重建的通用形式，需核对原文",
+     "被评测的四个智能体具体是哪些、骨干模型是什么，摘要未列明，待核实",
+     "「自然冲突」场景的具体构造方式与数据来源摘要未说明，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "它不只问智能体答得对不对，还问它遇到矛盾时敢不敢说自己不确定。"
+     },
+     {
+      "level": "入门",
+      "text": "当检索到的证据和模型脑子里的知识打架，或者两个资料互相矛盾时，智能体应该改答案、承认不确定，还是硬着头皮给个错结论？论文提出用「认知谦逊」来评测这件事，把它拆成识别冲突、在冲突下求解、无法解决时上报不确定这三步。"
+     },
+     {
+      "level": "进阶",
+      "text": "做法是设两种冲突场景：受控冲突和真实多步执行中自然出现的冲突，各自配一个没有冲突的对照，这样才能把「任务变难了」和「不谦逊」区分开。评了四个智能体后发现：准确率高不等于谦逊，有些高准确率配置明明识别到了冲突，最后的错误答案里却完全不提这份不确定；很多人早期能发现冲突，后面又跟丢了。"
+     },
+     {
+      "level": "专家",
+      "text": "它的价值在于把评测从「结果对错」推进到「过程行为」，且用配对对照控制难度混淆，方法论上比单纯统计准确率更可信。核心结论是 EH 不是某个模型的固有属性，而是骨干模型、智能体框架、评测环境三者交互的产物——这解释了为什么模型级干预能提高 EH 却常常掉准确率：谦逊与作答之间可能存在权衡。局限是轨迹级行为判定的边界较模糊，依赖如何从自然语言里读出 I/S/E。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么单看任务准确率不够？",
+      "a": "摘要指出，有些高准确率配置识别到冲突却不在错误答案里沟通不确定；准确率掩盖了这个可靠性缺口。"
+     },
+     {
+      "q": "为什么要配无冲突对照？",
+      "a": "冲突本身会让任务更难。有对照才能分离「难度导致的失败」与「不谦逊导致的失败」。"
+     },
+     {
+      "q": "为什么说 EH 是三者交互的产物？",
+      "a": "摘要发现模型级干预能提升 EH 但常掉准确率，说明单改模型不够，框架与评测环境也在塑造谦逊行为。"
+     }
+    ],
+    "mechanism": "核心难点是把「谦逊」这种抽象属性变成可测量、可复核的量。作者的做法是行为化：把 EH 落成轨迹上的 Identify/Solve/Escalate，再用配对的无冲突对照剥离难度因素。之所以必须这样设计，是因为如果只看最终答案对错，就无法区分「答错且不承认」与「答错但如实说了不确定」——而后者恰恰是可靠性最关键的部分。",
+    "boundary": "评测依赖对轨迹行为的人工/规则判定，边界模糊时结论不稳；冲突场景由作者构造，迁移到其他领域需重新验证；论文主要刻画现象与权衡，未给出稳定提升 EH 且不掉准确率的方法。",
+    "analogyBoundary": "「分诊」类比在流程清晰时成立，但这里没有统一规程，I/S/E 要从自然语言轨迹里推断，加上模型可能「嘴上谦逊、行为照旧」，存在假阳性，类比会低估判定难度。",
+    "misconceptions": [
+     "以为准确率高的智能体自然更可靠——摘要明确反驳，二者不对应。",
+     "把「识别到冲突」等同于「认知谦逊」——摘要强调还需行动与沟通，识别≠上报。",
+     "以为提升 EH 一定以掉准确率为代价——摘要只说「往往」，不是必然，但确实是常见权衡。"
+    ],
+    "ownAnalysis": "最值得记的是「评测要从结果转向过程」（推断），这与后训练里越来越重视过程奖励/轨迹评估的趋势一致。可疑处：摘要说早期识别、后期丢失，这很像长上下文中的状态保持问题（推断），也许可用记忆或显式的「不确定台账」缓解。另外模型级干预提 EH 就掉准确率，暗示可能同时存在「过度自信」与「过度收敛到不确定」两种失败模式（待核实）。",
+    "officialNotes": [
+     {
+      "position": "EH 通过轨迹级 Identify/Solve/Escalate 操作化，用受控与自然冲突两类场景配对无冲突对照评测；发现高准确率不等于高谦逊、早期识别后期丢失、干预提 EH 常掉准确率",
+      "source": "arxiv: 2610.12360"
+     }
+    ],
+    "interviewAnswer": "这篇评测的是智能体遇到知识冲突时的行为——检索证据和模型参数知识打架，或两个资料互相矛盾。作者提出「认知谦逊」，把它拆成轨迹级的三个维度：识别冲突、在冲突下求解、解决不了就上报不确定，并用受控冲突和自然冲突两种场景、各配一个无冲突对照。结论很有意思：任务准确率高不等于谦逊，有些高准确率配置识别到了冲突，却在错误答案里只字不提不确定；而且很多智能体早期发现问题、后面就丢了。模型级干预能提升谦逊，但常常掉准确率，说明谦逊是模型、框架、环境三者交互出来的。",
+    "studyPath": {
+     "prerequisites": [
+      "多步 LLM 智能体框架",
+      "检索增强生成与知识冲突",
+      "对照实验与轨迹级评测"
+     ],
+     "nextSteps": [
+      "读原文核对 ISE 的判定细则与权重",
+      "在自己熟悉的智能体上复现一个小规模冲突对照实验"
+     ]
+    }
+   }
+  },
+  {
+   "id": "ac3dc2887be5e28e",
+   "tldr": "把标准答案当临时脚手架先帮模型产出更好解，再只把高奖励的模型自产解回灌到无引导设置。",
+   "keyPoints": [
+    "on-policy RL 提升 LLM 推理，但受奖励稀疏限制容易停滞",
+    "既有做法需辅助数据与 RL 任务同格式，常靠强模型拒绝采样",
+    "RGPO 按模型当前能力自适应地使用标准答案 rationale",
+    "把参考解当临时脚手架，而非固定模仿目标",
+    "只把高奖励、模型自产的解回灌到原有无引导设置"
+   ],
+   "why": "RLVR 是后训练最热方向，「奖励稀疏」与「自适应脚手架」是面试高频概念；该法不改数据格式、语言与多模态通用。",
+   "difficulty": "hard",
+   "tags": [
+    "rl",
+    "posttraining",
+    "rlvr",
+    "reward-sparsity",
+    "llm-reasoning"
+   ],
+   "entities": [
+    "Rationale-Guided Policy Optimization (RGPO)",
+    "RLVR"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "RGPO 四步脚手架流程",
+    "caption": "用标准答案搭临时脚手架产出好解，筛出高奖励的模型自产解后回灌到无引导设置。",
+    "svg": "<svg viewBox='0 0 480 226' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='RGPO 从奖励稀疏瓶颈到回灌无引导设置的四步流程'>\n<rect x='40' y='14' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='38' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>奖励稀疏瓶颈</text>\n<text x='424' y='38' font-size='13' text-anchor='end' fill='currentColor'>难题探不到正确轨迹</text>\n<line x1='240' y1='52' x2='240' y2='60' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,68 236,60 244,60' fill='var(--line-1)'/>\n<rect x='40' y='68' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='92' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>自适应 rationale 脚手架</text>\n<text x='424' y='92' font-size='13' text-anchor='end' fill='currentColor'>按当前能力给引导</text>\n<line x1='240' y1='106' x2='240' y2='114' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,122 236,114 244,114' fill='var(--line-1)'/>\n<rect x='40' y='122' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='146' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>生成并筛高奖励解</text>\n<text x='424' y='146' font-size='13' text-anchor='end' fill='currentColor'>只留模型自产且高奖励</text>\n<line x1='240' y1='160' x2='240' y2='168' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,176 236,168 244,168' fill='var(--line-1)'/>\n<rect x='40' y='176' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='200' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>回灌无引导设置</text>\n<text x='424' y='200' font-size='13' text-anchor='end' fill='currentColor'>保留探索自由</text>\n</svg>",
+    "alt": "四层竖排流程：奖励稀疏瓶颈→自适应 rationale 脚手架→生成并筛高奖励解→回灌无引导设置。"
+   },
+   "concepts": [
+    {
+     "name": "Reward Sparsity（奖励稀疏）",
+     "readable": "在难题上模型几乎探不到正确轨迹，于是几乎拿不到正奖励，梯度信号接近零，训练原地打转。",
+     "analogy": "像在漆黑房间里找钥匙：找不到就完全没有反馈，只能乱撞，很难知道该往哪走。",
+     "analogyBreaksDown": "找钥匙是二值成功；这里奖励还分强弱、且轨迹可以部分正确，稀疏往往表现为「大量样本得分相同」，而不是完全无信号。",
+     "mechanism": "on-policy RL 只从自己采样到的轨迹学，难题上正确轨迹概率极低，组内奖励几乎全相同，优势项趋零，策略更新停滞。缓解方向是引入外部信息（示范、专家痕迹、模型生成解）来提高命中率。",
+     "visual": "横轴训练步、纵轴组内奖励方差；曲线在难题子集上贴近零并长期不动，标出「停滞区」。",
+     "prerequisites": [
+      "策略梯度与优势函数",
+      "RLVR 基本设定",
+      "组内相对优势"
+     ],
+     "selfTest": [
+      "为什么难题上梯度会消失？",
+      "奖励稀疏和奖励噪声有何区别？",
+      "为什么不能只加大采样数解决？"
+     ],
+     "formula": "\\hat{A}_i=\\frac{R_i-\\mathrm{mean}(R)}{\\mathrm{std}(R)}\\to 0\\ \\ \\mathrm{when}\\ \\mathrm{std}(R)\\to 0"
+    },
+    {
+     "name": "Temporary Rationale Scaffold（临时理由脚手架）",
+     "readable": "标准答案只用来「扶一把」：在引导下让模型生成更好的解，之后只把模型自己产出的高奖励解拿回去训练，不让模型死记标准答案的写法。",
+     "analogy": "像学骑车先用辅助轮，能骑稳后就把辅助轮拆掉，真正练的是自己保持平衡。",
+     "analogyBreaksDown": "辅助轮是物理支撑，拆掉后能力直接保留；这里的「脚手架」是通过上下文注入的，回灌是否真的把能力内化，取决于筛选与优化是否到位。",
+     "mechanism": "不把参考解当固定模仿目标（那会损失探索自由），而是当可撤除的引导：引导阶段提高成功轨迹产出率，再把其中高奖励、模型自产的解回灌到无引导目标里，兼顾降稀疏与保探索，且不要求辅助数据与 RL 任务同格式。",
+     "visual": "两条并行泳道：上排「有脚手架」成功率快速上升；下排「无引导」缓慢上升；箭头从有脚手架的高奖励轨迹流入无引导泳道。",
+     "prerequisites": [
+      "行为克隆与策略梯度的区别",
+      "拒绝采样自训练",
+      "on/off-policy 数据混用"
+     ],
+     "selfTest": [
+      "为什么不能直接把标准答案 SFT 进模型？",
+      "为什么只回灌「模型自产」的解？",
+      "脚手架什么时候该撤？"
+     ],
+     "formula": "\\mathcal{L}(\\theta)=\\mathbb{E}_{\\tau\\sim\\pi^{\\mathrm{g}}}\\Big[\\mathbb{1}\\big[R(\\tau)\\ge R_0\\big]\\,\\ell\\big(\\pi^{\\mathrm{u}},\\tau\\big)\\Big]"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-rgpo-filtered-transfer",
+     "name": "高奖励筛选回灌目标（Filtered Self-Transfer Objective）",
+     "category": "posttraining",
+     "latex": "\\mathcal{L}(\\theta)=\\mathbb{E}_{\\tau\\sim\\pi_{\\theta}^{\\mathrm{g}}}\\Big[\\mathbb{1}\\big[R(\\tau)\\ge R_0\\big]\\;\\ell\\big(\\pi_{\\theta}^{\\mathrm{u}},\\tau\\big)\\Big]",
+     "symbols": [
+      [
+       "\\pi_{\\theta}^{\\mathrm{g}}",
+       "带脚手架（引导）的策略"
+      ],
+      [
+       "\\pi_{\\theta}^{\\mathrm{u}}",
+       "无引导的原策略，即回灌目标"
+      ],
+      [
+       "R(\\tau)",
+       "轨迹 τ 的奖励"
+      ],
+      [
+       "R_0",
+       "高奖励筛选阈值"
+      ],
+      [
+       "\\mathbb{1}[\\cdot]",
+       "指示函数，只在达标时为 1"
+      ],
+      [
+       "\\ell",
+       "对模型自产轨迹的优化损失"
+      ]
+     ],
+     "derivation": [
+      "难题上无引导探索极少产出高奖励轨迹，优势项趋零导致停滞。",
+      "用标准答案作为脚手架，让策略在引导下产出更可能成功的轨迹。",
+      "只保留其中高奖励、且由模型自己生成的解，剔除低质量与外部直接给出的轨迹。",
+      "把这些解回灌到无引导策略的优化目标中，从而降低稀疏性又不放弃探索自由。"
+     ],
+     "analogy": "像陪练先喂球帮你找到手感（引导），等你能连续打好球了，就回到真比赛里自己打。",
+     "pitfalls": [
+      "把标准答案当固定模仿目标直接做 SFT，丢掉探索自由、也违背「只回灌模型自产解」的设计",
+      "阈值 R_0 太低会把平庸轨迹也回灌，引入噪声"
+     ],
+     "code": "def filtered_transfer(rollouts, R0=1.0):\n    # rollouts: list of (reward, is_model_generated)\n    keep = [(r, ok) for r, ok in rollouts if r >= R0 and ok]\n    return keep  # 仅高奖励、模型自产轨迹用于回灌",
+     "sources": [
+      {
+       "title": "Rationale-Guided Policy Optimization: Learning to Reason with Adaptive Rationale Scaffolding",
+       "url": "https://arxiv.org/abs/2610.07342"
+      }
+     ]
+    },
+    {
+     "id": "f-rgpo-adaptive-scaffold",
+     "name": "自适应脚手架强度（Adaptive Scaffolding Strength）",
+     "category": "posttraining",
+     "latex": "\\lambda_t=\\lambda_0\\big(1-\\hat{c}_t\\big)",
+     "symbols": [
+      [
+       "\\lambda_t",
+       "第 t 阶段的脚手架（引导）强度"
+      ],
+      [
+       "\\lambda_0",
+       "初始强度上限"
+      ],
+      [
+       "\\hat{c}_t",
+       "对模型当前能力的估计，取值 0 到 1"
+      ]
+     ],
+     "derivation": [
+      "能力弱时模型几乎探不到正确轨迹，需要更强的脚手架来提供信号。",
+      "能力增强后若仍强引导，会把模型锁死在参考解写法上，压缩探索空间。",
+      "用当前表现（如成功率）作为能力估计 c_hat_t。",
+      "让引导强度随能力线性衰减，实现「按当前能力自适应」的 rationale 使用。（按摘要重建的通用形式）"
+     ],
+     "analogy": "像教小孩写字：一开始手把手（强引导），字写稳了就只在旁边提醒（弱引导）。",
+     "pitfalls": [
+      "把引导强度设成常数：早期太弱没信号、后期太强掐死探索",
+      "能力估计用常数或单点估计，失去自适应性"
+     ],
+     "code": "def scaffold_strength(cap, lam0=1.0):\n    # cap: estimated current capability in [0,1]\n    return lam0 * max(0.0, 1.0 - cap)",
+     "sources": [
+      {
+       "title": "Rationale-Guided Policy Optimization: Learning to Reason with Adaptive Rationale Scaffolding",
+       "url": "https://arxiv.org/abs/2610.07342"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "on-policy RL 已成为提升 LLM 推理能力的核心范式",
+     "其效果常受奖励稀疏限制，模型在难题上探不到正确轨迹时优化停滞",
+     "既有缓解方法（off-policy 示范、专家痕迹、模型生成解）通常要求辅助数据与 RL 任务格式一致，常依赖强模型拒绝采样",
+     "RGPO 按模型当前能力自适应利用标准答案 rationale，同时保留探索自由",
+     "RGPO 把参考解当临时脚手架而非固定模仿目标，只把高奖励、模型自产的解回灌到无引导设置",
+     "该设计无需 off-policy 数据与 RL 任务同格式",
+     "在纯语言与视觉语言推理任务上，RGPO 一致优于 RLVR 基线，消融显示自适应 rationale 引导是关键贡献"
+    ],
+    "uncertain": [
+     "两条公式（筛选回灌目标、自适应脚手架强度）摘要未给精确形式，均为按摘要重建的通用形式，需核对原文",
+     "「自适应」的具体判定方式、脚手架的具体注入形式摘要未说明，待核实",
+     "基线 RLVR 的具体实现与视觉语言任务清单摘要未列全，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "难题做不出来时先给点提示，做出好答案后再只拿自己产出的好解去练。"
+     },
+     {
+      "level": "入门",
+      "text": "强化学习提升大模型推理，但遇到难题模型几乎做不对，拿不到奖励信号，训练就卡住。以前的办法要额外数据、还得和训练任务格式一致。RGPO 换个思路：把标准答案当临时提示帮模型生成更好的解，然后只把模型自己产出的、评分高的解拿回去继续练，答案本身不作为死记的目标。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键是两个设计。一是「按能力自适应」：模型弱时多给提示，强了就把提示撤掉，避免被参考解写法锁死。二是「只回灌模型自产的高奖励解」：先在有提示的情况下提高成功轨迹产出率，再把这些轨迹搬回无引导目标里优化，既缓解稀疏又不丢探索。这样也不需要辅助数据与 RL 任务同格式，纯语言和多模态都能用。"
+     },
+     {
+      "level": "专家",
+      "text": "它的问题定位很清晰：不是奖励函数不好，而是难题上的正确轨迹概率太低导致组内优势趋零。与「用强模型拒绝采样产 SFT 数据」不同，RGPO 的辅助信息只用于提升引导阶段的产出率，最终优化仍落在无引导策略上，因此更接近「先搭脚手架再撤掉」的课程式训练。消融显示自适应引导是增益主因。边界在于标准答案本身不可得或质量存疑时脚手架会误导，且脚手架注入带来的额外推理开销需要权衡。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不直接用标准答案做监督微调？",
+      "a": "那等于把参考解当固定模仿目标，模型会去复制答案写法、丢掉探索自由；RGPO 只让它当临时脚手架。"
+     },
+     {
+      "q": "为什么要「只回灌模型自产的解」？",
+      "a": "保证回灌的分布与无引导策略自身一致，避免把外部答案的分布硬塞进策略里造成不匹配。"
+     },
+     {
+      "q": "脚手架为什么必须自适应？",
+      "a": "固定强度两头不讨好：早期太弱仍没信号，后期太强会锁死探索，按当前能力调节才能两头兼顾。"
+     }
+    ],
+    "mechanism": "奖励稀疏的根源是「难题上采样不出成功轨迹」，所以关键不是改奖励，而是先提高成功轨迹的产出率、再把能力内化回无引导策略。RGPO 用标准答案做可撤除的引导（脚手架），只回灌高奖励的模型自产解作为内化载体，并用能力估计调节引导强度。这样既降稀疏，又不把探索锁死在参考解的格式上，也摆脱了辅助数据必须与 RL 任务同格式的约束。",
+    "boundary": "标准答案不可得、噪声大或与评测奖励不一致时，脚手架会把人带偏；引导阶段需额外推理开销；若筛选阈值不当，回灌会引入噪声轨迹。对本身奖励密集、模型已能大量成功的任务，收益有限。",
+    "analogyBoundary": "「辅助轮」类比成立在「能力一旦学会就保留」的假设上；但这里的能力靠回灌强化，若筛选或优化不到位，撤掉脚手架后表现可能回落，类比会高估内化的稳固性。",
+    "misconceptions": [
+     "把 RGPO 当成「用标准答案做 SFT」——参考解只是被撤除的脚手架。",
+     "以为只要给提示就能解决稀疏——关键在于只回灌高奖励的模型自产解。",
+     "认为作者用了更强的外部模型做拒绝采样——摘要强调 RGPO 不依赖这种格式匹配的 off-policy 数据。"
+    ],
+    "ownAnalysis": "最可迁移的是「外部信息做临时引导、最终目标是撤掉引导后的自主能力」（推断），这与蒸馏/课程学习/self-training 的思路一脉相承但更克制：不把教师分布直接搬过来。可疑处：「自适应」只说了按当前能力，但如何避免能力估计被奖励噪声污染、以及回灌后原技能是否遗忘（灾难性遗忘），摘要未展开（待核实）。",
+    "officialNotes": [
+     {
+      "position": "RGPO 按模型当前能力自适应使用 ground-truth rationale，把参考解当临时脚手架，只回灌高奖励的模型自产解到无引导设置；无需 off-policy 数据与 RL 任务同格式；语言与视觉语言任务上一致优于 RLVR 基线",
+      "source": "arxiv: 2610.07342"
+     }
+    ],
+    "interviewAnswer": "这篇针对 on-policy RL 训练大模型推理时的奖励稀疏问题：难题上模型探不到正确轨迹，组内优势趋零，训练停滞。已有方法要引入示范或强模型拒绝采样，还要求数据和 RL 任务格式一致。RGPO 的做法是把标准答案当临时脚手架——先按模型当前能力自适应地给 rationale 引导，让它产出更好的解，然后只把其中高奖励、模型自己生成的解回灌到原来的无引导设置里。这样既降稀疏、又不把探索锁死在参考解上，也不需要格式匹配的 off-policy 数据。消融显示自适应引导是增益主因，纯语言和视觉语言任务都优于 RLVR。",
+    "studyPath": {
+     "prerequisites": [
+      "策略梯度与组内相对优势（如 GRPO 类方法）",
+      "RLVR 与可验证奖励设定",
+      "拒绝采样自训练与蒸馏的区别"
+     ],
+     "nextSteps": [
+      "读原文确认自适应判定与脚手架注入的精确形式",
+      "在小型推理任务上对比 RLVR 与 RGPO 的组内奖励方差曲线"
+     ]
+    }
+   }
+  },
+  {
+   "id": "83d50b8fffe7bd19",
+   "tldr": "把程序性视频生成重构为视觉世界空间里的闭环任务执行：从生成状态选动作、执行、并判断是否完成。",
+   "keyPoints": [
+    "长程程序性任务要求生成能根据「实际已生成的内容」调整",
+    "开环生成无法适应执行结果，现有闭环系统依赖预训练执行器或间接验证",
+    "WorldGuide 给初始图与任务目标，预测原子动作并生成对应视频片段",
+    "用生成结果选下一个动作或终止；Planner 与 Executor 在同一步级示范上训练",
+    "缺步级监督故提出 WorldGuide Bench：约 59K 视频、245 任务、27 个类别",
+    "分层视觉记忆以有界历史 token 维持长程状态"
+   ],
+   "why": "世界模型与具身/程序性任务执行的交叉是热点；「规划与执行耦合、闭环决策」是 embodied 与 world model 岗位的核心考点。",
+   "difficulty": "hard",
+   "tags": [
+    "worldmodel",
+    "video-generation",
+    "planning",
+    "closed-loop",
+    "embodied"
+   ],
+   "entities": [
+    "WorldGuide",
+    "WorldGuide Bench",
+    "MiniMax-H3",
+    "VideoCraft-Bench",
+    "Planner",
+    "Executor"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "WorldGuide 闭环执行环",
+    "caption": "从初始图与目标出发，Planner 出动作、Executor 生成片段、据结果闭环推进，分层记忆兜住长程状态。",
+    "svg": "<svg viewBox='0 0 480 280' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='WorldGuide 从初始图与目标到终止判定的五级闭环执行流程'>\n<rect x='40' y='12' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='36' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>初始图 + 任务目标</text>\n<text x='424' y='36' font-size='13' text-anchor='end' fill='currentColor'>只给起点与目标</text>\n<line x1='240' y1='50' x2='240' y2='58' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,66 236,58 244,58' fill='var(--line-1)'/>\n<rect x='40' y='66' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='90' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>Planner 预测原子动作</text>\n<text x='424' y='90' font-size='13' text-anchor='end' fill='currentColor'>从视觉进展推下一步</text>\n<line x1='240' y1='104' x2='240' y2='112' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,120 236,112 244,112' fill='var(--line-1)'/>\n<rect x='40' y='120' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='144' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>Executor 生成视频片段</text>\n<text x='424' y='144' font-size='13' text-anchor='end' fill='currentColor'>把动作实现为视频</text>\n<line x1='240' y1='158' x2='240' y2='166' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,174 236,166 244,166' fill='var(--line-1)'/>\n<rect x='40' y='174' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='198' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>据生成结果闭环</text>\n<text x='424' y='198' font-size='13' text-anchor='end' fill='currentColor'>选下一动作 or 终止</text>\n<line x1='240' y1='212' x2='240' y2='220' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,228 236,220 244,220' fill='var(--line-1)'/>\n<rect x='40' y='228' width='400' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='252' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>分层视觉记忆</text>\n<text x='424' y='252' font-size='13' text-anchor='end' fill='currentColor'>有界 token 维持长程状态</text>\n</svg>",
+    "alt": "五级竖排流程：初始图与目标→Planner 预测原子动作→Executor 生成视频片段→据结果闭环选下一步或终止→分层视觉记忆。"
+   },
+   "concepts": [
+    {
+     "name": "Closed-Loop Procedural Video Generation（闭环程序性视频生成）",
+     "readable": "生成不是一次到底，而是每一步看「已经生成出来的画面」再决定下一个动作，直到判断任务完成。",
+     "analogy": "像照着菜谱做菜：每加一样就尝一口，根据味道决定下一步放什么，而不是闭着眼睛把整道菜做完。",
+     "analogyBreaksDown": "做菜有实时味觉；这里的「尝」只能靠模型对自己生成的视频片段做判断，判断本身可能出错，误差会累积。",
+     "mechanism": "把程序性视频生成形式化为「在视觉世界空间里的闭环任务执行」：由当前视觉状态推下一个原子动作、生成该动作的视频片段、再据此选下一步或终止。相比开环一次性生成，能让输出适应实际执行结果。",
+     "visual": "一个回路图：动作节点→视频片段节点→状态更新→回到动作节点；旁边并排放一条开环直线，标出开环无法回退修正。",
+     "prerequisites": [
+      "视频生成模型",
+      "世界模型与状态转移",
+      "任务规划基础"
+     ],
+     "selfTest": [
+      "开环生成为什么长程程序任务会失败？",
+      "闭环的「状态」这里由什么表示？",
+      "如何判断任务完成？"
+     ],
+     "formula": "a_t=\\pi_{\\mathrm{plan}}(g,\\ s_t),\\qquad s_{t+1}=\\pi_{\\mathrm{exec}}(s_t,\\ a_t)"
+    },
+    {
+     "name": "Planner-Executor Coupling（规划-执行耦合）",
+     "readable": "Planner 负责决定「下一步做什么」，Executor 负责把这一步真正生成出来；两者用同一批步级示范一起训练，而不是各自为政。",
+     "analogy": "像导演和摄影：导演说要拍「切菜」这一镜，摄影师得真拍出切菜的画面，否则接不上下一镜。",
+     "analogyBreaksDown": "剧组有回放可核对；这里只有在步级动作-视频对齐的示范上训练，缺少这种监督，作者才要专门造 WorldGuide Bench。",
+     "mechanism": "既有闭环系统常靠预训练执行器或间接验证，规划与执行之间存在「说得对但做不到」的鸿沟。WorldGuide 让 Planner 从视觉进展预测原子动作或完成，让 Executor 直接学着把预测动作实现出来，两者共享同一套步级示范，从而缩小这个鸿沟。",
+     "visual": "两列：左列 Planner 输出的动作序列（文字/标签），右列 Executor 生成的分镜（视频帧缩略）；用横箭头表示「动作→片段」一一对应，错位处高亮为耦合失败。",
+     "prerequisites": [
+      "视频扩散/生成模型与条件控制",
+      "视觉语言模型做决策",
+      "步级数据标注"
+     ],
+     "selfTest": [
+      "为何不能直接用预训练执行器？",
+      "Planner 与 Executor 为什么共享示范？",
+      "「间接验证」的缺陷是什么？"
+     ],
+     "formula": "\\mathcal{S}=\\frac{1}{N}\\sum_{i=1}^{N}\\mathbb{1}\\big[\\mathrm{complete}(i)\\big]"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-worldguide-closed-loop",
+     "name": "闭环规划-执行递归（Closed-Loop Plan-Execute Recursion）",
+     "category": "worldmodel",
+     "latex": "a_t=\\pi_{\\mathrm{plan}}\\big(g,\\ s_t\\big),\\qquad s_{t+1}=\\pi_{\\mathrm{exec}}\\big(s_t,\\ a_t\\big)",
+     "symbols": [
+      [
+       "g",
+       "任务目标"
+      ],
+      [
+       "s_t",
+       "第 t 步的视觉状态（已生成的画面/记忆）"
+      ],
+      [
+       "a_t",
+       "第 t 步预测的原子动作，或终止标志"
+      ],
+      [
+       "\\pi_{\\mathrm{plan}}",
+       "Planner：从视觉进展预测下一动作或完成"
+      ],
+      [
+       "\\pi_{\\mathrm{exec}}",
+       "Executor：把动作生成为视频片段并推进状态"
+      ]
+     ],
+     "derivation": [
+      "长程程序性任务要求生成能根据实际产出调整，开环一次性生成做不到。",
+      "把过程写成递归：每个时间步先由 Planner 依据目标 g 与当前视觉状态 s_t 选出原子动作 a_t。",
+      "再由 Executor 依据 (s_t, a_t) 生成对应视频片段，得到新状态 s_{t+1}。",
+      "循环直到 Planner 输出终止，完成任务。"
+     ],
+     "analogy": "像导航：每到路口看一眼实际位置（状态），决定下一次转向（动作），开过去再看新位置，直到到达。",
+     "pitfalls": [
+      "把它当成一次性 prompt 生成——闭环的关键是每步都依赖真实生成结果",
+      "忽略终止判定，导致循环无法停止或提前结束"
+     ],
+     "code": "def run(plan, exec_, g, s0, tmax=20):\n    s, done = s0, False\n    for _ in range(tmax):\n        a = plan(g, s)          # 预测原子动作或终止\n        if a is None:\n            done = True\n            break\n        s = exec_(s, a)         # 生成视频片段，推进状态\n    return s, done",
+     "sources": [
+      {
+       "title": "WorldGuide: Goal-Directed Video World Model for Procedural Task Execution",
+       "url": "https://arxiv.org/abs/2610.12459"
+      }
+     ]
+    },
+    {
+     "id": "f-worldguide-visual-memory",
+     "name": "有界分层视觉记忆（Bounded Hierarchical Visual Memory）",
+     "category": "worldmodel",
+     "latex": "\\mathcal{M}_t=\\mathrm{Compress}\\big(\\mathcal{M}_{t-1},\\, o_t\\big),\\qquad \\lvert\\mathcal{M}_t\\rvert\\le B",
+     "symbols": [
+      [
+       "\\mathcal{M}_t",
+       "第 t 步的视觉记忆（分层摘要）"
+      ],
+      [
+       "o_t",
+       "第 t 步的新观测（生成的视频片段）"
+      ],
+      [
+       "B",
+       "历史 token 预算上限"
+      ],
+      [
+       "\\mathrm{Compress}",
+       "把新观测并入记忆并压缩到有界规模"
+      ]
+     ],
+     "derivation": [
+      "长程执行的历史会不断增长，直接全部保留会超出上下文预算。",
+      "但闭环决策又需要跨步状态，不能丢掉历史。",
+      "于是把历史组织成分层摘要，只保留当前任务相关的多尺度信息。",
+      "每步用新观测更新记忆并压缩，保证规模有界（按摘要重建的通用形式）。"
+     ],
+     "analogy": "像写旅行日记：不记下每一分钟，而是每天一句、每周一段，需要时回看摘要即可。",
+     "pitfalls": [
+      "以为记忆是无限回放——摘要强调历史 token 成本有界，必然有信息损失",
+      "层次设计不当会把关键步级细节压没，导致长程决策漂移"
+     ],
+     "code": "def update_memory(M, obs, compress, B):\n    M = compress(M, obs)   # 并入新观测并生成分层摘要\n    return M[:B]           # 控制历史 token 成本有界",
+     "sources": [
+      {
+       "title": "WorldGuide: Goal-Directed Video World Model for Procedural Task Execution",
+       "url": "https://arxiv.org/abs/2610.12459"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "视频生成器与视频世界模型能合成看似合理的视觉轨迹，但长程程序性任务要求生成适应实际已产出的内容",
+     "开环生成无法适应执行结果，现有闭环系统常依赖预训练执行器或间接验证，留下「决定动作」与「成功实现动作」之间的鸿沟",
+     "论文把程序性视频生成形式化为视觉世界空间中的闭环任务执行，提出 WorldGuide",
+     "只给初始图与任务目标，WorldGuide 预测原子动作、生成对应视频片段、并据生成结果选下一动作或终止",
+     "Planner 与 Executor 在同一步级程序示范上训练：Planner 预测下一原子动作或完成，Executor 直接学着实现预测动作",
+     "分层视觉记忆在有界历史 token 成本下维持长程状态",
+     "因缺少步级动作-视频监督，论文提出 WorldGuide Bench：约 59K 步级标注视频、245 个任务、27 个程序类别",
+     "WorldGuide 在 WorldGuide-Bench 达 33.33% 任务成功率，对比 MiniMax-H3 的 29.90%（后者还接收了参考动作计划）；在 VideoCraft-Bench 达 47.69%，对比 MiniMax-H3 的 32.73%（目标仅给目标的条件下）"
+    ],
+    "uncertain": [
+     "两条公式（闭环递归、有界视觉记忆）摘要未给具体形式，均为按摘要重建的通用形式，需核对原文",
+     "Planner/Executor 的具体网络结构与训练损失摘要未说明，待核实",
+     "WorldGuide Bench 的采集来源与「步级标注」的定义细节摘要未说明，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "做一个任务时，它每生成一步就回头看结果，再决定下一步，直到判断做完。"
+     },
+     {
+      "level": "入门",
+      "text": "视频世界模型能生成看起来合理的画面，但做菜、装配这类多步骤任务要求「下一步」取决于「已经做出什么」。WorldGuide 只给一张初始图和目标，就让模型预测一个原子动作、生成这个动作的视频片段，再用生成结果决定下一个动作或收尾。"
+     },
+     {
+      "level": "进阶",
+      "text": "它把问题重新定义为视觉世界空间里的闭环执行，强调规划和执行要一起学：Planner 从视觉进展预测下一动作或完成，Executor 直接学着把动作实现出来，两者共用同一套步级示范。因为缺这种步级动作-视频监督，作者建了 WorldGuide Bench（约 59K 视频、245 任务、27 类）。长程执行靠分层视觉记忆维持状态，同时把历史 token 成本控制在有界范围。"
+     },
+     {
+      "level": "专家",
+      "text": "相比开环一次性生成，闭环能根据实际产出修正；相比依赖预训练执行器或间接验证的既有闭环系统，它把规划与执行端到端耦合，缩小「决定动作」与「成功实现动作」的鸿沟。结果上：WorldGuide-Bench 33.33% 对 MiniMax-H3 29.90%（对方还额外给了参考动作计划），VideoCraft-Bench 47.69% 对 32.73%。边界在于它仍是视觉世界里的执行，没有真实物理矫正回路，长程误差会沿记忆累积；有界记忆意味着信息必然被压缩。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么开环生成做不了长程程序任务？",
+      "a": "开环生成不根据实际产出调整，一旦某步偏离真实可行状态，后面所有步骤都会在错误状态上继续。"
+     },
+     {
+      "q": "为什么要 Planner 和 Executor 一起训？",
+      "a": "摘要指出既有系统存在「决定动作」与「成功实现动作」的鸿沟；共享步级示范可让预测的动作落在执行器真能做到的范围内。"
+     },
+     {
+      "q": "为什么记忆必须有界？",
+      "a": "长程执行的历史会无限增长、超出上下文；分层摘要能在有限的 token 成本下保留跨步所需状态。"
+     }
+    ],
+    "mechanism": "这类任务的核心矛盾是「长程依赖」与「误差累积」：每一步的输出都成为下一步的输入，必须根据真实产出而非计划前进。WorldGuide 用闭环递归把动作决策与视频实现绑在一起，用共享的步级示范让两者对齐，再用分层视觉记忆在固定 token 预算下携带跨步状态。三件事配合才能让「决定下一步」与「真的做出这一步」保持一致。",
+    "boundary": "在视觉世界空间里执行，没有真实物理反馈或人工纠错，长程误差会沿记忆累积；有界视觉记忆会丢失细节，超长任务上状态可能漂移；依赖规模较大的步级标注数据。对不需要多步交互的一次性视频生成任务，闭环收益有限。",
+    "analogyBoundary": "「每步尝一口再决定」类比在味觉即时可靠时成立；这里的「尝」是模型对自己生成片段的判断，可能自欺（把失败的片段判为成功），于是误差不仅来自动作，还来自判别本身。",
+    "misconceptions": [
+     "以为它只是更强的视频生成模型——它的关键是闭环规划与执行耦合。",
+     "以为它用了预训练执行器——作者正是要摆脱这种依赖。",
+     "忽略对照条件：MiniMax-H3 在 WorldGuide-Bench 上还额外拿到了参考动作计划，比较是在这个前提下成立的。"
+    ],
+    "ownAnalysis": "最可迁移的是「把长程生成当序列决策、用共享示范对齐规划与执行」（推断），这与 VLA/具身智能里的「高层规划 + 低层控制」架构同构，只是把低层换成视频生成。可疑处：Task Success 33.33% 绝对值并不高，说明闭环执行仍然很难（推断）；且「判定完成」由 Planner 自己做，缺少外部验证器时，可能出现过早终止或不停循环两种失败（待核实）。",
+    "officialNotes": [
+     {
+      "position": "WorldGuide 把程序性视频生成形式化为视觉世界空间中的闭环任务执行；Planner 与 Executor 共享步级示范训练，分层视觉记忆保证有界 token 成本；WorldGuide-Bench 33.33% 对 MiniMax-H3 29.90%，VideoCraft-Bench 47.69% 对 32.73%",
+      "source": "arxiv: 2610.12459"
+     }
+    ],
+    "interviewAnswer": "这篇把程序性视频生成重新定义成视觉世界空间里的闭环任务执行。开环生成没法根据实际产出调整，已有闭环系统又常依赖预训练执行器或间接验证，导致「决定动作」和「真的做出动作」之间有鸿沟。WorldGuide 只给初始图和目标，让 Planner 从视觉进展预测原子动作或任务完成，让 Executor 把动作真的生成成视频片段，再用生成结果选下一步或终止，两者用同一套步级示范训练。长程执行靠分层视觉记忆维持状态、控制 token。在 WorldGuide-Bench 上 33.33% 对 MiniMax-H3 的 29.90%，而对方还额外拿到了参考动作计划；VideoCraft-Bench 上 47.69% 对 32.73%。",
+    "studyPath": {
+     "prerequisites": [
+      "视频扩散/生成模型与条件控制",
+      "世界模型与状态转移建模",
+      "序列决策与长程依赖问题"
+     ],
+     "nextSteps": [
+      "读原文与 WorldGuide Bench 说明，明确步级标注定义",
+      "复现一个最小的闭环执行循环，观察误差如何沿步累积"
+     ]
+    }
+   }
+  }
+ ],
+ "skipped": []
+}

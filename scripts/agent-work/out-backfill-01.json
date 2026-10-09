@@ -1,0 +1,390 @@
+{
+ "batchId": "backfill-01",
+ "entries": [
+  {
+   "id": "08bb5fe94761a493",
+   "formulas": [
+    {
+     "id": "f-gkd-generalized-jsd",
+     "name": "广义 JS 散度蒸馏目标（Generalized JSD for Distillation）",
+     "category": "posttraining",
+     "latex": "D_{\\mathrm{JSD}(\\beta)}(p_T \\,\\|\\, p_S) = \\beta\\, D_{\\mathrm{KL}}(p_T \\,\\|\\, M) + (1-\\beta)\\, D_{\\mathrm{KL}}(p_S \\,\\|\\, M), \\quad M = \\beta\\, p_T + (1-\\beta)\\, p_S",
+     "symbols": [
+      [
+       "p_T",
+       "教师模型在给定上下文下的下一 token 分布"
+      ],
+      [
+       "p_S",
+       "学生模型分布，需在学生自己采样的序列上计算"
+      ],
+      [
+       "\\beta",
+       "散度方向插值系数，beta=0.5 为等权 JSD"
+      ],
+      [
+       "M",
+       "混合分布 M = beta·p_T + (1-beta)·p_S"
+      ],
+      [
+       "D_{\\mathrm{KL}}",
+       "KL 散度"
+      ]
+     ],
+     "derivation": [
+      "第 1 步（动机）：普通 KD 只用前向 KL，学生会平均覆盖教师所有模态（mode-covering），在自回归长序列上容易被曝光偏差放大。",
+      "第 2 步（引入可调散度）：把前向 KL 与反向 KL 按 beta 线性组合，得到一个连续族，beta=1 退化为前向 KL、beta=0 退化为反向 KL。",
+      "第 3 步（写成对混合分布的两项 KL）：令 M = beta·p_T + (1-beta)·p_S，则 D = beta·KL(p_T||M) + (1-beta)·KL(p_S||M)，这正是广义 JS 散度的定义式。",
+      "第 4 步（训练）：在学生采样得到的数据上最小化该散度，beta 控制 mode-covering 与 mode-seeking 的偏好，是 OPD/GKD 路线的核心旋钮。"
+     ],
+     "analogy": "像校对错题：前向 KL 要求你把老师所有可能的写法都覆盖（宁可多写几种），反向 KL 只要求你专注模仿老师最典型的那一种写法。beta 就是「多写」与「专一」之间的旋钮。",
+     "pitfalls": [
+      "把 beta 当成温度参数——它调的是散度方向，不是 logits 的平滑程度",
+      "忽略 p_S 必须在学生自生成序列上计算，用教师数据算就退回 off-policy KD",
+      "beta=0 的反向 KL 训练不稳定、易模式坍缩，不能盲目取极值"
+     ],
+     "code": "import torch, torch.nn.functional as F\n\ndef gjsd(student_logits, teacher_logits, beta=0.5, T=1.0):\n    pS = F.softmax(student_logits / T, dim=-1)\n    pT = F.softmax(teacher_logits / T, dim=-1)\n    M = (beta * pT + (1 - beta) * pS)            # 混合分布\n    kl_TM = F.kl_div(M.log(), pT, reduction='batchmean')   # KL(pT || M)\n    kl_SM = F.kl_div(M.log(), pS, reduction='batchmean')   # KL(pS || M)\n    return beta * kl_TM + (1 - beta) * kl_SM\n",
+     "sources": [
+      {
+       "title": "chrisliu298/awesome-on-policy-distillation",
+       "url": "https://github.com/chrisliu298/awesome-on-policy-distillation"
+      }
+     ]
+    },
+    {
+     "id": "f-gkd-onpolicy-data-mix",
+     "name": "同策略数据混合蒸馏目标（On-Policy Data Mixing）",
+     "category": "posttraining",
+     "latex": "\\mathcal{L} = \\mathbb{E}_{x \\sim (1-\\lambda)\\,\\mathcal{D} + \\lambda\\,\\mathcal{S}} \\left[ D_{\\mathrm{JSD}(\\beta)}\\left( p_T(\\cdot \\mid x) \\,\\|\\, p_S(\\cdot \\mid x) \\right) \\right]",
+     "symbols": [
+      [
+       "\\mathcal{D}",
+       "离线/教师数据集（off-policy 数据）"
+      ],
+      [
+       "\\mathcal{S}",
+       "学生自生成数据集（on-policy 数据）"
+      ],
+      [
+       "\\lambda",
+       "on-policy 数据占比，lambda 属于 0 到 1"
+      ],
+      [
+       "x",
+       "一个输入提示或已生成前缀"
+      ],
+      [
+       "D_{\\mathrm{JSD}(\\beta)}",
+       "上一条定义的广义 JS 散度"
+      ]
+     ],
+     "derivation": [
+      "第 1 步（动机）：只在教师数据上蒸馏，学生会过拟合教师分布；推理时走到自己生成的状态上却没有监督信号。",
+      "第 2 步（造 on-policy 数据）：让学生按当前策略自己采样一批序列，构成集合 S。",
+      "第 3 步（混合采样）：把 S 与原始数据 D 按比例 lambda 混合，lambda 越大越偏 on-policy。",
+      "第 4 步（目标）：在混合分布上计算 token 级软监督期望，得到上式；lambda 与 beta 正交，可分别调，分别对应「数据从哪来」与「散度朝哪个方向」。"
+     ],
+     "analogy": "像备考：D 是教材例题（老师给的），S 是你自己做错的题（自己生成的）。lambda 就是你复习时间分给「重做自己错题」的比例——比例太低，考场上没人给提示时就容易崩。",
+     "pitfalls": [
+      "lambda 不是越大越好：学生太弱时自生成数据质量低，需要教师验证或过滤",
+      "混合的是数据来源，不是 loss 里样本的权重，两者别混为一谈",
+      "on-policy 数据的 logits 需重新前向计算，训练成本约翻倍，工程上要做取舍"
+     ],
+     "code": "import random\n\ndef sample_batch(teacher_data, student_data, lam, bs):\n    n_stu = int(round(lam * bs))                 # on-policy 部分\n    n_tea = bs - n_stu                           # off-policy 部分\n    return random.sample(student_data, n_stu) + random.sample(teacher_data, n_tea)\n\nbatch = sample_batch(teacher_data, student_data, lam=0.5, bs=32)\n# 之后交给统一的广义 JSD 蒸馏损失逐 token 计算\n",
+     "sources": [
+      {
+       "title": "chrisliu298/awesome-on-policy-distillation",
+       "url": "https://github.com/chrisliu298/awesome-on-policy-distillation"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "12192a17a1d97235",
+   "formulas": [
+    {
+     "id": "f-inference-kernel-fusion-traffic",
+     "name": "算子融合的访存缩减比（Memory Traffic of Kernel Fusion）",
+     "category": "engineering",
+     "latex": "R_{\\mathrm{traffic}} = \\frac{\\sum_{k=1}^{K} 2\\, n\\, d}{2\\, n\\, d} = K",
+     "symbols": [
+      [
+       "K",
+       "同一条张量链上被顺序执行的逐元素内核数量"
+      ],
+      [
+       "n",
+       "张量元素个数"
+      ],
+      [
+       "d",
+       "单个元素字节数，如 fp16 为 2"
+      ],
+      [
+       "R_{\\mathrm{traffic}}",
+       "访存流量缩减比，带宽受限时近似等于加速比"
+      ]
+     ],
+     "derivation": [
+      "第 1 步（动机）：自回归解码阶段是访存受限，瓶颈是显存流量而不是算力，每减少一次显存往返都能直接省时间。",
+      "第 2 步（未融合的流量）：K 个逐元素内核各自把整条张量读一遍、写一遍，总流量 = 2Knd。",
+      "第 3 步（融合后的流量）：把 K 个内核合成一个，中间结果留在寄存器或共享内存，只需读输入一次、写输出一次，流量 = 2nd。",
+      "第 4 步（相除）：R = 2Knd / 2nd = K，即带宽受限区间下，融合 K 个逐元素内核理论上最高带来约 K 倍加速。"
+     ],
+     "analogy": "像搬家：没融合时每搬一件东西都要从仓库到货车往返一趟（读加写各一次）；融合后一趟把整箱东西直接搬过去，往返次数从 2K 次降到 2 次。",
+     "pitfalls": [
+      "只有带宽受限的小 batch decode 才近似 K 倍；算力受限的大 batch prefill 收益很小",
+      "融合会抬高寄存器压力，过度融合反而降低 occupancy，实测未必更快",
+      "中间结果必须塞得进寄存器或共享内存，否则仍落回显存，R 达不到 K"
+     ],
+     "code": "def traffic_unfused(K, n, d=2):\n    return 2 * K * n * d          # K 个内核各自读加写一遍\n\ndef traffic_fused(n, d=2):\n    return 2 * n * d              # 只读输入、写输出各一次\n\nK, n = 6, 1 << 20\nprint(traffic_unfused(K, n) / traffic_fused(n))   # 约等于 K = 6\n",
+     "sources": [
+      {
+       "title": "pegainfer-project/pegainfer",
+       "url": "https://github.com/pegainfer-project/pegainfer"
+      }
+     ]
+    },
+    {
+     "id": "f-inference-roofline-intensity",
+     "name": "算术强度与 Roofline 耗时下界（Arithmetic Intensity & Roofline Bound）",
+     "category": "engineering",
+     "latex": "I = \\frac{\\mathrm{FLOPs}}{\\mathrm{Bytes}}, \\quad T_{\\min} = \\max\\left( \\frac{\\mathrm{FLOPs}}{\\pi_{\\mathrm{peak}}},\\; \\frac{\\mathrm{Bytes}}{\\beta_{\\mathrm{BW}}} \\right)",
+     "symbols": [
+      [
+       "I",
+       "算术强度，每访问一字节显存能完成的浮点运算数"
+      ],
+      [
+       "\\pi_{\\mathrm{peak}}",
+       "GPU 峰值算力，单位 FLOP/s"
+      ],
+      [
+       "\\beta_{\\mathrm{BW}}",
+       "显存带宽，单位 Byte/s"
+      ],
+      [
+       "T_{\\min}",
+       "该内核的理论耗时下界"
+      ],
+      [
+       "FLOPs/Bytes",
+       "算子总运算量与总访存量"
+      ]
+     ],
+     "derivation": [
+      "第 1 步（动机）：先判断一个内核是算力受限还是带宽受限，才能决定该优化算力还是优化访存。",
+      "第 2 步（定义算术强度）：I = FLOPs / Bytes，衡量单位访存能换取多少计算。",
+      "第 3 步（两条时间下界）：按算力算 T_compute = FLOPs / pi_peak，按带宽算 T_mem = Bytes / beta_BW。",
+      "第 4 步（取下界）：实际耗时不可能低于二者较大者，即 T_min = max(T_compute, T_mem)；I 低于机器拐点时带宽受限，decode 的逐 token 生成正是这种情况。"
+     ],
+     "analogy": "像用桶在井里打水：算力是你往桶里倒水的手速，带宽是井口出水速度。井口太小时你手速再快也没用，瓶颈在水流——这就是带宽受限。",
+     "pitfalls": [
+      "decode 阶段 batch=1 时算术强度极低，几乎总是带宽受限，此时优化算力没用",
+      "FLOPs 按理论值算会高估 I，稀疏或掩码算子的有效算力更低",
+      "roofline 给的是下界，真实耗时还受 occupancy、访存合并、kernel launch 开销影响"
+     ],
+     "code": "def roofline(flops, bytes_moved, peak_flops, bw):\n    t_comp = flops / peak_flops\n    t_mem = bytes_moved / bw\n    t_min = max(t_comp, t_mem)\n    regime = \"compute-bound\" if t_comp > t_mem else \"memory-bound\"\n    return t_min, regime\n\n# 例：峰值 312 TFLOP/s fp16、带宽 2 TB/s\nprint(roofline(2e9, 4e9, 312e12, 2e12))\n",
+     "sources": [
+      {
+       "title": "pegainfer-project/pegainfer",
+       "url": "https://github.com/pegainfer-project/pegainfer"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "17807f6b228bf63a",
+   "formulas": [
+    {
+     "id": "f-dynamic-batching-throughput",
+     "name": "动态批处理的吞吐—延迟权衡（Dynamic Batching Trade-off）",
+     "category": "engineering",
+     "latex": "T(\\tau) = \\min\\left( \\lambda,\\; \\frac{B}{\\tau} \\right), \\quad L(\\tau) \\approx \\tau + t_{\\mathrm{svc}}\\left( \\min(B, \\lambda\\tau) \\right)",
+     "symbols": [
+      [
+       "\\lambda",
+       "请求到达率，单位 requests/s"
+      ],
+      [
+       "B",
+       "最大批大小，受显存限制"
+      ],
+      [
+       "\\tau",
+       "攒批时间窗，即单请求最大等待时间"
+      ],
+      [
+       "T(\\tau)",
+       "系统吞吐，单位 requests/s"
+      ],
+      [
+       "L(\\tau)",
+       "单请求平均延迟"
+      ],
+      [
+       "t_{\\mathrm{svc}}",
+       "一次前向的服务时间，随批大小增大而增大"
+      ]
+     ],
+     "derivation": [
+      "第 1 步（动机）：模型服务的核心矛盾是吞吐与延迟，而攒批时间窗 tau 是唯一可调的旋钮。",
+      "第 2 步（窗口内到量）：时间窗内到达的请求数约为 lambda·tau，实际能凑成的批大小 = min(B, lambda·tau)。",
+      "第 3 步（吞吐）：吞吐 = 批大小 / 窗口 = min(B, lambda·tau) / tau = min(lambda, B/tau)。",
+      "第 4 步（延迟）：单请求要等满窗口 tau 再被执行，加上前向服务时间，故 L 约等于 tau 加 t_svc；tau 越大吞吐越高但延迟也越高，需按 SLA 折中。"
+     ],
+     "analogy": "像食堂打饭：阿姨可以来一个人打一份（延迟低但效率差），也可以等一小会儿攒够一托盘再打（效率高但排队的人要等）。攒批窗口就是「等多久」。",
+     "pitfalls": [
+      "tau 不能无限增大，否则最坏情况延迟飙升，必须设 SLA 上界",
+      "批大小受显存约束，B 不是想设多大就多大，KV cache 会先爆",
+      "当 lambda·tau 小于 B 时吞吐被到达率限制，再增大 tau 也不会提高吞吐"
+     ],
+     "code": "def dynamic_batching(lam, B, tau, t_svc_per_req=0.002):\n    batch = min(B, lam * tau)          # 窗口内实际凑成的批\n    throughput = batch / tau           # requests/s\n    latency = tau + batch * t_svc_per_req\n    return throughput, latency\n\nprint(dynamic_batching(lam=200, B=32, tau=0.01))\n",
+     "sources": [
+      {
+       "title": "bentoml/BentoML",
+       "url": "https://github.com/bentoml/BentoML"
+      }
+     ]
+    },
+    {
+     "id": "f-pipeline-bottleneck-throughput",
+     "name": "多模型流水线的瓶颈吞吐（Bottleneck-Limited Pipeline Throughput）",
+     "category": "engineering",
+     "latex": "T_{\\mathrm{pipe}} = \\frac{1}{\\max_i t_i}, \\quad L_{\\mathrm{pipe}} \\approx \\sum_{i=1}^{M} t_i",
+     "symbols": [
+      [
+       "t_i",
+       "第 i 个阶段的单请求处理时间"
+      ],
+      [
+       "M",
+       "流水线阶段数"
+      ],
+      [
+       "T_{\\mathrm{pipe}}",
+       "流水线稳态吞吐，单位 requests/s"
+      ],
+      [
+       "L_{\\mathrm{pipe}}",
+       "端到端延迟，约为各阶段耗时之和"
+      ]
+     ],
+     "derivation": [
+      "第 1 步（动机）：多模型流水线把预处理、主体模型、后处理串起来，需要知道瓶颈在哪一环。",
+      "第 2 步（稳态节拍）：稳态下最慢阶段每 t_max 秒才能交付一个结果，故系统吞吐 = 1 / max_i t_i。",
+      "第 3 步（端到端延迟）：单条请求要依次穿过所有阶段，延迟约等于各阶段耗时之和 sum_i t_i。",
+      "第 4 步（推论）：吞吐只由瓶颈阶段决定，优化非瓶颈阶段几乎不提升吞吐；某阶段批处理能抬吞吐但会拉长其 t_i，需在两指标间权衡。"
+     ],
+     "analogy": "像工厂流水线：产能由最慢的工位决定，别的工位再快也只能干等；整条线的周期就是最慢工位的节拍，缓冲只是让等待不那么明显。",
+     "pitfalls": [
+      "吞吐看瓶颈阶段的 max t_i、延迟看阶段之和 sum t_i，两个概念别混用",
+      "给非瓶颈阶段提速几乎不涨吞吐，这是最常见的优化误区",
+      "阶段间若无缓冲，下游抖动会向上游传导成停顿，实测吞吐低于 1/max t_i"
+     ],
+     "code": "def pipeline_metrics(stage_times):\n    thr = 1.0 / max(stage_times)                 # 瓶颈决定吞吐\n    lat = sum(stage_times)                       # 延迟是各阶段之和\n    bottleneck = stage_times.index(max(stage_times))\n    return thr, lat, bottleneck\n\nprint(pipeline_metrics([0.005, 0.4, 0.02]))      # 瓶颈在阶段 1\n",
+     "sources": [
+      {
+       "title": "bentoml/BentoML",
+       "url": "https://github.com/bentoml/BentoML"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "b7b17a114ffa47c7",
+   "formulas": [
+    {
+     "id": "f-asr-attack-success-rate",
+     "name": "攻击成功率（Attack Success Rate, ASR）",
+     "category": "multimodal",
+     "latex": "\\mathrm{ASR} = \\frac{1}{N} \\sum_{i=1}^{N} \\mathbf{1}\\left[ \\mathcal{J}(y_i) = 1 \\right]",
+     "symbols": [
+      [
+       "N",
+       "对抗或越狱测试样本总数"
+      ],
+      [
+       "y_i",
+       "模型对第 i 个含攻击输入的回复"
+      ],
+      [
+       "\\mathcal{J}",
+       "越狱判定函数，回复有害或违反策略时取 1"
+      ],
+      [
+       "\\mathrm{ASR}",
+       "攻击成功率，越高表示模型越容易被攻破"
+      ]
+     ],
+     "derivation": [
+      "第 1 步（动机）：多模态安全评测需要一个可跨攻击方法、跨模型比较的主体指标。",
+      "第 2 步（跑样本）：把每个对抗样本（如加了扰动的图像加诱导文本）喂给 LVLM，得到回复 y_i。",
+      "第 3 步（判定）：用人工规则、有害关键词或安全分类器判断是否越狱，记为 0 或 1。",
+      "第 4 步（统计）：对 N 条样本取平均即得 ASR；防御方法的目标就是把 ASR 压下去，评测基准则用 ASR 横向排名。"
+     ],
+     "analogy": "像给门锁做压力测试：找 N 个人各试一把钥匙（有的是万能钥匙），数几个人真能推开。ASR 就是被推开的比例，比例越低说明锁越牢。",
+     "pitfalls": [
+      "ASR 高度依赖判定器口径，换一个判定器数值就不可比，必须报告判定方式",
+      "只看 ASR 会忽略过度拒答：把所有请求都拒了 ASR=0，但模型已不可用",
+      "N 太小或正负样本不均衡时 ASR 方差大，不能据单次小样本结果下结论"
+     ],
+     "code": "import numpy as np\n\ndef attack_success_rate(judgments):\n    j = np.asarray(judgments, dtype=float)   # 每条回复的 0/1 越狱判定\n    return float(j.mean())                   # 即 ASR\n\nprint(attack_success_rate([1, 0, 1, 0, 1, 0, 0, 0]))   # 0.375\n",
+     "sources": [
+      {
+       "title": "XuankunRong/Awesome-LVLM-Safety",
+       "url": "https://github.com/XuankunRong/Awesome-LVLM-Safety"
+      }
+     ]
+    },
+    {
+     "id": "f-safety-utility-tradeoff",
+     "name": "安全—有用性权衡打分（Safety–Utility Trade-off Score）",
+     "category": "multimodal",
+     "latex": "S_{\\mathrm{safe}} = \\alpha\\,(1 - \\mathrm{ASR}) + (1-\\alpha)\\,(1 - \\mathrm{ORR})",
+     "symbols": [
+      [
+       "\\mathrm{ASR}",
+       "攻击成功率，越低越安全"
+      ],
+      [
+       "\\mathrm{ORR}",
+       "过度拒答率，对良性请求误拒的比例，越低越有用"
+      ],
+      [
+       "\\alpha",
+       "安全权重，属于 0 到 1，表示更看重安全还是有用性"
+      ],
+      [
+       "S_{\\mathrm{safe}}",
+       "综合安全—有用性得分，越高越好"
+      ]
+     ],
+     "derivation": [
+      "第 1 步（动机）：单看 ASR 会把「一律拒答」误判为最优，必须同时看有用性代价。",
+      "第 2 步（安全项）：定义 1 减 ASR 为安全得分，越安全越高。",
+      "第 3 步（有用项）：定义 1 减 ORR 为有用性得分，ORR 是在良性请求上的误拒率。",
+      "第 4 步（加权）：用权重 alpha 线性组合得 S_safe；防御方案在 (ASR, ORR) 平面上的位置越靠左上越优，该打分把二维权衡压成一维便于排序。"
+     ],
+     "analogy": "像招保安：既要拦住坏人（低 ASR），又不能把所有来客都拦下（低 ORR）。alpha 就是你更看重「别放过坏人」还是「别误拦好人」的偏好旋钮。",
+     "pitfalls": [
+      "alpha 是价值判断，换一个 alpha 排名可能翻转，报告时必须写明取值",
+      "1 减 ASR 与 1 减 ORR 量纲口径不同，直接线性相加前要确认已在同一评测集上归一",
+      "跨威胁模型或跨数据集比较无意义，只有同基准同判定器下的分数才可比"
+     ],
+     "code": "def safety_utility_score(asr, orr, alpha=0.5):\n    safety = 1.0 - asr        # 越安全越高\n    utility = 1.0 - orr       # 误拒越少越有用\n    return alpha * safety + (1 - alpha) * utility\n\nprint(safety_utility_score(asr=0.1, orr=0.05, alpha=0.5))   # 0.925\n",
+     "sources": [
+      {
+       "title": "XuankunRong/Awesome-LVLM-Safety",
+       "url": "https://github.com/XuankunRong/Awesome-LVLM-Safety"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "skipped": []
+}

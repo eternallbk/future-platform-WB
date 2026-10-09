@@ -1,0 +1,97 @@
+{
+ "id": "209a6520800a5cf3",
+ "tldr": "TCP 靠慢开始、拥塞避免、快重传、快恢复四个算法动态调节 cwnd，围绕 ssthresh 实现 AIMD 式吞吐控制。",
+ "keyPoints": [
+  "四种经典算法：慢开始、拥塞避免、快重传、快恢复",
+  "拥塞窗口 cwnd 限制在途未确认数据，受慢开始阈值 ssthresh 约束",
+  "慢开始指数增长到 ssthresh，随后拥塞避免线性增长",
+  "丢包时 ssthresh 减半、进入快恢复，避免吞吐骤降",
+  "现代演进出 TCP CUBIC、BBR；拥塞控制区别于流量控制"
+ ],
+ "why": "网络八股必问；分布式训练与推理集群的通信都依赖拥塞控制，理解 cwnd 有助于排查吞吐与时延。",
+ "difficulty": "medium",
+ "tags": ["network", "tcp", "congestion-control", "interview", "aimd"],
+ "entities": ["TCP", "cwnd", "ssthresh", "快速重传", "快速恢复", "TCP CUBIC", "BBR"],
+ "diagram": {
+  "kind": "curve",
+  "title": "cwnd 随时间演化的锯齿",
+  "caption": "记住这条锯齿：慢开始陡升到 ssthresh，之后线性爬升，一丢包就砍半再重新爬。",
+  "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='拥塞窗口随时间变化曲线：慢开始指数上升，拥塞避免线性上升，丢包后砍半进入快恢复'><line x1='40' y1='200' x2='460' y2='200' stroke='var(--line-1)' stroke-width='1.4'/><line x1='40' y1='40' x2='40' y2='200' stroke='var(--line-1)' stroke-width='1.4'/><line x1='40' y1='90' x2='460' y2='90' stroke='var(--line-1)' stroke-width='1.2' stroke-dasharray='4 4'/><polyline points='48,196 70,180 92,160 114,136 136,108 152,92 200,84 248,78 290,72' fill='none' stroke='var(--accent)' stroke-width='2'/><line x1='290' y1='72' x2='290' y2='110' stroke='var(--accent)' stroke-width='2'/><polyline points='290,110 335,104 380,98 415,92' fill='none' stroke='var(--accent)' stroke-width='2'/><line x1='415' y1='92' x2='415' y2='126' stroke='var(--accent)' stroke-width='2'/><polyline points='415,126 440,122 460,118' fill='none' stroke='var(--accent)' stroke-width='2'/><circle cx='290' cy='72' r='3' fill='var(--accent)'/><circle cx='415' cy='92' r='3' fill='var(--accent)'/><text x='44' y='34' font-size='13' fill='currentColor'>cwnd</text><text x='434' y='218' font-size='13' fill='currentColor'>时间</text><text x='396' y='84' font-size='13' fill='currentColor'>ssthresh</text><text x='96' y='178' font-size='13' fill='currentColor'>慢开始</text><text x='206' y='66' font-size='13' fill='currentColor'>拥塞避免</text><text x='298' y='136' font-size='13' fill='currentColor'>快恢复</text></svg>",
+  "alt": "曲线：cwnd 在慢开始阶段陡峭上升至 ssthresh 虚线，之后线性上升，两次丢包处垂直下砍一半再继续线性上升。"
+ },
+ "concepts": [
+  {
+   "name": "AIMD（加性增乘性减）",
+   "readable": "发送方无丢包时每条 RTT 把拥塞窗口加一点（加性增），一旦丢包就把窗口砍一半（乘性减），在平衡点附近来回试探出网络容量。",
+   "analogy": "往杯里倒水：慢慢加流量试探，一旦溢出就立刻减半，再慢加；反复几次就能稳定在『刚好不溢出』的水位附近。",
+   "analogyBreaksDown": "倒水是单方试探，而 TCP 的减半是所有流同时发生，多个连接会同步振荡；且网络容量是共享且实时变化的，不像杯子容量固定，AIMD 只能收敛到近似公平而非精确最优。",
+   "mechanism": "用『加性增』换稳定、用『乘性减』加快从拥塞退出：慢开始指数增长快速逼近容量，拥塞避免线性增长避免过冲，丢包减半让所有流快速回到不拥塞区。",
+   "visual": "横轴时间、纵轴 cwnd，画锯齿：每次触到 ssthresh 后线性爬升，丢包处垂直下砍一半，周期重复。",
+   "prerequisites": ["TCP 可靠传输与确认机制", "RTT 与往返时延", "窗口与流水线发送"],
+   "selfTest": ["为什么用乘性减而不是线性减？", "慢开始为什么反而增长最快？", "AIMD 在多流共享链路上为什么趋向公平？"],
+   "formula": "cwnd_{t+1}=\\begin{cases} 2\\,cwnd_t & \\mathrm{SS} \\\\ cwnd_t+1 & \\mathrm{CA} \\\\ \\max\\!\\left(cwnd_t/2,\\,2\\right) & \\mathrm{loss} \\end{cases}"
+  },
+  {
+   "name": "Congestion Window vs Receive Window（拥塞窗口与接收窗口）",
+   "readable": "拥塞窗口 cwnd 是发送方对『网络能不能承受』的估计，接收窗口 rwnd 是接收方通告的『我还能收多少』；实际发送量取两者中的较小值。",
+   "analogy": "寄快递：rwnd 是收件人门口能堆多少件的上限，cwnd 是路上这条路能挤多少辆车的上限，真正能发多少由更紧的那个决定。",
+   "analogyBreaksDown": "门口容量由收件人直接告知（明确），而路上拥挤程度发送方看不见，只能靠丢包或时延间接推断，所以 cwnd 的调节必然滞后且有误差。",
+   "mechanism": "流量控制解决『接收方来不及收』（rwnd），拥塞控制解决『网络中间节点过载』（cwnd）；两者维度不同，发送窗口 = min(cwnd, rwnd)，区分它们是面试高频追问点。",
+   "visual": "画两条并列的量尺：左侧 cwnd 随丢包振荡，右侧 rwnd 由接收方缓冲区决定；发送窗口取两者较小值，用一条水平线标出。",
+   "prerequisites": ["滑动窗口机制", "接收缓冲区"],
+   "selfTest": ["拥塞控制和流量控制分别解决什么问题？", "发送窗口由谁决定？", "为什么 cwnd 只能间接推断？"],
+   "formula": ""
+  }
+ ],
+ "formulas": [
+  {
+   "id": "f-tcp-aimd-cwnd",
+   "name": "拥塞窗口的 AIMD 更新（Additive Increase Multiplicative Decrease）",
+   "category": "engineering",
+   "latex": "cwnd_{t+1}=\\begin{cases} 2\\,cwnd_t & \\mathrm{SS} \\\\ cwnd_t+1 & \\mathrm{CA} \\\\ \\max\\!\\left(cwnd_t/2,\\,2\\right) & \\mathrm{loss} \\end{cases}",
+   "symbols": [["cwnd_t", "当前拥塞窗口，单位 MSS"], ["\\mathrm{SS}", "慢开始阶段（Slow Start），收到 ACK 即翻倍"], ["\\mathrm{CA}", "拥塞避免阶段（Congestion Avoidance），每 RTT 加 1"], ["\\mathrm{loss}", "检测到丢包时的下调规则"]],
+   "derivation": ["第 1 步：发送方无法直接观测网络容量，只能用丢包当拥塞信号。", "第 2 步：慢开始阶段每收到一个 ACK 就把 cwnd 翻倍，呈指数增长，快速逼近容量。", "第 3 步：到达 ssthresh 后转入拥塞避免，每个 RTT 只加 1 MSS，缓慢试探。", "第 4 步：一旦丢包，cwnd 与 ssthresh 减半，形成周期性的锯齿。"],
+   "analogy": "往杯里倒水：先猛倒（慢开始）感觉快满就改小流量（拥塞避免），一旦溢出（丢包）就立刻关小一半，再慢慢加回去。",
+   "pitfalls": ["把『慢开始』理解为增长慢；它其实是指数增长，比拥塞避免快得多", "混淆 ssthresh（阈值）与 cwnd（当前窗口）", "把拥塞控制与流量控制混为一谈，后者管的是接收方缓冲区"],
+   "code": "cwnd, ssthresh = 1, 16\nfor step in range(20):\n    if cwnd < ssthresh:\n        cwnd *= 2          # 慢开始：指数增长\n    else:\n        cwnd += 1          # 拥塞避免：线性增长\n    if cwnd > 40:          # 模拟一次丢包\n        ssthresh = max(cwnd // 2, 2)\n        cwnd = ssthresh\n    print(step, cwnd, ssthresh)",
+   "sources": [{"title": "能说说拥塞控制是怎样实现的吗？", "url": "https://notes.kamacoder.com/base/congestion-control.html"}]
+  },
+  {
+   "id": "f-tcp-fast-recovery-ssthresh",
+   "name": "快重传与快恢复的窗口更新（Fast Retransmit / Fast Recovery）",
+   "category": "engineering",
+   "latex": "ssthresh=\\max\\!\\left(\\frac{cwnd}{2},\\,2\\right),\\quad cwnd=ssthresh+3",
+   "symbols": [["ssthresh", "慢开始阈值，超过它就从指数增长切换到线性增长"], ["cwnd", "拥塞窗口"], ["3", "收到 3 个重复 ACK 触发快重传后额外补偿的 3 个 MSS"]],
+   "derivation": ["第 1 步：收到 3 个重复 ACK，说明单个报文丢失但网络尚未完全拥塞。", "第 2 步：快重传立即重发丢失报文，不必等超时定时器到期。", "第 3 步：把 ssthresh 减半，cwnd 设为 ssthresh + 3（补偿已离开网络的 3 个报文）。", "第 4 步：随后进入拥塞避免，缓慢线性增长，避免吞吐骤降。"],
+   "analogy": "队伍里有人掉队，不必让全队停下等超时，派人回头接一下（快重传）再继续前进，队伍整体不掉速。",
+   "pitfalls": ["把快恢复与超时重传后的处理混淆：超时通常直接回到慢开始（cwnd=1）", "以为快重传要重传整个窗口，实际只重传丢失的那个报文", "忽略触发条件是『3 个重复 ACK』，少于 3 个不触发"],
+   "code": "def fast_recovery(cwnd):\n    ssthresh = max(cwnd // 2, 2)\n    cwnd = ssthresh + 3   # 3 个重复 ACK 的补偿\n    return cwnd, ssthresh\nprint(fast_recovery(32))  # (19, 16)",
+   "sources": [{"title": "能说说拥塞控制是怎样实现的吗？", "url": "https://notes.kamacoder.com/base/congestion-control.html"}]
+  }
+ ],
+ "selfCheck": {
+  "claims": ["TCP 拥塞控制靠慢开始、拥塞避免、快重传、快恢复四种经典算法动态调整发送速率", "拥塞窗口 cwnd 与慢开始阈值 ssthresh 是核心机制", "需要对比拥塞控制与流量控制的区别", "文中提及现代算法如 TCP CUBIC 和 BBR 的演进", "目标是防止网络过载，应对面试中关于网络性能优化的深入提问"],
+  "uncertain": ["AIMD 分段形式与快恢复的 cwnd=ssthresh+3 为按摘要四算法重建的通用形式，原文具体表述待核实", "摘要未给出慢开始初始 cwnd 与 ssthresh 的具体取值，本文示例数字为演示用（自行构造）", "TCP CUBIC 与 BBR 的具体机制摘要未展开，本文只提其存在"]
+ },
+ "teaching": {
+  "progressive": [
+   {"level": "一句话", "text": "TCP 靠不停试探，拥塞就减速、通畅就加速，避免把网络挤爆。"},
+   {"level": "入门", "text": "TCP 用一个叫拥塞窗口 cwnd 的值限制同时在路上的数据量。开始用慢开始快速上探，到 ssthresh 后改用拥塞避免慢慢加；一旦丢包就认为网络拥塞，把窗口砍半再从快恢复继续。"},
+   {"level": "进阶", "text": "四算法分工明确：慢开始让 cwnd 指数增长，快速逼近网络容量；拥塞避免线性增长防止过冲；快重传在收到 3 个重复 ACK 时立刻重发丢失报文，不等超时；快恢复把 ssthresh 减半、cwnd 设为 ssthresh+3 后进入线性增长，避免吞吐骤降。整体形成围绕 ssthresh 的锯齿。"},
+   {"level": "专家", "text": "这套机制本质是 AIMD：加性增换取稳定、乘性减加快退出拥塞，多流共享链路上趋向公平。局限是它把丢包等同于拥塞，在高带宽长时延或无线链路上会误判；于是有了 BBR（按带宽时延积建模、不依赖丢包）和 CUBIC（用三次函数替代线性增长，适配高速网络）。答面试时要把『丢包即拥塞』这个前提与它的失效场景一起说清。"}
+  ],
+  "socratic": [
+   {"q": "如果发送方不做任何窗口控制会怎样？", "a": "发送速率超过链路与中间节点容量，队列溢出导致大量丢包、重传，吞吐反而崩塌（拥塞崩溃）。"},
+   {"q": "为什么慢开始阶段增长那么猛，还要叫『慢』？", "a": "『慢』是相对它起步的初始值小、从 1 个 MSS 开始；但每 ACK 翻倍，实际上是指数增长，比拥塞避免快。"},
+   {"q": "为什么快重传不必等超时定时器？", "a": "3 个重复 ACK 已足以说明该报文丢失但后续报文还能到达，立即重发能省下一整个超时周期（可能几百毫秒）。"}
+  ],
+  "mechanism": "之所以必须设计这套机制，是因为发送方看不见网络内部状态，只能通过丢包（或时延）间接推断拥塞。指数增长的慢开始用于快速找到大致容量，线性增长的拥塞避免用于在容量附近精细试探、避免过冲，减半规则让所有流在拥塞时快速收缩。三者配合把发送速率稳定在平衡点附近：既用满带宽，又不让中间队列长期溢出。",
+  "boundary": "前提是『丢包即拥塞、链路对称、有足够缓冲』。在无线链路上随机误码会被误判为拥塞而无谓降速；高带宽长时延链路上 AIMD 收敛太慢，于是需要 CUBIC/BBR。这些机制只管发送速率，不解决接收方缓冲区不足（那是流量控制）；也不适用于 UDP 等无连接协议，除非上层自建。",
+  "analogyBoundary": "『倒水试探』的类比失效在于：杯子容量固定、只有一个人在倒，而网络容量共享且实时变化，多条 TCP 流会同步减半再同步爬升，产生全局振荡；且倒水能立刻看到溢出，TCP 只能事后从丢包推断。",
+  "misconceptions": ["把慢开始误认为增长慢；它其实是指数增长。", "把拥塞控制与流量控制混为一谈；后者管接收方窗口 rwnd。", "以为丢包一定等于拥塞；无线误码也会丢包，导致无谓降速。"],
+  "ownAnalysis": "四算法里，快重传与快恢复是『优化』而非必需——只靠慢开始加拥塞避免加超时重传也能工作，快重传的价值是把『等超时』换成『等 3 个重复 ACK』，省下大量时延（推断）。摘要提到 TCP CUBIC 与 BBR 的演进，说明面试官可能追问『为什么经典算法在高 BDP 链路上不够用』，建议把带宽时延积（BDP）作为答这道题的延伸钩子（推断）。整体上这是背多不如讲通『丢包即拥塞』前提的一道题。",
+  "officialNotes": [{"position": "TCP 拥塞控制靠慢开始、拥塞避免、快重传、快恢复四种经典算法动态调整发送速率防止网络过载，核心是拥塞窗口 cwnd 与慢开始阈值 ssthresh，并与流量控制相区别，现代演进出 TCP CUBIC 与 BBR", "source": "https://notes.kamacoder.com/base/congestion-control.html"}],
+  "interviewAnswer": "TCP 拥塞控制分四个阶段。开始是慢开始，cwnd 从 1 个 MSS 起，每收到 ACK 就翻倍，指数增长直到慢开始阈值 ssthresh；之后进入拥塞避免，每个 RTT 只加 1，线性上探。如果收到 3 个重复 ACK，就触发快重传立即重发丢失报文，并把 ssthresh 减半、cwnd 设为 ssthresh 加 3，进入快恢复继续线性增长。整体形成围绕 ssthresh 的锯齿。它和流量控制不同，后者管的是接收方窗口。现代还有 CUBIC 和 BBR 解决高带宽长时延下的不足。",
+  "studyPath": {"prerequisites": ["TCP 可靠传输与确认机制", "滑动窗口与 RTT", "丢包与重传"], "nextSteps": ["画一遍 cwnd 随时间演化的锯齿图并标注四个阶段", "对比拥塞控制与流量控制的区别", "了解 CUBIC 与 BBR 的设计动机"]}
+ }
+}

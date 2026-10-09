@@ -1,0 +1,126 @@
+{
+  "id": "a526f15fe6c04b42",
+  "tldr": "RoboJEPA 在 12 种机器人本体数据上训练 JEPA 隐空间世界模型，发现想象误差随算力呈二阶幂律，可外推预测规划性能。",
+  "keyPoints": [
+    "基于 JEPA 的隐空间世界模型，训练数据覆盖 12 种机器人本体",
+    "想象误差（隐 rollout 误差）随算力呈二阶幂律，可外推预测模型质量",
+    "下游机器人规划性能随算力可预测提升，且与想象误差强相关",
+    "可零样本部署为机器人智能体，朝单张目标图做长时程规划",
+    "发布全部检查点与训练/部署代码，8B 为迄今最大 JEPA 预测器"
+  ],
+  "why": "把「算力→世界模型质量→规划性能」变成可预算的工程规律，是 world model 与具身方向面试的高价值谈资。",
+  "difficulty": "hard",
+  "tags": ["worldmodel", "jepa", "scaling-law", "robotics", "latent-dynamics"],
+  "entities": ["RoboJEPA", "Joint Embedding Predictive Architecture", "JEPA"],
+  "diagram": {
+    "kind": "flow",
+    "title": "RoboJEPA 训练与部署链路",
+    "caption": "同一隐空间里预测未来表征，想象误差可预测规划性能。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='RoboJEPA 四层流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>多本体数据</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>12 种机器人本体</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>JEPA 隐空间世界模型</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>8B 预测器</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>想象误差</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>隐 rollout 误差，二阶幂律</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>规划性能与部署</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>朝单张目标图零样本规划</text>\n</svg>",
+    "spec": {
+      "type": "flow",
+      "nodes": [
+        {"label": "多本体数据", "detail": "12 种本体、真实机器人数据"},
+        {"label": "JEPA 预测器", "detail": "隐空间预测未来表征，8B"},
+        {"label": "想象误差", "detail": "隐 rollout 误差，随算力二阶幂律"},
+        {"label": "规划/部署", "detail": "目标图条件的长时程规划"}
+      ],
+      "edges": [
+        {"from": 0, "to": 1, "label": "大规模预训练"},
+        {"from": 1, "to": 2, "label": "隐空间 rollout"},
+        {"from": 2, "to": 3, "label": "作为代理指标"}
+      ]
+    },
+    "alt": "RoboJEPA 从多本体数据训练隐空间世界模型，用想象误差预测下游规划性能并零样本部署。"
+  },
+  "concepts": [
+    {
+      "name": "Latent World Model (JEPA)",
+      "readable": "不重建每个像素，而是在编码器给出的表征空间里预测下一时刻的表征；预测对了表征就抓住了对未来有用的状态信息。",
+      "analogy": "像下棋不复现棋盘照片，只记「局面特征向量」——够用就能推演下一步。",
+      "analogyBreaksDown": "棋局特征是人手设计且完全可观测；机器人表征是学出来的，有遮挡与硬件噪声时，表征空间里的「等价」可能掩盖对控制关键的细节。",
+      "mechanism": "预测损失只作用于隐表征、不监督像素重建，迫使模型丢弃与动作无关的外观细节，把容量集中到可预测的动力学上，从而在多本体间共享一个动力学先验。",
+      "visual": "横轴为时间步，纵轴为隐状态空间；实线是真实轨迹折线，虚线是模型 rollout，两条线随时间分叉，分叉幅度即想象误差。",
+      "prerequisites": ["自监督学习（对比/预测式目标）", "表征学习与 EMA/stop-gradient 技巧", "强化学习中的模型预测控制"],
+      "selfTest": [
+        "JEPA 与像素重建式世界模型的核心差别是什么？",
+        "为什么在多本体数据上共享隐空间比共享动作空间更可行？",
+        "想象误差为什么可以替代真机评测？"
+      ],
+      "formula": "\\mathcal{L}_{\\mathrm{JEPA}} = \\lVert f_{\\theta}(z_t, a_t) - \\mathrm{sg}(z_{t+1}) \\rVert_2^2"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-imagination-error-scaling",
+      "name": "想象误差算力幂律（Imagination Error Compute Power Law）",
+      "category": "worldmodel",
+      "latex": "E(C) = A\\,C^{-\\alpha} + E_{\\infty}",
+      "symbols": [
+        ["C", "训练算力（FLOPs）"],
+        ["E(C)", "该算力下的想象误差（隐 rollout 误差）"],
+        ["A", "比例系数"],
+        ["\\alpha", "幂律指数（拟合得到的下降斜率）"],
+        ["E_{\\infty}", "不可约误差下界"]
+      ],
+      "derivation": [
+        "动机：想用有限算力实验预测更大规模世界模型的质量，避免每次都训到最大。",
+        "假设误差随算力按幂律衰减，并存在一个不随规模下降的下界 E_inf。",
+        "两边减去下界后取对数：log(E - E_inf) 对 log C 近似直线，斜率即 -alpha。",
+        "原文称其为二阶（second-order）幂律；若单幂律在低算力区偏离，需再加一项修正。"
+      ],
+      "analogy": "像用几十公里的油耗外推整车续航：先量几段斜率，再预测长途表现，但前提是路况没变、发动机没换。",
+      "pitfalls": [
+        "幂律只在拟合区间内可信，外推越远越不可靠",
+        "算力必须统一定义（训练 FLOPs vs 参数量×步数），否则曲线不可比",
+        "不同论文的「想象误差」指标不同，不能直接横向比数值"
+      ],
+      "code": "import numpy as np\nC = np.array([1e18,3e18,1e19,3e19,1e20])\nE = 0.9*np.power(C,-0.35)+0.05\nb, logA = np.polyfit(np.log(C), np.log(E-0.05), 1)  # slope = -alpha\nalpha, A = -b, np.exp(logA)\nC_next = 1e21; print(A*np.power(C_next,-alpha)+0.05)",
+      "sources": [{"title": "RoboJEPA: Scaling Robotic Latent World Models", "url": "https://arxiv.org/abs/2610.10515v1"}]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "RoboJEPA 基于 JEPA 架构，训练数据覆盖 12 种机器人本体",
+      "想象误差随算力呈二阶幂律，可用于外推预测模型质量",
+      "下游规划性能随算力可预测提升，且与想象误差强相关",
+      "可零样本部署为机器人智能体，朝单张目标图做长时程规划",
+      "8B 参数，作者称是迄今最大的 JEPA 预测器"
+    ],
+    "uncertain": [
+      "公式为按摘要中 second-order power law 重建的通用形式，需核对原文系数、指数与是否含二阶项",
+      "摘要未给出具体算力区间、误差数值与相关性系数，待核实",
+      "幂律中的 compute 是否指训练 FLOPs，摘要未明说，待核实"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "把机器人世界模型做大，误差会按可预测的规律下降。"},
+      {"level": "入门", "text": "世界模型学会在隐空间里想象未来；RoboJEPA 用 12 种机器人的真实数据训练，发现想象误差随算力按幂律下降，而且这个误差能预测真机规划表现好不好。"},
+      {"level": "进阶", "text": "关键设计是 JEPA：只在隐表征上做预测，不重建像素，从而跨本体共享动力学；再用「想象误差 vs 算力」的幂律外推模型质量，把昂贵真机评测替换成离线代理指标，并证明模型可零样本朝目标图规划。"},
+      {"level": "专家", "text": "相比像素重建世界模型与行为克隆，它把「表征可预测性」当成规模化抓手：容量花在动力学而非外观上。边界是幂律只在拟合区间外推可信、跨本体共享隐空间可能抹掉控制关键细节，且想象误差与真机性能是相关而非因果。"}
+    ],
+    "socratic": [
+      {"q": "为什么要预测隐表征而不是重建像素？", "a": "像素里大量信息与动作无关，重建会浪费容量；预测表征迫使模型聚焦动力学，也更易跨本体共享。"},
+      {"q": "为什么不直接训练最大模型？", "a": "训练与真机评测都昂贵；幂律让你用中等规模实验外推大模型质量，提前判断投入是否值得。"},
+      {"q": "想象误差凭什么当代理指标？", "a": "摘要说它与下游规划性能强相关，故可离线替代真机评测，但这是经验相关而非因果。"}
+    ],
+    "mechanism": "真机数据贵、评测更贵：只有把预测放进隐空间，12 种本体的异构观测才能共享同一动力学先验，把数据规模转化为模型规模；只有找到与真机性能强相关的离线误差，规模化收益才可被测量而不必反复上真机。",
+    "boundary": "幂律仅在拟合算力区间内可靠，外推过远会失真；观测差异极大时跨本体共享隐空间可能失效；域偏移或评测协议变化后，想象误差与真机性能的代理关系可能不再成立。",
+    "analogyBoundary": "「用油耗外推续航」失效在于：车况是固定物理规律，而世界模型误差还随数据分布、本体差异与评测指标变化，斜率本身会漂移。",
+    "misconceptions": [
+      "把 JEPA 说成「VAE 式重建损失」——它不重建输入，只在隐空间预测",
+      "认为想象误差低就一定真机成功率高；摘要只说强相关",
+      "把 scaling law 当保证，忽略它只在拟合区间外推有效"
+    ],
+    "ownAnalysis": "把隐空间预测与 scaling law 结合，本质是把「表征质量」变成可测量的规模函数（推断）。幂律拟合对指标定义与算力口径高度敏感，若各本体数据量不均，混合曲线斜率可能被数据最多的本体主导（推断），部署前应按本体分组验证。",
+    "officialNotes": [
+      {"position": "作者称这是首个为多本体机器人世界模型建立 scaling law 的工作，且 RoboJEPA（8B）是迄今最大的 JEPA 预测器", "source": "arxiv https://arxiv.org/abs/2610.10515v1"}
+    ],
+    "interviewAnswer": "RoboJEPA 是 JEPA 架构的机器人隐空间世界模型，用 12 种本体数据训练。最值得学的两点：一是预测放在隐空间，不重建像素，省容量且方便跨本体共享动力学；二是想象误差随算力呈二阶幂律，并与下游规划性能强相关，因此能外推大模型质量、用离线误差替代真机评测。8B 是迄今最大的 JEPA 预测器，还能零样本朝目标图做长时程规划。",
+    "studyPath": {
+      "prerequisites": ["JEPA / 自监督表征学习", "模型预测控制基础", "scaling law 拟合与对数坐标阅读"],
+      "nextSteps": ["读原文的幂律拟合细节与算力口径", "复现隐空间 rollout 误差曲线", "对比 DreamerV3、V-JEPA 等世界模型"]
+    }
+  }
+}

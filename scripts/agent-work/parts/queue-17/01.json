@@ -1,0 +1,84 @@
+{
+ "id": "8d63fbcdd499a7d4",
+ "tldr": "硬链接与原文件共享同一 inode、不跨文件系统；软链接是独立文件存路径，原文件删了就悬空。",
+ "keyPoints": [
+  "硬链接共享 inode，删除原文件不影响链接访问",
+  "软链接是独立文件，存储目标路径，可跨文件系统",
+  "软链接可链接目录，原文件删除则失效成悬空链接",
+  "硬链接不能跨文件系统，受 inode 与链接计数限制",
+  "用链接计数（inode 计数）查看文件被引用次数"
+ ],
+ "why": "inode 与引用计数是操作系统八股常客，算法岗同样会问；理解软链还是管训练数据、checkpoint 版本切换的基础。",
+ "difficulty": "medium",
+ "tags": ["os", "filesystem", "inode", "linux", "interview"],
+ "entities": ["inode", "硬链接", "软链接", "Linux", "文件系统", "inode 计数"],
+ "diagram": {
+  "kind": "architecture",
+  "title": "目录项与 inode 的指向关系",
+  "caption": "两条硬链接指向同一个 inode（计数 2），软链接有独立 inode、里面存的是目标路径。",
+  "svg": "<svg viewBox='0 0 480 230' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='目录项指向 inode：两条硬链接共享同一 inode，软链接有独立 inode 存路径'><text x='16' y='20' font-size='13' text-anchor='start' fill='currentColor'>目录项（文件名 → inode 号）</text><rect x='16' y='28' width='150' height='30' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='26' y='48' font-size='13' text-anchor='start' fill='currentColor'>a.txt → 100</text><rect x='16' y='64' width='150' height='30' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='26' y='84' font-size='13' text-anchor='start' fill='currentColor'>a_hard.txt → 100</text><rect x='16' y='100' width='150' height='30' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='26' y='120' font-size='13' text-anchor='start' fill='currentColor'>a_soft.txt → 205</text><rect x='216' y='26' width='150' height='46' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='228' y='46' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>inode 100</text><text x='228' y='64' font-size='13' text-anchor='start' fill='currentColor'>链接计数 = 2</text><rect x='216' y='98' width='150' height='46' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.5'/><text x='228' y='118' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>inode 205</text><text x='228' y='136' font-size='13' text-anchor='start' fill='currentColor'>符号链接，存路径</text><rect x='382' y='26' width='82' height='46' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='423' y='54' font-size='13' text-anchor='middle' fill='currentColor'>数据块</text><line x1='166' y1='43' x2='212' y2='43' stroke='var(--line-1)' stroke-width='1.4'/><polygon points='216,43 208,39 208,47' fill='var(--line-1)'/><line x1='166' y1='79' x2='198' y2='62' stroke='var(--line-1)' stroke-width='1.4'/><polygon points='216,57 207,55 210,63' fill='var(--line-1)'/><line x1='166' y1='115' x2='212' y2='118' stroke='var(--line-1)' stroke-width='1.4'/><polygon points='216,119 208,114 208,123' fill='var(--line-1)'/><line x1='366' y1='49' x2='378' y2='49' stroke='var(--line-1)' stroke-width='1.4'/><polygon points='382,49 374,45 374,53' fill='var(--line-1)'/><text x='16' y='174' font-size='13' text-anchor='start' fill='currentColor'>硬链接：多个名字共用同一 inode，删任一名字计数减一。</text><text x='16' y='196' font-size='13' text-anchor='start' fill='currentColor'>软链接：独立 inode 存路径，目标删掉就成悬空链接。</text></svg>",
+  "alt": "目录项指向 inode 的结构图：a.txt 与 a_hard.txt 两条硬链接指向同一 inode（计数 2），a_soft.txt 指向另一个存放路径的符号链接 inode。"
+ },
+ "concepts": [
+  {
+   "name": "Inode 与硬链接引用计数（Inode & Hard Link）",
+   "readable": "inode 是文件系统里记录元数据与数据块位置的结构，文件名只是指向它的目录项。硬链接就是再加一个目录项指向同一 inode，链接计数加一，删掉一个名字数据仍在。",
+   "analogy": "像一栋房子（inode）挂了两个门牌号（文件名）；拆掉一个门牌，房子还在，从另一个门牌照样进屋。",
+   "analogyBreaksDown": "门牌与房子是一一对应的空间关系，但硬链接受文件系统边界约束：同一 inode 不能出现在两个文件系统里，跨盘就挂不了第二个门牌；而软链接是另一块指路牌，能跨盘却会指向不存在的地址。",
+   "mechanism": "目录项保存『文件名→inode 号』，inode 保存元数据、数据块指针与链接计数。硬链接只新增目录项并把计数加一，不复制数据；计数归零才真正释放 inode 与数据块，这就是删除原文件不影响硬链接的原因。",
+   "visual": "画三列：左列目录项（文件名），中列 inode 表（含链接计数），右列数据块；两条硬链接汇入同一 inode，软链接汇入一个只存路径的独立 inode。",
+   "prerequisites": ["文件系统基本概念", "目录与路径", "Linux 常用命令"],
+   "selfTest": ["硬链接与软链接的 inode 是否相同？", "为什么硬链接不能跨文件系统？", "删除原文件后软链接与硬链接分别怎样？"],
+   "formula": "n_{\\mathrm{link}}(i) = \\left| \\{\\, d \\in D : \\mathrm{target}(d) = i \\,\\} \\right|"
+  },
+  {
+   "name": "符号链接与悬空链接（Symbolic Link & Dangling Link）",
+   "readable": "软链接是一个独立文件，内容只是目标路径字符串；访问时内核按路径再解析一次。目标被删后，软链接就变成指向不存在路径的悬空链接。",
+   "analogy": "像门上的便签写着『钥匙在隔壁抽屉』；便签一直在，但隔壁抽屉搬空后，照着便签就找不到东西。",
+   "analogyBreaksDown": "便签不会因为目标消失而报错，而软链接在被 open/stat 时会因目标不存在返回错误；便签是死文字，软链接却可以是相对路径，会随当前工作目录变化而指向不同位置。",
+   "mechanism": "软链接用独立 inode 与数据块存路径串，因此能跨文件系统、能指向目录，创建时也不增加被链接对象的计数；代价是多一次路径解析，并带来悬空风险。",
+   "visual": "画两条到达数据块的路径：硬链接直达数据块；软链接先到自己的 inode（内容是路径），再用虚线画出『第二跳』解析到目标 inode，虚线表示这一跳可能断裂。",
+   "prerequisites": ["inode 概念", "路径解析", "ln -s 命令"],
+   "selfTest": ["软链接为什么能跨文件系统？", "ln -s 创建的链接 inode 与原文件是否相同？", "什么是悬空链接，怎么检查？"],
+   "formula": ""
+  }
+ ],
+ "formulas": [
+  {
+   "id": "f-hardlink-inode-count",
+   "name": "硬链接计数（Hard Link Count）",
+   "category": "engineering",
+   "latex": "n_{\\mathrm{link}}(i) = \\left| \\{\\, d \\in D : \\mathrm{target}(d) = i \\,\\} \\right|",
+   "symbols": [["i", "某个 inode"], ["D", "该文件系统中所有目录项的集合"], ["d", "一个目录项（即一个文件名）"], ["\\mathrm{target}(d)", "目录项 d 指向的 inode 号"], ["n_{\\mathrm{link}}(i)", "inode i 的链接计数，即指向它的目录项个数"]],
+   "derivation": ["第 1 步：目录项只记录文件名到 inode 号的映射，真正的数据由 inode 承载。", "第 2 步：建立硬链接＝新增一个目录项，使它指向已存在的同一 inode。", "第 3 步：inode 的链接计数等于指向它的目录项个数，所以新增硬链接即计数加一，删除文件名即计数减一。", "第 4 步：只有当计数归零时，文件系统才释放 inode 与数据块，这解释了『删原文件不断硬链接』。"],
+   "analogy": "像教室点名：老师手里（inode）有一份名单，谁的名字被写到几个花名册上（目录项），点名人数就加几；只要还有花名册写着他，人就还在。",
+   "pitfalls": ["把链接计数与文件引用计数（打开的文件描述符数）混为一谈，两者独立", "以为删除原文件名会释放空间；只要还有硬链接指向该 inode，数据不释放", "忽略 inode 号只在单个文件系统内唯一，误以为硬链接能跨盘"],
+   "code": "import os\nos.link(\"a.txt\", \"a_hard.txt\")     # 硬链接：新增目录项，共享 inode\nos.symlink(\"a.txt\", \"a_soft.txt\")  # 软链接：新建 inode，存路径\nprint(os.stat(\"a.txt\").st_nlink)                          # 2\nprint(os.stat(\"a.txt\").st_ino == os.stat(\"a_hard.txt\").st_ino)  # True\nprint(os.stat(\"a_soft.txt\").st_ino == os.stat(\"a.txt\").st_ino)  # False",
+   "sources": [{"title": "软连接和硬链接的区别 · 八股", "url": "https://notes.kamacoder.com/base/hard-link-vs-soft-link.html"}]
+  }
+ ],
+ "selfCheck": {
+  "claims": ["硬链接共享 inode，删除原文件不影响链接访问", "软链接是独立文件，存储的是路径，可跨文件系统", "软链接可以链接目录，原文件删除后失效", "硬链接不能跨文件系统，受 inode 与文件系统限制", "可通过链接计数（inode 引用计数）查看文件被引用次数"],
+  "uncertain": ["具体文件系统的硬链接计数上限、inode 总数等数值，摘要未给出，待核实", "『各文件系统是否允许目录硬链接』的具体差异（如 ext4 对目录硬链接的限制）摘要未展开，待核实", "自测示例中的 inode 号为示意，非原文数据"]
+ },
+ "teaching": {
+  "progressive": [
+   {"level": "一句话", "text": "文件有两个名字：一个和房子绑死，一个只是张写着地址的便签。"},
+   {"level": "入门", "text": "硬链接就是给同一个文件再起一个名字，两个名字指向同一份数据，删掉其中一个，另一个照样能读。软链接是一个独立的小文件，内容只是目标路径，像快捷方式，原文件被删后它就指了个空地址。"},
+   {"level": "进阶", "text": "文件系统里文件名只是目录项，真正记录元数据与数据块位置的是 inode。硬链接新增一个目录项指向同一 inode，链接计数加一，计数归零才真正删数据，所以删原文件不影响硬链接；但同一 inode 不能出现在两个文件系统，故硬链接不能跨盘。软链接有独立 inode，用数据块存目标路径，因此能跨文件系统、也能指向目录，代价是目标删除后变成悬空链接。"},
+   {"level": "专家", "text": "从 inode 层看，两者差别是『共享 inode』与『新建 inode』：硬链接只是引用计数加一，几乎零额外开销，但受文件系统边界与目录限制；软链接多一层路径解析，换来跨文件系统、可指目录、可指向不存在的路径。工程上这点很实用：软链常做版本切换（如 current 指向某次 release）与训练数据/checkpoint 引用，硬链接用于同一文件系统内的去重与快照式备份。要记住悬空链接在任何 open/stat 时会失败。"}
+  ],
+  "socratic": [
+   {"q": "如果不用 inode 计数，而是让每个文件名直接保存数据块位置，会怎样？", "a": "每个名字都要复制一份元数据，改属性要同步所有名字，且无法判断数据何时该释放；计数让『还有几个名字指向我』变成一次判定。"},
+   {"q": "既然软链接更灵活，为什么还需要硬链接？", "a": "软链接要多一次路径解析、有悬空风险且部分场景被拒绝；硬链接零额外开销、改名原子，同一文件系统内的去重与备份更合适。"}
+  ],
+  "mechanism": "目录项只存『文件名→inode 号』，inode 存元数据、数据块指针与链接计数。硬链接的做法是新增目录项并把计数加一，不复制数据，所以省空间且删名不断数据；但 inode 号只在单个文件系统内唯一，跨盘无法解析，故不能跨文件系统。软链接则新建一个 inode，把目标路径写进它的数据块，访问时内核按路径二次解析，于是可跨盘、可指目录，也埋下悬空隐患。",
+  "boundary": "硬链接不能跨文件系统，多数文件系统不允许对目录建硬链接，也受 inode 链接计数上限约束；软链接虽然通用，但目标被删后即悬空，且相对路径会随工作目录变化指向不同目标，脚本里最好用绝对路径。部分服务与归档工具会跳过软链接、只拷贝链接本身。",
+  "analogyBoundary": "『门牌 vs 便签』在空间关系上很直观，但便签是死文字、不会报错，而软链接被访问时会因目标缺失返回 ENOENT；相对路径的软链接还会随当前目录改变指向，这一点门牌类比完全体现不出来。",
+  "misconceptions": ["以为硬链接是复制文件、占双份空间；其实共享 inode，几乎不占额外数据空间。", "以为删掉原文件软链接还能用；目标被删后软链接即悬空失效。", "以为硬链接能跨文件系统；inode 号不跨文件系统，跨盘必须用软链接。"],
+  "ownAnalysis": "（推断）软硬链接之争本质是『共享对象』与『间接引用』两种引用语义：硬链接是别名（同一对象多个名字），软链接是指针（指向名字而非对象），这与编程里的引用/指针、版本管理里的 tag/分支有相似的张力。需要核实：摘要未给出各文件系统的硬链接计数上限与 inode 耗尽的实际表现，目录硬链接被封禁的具体实现细节也应回原文核对。",
+  "officialNotes": [{"position": "硬链接共享 inode，删除原文件不影响链接访问；软链接是独立文件存储路径，可跨文件系统、可链接目录，原文件删除则失效；文章还解答了硬链接为何不能跨文件系统以及如何查看链接数", "source": "https://notes.kamacoder.com/base/hard-link-vs-soft-link.html"}],
+  "interviewAnswer": "硬链接和软链接的区别我一般从 inode 讲起。文件名只是目录项，真正记录数据和元数据的是 inode。硬链接是再建一个目录项指向同一个 inode，链接计数加一，删掉一个名字数据还在，计数归零才释放；因为 inode 号只在单个文件系统内唯一，所以硬链接不能跨文件系统，通常也不允许指向目录。软链接是全新文件，自己的 inode 里存目标路径，访问时多一次路径解析，所以能跨文件系统、能指目录，但目标删掉后就悬空。查看链接数用 ls -l 或 stat 看链接计数。",
+  "studyPath": {"prerequisites": ["文件系统与 inode 基本概念", "Linux 目录与路径", "ln 命令"], "nextSteps": ["写脚本对比硬/软链接的 inode 与计数变化", "研究容器与 k8s 中软链接挂载的用法", "了解 overlayfs 这类使用硬链接的分层文件系统"]}
+ }
+}

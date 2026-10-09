@@ -1,0 +1,102 @@
+{
+ "id": "45af88edc732a0d6",
+ "tldr": "数据库事务四大特性：原子性靠 Undo Log、隔离性靠锁与 MVCC、持久性靠 Redo Log，一致性是最终目的。",
+ "keyPoints": [
+  "原子性：事务内操作要么全做、要么全不做",
+  "一致性：事务前后数据的完整性约束不被破坏",
+  "隔离性：并发事务互不干扰，由锁与 MVCC 实现",
+  "持久性：提交后的修改不丢失，由 Redo Log 保证",
+  "隔离级别与并发问题相关：脏读、不可重复读、幻读"
+ ],
+ "why": "ACID 是数据库工程面开场必答题；隔离性与日志机制同构于 checkpoint 与数据一致性，对算法岗属中等相关的基础加分项。",
+ "difficulty": "medium",
+ "tags": ["interview", "database", "acid", "transaction", "mvcc"],
+ "entities": ["ACID", "Undo Log", "Redo Log", "MVCC", "隔离级别", "脏读", "幻读"],
+ "diagram": {
+  "kind": "matrix",
+  "title": "隔离级别与并发异常",
+  "caption": "记住一句话：隔离级别每升一级，堵掉一类并发异常，但并发度随之下降。",
+  "svg": "<svg viewBox='0 0 480 200' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='隔离级别与并发异常矩阵：读未提交可能出现脏读、不可重复读、幻读；读已提交避免脏读；可重复读避免不可重复读；串行化四类异常均避免'><text x='20' y='34' font-size='13' text-anchor='start' fill='currentColor' font-weight='bold'>隔离级别</text><text x='204' y='34' font-size='13' text-anchor='middle' fill='currentColor' font-weight='bold'>脏读</text><text x='315' y='34' font-size='13' text-anchor='middle' fill='currentColor' font-weight='bold'>不可重复读</text><text x='418' y='34' font-size='13' text-anchor='middle' fill='currentColor' font-weight='bold'>幻读</text><line x1='16' y1='46' x2='464' y2='46' stroke='var(--line-1)' stroke-width='1.2'/><line x1='16' y1='82' x2='464' y2='82' stroke='var(--line-1)' stroke-width='1.2'/><line x1='16' y1='118' x2='464' y2='118' stroke='var(--line-1)' stroke-width='1.2'/><line x1='16' y1='154' x2='464' y2='154' stroke='var(--line-1)' stroke-width='1.2'/><line x1='16' y1='190' x2='464' y2='190' stroke='var(--line-1)' stroke-width='1.2'/><line x1='150' y1='20' x2='150' y2='190' stroke='var(--line-1)' stroke-width='1.2'/><line x1='258' y1='20' x2='258' y2='190' stroke='var(--line-1)' stroke-width='1.2'/><line x1='372' y1='20' x2='372' y2='190' stroke='var(--line-1)' stroke-width='1.2'/><text x='20' y='72' font-size='13' text-anchor='start' fill='currentColor'>读未提交</text><text x='204' y='72' font-size='13' text-anchor='middle' fill='currentColor'>可能</text><text x='315' y='72' font-size='13' text-anchor='middle' fill='currentColor'>可能</text><text x='418' y='72' font-size='13' text-anchor='middle' fill='currentColor'>可能</text><text x='20' y='108' font-size='13' text-anchor='start' fill='currentColor'>读已提交</text><text x='204' y='108' font-size='13' text-anchor='middle' fill='currentColor'>不会</text><text x='315' y='108' font-size='13' text-anchor='middle' fill='currentColor'>可能</text><text x='418' y='108' font-size='13' text-anchor='middle' fill='currentColor'>可能</text><text x='20' y='144' font-size='13' text-anchor='start' fill='currentColor'>可重复读</text><text x='204' y='144' font-size='13' text-anchor='middle' fill='currentColor'>不会</text><text x='315' y='144' font-size='13' text-anchor='middle' fill='currentColor'>不会</text><text x='418' y='144' font-size='13' text-anchor='middle' fill='currentColor'>可能</text><text x='20' y='180' font-size='13' text-anchor='start' fill='currentColor'>串行化</text><text x='204' y='180' font-size='13' text-anchor='middle' fill='currentColor'>不会</text><text x='315' y='180' font-size='13' text-anchor='middle' fill='currentColor'>不会</text><text x='418' y='180' font-size='13' text-anchor='middle' fill='currentColor'>不会</text></svg>",
+  "alt": "隔离级别与并发异常矩阵：读未提交可能出现脏读、不可重复读、幻读；读已提交避免脏读；可重复读避免不可重复读；串行化四类异常均避免。"
+ },
+ "concepts": [
+  {
+   "name": "ACID 与实现机制（ACID & Implementation）",
+   "readable": "事务要同时保证四件事：原子性（全做或全不做）、一致性（约束不被破坏）、隔离性（并发不打架）、持久性（提交后不丢）；它们各有对应机制支撑。",
+   "analogy": "像银行转账：钱要么两边都改、要么都不改（原子性），总账始终平（一致性），别人查余额时不会看到改了一半（隔离性），一转完就记账本上再也不改（持久性）。",
+   "analogyBreaksDown": "银行转账是单机、强一致、串行柜台业务；而真实数据库是高并发且崩溃随时发生，隔离性并非靠排队而是靠版本快照，持久性靠先写日志再改数据页，类比里看不到日志与版本这一层。",
+   "mechanism": "一致性是目的，另三者是手段：原子性用 Undo Log 记录旧值以便回滚；持久性用 Redo Log 先写日志再改数据（WAL），崩溃后重放已提交事务；隔离性用锁管写写互斥、用 MVCC 让读写不互斥。日志被复用，是设计的关键取舍。",
+   "visual": "画一个事务方框，左侧箭头连 Undo Log（回滚）、右侧连 Redo Log（重放），底部连 MVCC 版本链；三者汇入中央的一致性约束。",
+   "prerequisites": ["SQL 与事务基础用法", "日志与持久化基本概念"],
+   "selfTest": ["四大特性里哪一个不是靠独立机制实现的？", "Redo Log 与 Undo Log 各自解决什么问题？", "为什么 WAL 能保证崩溃后恢复？"],
+   "formula": ""
+  },
+  {
+   "name": "MVCC 多版本并发控制（Multi-Version Concurrency Control）",
+   "readable": "给每行数据保留多个历史版本，读操作读符合自己快照的那个旧版本，写操作生成新版本，从而让读和写互不阻塞，避免读被写锁住。",
+   "analogy": "像维基百科的版本历史：你可以翻到某个时间点的旧版本照常阅读，别人同时在编辑最新页，两边互不影响。",
+   "analogyBreaksDown": "维基历史永久保留且人人可见，而 MVCC 的旧版本由 Undo Log 维护、会被清理，且不同事务看到的可见版本由隔离级别规则决定，不是『谁都能看全部历史』。",
+   "mechanism": "读操作依事务快照沿版本链找到可见版本，不加共享锁；写操作加排他锁并生成新版本。这样读写不互斥，把并发冲突从『阻塞』转成『多版本』，MySQL InnoDB 的可重复读即依赖此机制。",
+   "visual": "画一条行的版本链 v1→v2→v3，两个读事务各自指向不同版本，一个写事务在链尾追加新版本。",
+   "prerequisites": ["事务与隔离级别", "行锁与一致性读概念"],
+   "selfTest": ["MVCC 为什么能让读不加锁？", "旧版本存放在哪里、何时清理？", "MVCC 下写写冲突还需不需要锁？"],
+   "formula": ""
+  },
+  {
+   "name": "隔离级别与并发异常（Isolation Levels & Anomalies）",
+   "readable": "隔离级别从低到高是读未提交、读已提交、可重复读、串行化；级别越高越安全，但并发度越低。对应三类典型异常：脏读、不可重复读、幻读。",
+   "analogy": "像看一份不断被修订的名单：脏读是看到别人写了一半又划掉的草稿；不可重复读是同一条被改了；幻读是原本没有的名字后来冒了出来。",
+   "analogyBreaksDown": "看名单是单人视角、随时可重看，而数据库是并发多事务、每条读都有快照时刻；类比无法体现『同一事务内两次读为何应看到同一快照』这条可重复读的语义。",
+   "mechanism": "读已提交用语句级快照避免脏读；可重复读用事务级快照避免不可重复读，MySQL InnoDB 再借间隙锁避免大部分幻读；串行化对读也加锁，代价是并发度骤降。级别选择本质是安全与吞吐的权衡。",
+   "visual": "画一张四行三列的矩阵：行是四档隔离级别，列是脏读/不可重复读/幻读，格子里标可能或不会。",
+   "prerequisites": ["并发事务基础", "锁与快照读概念"],
+   "selfTest": ["哪一档隔离级别会脏读？", "可重复读在标准 SQL 里能防住幻读吗？", "串行化为什么吞吐最低？"],
+   "formula": ""
+  }
+ ],
+ "formulas": [],
+ "selfCheck": {
+  "claims": [
+   "事务四大特性为原子性、一致性、隔离性和持久性（ACID）",
+   "原子性由 Undo Log 保证",
+   "隔离性由锁与 MVCC 实现",
+   "持久性由 Redo Log 确保",
+   "摘要探讨了事务隔离级别与并发问题（脏读、幻读）的关系"
+  ],
+  "uncertain": [
+   "本条为数据库八股，偏 Java 后端，与多模态 / post-training / 生成式 / 世界模型方向的直接相关性中等（按批次要求正常深读）",
+   "摘要给出 ACID 定义与 Undo Log / Redo Log / 锁与 MVCC 的实现分工，但未给出隔离级别与并发异常的对照矩阵；图中矩阵为数据库通用教科书结论（待核实与原文口径一致；MySQL InnoDB 的可重复读借间隙锁可避免大部分幻读，与标准 SQL 略有差异）",
+   "摘要提到脏读与幻读，未逐一给出不可重复读的定义与示例，concepts 与 teaching 中相关解释为通用补充（待核实）"
+  ]
+ },
+ "teaching": {
+  "progressive": [
+   {"level": "一句话", "text": "数据库事务要做到四件事：全做或全不做、前后一致、并发不打架、提交后不丢。"},
+   {"level": "入门", "text": "ACID 是事务的四项保证：原子性（要么全成功、要么全回滚）、一致性（约束不被破坏）、隔离性（并发事务互不干扰）、持久性（提交结果永久保存）。实现上原子性靠 Undo Log、持久性靠 Redo Log、隔离性靠锁和 MVCC。"},
+   {"level": "进阶", "text": "四特性不是并列的四条规则：一致性是目的，另外三个是手段。原子性用 Undo Log 记旧值，回滚时反向恢复；持久性用 Redo Log 先写日志再改数据，崩溃后重放；隔离性用锁管写写互斥、用 MVCC 让读写不互斥、按快照读旧版本。隔离级别越高越安全，但并发度越低。"},
+   {"level": "专家", "text": "ACID 的核心矛盾在隔离性与性能：串行化最安全但吞吐最低，读已提交最常用，可重复读在 MySQL InnoDB 里借 MVCC 快照加间隙锁避免了大部分幻读。分工上 Undo Log 同时服务回滚与 MVCC 的旧版本读取，Redo Log 保证已提交事务崩溃后可重放，二者都用 WAL 把随机写变顺序写。面试要能说清四个特性分别由什么机制支撑，以及隔离级别与脏读、不可重复读、幻读的对应关系，而不是背定义。"}
+  ],
+  "socratic": [
+   {"q": "如果只有原子性而没有持久性会怎样？", "a": "事务提交后若断电，已提交的修改会丢失，等于白做；所以必须用 Redo Log 在提交前落盘，崩溃后重放已提交事务。"},
+   {"q": "为什么隔离性不能一律用串行化？", "a": "串行化让事务排队执行，吞吐和并发度骤降；多数业务接受读已提交或可重复读的弱保证，用 MVCC 换取读写不互斥的高并发。"},
+   {"q": "一致性为什么不单独配一种日志机制？", "a": "一致性是目标不是手段，靠原子性（回滚不留半成品）、隔离性（并发不读脏数据）与约束检查共同保证，本身不需要专门机制。"}
+  ],
+  "mechanism": "四特性里一致性是目的，原子性、隔离性、持久性是三根支柱，且实现上互相复用日志：Undo Log 既用于回滚（原子性）又供 MVCC 读旧版本，Redo Log 用于持久化。之所以这样设计，是因为崩溃恢复必须能在数据页尚未落盘时靠日志重建，而并发读写必须在锁与版本之间权衡；把日志复用让两个目标共享同一份写入，代价是恢复逻辑更复杂。",
+  "boundary": "ACID 的强弱取决于数据库与隔离级别：MySQL InnoDB 默认可重复读借间隙锁避免大部分幻读，而标准 SQL 的可重复读仍允许幻读；分布式事务常放宽为 BASE（基本可用、软状态、最终一致）。因此不能说 ACID 一劳永逸，跨库跨节点时严格 ACID 代价极高。",
+  "analogyBoundary": "把事务比作转账要么都成要么都不成很贴切，但转账类比看不到版本与日志这一层：实际隔离性不是靠互斥而是靠 MVCC 快照，读的人可能误以为并发一定得加锁排队、性能必然差。",
+  "misconceptions": [
+   "以为一致性由某个独立机制保证：它靠原子性、隔离性与约束共同达成，是目的不是手段。",
+   "以为隔离级别越高越该默认用串行化：串行化吞吐极低，多数系统默认读已提交或可重复读。",
+   "以为用了 MVCC 就不需要锁：它让读写不互斥，但写写仍需加锁，版本链本身也要管理。"
+  ],
+  "ownAnalysis": "这是数据库通用八股，与多模态 / 后训练没有直接技术交集，与算法岗相关性中等。（推断）可迁移的点是 WAL 与 MVCC 快照：WAL『先写日志再改数据』同构于训练 checkpoint 的先写临时文件再原子替换；MVCC『读一致性快照不阻塞写入』同构于数据加载时按快照读取而不影响写入方。摘要只给了 ACID 定义与实现机制名，未给隔离级别矩阵，图中矩阵为通用补充。记忆锚点建议用『一致性是目的，另三是手段』。",
+  "officialNotes": [
+   {"position": "来源为卡码网基础八股整理页（ACID），给出四特性定义与 Undo Log / Redo Log / 锁与 MVCC 的实现分工，并关联隔离级别与脏读、幻读", "source": "https://notes.kamacoder.com/base/acid-properties.html"}
+  ],
+  "interviewAnswer": "ACID 是原子性、一致性、隔离性、持久性。我会强调一致性是目的：原子性用 Undo Log 保证回滚不留半成品，持久性用 Redo Log 的 WAL 保证提交后崩溃可重放，隔离性用锁和 MVCC 让并发事务互不干扰。隔离性再展开：读未提交有脏读，读已提交避免脏读，可重复读避免不可重复读、MySQL 借间隙锁避免大部分幻读，串行化最安全但吞吐最低。",
+  "studyPath": {
+   "prerequisites": ["SQL 与事务基本用法", "并发与锁的基本概念"],
+   "nextSteps": ["在 MySQL 里用两个会话复现脏读与不可重复读", "读 InnoDB 的 MVCC 与 Undo/Redo Log 实现", "整理隔离级别与并发异常对照矩阵"]
+  }
+ }
+}

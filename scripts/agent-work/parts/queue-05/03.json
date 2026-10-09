@@ -1,0 +1,159 @@
+{
+  "id": "83a0a88895a87397",
+  "tldr": "H-CDLM 让 token 与「token 聚类」两层粒度在连续空间里并行扩散，低开销提升连续扩散语言模型质量。",
+  "keyPoints": [
+    "连续扩散/流匹配语言模型是顺序无关的并行文本生成路径",
+    "H-CDLM 借鉴图像联合扩散，把多种「模态」并行去噪",
+    "两种模态是不同语义粒度：token 本身，与预训练 token 嵌入的粗聚类",
+    "框架允许逐模态设置采样器与调度，增强模态间互动",
+    "迁到 CoBit 得 H-CoBit：LM1B GenPPL 49.4、OWT 50.4，GSM8K 27.4%"
+  ],
+  "why": "连续扩散语言模型是生成式方向的对 LLM 范式挑战；「多粒度联合扩散 + 逐模态调度」是可直接迁移的建模范式，面试可考扩散与自回归的对比。",
+  "difficulty": "hard",
+  "tags": ["generative", "diffusion", "language-model", "flow-matching", "discrete-diffusion", "continuous"],
+  "entities": [
+    "Hierarchical Continuous Diffusion Language Models (H-CDLMs)",
+    "H-CoBit",
+    "H-FLM",
+    "CoBit",
+    "FLM",
+    "MAUVE",
+    "GenPPL"
+  ],
+  "diagram": {
+    "kind": "flow",
+    "title": "层次连续扩散语言模型",
+    "caption": "token 与 token 聚类两层粒度在同一连续空间并行扩散，用逐模态采样器协调生成。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='H-CDLM 四层流程'>\n<rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>文本 token 嵌入</text>\n<text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>预训练嵌入空间</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>粒度聚类 + 并行扩散</text>\n<text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>token 层与聚类层同时去噪</text>\n<line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,124 236,116 244,116' fill='var(--line-1)'/>\n<rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>逐模态采样器 / 调度</text>\n<text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>强化模态间互动</text>\n<line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,178 236,170 244,170' fill='var(--line-1)'/>\n<rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>连续去噪 → 生成文本</text>\n<text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>顺序无关、可并行</text>\n</svg>",
+    "alt": "四层竖排流程：文本 token 嵌入→粒度聚类与并行扩散→逐模态采样器与调度→连续去噪生成文本。"
+  },
+  "concepts": [
+    {
+      "name": "Joint Continuous Diffusion over Hierarchical Granularities（层次粒度联合连续扩散）",
+      "readable": "不只对最终的 token 序列加噪去噪，还同时对一个「更粗的版本」——把 token 嵌入做聚类得到的簇——加噪去噪，让粗粒度和细粒度两个尺度互相帮忙。",
+      "analogy": "像同时画草图和细节：先把握整张画的构图（粗聚类），再在其约束下补像素级细节（token），两者一起迭代而不是先后两步。",
+      "analogyBreaksDown": "画草图和细节是人为分工，这里的聚类层由「预训练 token 嵌入的聚类」客观定义，且两层在同一个连续扩散过程里同步加噪，不存在谁先谁后的严格先后关系。",
+      "mechanism": "把 token 与「token 所在聚类」视为不同语义粒度的两种模态，在连续扩散空间并行去噪；由于是同一去噪过程，粗层可对细层施加语义约束，从而提升生成质量，且开销与参数增加极小。",
+      "visual": "画两条平行的去噪轨迹：上轨迹是 token 嵌入（细、抖动大），下轨迹是聚类中心（粗、平滑），两条轨迹用竖线相连表示互相约束，随扩散步数 t 从纯噪声走向数据。",
+      "prerequisites": ["连续扩散/DDPM 基本形式", "流匹配与连续时间生成", "离散扩散语言模型（DLM）基础"],
+      "selfTest": ["「两种模态」在这里指哪两种粒度？", "为什么粗聚类能约束细化？", "和图像多模态联合扩散的异同是什么？"],
+      "formula": "\\mathcal{L}=\\sum_{m}w_{m}\\,\\mathbb{E}_{t,x_{0},\\epsilon}\\!\\left[\\lVert \\epsilon-\\epsilon_{\\theta}^{(m)}(x_{t}^{(m)},t)\\rVert^{2}\\right]"
+    },
+    {
+      "name": "Per-Modality Sampler and Schedule（逐模态采样器与调度）",
+      "readable": "不同粒度的模态不必共用同一套加噪强度与采样步数，可以各自设置采样器和噪声调度，使粗层与细层以不同节奏去噪。",
+      "analogy": "像合唱里不同声部用不同的谱：粗声部节奏慢、负责定调，细声部节奏快、负责装饰，各自按自己的拍子走却合成一首歌。",
+      "analogyBreaksDown": "合唱各声部彼此独立，而这里两种模态必须同步收敛到各自的目标分布；调度若配合不当，粗层还没稳定细层已经定型，反而引入不一致。",
+      "mechanism": "为每个模态单独配置采样器与噪声调度，让它们在去噪早期/晚期承担不同角色，从而控制模态间的信息交换节奏；这是把「跨模态互动强度」变成可调超参，而非固定耦合。",
+      "visual": "画一张横轴为扩散时间、纵轴为噪声强度的折线图，两条曲线斜率不同（粗层更平缓、细层更陡），用阴影标注两条曲线差距最大的阶段即模态间强互动区。",
+      "prerequisites": ["扩散噪声调度（β 或 SNR 曲线）", "采样器（DDIM/Euler 等）概念"],
+      "selfTest": ["为什么不同粒度要不同调度？", "调度不当会发生什么？", "把两个模态调度设为相同会退化成什么？"],
+      "formula": "x_{t}^{(m)}=\\sqrt{\\bar{\\alpha}_{t}^{(m)}}\\,x_{0}^{(m)}+\\sqrt{1-\\bar{\\alpha}_{t}^{(m)}}\\,\\epsilon^{(m)}"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-hcdlm-joint-diffusion-loss",
+      "name": "层次联合扩散损失（Hierarchical Joint Diffusion Loss）",
+      "category": "generative",
+      "latex": "\\mathcal{L}=\\sum_{m}w_{m}\\,\\mathbb{E}_{t,x_{0}^{(m)},\\epsilon^{(m)}}\\!\\left[\\lVert \\epsilon^{(m)}-\\epsilon_{\\theta}^{(m)}(x_{t}^{(m)},t)\\rVert^{2}\\right]",
+      "symbols": [
+        ["m", "模态索引（token 层 / 聚类层）"],
+        ["x_{0}^{(m)}", "模态 m 的干净数据（token 嵌入或聚类表示）"],
+        ["x_{t}^{(m)}", "模态 m 在时间 t 的加噪状态"],
+        ["\\epsilon^{(m)}", "采样注入的噪声"],
+        ["\\epsilon_{\\theta}^{(m)}", "模型对模态 m 预测的噪声"],
+        ["w_{m}", "各模态损失权重"]
+      ],
+      "derivation": [
+        "第 1 步：连续扩散在干净数据上加噪，训练网络预测所加噪声。",
+        "第 2 步：把 token 与其粗聚类视为两个模态，各自加噪。",
+        "第 3 步：对两个模态的预测噪声损失加权求和，构成联合目标。",
+        "第 4 步：两模态在同一过程里去噪，粗层对细层施加语义约束。"
+      ],
+      "analogy": "像同时纠正一张画和马赛克版画：细图与粗图都要对上原图，粗图帮细图定大结构。",
+      "pitfalls": [
+        "只对 token 层做扩散，忽略聚类层，退化为普通连续 DLM",
+        "权重 w_{m} 失衡，粗层主导导致细粒度被抹平",
+        "误以为两模态共享同一噪声——它们各自采样"
+      ],
+      "code": "import torch, torch.nn.functional as F\ndef hcdlm_loss(eps_pred, eps, ws=(1.0, 1.0)):\n    # eps_pred, eps: list of [M] tensors, one per modality\n    loss = 0.0\n    for w, ep, e in zip(ws, eps_pred, eps):\n        loss = loss + w * F.mse_loss(ep, e)\n    return loss",
+      "sources": [
+        {"title": "Denoising Hierarchical Representations: Joint Continuous Diffusion for Language Modeling", "url": "https://arxiv.org/abs/2610.08738v1"}
+      ]
+    },
+    {
+      "id": "f-hcdlm-flow-matching-velocity",
+      "name": "逐模态流匹配速度目标（Per-Modality Flow Matching Velocity）",
+      "category": "generative",
+      "latex": "x_{t}^{(m)}=(1-t)\\,x_{0}^{(m)}+t\\,x_{1}^{(m)},\\quad \\mathcal{L}_{\\mathrm{FM}}=\\sum_{m}w_{m}\\mathbb{E}\\lVert v_{\\theta}^{(m)}(x_{t}^{(m)},t)-(x_{1}^{(m)}-x_{0}^{(m)})\\rVert^{2}",
+      "symbols": [
+        ["x_{0}^{(m)}", "模态 m 的源分布样本（噪声）"],
+        ["x_{1}^{(m)}", "模态 m 的目标数据"],
+        ["v_{\\theta}^{(m)}", "模态 m 的预测速度场"],
+        ["t", "连续时间（0 到 1）"],
+        ["w_{m}", "模态损失权重"]
+      ],
+      "derivation": [
+        "第 1 步：流匹配在源与目标间取线性插值路径。",
+        "第 2 步：该路径上目标速度恒为 x_{1}-x_{0}，与 t 无关。",
+        "第 3 步：训练网络回归该速度，得到每个模态的向量场。",
+        "第 4 步：H-CDLM 把该目标套用到每层粒度，得到 H-FLM。"
+      ],
+      "analogy": "像给两辆不同起点的车规划到各自终点的直路，训练模型在任何时刻都知道该往哪个方向、以多快走。",
+      "pitfalls": [
+        "把速度目标写反（x_{0}-x_{1}），训练方向错误",
+        "误以为线性插值路径是唯一选择，忽略一般高斯路径",
+        "两模态共用同一速度网络却不加模态标识，导致混淆"
+      ],
+      "code": "import torch, torch.nn.functional as F\ndef fm_loss(v_pred, x0, x1, t):\n    # t: [B,1]; 线性插值路径\n    x_t = (1 - t) * x0 + t * x1\n    target_v = x1 - x0\n    return F.mse_loss(v_pred, target_v)\n\n# 每个模态各调一次后加权求和即为 H-FLM 损失",
+      "sources": [
+        {"title": "Denoising Hierarchical Representations: Joint Continuous Diffusion for Language Modeling", "url": "https://arxiv.org/abs/2610.08738v1"}
+      ]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "连续扩散与流匹配语言模型近期取得实质进展，靠精心设计的 token 表示与扩散/流空间",
+      "H-CDLM 借鉴离散 DLM 与连续图像扩散的联合扩散思路，对多个模态并行扩散",
+      "两种模态是不同语义粒度：token 本身，与预训练 token 嵌入聚类得到的粗簇",
+      "框架允许逐模态的采样器与调度，以增强模态间互动",
+      "应用到 CoBit 得 H-CoBit，在数据集熵下 MAUVE 提升，LM1B GenPPL 49.4、OWT GenPPL 50.4（较基线改善 24.2 与 20.7 点）",
+      "GSM8K 上达 27.4% 准确率，超过此前连续扩散/流匹配模型；应用到 FLM 得 H-FLM 也一致提升"
+    ],
+    "uncertain": [
+      "聚类层实现细节（聚类数、聚类算法、簇表示如何参数化）摘要未给，待核实",
+      "逐模态采样器与调度的具体形式与超参摘要未给，公式为按摘要重建的通用形式，需核对原文",
+      "「改善 24.2 与 20.7 点」针对 GenPPL 还是 GenPPL 对应的基线值，表述需核对原文"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "让模型同时对「词」和「词的粗分类」两层粒度加噪去噪，生成更好的文本。"},
+      {"level": "入门", "text": "连续扩散语言模型把文本放进连续空间，靠顺序无关的并行去噪生成。H-CDLM 在这个基础上多加一层「粗粒度」：把 token 嵌入做聚类得到簇表示，让 token 层和簇层一起并行扩散，再各自设采样器和调度，于是粗结构约束细粒度，指标提升而开销很小。"},
+      {"level": "进阶", "text": "关键设计有三：一是把「不同语义粒度」当成不同模态做联合扩散，借的是图像多模态扩散的经验；二是粗层为细层提供语义约束，改善生成分布（MAUVE、GenPPL）；三是允许逐模态采样器与调度，把跨层互动节奏变成可调超参。它在 CoBit 上得到 H-CoBit，在 FLM 上得到 H-FLM，说明对扩散与流匹配两种范式都适用。"},
+      {"level": "专家", "text": "与离散 DLM 相比，连续扩散在连续空间去噪，H-CDLM 进一步用层次粒度补上「全局语义」这一弱项；与普通连续扩散相比，它多了一条粗粒度监督通路，代价极小。它与图像领域多模态联合扩散同构，但「模态」换成了同一文本的不同语义粒度，这是它比较巧的地方。边界在于：若聚类粒度与 token 语义不对齐，粗层会误导细层；逐模态调度也带来额外超参。"}
+    ],
+    "socratic": [
+      {"q": "只对 token 做连续扩散不够吗？", "a": "不够。token 层缺乏全局语义约束，长程一致性弱；引入粗聚类层提供高层结构信号，能改善分布质量与困惑度。"},
+      {"q": "为什么不让两层共用同一调度？", "a": "两层收敛节奏不同，共用调度会使粗层未稳而细层已定；分开调度可控制互动时机，避免过早冻结细节。"}
+    ],
+    "mechanism": "连续扩散语言模型的短板是缺少显式的全局语义约束。作者复用图像多模态联合扩散的思想，但把「模态」重新定义为同一段文本的不同语义粒度：token 与其预训练嵌入的粗聚类。两层在同一扩散过程并行去噪，粗层天然提供高层的语义条件；再允许二者用不同采样器与调度，使这种条件在恰当阶段发生，从而在几乎不增开销下提升生成质量。",
+    "boundary": "若聚类粒度与下游任务的语义需求不匹配（例如需要精细数值推理时粗聚类贡献有限），收益会下降；逐模态调度引入额外超参，调不好反而破坏一致性。此外该框架是在既有连续 DLM/流匹配之上的增量，无法解决连续扩散本身在精确复制类任务上的固有弱点。",
+    "analogyBoundary": "草图—细节类比隐含「粗层一定正确」；若聚类把语义相关的词分到不同簇，粗层的「构图」就是错的，会反过来把细层带偏。类比也掩盖了同步扩散这一事实——两层是同时去噪而非先后两步。",
+    "misconceptions": [
+      "把两种模态理解成文本与图像——这里指同一文本的两个语义粒度。",
+      "以为 H-CDLM 是全新的模型——它是在 CoBit/FLM 上的低开销框架增量。",
+      "认为层次粒度必然提升所有任务——GSM8K 等推理任务收益与语义对齐强相关。"
+    ],
+    "ownAnalysis": "这篇最可迁移的是「把同一输入的不同语义粒度当作模态做联合扩散」（推断），它把图像里的多模态联合扩散迁移到文本的层级表示，思路上与层级 VAE、多尺度扩散一致。可疑处：摘要强调 GenPPL/MAUVE 提升，但未给聚类质量或消融，无法判断粗层贡献是否来自聚类本身的语义（待核实）；GSM8K 27.4% 相对绝对值仍不高，说明连续扩散在推理类任务上仍是短板。",
+    "officialNotes": [
+      {"position": "H-CDLM 通过对多粒度模态并行扩散并逐模态设采样器/调度，在 CoBit 上得 H-CoBit：LM1B GenPPL 49.4、OWT GenPPL 50.4，GSM8K 27.4%，并在 FLM 上得 H-FLM 一致提升", "source": "arxiv: 2610.08738v1"}
+    ],
+    "interviewAnswer": "连续扩散语言模型靠并行去噪生成文本，优点是不依赖从左到右的顺序。H-CDLM 的点子是层次粒度：不但对 token 嵌入加噪去噪，还把它聚类成一个粗粒度表示，两层一起并行扩散，粗层给细层提供全局语义约束；而且两层可以各自设采样器和噪声调度，控制互动节奏。这个框架套到 CoBit 得到 H-CoBit，LM1B 和 OWT 的 GenPPL 分别到 49.4 和 50.4，套到 FLM 得到 H-FLM 也有提升。它的价值在于用极小开销引入层级语义监督。",
+    "studyPath": {
+      "prerequisites": ["DDPM/连续扩散与噪声调度", "流匹配", "离散扩散语言模型与连续扩散语言模型区别"],
+      "nextSteps": ["读原文与 github.com/matol-16/HCDLM", "复现 CoBit 基线并加聚类层消融", "对比离散 DLM 与连续扩散在推理任务上的差距"]
+    }
+  }
+}

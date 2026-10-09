@@ -1,0 +1,1361 @@
+{
+ "batchId": "queue-07",
+ "entries": [
+  {
+   "id": "ae8164d86a237df6",
+   "tldr": "用共享神经渲染器把模拟器/游戏引擎接成实时交互世界，智能体把每轮经验蒸馏成可继承的 playbook，4 轮即学会。",
+   "keyPoints": [
+    "模拟后端维护持久世界状态并执行程序定义的交互规则",
+    "共享神经渲染器从结构化条件生成视觉观测，走统一接口",
+    "提出 Adversarial Forcing：精确重放让历史预填充可微，并加真实数据对抗监督",
+    "智能体把每轮经验蒸馏成 playbook，供后续智能体继承并精炼",
+    "摘要报告 4 轮即学得，传统 RL 对照需数百万轮"
+   ],
+   "why": "「代码即世界 + 神经渲染 + 经验蒸馏」是智能体与世界模型交叉的新范式，直接对应 RL/Agent 与世界模型方向的实习考点。",
+   "difficulty": "hard",
+   "tags": [
+    "rl",
+    "agent",
+    "world-model",
+    "video-generation",
+    "representation-learning"
+   ],
+   "entities": [
+    "AgentGarten",
+    "Adversarial Forcing",
+    "neural renderer",
+    "playbook",
+    "game engine"
+   ],
+   "diagram": {
+    "kind": "architecture",
+    "title": "AgentGarten 四层架构",
+    "caption": "程序化状态与神经渲染解耦：规则保证一致性，渲染器负责视觉真实，经验蒸馏驱动智能体进化。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='AgentGarten 架构流程'><rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>世界即代码</text><text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>程序定义规则与状态</text><line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,70 236,62 244,62' fill='var(--line-1)'/><rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>共享神经渲染器</text><text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>结构化条件→视觉观测</text><line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,124 236,116 244,116' fill='var(--line-1)'/><rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>智能体实时交互</text><text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>观测→动作→反馈</text><line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,178 236,170 244,170' fill='var(--line-1)'/><rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>经验蒸馏为 playbook</text><text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>后续智能体继承改进</text></svg>",
+    "alt": "四层流程：世界即代码维护规则与状态→共享神经渲染器出视觉观测→智能体实时交互→经验蒸馏为 playbook 由后续智能体继承。"
+   },
+   "concepts": [
+    {
+     "name": "Adversarial Forcing（对抗式强制）",
+     "readable": "训练自回归视频渲染器时，用精确重放让历史预填充可微，使后续帧的损失能反向纠正渲染器对前面观测的编码；再拿真实数据做对抗监督提画质。",
+     "analogy": "像学画时不仅被批这一笔错了，还被允许回头改起稿，并请鉴定师判断成品像不像真迹。",
+     "analogyBreaksDown": "画画改起稿是即时的；这里『回头改』是通过梯度在训练中完成的，推理时历史仍是逐帧生成，故它改善的是训练信号而非运行时的纠错能力。",
+     "mechanism": "普通自回归蒸馏把历史当固定输入，早期编码错误无法被后段损失纠正，误差累积。精确重放的预填充保持可微，后段预测损失便可回流到历史编码；叠加真实数据对抗损失让生成分布贴近真实视觉分布。",
+     "visual": "横轴预测时间步、纵轴误差；画两条曲线，普通强制误差随步数持续上升，对抗式强制因历史编码被纠正而上升更缓。",
+     "prerequisites": [
+      "自回归/视频生成与 teacher forcing",
+      "扩散或对抗生成基础",
+      "梯度回传与可微性"
+     ],
+     "selfTest": [
+      "为什么必须让历史预填充可微？",
+      "对抗监督项在这里补的是哪种误差？",
+      "去掉精确重放会退化成什么？"
+     ],
+     "formula": "\\mathcal{L}_{\\mathrm{AF}}=\\mathcal{L}_{\\mathrm{pred}}+\\lambda\\,\\mathcal{L}_{\\mathrm{adv}}"
+    },
+    {
+     "name": "Code-as-World（代码即世界）",
+     "readable": "把世界规则和初始状态直接写成代码，由模拟后端执行并维护持久状态，新世界只要写新代码就能经同一接口渲染出来。",
+     "analogy": "像用不同的地图文件开同一款游戏引擎：换一张地图代码就换一个世界，引擎和渲染管线都不用改。",
+     "analogyBreaksDown": "游戏地图仍受引擎固定物理规则约束，而这里的规则本身由代码任意定义，更接近『连物理定律都能重写』，因此对渲染器适应新规则的泛化要求更高。",
+     "mechanism": "把模拟后端（状态与规则）与渲染器（画面）用统一接口解耦：后端只导出结构化条件，渲染器不关心规则语义。于是世界数量与难度可随智能体同步扩展，而不必为每个世界重训智能体。",
+     "visual": "横轴世界数量、纵轴智能体能力；画两条线，代码世界沿对角线一起增长，固定环境则很快触顶。",
+     "prerequisites": [
+      "智能体-环境循环",
+      "模拟器/游戏引擎状态管理",
+      "条件生成模型"
+     ],
+     "selfTest": [
+      "为什么要让后端只导出结构化条件？",
+      "代码世界相比固定数据集的好处是什么？",
+      "新增世界为何不必重训智能体？"
+     ],
+     "formula": ""
+    },
+    {
+     "name": "Playbook Distillation（经验蒸馏为 playbook）",
+     "readable": "智能体把每轮交互得到的经验压成一份可读、可复用的 playbook，交给下一批智能体继承并在新交互里继续精炼。",
+     "analogy": "像师傅把多年经验写成操作手册交给徒弟，徒弟干活后再补写自己的心得留给下一代。",
+     "analogyBreaksDown": "手册是离散文本、可无穷复制且不会遗忘；而蒸馏进智能体的经验若以参数形式存在，面临容量上限与灾难性遗忘，『继承』未必无损。",
+     "mechanism": "把经验从一次性轨迹转成跨轮复用的结构，避免每轮从零学；继承 + 精炼构成迭代，使学习轮数远少于逐步试错的 RL。这是摘要所说『学习效率大幅提升』的直接来源。",
+     "visual": "横轴轮次、纵轴性能；画台阶线，每轮蒸馏一次抬一阶，4 阶后接近目标，而 RL 曲线需数百万步。",
+     "prerequisites": [
+      "策略学习/行为克隆",
+      "经验回放",
+      "知识蒸馏"
+     ],
+     "selfTest": [
+      "playbook 与权重迁移是一回事吗？",
+      "为什么继承能减少轮数？",
+      "『继续精炼』意味着什么？"
+     ],
+     "formula": "\\pi_{k+1}=\\mathrm{Distill}\\big(\\pi_k,\\ \\mathcal{D}_k\\big)"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-adversarial-forcing",
+     "name": "对抗式强制损失（Adversarial Forcing Objective）",
+     "category": "generative",
+     "latex": "\\mathcal{L}_{\\mathrm{AF}}=\\mathcal{L}_{\\mathrm{pred}}\\big(G_\\theta(\\hat{h}_{1:t}),\\ x_{t+1:T}\\big)+\\lambda\\,\\mathcal{L}_{\\mathrm{adv}}(D_\\phi,\\ G_\\theta)",
+     "symbols": [
+      [
+       "G_\\theta",
+       "神经渲染器（生成器）"
+      ],
+      [
+       "\\hat{h}_{1:t}",
+       "经精确重放得到、保持可微的历史预填充"
+      ],
+      [
+       "x_{t+1:T}",
+       "后续帧的真实目标"
+      ],
+      [
+       "\\mathcal{L}_{\\mathrm{pred}}",
+       "后续预测的重建/预测损失"
+      ],
+      [
+       "\\mathcal{L}_{\\mathrm{adv}}",
+       "真实数据上的对抗监督损失"
+      ],
+      [
+       "D_\\phi",
+       "对抗判别器，\\phi 为其参数"
+      ],
+      [
+       "\\lambda",
+       "对抗项权重"
+      ]
+     ],
+     "derivation": [
+      "自回归渲染器按历史生成后续帧；普通蒸馏下历史固定，早期编码错误无法被后段损失纠正。",
+      "把历史预填充改成精确重放并保持可微，使后段预测损失能回流到『如何编码先前观测』。",
+      "再叠加真实数据上的对抗监督，让生成分布贴近真实视觉分布，得到联合目标。"
+     ],
+     "analogy": "像学画时不仅被指出这一笔错，还被允许回头改起稿，并请鉴定师判断成品像不像真迹。",
+     "pitfalls": [
+      "把对抗项当唯一目标：丢掉可微历史预填充就退化成普通 GAN 蒸馏，误差仍累积",
+      "忽略历史预填充可微是损失回流到早期编码的前提",
+      "误以为对抗监督会改动模拟后端——后端规则始终不变"
+     ],
+     "code": "import torch, torch.nn.functional as F\ndef af_loss(pred, target, adv_logit, lam=0.1):\n    l_pred = F.mse_loss(pred, target)\n    l_adv = F.binary_cross_entropy_with_logits(adv_logit, torch.ones_like(adv_logit))\n    return l_pred + lam * l_adv",
+     "sources": [
+      {
+       "title": "AgentGarten: Code Worlds for Evolving Agents",
+       "url": "https://arxiv.org/abs/2610.12374v1"
+      }
+     ]
+    },
+    {
+     "id": "f-playbook-distill",
+     "name": "经验蒸馏为 Playbook（Experience-to-Playbook Distillation）",
+     "category": "agent",
+     "latex": "\\pi_{k+1}=\\mathrm{Distill}\\big(\\pi_k,\\ \\mathcal{D}_k\\big),\\quad \\mathcal{D}_k=\\{\\tau_i^{(k)}\\}_{i=1}^{N}",
+     "symbols": [
+      [
+       "\\pi_k",
+       "第 k 轮智能体的策略/经验载体"
+      ],
+      [
+       "\\mathcal{D}_k",
+       "第 k 轮交互产生的轨迹集合"
+      ],
+      [
+       "\\tau_i^{(k)}",
+       "第 i 条交互轨迹"
+      ],
+      [
+       "\\mathrm{Distill}",
+       "把经验压成可继承 playbook 的过程"
+      ],
+      [
+       "N",
+       "该轮轨迹条数"
+      ]
+     ],
+     "derivation": [
+      "智能体在代码世界里交互，产生一批轨迹 D_k。",
+      "把轨迹中的经验蒸馏成 playbook（可复用的行为与知识），而非保留原始轨迹。",
+      "下一轮智能体继承该 playbook，并在新交互中继续精炼，形成迭代提升。"
+     ],
+     "analogy": "像师傅把经验写成操作手册交给徒弟，徒弟干完活再补写心得留给下一代。",
+     "pitfalls": [
+      "把 playbook 当成权重复制：摘要只说经验的蒸馏与继承，未等同于参数迁移",
+      "忽略『继承后再精炼』——是迭代过程，不是一次性总结",
+      "以为轮数越多必然越好，摘要只报告 4 轮内的高效率，未给长期曲线"
+     ],
+     "code": "def distill_playbook(trajectories):\n    playbook = {}\n    for traj in trajectories:\n        for (state, action, reward) in traj:\n            playbook.setdefault(state, []).append((action, reward))\n    return playbook",
+     "sources": [
+      {
+       "title": "AgentGarten: Code Worlds for Evolving Agents",
+       "url": "https://arxiv.org/abs/2610.12374v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "摘要称 AgentGarten 用共享神经渲染器把模拟器与游戏引擎接成实时交互环境",
+     "模拟后端维护持久世界状态并执行程序定义的交互规则",
+     "渲染器从经统一接口导出的结构化条件生成视觉观测",
+     "提出 Adversarial Forcing：让历史预填充经精确重放可微，并加真实数据对抗监督",
+     "智能体把每轮经验蒸馏成 playbook，供后续智能体继承并精炼",
+     "摘要报告 4 轮即学得，传统 RL 对照需数百万轮",
+     "新世界可写成代码并经同一接口渲染，环境可随智能体扩展"
+    ],
+    "uncertain": [
+     "Adversarial Forcing 与 playbook 蒸馏的精确损失/更新式为按摘要重建的通用形式，需核对原文",
+     "『4 轮』的定义、评估协议与统计口径摘要未给出，待核实",
+     "渲染器骨干、几何条件具体形式与实时优化手段摘要未说明"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "把游戏世界写成代码，用 AI 渲染器实时画出来，让智能体在里面玩几轮就学会。"
+     },
+     {
+      "level": "入门",
+      "text": "AgentGarten 把模拟器/游戏引擎（维护世界状态与交互规则）与一个共享神经渲染器（把结构化条件变成画面）拼成实时交互环境；智能体看画面、做动作、拿反馈，反复练并沉淀经验。"
+     },
+     {
+      "level": "进阶",
+      "text": "渲染器由预训练视频模型改造：先适配几何条件，再用 Adversarial Forcing 蒸馏——通过精确重放让历史预填充可微，使后段预测损失能反向更新渲染器对先前观测的编码，并加真实数据对抗监督提画质，推理再做实时优化。智能体侧把每轮经验蒸馏成 playbook 传给后续智能体。"
+     },
+     {
+      "level": "专家",
+      "text": "核心矛盾是 faithful（状态/规则/动力学一致）与 realistic（观测符合真实视觉分布）难以兼得：纯模拟器精确但画面假，纯生成模型画面真但状态漂移。AgentGarten 把二者用统一接口解耦——后端保精确状态，神经渲染器保视觉真实。Adversarial Forcing 同时缓解自回归误差累积与画质：可微历史预填充让早期编码被后段损失纠正，对抗监督拉近真实分布。因新世界只需写代码走同一接口，世界数量与难度可随智能体同步扩展。摘要报告 4 轮对比传统 RL 数百万轮的学习效率增益。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不让神经网络直接模拟整个世界状态，而要用程序化模拟后端？",
+      "a": "纯神经世界模型难以长时间保持状态与规则一致，容易漂移；程序后端用代码精确定义状态与交互规则，渲染器只负责把结构化条件画成真实画面，各司其职。"
+     },
+     {
+      "q": "Adversarial Forcing 里『让历史预填充可微』为什么必要？",
+      "a": "普通自回归蒸馏中历史是固定输入，早期编码错误不会被后段损失纠正；精确重放使预填充可导，后段预测损失才能回流更新渲染器如何编码先前观测，抑制误差累积。"
+     },
+     {
+      "q": "代码世界相比固定数据集，真的能一直扩展下去吗？",
+      "a": "规则可写即可扩，但渲染器必须在新增规则下仍保持视觉真实；摘要只证明数量与难度可随智能体扩展，未给跨全新规则的泛化证据，这是可扩展性的隐含前提。"
+     }
+    ],
+    "mechanism": "难点在 faithful 与 realistic 难兼得：经典模拟器状态精确但画面假，纯生成模型画面真但状态/规则漂移。AgentGarten 用接口把两者解耦——模拟后端保规则与持久状态，神经渲染器由预训练视频模型改造、从结构化条件出画面；Adversarial Forcing 通过精确重放让历史预填充可微、再用后段损失更新早期编码，并用真实数据对抗监督补画质，从而在实时约束下同时拿到一致性与真实感。",
+    "boundary": "适用前提是有可写成代码的规则化世界，且有足够条件-画面配对数据训练渲染器；当世界规则难以程序化、需要极高物理精度而非视觉真实、或目标分布远离渲染器训练分布时，收益会下降。摘要未给跨域泛化与扩展到全新规则的定量证据。",
+    "analogyBoundary": "把它类比成『给游戏换一套 AI 皮肤』不准确：渲染器不只是贴图，它决定了观测分布的真实性；世界规则一改（改代码）渲染器就得跟上，皮肤类比的『换层皮、内核不变』低估了渲染器与后端之间的条件对齐成本。",
+    "misconceptions": [
+     "以为它只是更快的游戏引擎：核心是让智能体学习更快，渲染器是手段",
+     "以为 Adversarial Forcing 就是普通 GAN 训练：它还把历史预填充做成可微，损失能回流改历史编码",
+     "以为能替代所有 RL：摘要只报告该设定下的学习效率增益，未证明通用性"
+    ],
+    "ownAnalysis": "（推断）这套『程序化状态 + 神经渲染』与 Dreamer 式纯潜空间世界模型是两条路：前者牺牲部分端到端优化换取长时一致性与可扩展性，后者反过来。Adversarial Forcing 的『可微历史预填充』很可能借鉴 teacher forcing 与 diffusion forcing 的误差累积分析（推断），但把对抗监督并进来是其新增点。（待核实）摘要未给渲染器架构细节、几何条件形式以及 4 轮之后是否饱和，这些是判断可扩展性的关键。",
+    "officialNotes": [
+     {
+      "position": "摘要称在 AgentGarten 中智能体仅需 4 轮学习，而传统 RL 对照需数百万轮，学习效率大幅提升；新世界可写成代码并经同一接口渲染，环境可在数量与难度上随智能体扩展。",
+      "source": "arxiv 2610.12374v1"
+     }
+    ],
+    "interviewAnswer": "AgentGarten 想解决智能体训练环境的两个矛盾：状态规则要一致、画面又要真实。做法是把程序化模拟后端和游戏引擎接到一个共享神经渲染器上，后端保证持久状态和交互规则，渲染器从结构化条件出观测。渲染器用预训练视频模型改造，关键贡献是 Adversarial Forcing：精确重放让历史预填充可微，使后段损失能纠正早期编码，再加真实数据对抗监督提画质，并优化推理到实时。智能体把每轮经验蒸馏成 playbook 继承，摘要报告 4 轮就能学，对比传统 RL 数百万轮。",
+    "studyPath": {
+     "prerequisites": [
+      "自回归/视频生成模型与 teacher forcing",
+      "扩散或对抗生成基础",
+      "强化学习与智能体-环境循环"
+     ],
+     "nextSteps": [
+      "读 diffusion forcing / 视频预测的误差累积分析",
+      "对比 Dreamer 等潜空间世界模型",
+      "思考『代码世界』对训练数据与泛化的影响"
+     ]
+    }
+   }
+  },
+  {
+   "id": "658deaffa4055464",
+   "tldr": "把浅层特征当观测量、用 Koopman 算子预测深层特征并做观测校正，免训练加速冻结扩散采样，特征 MSE 降 19.9%。",
+   "keyPoints": [
+    "特征缓存用历史激活的预测替代昂贵网络评估来加速扩散采样",
+    "只用过去特征的预测无法吸收当前去噪状态的变化",
+    "用新算出的廉价浅层特征作为观测来校正预测",
+    "在标定轨迹上辨识有限维、时变的 Koopman 算子，联合刻画浅层与深层特征增量",
+    "采样时算子预测深层特征、浅层 innovation 校正状态，周期全量评估刷新观测器，参数全冻结",
+    "CIFAR-10 配对 Inception 特征 MSE 降 19.9%、ImageNet 子集降 11.9%；DDIM-50 上加速 1.89x/1.85x"
+   ],
+   "why": "免训练加速冻结扩散模型是生成式落地的核心考点；「外推 + 廉价观测校正」的思路对特征缓存、视频生成加速都能迁移。",
+   "difficulty": "hard",
+   "tags": [
+    "generative",
+    "diffusion",
+    "feature-caching",
+    "sampling-acceleration",
+    "koopman"
+   ],
+   "entities": [
+    "Koopman",
+    "DDIM-50",
+    "Inception-feature MSE",
+    "channelwise affine prediction"
+   ],
+   "diagram": {
+    "kind": "architecture",
+    "title": "Koopman 观测器加速环",
+    "caption": "深层特征是待估状态，廉价浅层特征提供观测，innovation 经增益校正预测，周期全量评估刷新算子。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Koopman 观测器流程'><rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>廉价浅层特征</text><text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>新算出，当观测 y</text><line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,70 236,62 244,62' fill='var(--line-1)'/><rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>Koopman 算子预测</text><text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>时变线性推进深层特征</text><line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,124 236,116 244,116' fill='var(--line-1)'/><rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>innovation 校正</text><text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>观测减预测→修正状态</text><line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,178 236,170 244,170' fill='var(--line-1)'/><rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>周期全量评估</text><text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>刷新观测器，参数冻结</text></svg>",
+    "alt": "四步环：新算廉价浅层特征当观测→Koopman 算子时变线性预测深层特征→innovation 校正状态→周期全量评估刷新观测器，扩散参数不变。"
+   },
+   "concepts": [
+    {
+     "name": "Koopman Operator（Koopman 算子）",
+     "readable": "把非线性动力学提升到特征函数空间上、使其变成线性演化的算子；这里用有限维、时变近似刻画特征随去噪步的增量。",
+     "analogy": "就像把一段乱七八糟的曲线，换到另一个坐标系里看就变成了一条直线，之后外推直线就很简单。",
+     "analogyBreaksDown": "换坐标系只在原始数据附近有效；Koopman 线性也只是在标定轨迹分布附近近似成立，跨分布时直线会弯回去。",
+     "mechanism": "扩散特征是高度非线性的，直接外推难。Koopman 把状态提升到（特征）函数空间用线性算子描述演化，从而能用矩阵闭式推进；有限维 + 时变是以牺牲全局精确性换取可在线计算的近似。",
+     "visual": "横轴去噪步 k、纵轴特征值；原始曲面非线性弯曲，Koopman 坐标下同一轨迹近似是一条直线。",
+     "prerequisites": [
+      "动力学系统与线性化",
+      "线性代数（矩阵幂/最小二乘）",
+      "扩散采样流程"
+     ],
+     "selfTest": [
+      "Koopman 为什么能把非线性变成线性？",
+      "有限维近似在什么情况下失效？",
+      "它和直接线性插值特征有何区别？"
+     ],
+     "formula": "\\Delta z_{k+1}=\\mathcal{K}_k\\,\\Delta z_k"
+    },
+    {
+     "name": "Observer Innovation Correction（观测器创新校正）",
+     "readable": "每一步多算一个便宜的特征当观测，用『观测减预测』这个 innovation 经增益去修正对贵特征的预测，像卡尔曼滤波那样纠偏。",
+     "analogy": "像惯性导航自己推算位置会漂，每隔一会儿收到 GPS 读数，就用读数和推算的差把位置拉回来。",
+     "analogyBreaksDown": "GPS 通常比惯性推算更准，而这里的浅层观测本身也是廉价近似，创新项必须靠标定增益权衡，全信观测反而引入抖动。",
+     "mechanism": "纯缓存外推看不到当前状态的新信息，误差累积。引入新算出的浅层特征作观测，形成反馈环；增益 L 决定多大程度信任观测，使校正在稳定与灵敏之间平衡。消融显示校正本身贡献了额外 4.54%/4.67% 的 MSE 下降。",
+     "visual": "横轴去噪步、纵轴偏差；画外推误差（发散）与带校正误差（收敛）两条曲线。",
+     "prerequisites": [
+      "卡尔曼滤波/状态估计直觉",
+      "线性观测器 L 增益",
+      "特征缓存方法"
+     ],
+     "selfTest": [
+      "innovation 具体是什么？",
+      "增益 L 太大或太小分别会怎样？",
+      "为什么观测要用『浅层』特征？"
+     ],
+     "formula": "\\hat{z}_{k+1}=K_k\\hat{z}_k+L_k(y_k-H_k\\hat{z}_k)"
+    },
+    {
+     "name": "Feature Caching（特征缓存加速）",
+     "readable": "扩散采样每步都过大网络太贵，于是复用之前算过的激活来猜中间若干步的输出，跳掉部分昂贵评估来提速。",
+     "analogy": "像看视频时缓存已解码的帧，中间帧先按前帧粗略补出来，省去逐帧重算。",
+     "analogyBreaksDown": "视频帧间变化小、补帧尚可；扩散特征变化可能剧烈且与提示相关，纯补帧式的缓存会累积误差，这正是本文要加观测校正的原因。",
+     "mechanism": "缓存把网络评估换成对历史激活的预测，直接降低每步成本；代价是预测无法反映当前状态，于是本文在缓存基础上补观测校正，使加速与保真兼顾。",
+     "visual": "横轴采样步、纵轴特征误差；纯缓存误差阶梯上升，加校正后阶梯更平。",
+     "prerequisites": [
+      "扩散模型 U-Net/DiT 结构",
+      "误差累积概念",
+      "推理加速"
+     ],
+     "selfTest": [
+      "特征缓存为什么能提速？",
+      "缓存方法的固有缺陷是什么？",
+      "它与剪枝/量化加速有何不同？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-koopman-observer",
+     "name": "Koopman 观测器状态更新（Koopman Observer Update）",
+     "category": "generative",
+     "latex": "\\hat{z}_{k+1}=K_k\\,\\hat{z}_k+L_k\\big(y_k-H_k\\,\\hat{z}_k\\big)",
+     "symbols": [
+      [
+       "\\hat{z}_k",
+       "第 k 步对深层特征的估计（状态）"
+      ],
+      [
+       "y_k",
+       "新算出的廉价浅层特征（观测）"
+      ],
+      [
+       "K_k",
+       "时变 Koopman 算子，描述状态演化"
+      ],
+      [
+       "H_k",
+       "观测算子，把状态映射到观测空间"
+      ],
+      [
+       "L_k",
+       "观测器增益，权衡 innovation"
+      ],
+      [
+       "y_k-H_k\\hat{z}_k",
+       "innovation，观测与预测之差"
+      ]
+     ],
+     "derivation": [
+      "加速采样想省掉深层网络评估，于是把深层特征当成待估状态 z。",
+      "用标定轨迹辨识时变 Koopman 算子 K_k，闭式推进状态预测 K_k z_k。",
+      "每步额外算廉价浅层特征 y_k，用 innovation 经增益 L_k 校正预测，抑制外推误差。"
+     ],
+     "analogy": "像惯性导航用模型推进位置，再拿 GPS 读数与推算之差纠正漂移。",
+     "pitfalls": [
+      "把浅层观测当成无噪声真值：它也是廉价近似，需靠增益 L 权衡",
+      "忽略 K、L 只在标定分布附近成立",
+      "以为 innovation 项可省——消融显示它贡献显著（4.54%/4.67%）"
+     ],
+     "code": "import torch\ndef koopman_observer(z_hat, y, K, H, L):\n    innov = y - H @ z_hat\n    z_next = K @ z_hat + L @ innov\n    return z_next",
+     "sources": [
+      {
+       "title": "Koopman Observers for Diffusion Acceleration",
+       "url": "https://arxiv.org/abs/2610.10366v1"
+      }
+     ]
+    },
+    {
+     "id": "f-koopman-feature-increment",
+     "name": "浅深特征联合 Koopman 增量（Joint Feature-Increment Koopman）",
+     "category": "generative",
+     "latex": "\\Delta z_{k+1}=\\mathcal{K}_k\\,\\Delta z_k,\\quad \\Delta z_k=(\\Delta s_k,\\ \\Delta d_k)",
+     "symbols": [
+      [
+       "\\Delta s_k",
+       "浅层特征在第 k 步的增量"
+      ],
+      [
+       "\\Delta d_k",
+       "深层特征在第 k 步的增量"
+      ],
+      [
+       "\\mathcal{K}_k",
+       "时变 Koopman 算子，联合刻画两类特征增量"
+      ],
+      [
+       "\\Delta z_k",
+       "浅深特征增量拼成的状态向量"
+      ]
+     ],
+     "derivation": [
+      "特征随去噪步变化，直接建模绝对演化较难，转而看相邻步的增量。",
+      "标定轨迹上把浅层与深层特征的增量拼成一个状态向量。",
+      "辨识有限维、时变算子 K_k，使增量近似线性演化，之后用它预测深层特征增量，仅对浅层做观测校正。"
+     ],
+     "analogy": "像根据仪表每步读数的变化率建一张换算表，用便宜仪表的读数变化去预测贵仪表的读数变化。",
+     "pitfalls": [
+      "把 K_k 当常数：它随去噪步变化（时变）",
+      "忽略增量建模隐含采样步长，换调度要重新标定",
+      "以为拼在一起就自动对齐：浅深特征需在标定中联合辨识"
+     ],
+     "code": "import torch\ndef fit_koopman(deltas_s, deltas_d):\n    Z = torch.cat([deltas_s, deltas_d], dim=-1)\n    X, Y = Z[:-1], Z[1:]\n    K = torch.linalg.lstsq(X, Y).solution\n    return K",
+     "sources": [
+      {
+       "title": "Koopman Observers for Diffusion Acceleration",
+       "url": "https://arxiv.org/abs/2610.10366v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "摘要称特征缓存通过用历史激活的预测替代昂贵网络评估来加速扩散采样",
+     "仅基于过去特征的预测无法直接吸收当前去噪状态的变化",
+     "提出 observation-corrected Koopman 框架加速冻结扩散模型",
+     "用标定轨迹辨识有限维、时变 Koopman 近似，联合描述浅层与深层特征的增量",
+     "采样时算子预测深层特征演进、浅层观测的 innovation 校正状态；周期全量评估刷新观测器；生成模型参数不变",
+     "相对 channelwise affine 预测在同四分之一步调度下，CIFAR-10 特征 MSE 降 19.9%、ImageNet 子集降 11.9%",
+     "消融将额外 4.54%/4.67% 归因于观测校正；DDIM-50 测得 1.89x/1.85x 加速"
+    ],
+    "uncertain": [
+     "Koopman 观测器更新与增量算子为按摘要重建的通用形式，需核对原文",
+     "算子辨识方法、标定轨迹规模、周期全量评估频率摘要未给出，待核实",
+     "『四分之一步调度』的具体定义待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "把扩散采样里便宜的特征当尺子，随时校正对贵特征的预测，省算力又不掉质量。"
+     },
+     {
+      "level": "入门",
+      "text": "扩散采样每一步都过大网络很贵；特征缓存用历史激活猜下一步来省算力，但猜不准。这篇在每步额外算一个便宜浅层特征，把它当观测去校正对深层特征的预测，并用 Koopman 线性算子描述特征演化。"
+     },
+     {
+      "level": "进阶",
+      "text": "在标定轨迹上用有限维、时变的 Koopman 近似联合刻画浅层与深层特征的增量；加速采样时算子预测深层特征演进，浅层特征的 innovation（观测减预测）实时校正状态，周期性做全量评估刷新观测器，所有扩散模型参数冻结不动。"
+     },
+     {
+      "level": "专家",
+      "text": "本质把加速采样看成带观测的状态估计问题：过去特征只能外推，看不到当前去噪状态变化，于是引入廉价新观测做反馈。Koopman 给线性时变动力学使预测可闭式推进，观测器结构 K + L·innovation 保证校正稳定。相对 channelwise affine 预测在同调度下特征 MSE 降 19.9%/11.9%，消融显示观测校正额外贡献 4.54%/4.67%，说明收益不止来自更好外推；因参数冻结无需重训，适配成本低。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "只用历史特征预测为什么不够？",
+      "a": "预测基于过去激活，无法吸收当前去噪状态的新信息，误差随步数累积；引入新算出的浅层观测提供即时反馈，才能把轨迹拉回正轨。"
+     },
+     {
+      "q": "为什么能用线性 Koopman 算子描述非线性特征演化？",
+      "a": "Koopman 把非线性动力学提升到函数空间上变成线性演化，用有限维近似在标定轨迹上辨识即可；代价是该线性只在标定分布附近成立。"
+     },
+     {
+      "q": "浅层特征为什么是合适的观测量？",
+      "a": "它计算便宜、又与深层特征演化强相关，因此能以很小代价提供 informative 的反馈；若两者耦合很弱，innovation 就没信息。"
+     }
+    ],
+    "mechanism": "加速采样本质是外推：省掉的全量评估让预测无法感知当前状态，误差累积。作者把浅层特征当廉价观测、深层特征当待估状态，构成观测器反馈环——Koopman 算子给可闭式推进的线性时变动力学，innovation 把新观测与预测之差注入状态，周期全量评估防止算子漂移。所有参数冻结、只改采样，因此部署成本低，收益还能归因到观测校正本身。",
+    "boundary": "Koopman 近似只在标定轨迹分布附近有效；当提示或分布显著偏离标定集、特征动力学强非平稳、或浅层特征与深层特征耦合很弱（创新项信息量低）时收益下降；四分之一步调度下测得的结果未必外推到更激进的跳步。摘要未给跨数据集外推证据。",
+    "analogyBoundary": "把它类比成『GPS 定期校准惯性导航』很贴切，但失效点在于：导航里观测通常更准，而这里观测是廉价的浅层特征、本身有噪声，innovation 必须靠标定增益 L 权衡，盲目信任观测反而会引入抖动。",
+    "misconceptions": [
+     "以为要重训或微调扩散模型：摘要明确所有生成模型参数冻结不变",
+     "以为 Koopman 是全局精确线性化：它是有限维、时变、仅在标定轨迹附近成立的近似",
+     "以为收益全来自更好的外推：消融显示相当一部分来自观测校正本身"
+    ],
+    "ownAnalysis": "（推断）观测器结构 z←Kz+L(y−Hz) 与卡尔曼滤波同构，L 可理解为近似卡尔曼增益；本文贡献是把『浅层特征』选成廉价观测量，从而在扩散采样里造出可用的反馈信号。相比 DeepCache 等纯缓存方法，它的增量正是这个反馈项，因此消融必然显著。（待核实）摘要未给 K、L 如何在小样本标定上辨识、以及周期全量评估频率如何权衡，这些决定实际加速比。",
+    "officialNotes": [
+     {
+      "position": "摘要称相对 channelwise affine 预测、在相同四分之一步调度下，配对的 Inception 特征 MSE 在 CIFAR-10 降 19.9%、十分类 ImageNet 子集降 11.9%；消融将额外 4.54% 与 4.67% 归因于观测校正；相对 DDIM-50 测得 1.89x/1.85x 加速，且不重训去噪器。",
+      "source": "arxiv 2610.10366v1"
+     }
+    ],
+    "interviewAnswer": "扩散采样慢是因为每步都要过昂贵网络。特征缓存用历史激活外推下一步，但外推看不到当前状态变化，误差累积。这篇把加速当成状态估计：深层特征是待估状态，每步额外算一个便宜的浅层特征当观测；用标定轨迹上辨识的有限维时变 Koopman 算子预测特征增量，再用浅层特征的 innovation 校正预测，周期性全量评估刷新观测器，所有扩散参数冻结。摘要报告特征 MSE 比 channelwise affine 预测降 19.9%/11.9%，消融证明其中一部分来自观测校正，DDIM-50 上约 1.9x 加速。",
+    "studyPath": {
+     "prerequisites": [
+      "扩散采样与 DDIM 调度",
+      "特征缓存（如 DeepCache）",
+      "线性系统/观测器与卡尔曼滤波直觉"
+     ],
+     "nextSteps": [
+      "读 DeepCache 等免训练加速方法做对比",
+      "了解 Koopman 算子在动力学建模中的用法",
+      "想清楚观测校正与单纯插值的差别"
+     ]
+    }
+   }
+  },
+  {
+   "id": "7a1d09356e2ec880",
+   "tldr": "训练期在夸张数据集上微调 text-to-motion 模型、推理期用 DMP 定义的夸张引导信号，可控地生成更夸张的表达性动作。",
+   "keyPoints": [
+    "现有运动生成模型动作物理合理，却忽略动画的 Exaggeration（夸张）原则",
+    "框架作用于现有运动生成管线的两个阶段",
+    "训练期：在自建夸张数据集上对预训练 text-to-motion 模型做监督微调",
+    "推理期：基于 dynamic movement primitives 给出夸张的数学形式",
+    "把该形式作为引导信号，免训练地引导扩散与 flow-matching 模型生成夸张动作",
+    "对比三个强基线，动作更夸张表达，同时保留中立参考意图与物理合理性"
+   ],
+   "why": "「把艺术目标数学化成可微引导信号」是可迁移的可控生成范式，动作/视频可控性是生成式岗位高频考点。",
+   "difficulty": "medium",
+   "tags": [
+    "generative",
+    "diffusion",
+    "motion-generation",
+    "guidance",
+    "flow-matching"
+   ],
+   "entities": [
+    "Exaggeration",
+    "dynamic movement primitives (DMPs)",
+    "text-to-motion",
+    "flow-matching"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "两阶段夸张控制管线",
+    "caption": "训练期改分布、推理期加引导：SFT 注入夸张先验，DMP 度量提供连续强度旋钮且不重训。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='夸张控制两阶段流程'><rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>预训练动作模型</text><text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>text-to-motion 基线</text><line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,70 236,62 244,62' fill='var(--line-1)'/><rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>训练期监督微调</text><text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>自建夸张数据集</text><line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,124 236,116 244,116' fill='var(--line-1)'/><rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>推理期 DMP 形式</text><text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>夸张的数学化度量</text><line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,178 236,170 244,170' fill='var(--line-1)'/><rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>引导采样出结果</text><text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>免训练偏置扩散/flow</text></svg>",
+    "alt": "四步流程：预训练 text-to-motion 模型→训练期在夸张数据集上监督微调→推理期用 DMP 定义夸张数学形式→作为引导信号免训练偏置扩散/flow 采样。"
+   },
+   "concepts": [
+    {
+     "name": "Dynamic Movement Primitives（动态运动基元）",
+     "readable": "一类把运动写成『收敛到目标的稳定二阶动力学 + 非线性强迫项』的参数化；改幅值或时间缩放就能按比例改变动作，同时保持轨迹形状与稳定性。",
+     "analogy": "像给弹簧挂一个小球并加以目标为终点的引导力：无论把起点拉多远，它总会以相似形状平滑地回到目标。",
+     "analogyBreaksDown": "弹簧系统只保证收敛形状，不保证符合人类骨骼与地面接触约束；夸张过头时 DMP 仍平滑收敛，但动作可能在物理上穿模或失衡。",
+     "mechanism": "用临界阻尼二阶系统保证收敛到目标 g，叠加径向基函数编码的强迫项复现任意平滑轨迹形状；把目标或时间常数按比例放大即实现夸张，因此它是『夸张』的可参数化入口。",
+     "visual": "横轴时间、纵轴位移；中立参考是一条小振幅曲线，夸张后是同样形状但振幅更大的曲线，两端仍收敛到目标。",
+     "prerequisites": [
+      "二阶动力学/阻尼系统",
+      "径向基函数",
+      "运动表示与骨骼动画"
+     ],
+     "selfTest": [
+      "DMP 的稳定收敛由哪一项保证？",
+      "改变哪个参数实现夸张？",
+      "强迫项的相位为何会衰减？"
+     ],
+     "formula": "\\tau^2\\ddot{y}=\\alpha_z\\big(\\beta_z(g-y)-\\tau\\dot{y}\\big)+f(x)"
+    },
+    {
+     "name": "Exaggeration Guidance（夸张引导信号）",
+     "readable": "把『夸张』写成一个可微度量，取其梯度在采样时叠加到生成方向上，从而无需重训就连续控制动作的夸张程度。",
+     "analogy": "像在写好的句子上加一支力度笔：字还是那些字，只是笔触按滑杆变粗变重。",
+     "analogyBreaksDown": "笔触只改外观，而动作夸张要同时满足骨骼动力学与地面接触等硬约束，引导稍过就会穿模或失衡，可控区间比图像风格化窄。",
+     "mechanism": "预训练模型给出可能动作但不保证符合动画原则；用 DMP 构造夸张度量，对其关于去噪状态的梯度作为引导项加到采样速度/score 上，使轨迹定向偏置。这与 classifier guidance 同构，但辅目标是领域定制的夸张度量。",
+     "visual": "横轴夸张强度 γ、纵轴表达性；画一条上升曲线与一条物理合理性下降曲线，二者交点即合适强度。",
+     "prerequisites": [
+      "扩散采样与 guidance",
+      "flow matching 的速度场",
+      "梯度可微与自动微分"
+     ],
+     "selfTest": [
+      "引导项是什么量的梯度？",
+      "为何引导不重训也能控制强度？",
+      "γ 过大为什么破坏合理性？"
+     ],
+     "formula": "\\tilde{v}_\\theta=v_\\theta+\\gamma\\,\\nabla_{x_t}\\mathcal{E}_{\\mathrm{exag}}"
+    },
+    {
+     "name": "Supervised Fine-tuning on Exaggeration Data（夸张数据监督微调）",
+     "readable": "在自建、带夸张标注的动作数据集上，用监督目标微调预训练 text-to-motion 模型，让它先见过夸张样本、把夸张风格注入模型分布。",
+     "analogy": "像让一个只跳过标准舞的舞者，先专门排练一批夸张舞段，之后再跳时自然更有张力。",
+     "analogyBreaksDown": "排练会改变舞者的默认风格、难以回退到中立版本；SFT 同样会把夸张偏好写进权重，若要严格中立输出需另存基线或靠推理期抵消。",
+     "mechanism": "纯推理引导只能在既有分布附近偏置，空间有限；SFT 直接移动分布中心，使模型对夸张动作有先验。训练期与推理期互补：前者改变能生成什么，后者决定这次生成多夸张。",
+     "visual": "横轴模型在夸张维度上的分布中心；SFT 后分布中心向夸张一侧平移，推理引导再在此基础上微调位置。",
+     "prerequisites": [
+      "监督微调",
+      "text-to-motion 条件生成",
+      "数据标注与数据构建"
+     ],
+     "selfTest": [
+      "SFT 与推理引导分别改变什么？",
+      "为何需要自建夸张数据集？",
+      "SFT 后还能输出中立动作吗？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-dmp-transformation-system",
+     "name": "DMP 变换系统（DMP Transformation System）",
+     "category": "generative",
+     "latex": "\\tau^2\\ddot{y}=\\alpha_z\\big(\\beta_z(g-y)-\\tau\\dot{y}\\big)+f(x),\\quad f(x)=\\frac{\\sum_i w_i\\psi_i(x)\\,x}{\\sum_i\\psi_i(x)}",
+     "symbols": [
+      [
+       "y",
+       "运动状态（如关节位置）"
+      ],
+      [
+       "\\dot{y},\\ddot{y}",
+       "速度与加速度"
+      ],
+      [
+       "g",
+       "目标吸引子"
+      ],
+      [
+       "\\tau",
+       "时间缩放常数"
+      ],
+      [
+       "\\alpha_z,\\beta_z",
+       "增益常数，取合适值使系统临界阻尼"
+      ],
+      [
+       "f(x)",
+       "非线性强迫项，由径向基 \\psi_i 加权"
+      ],
+      [
+       "w_i",
+       "第 i 个基函数的权重"
+      ],
+      [
+       "x",
+       "相位变量，随时间从 1 衰减到 0"
+      ]
+     ],
+     "derivation": [
+      "用一个二阶阻尼系统把运动写成收敛到目标 g 的稳定过程，保证轨迹平滑且必然到达终点。",
+      "叠加非线性强迫项 f(x) 编码示范轨迹的中间形状，使系统能复现任意平滑运动。",
+      "按比例放大目标/时间常数即可按比例夸张动作，且相位 x 衰减保证收敛不受 f 影响。"
+     ],
+     "analogy": "像弹簧挂小球并施加指向终点的引导力：起点拉得再远也以相似形状平滑回到目标。",
+     "pitfalls": [
+      "把 DMP 当纯曲线拟合：它是有收敛保证的动力学系统",
+      "忽略相位 x 衰减：强迫项随之消失才能收敛到目标",
+      "以为夸张=整体放大：还须保持运动意图与物理合理"
+     ],
+     "code": "import torch\ndef dmp_step(y, dy, g, x, f, alpha_z=25.0, beta_z=6.25, tau=1.0, dt=0.01):\n    ddy = (alpha_z * (beta_z * (g - y) - tau * dy) + f) / (tau ** 2)\n    dy = dy + ddy * dt\n    y = y + dy * dt\n    return y, dy",
+     "sources": [
+      {
+       "title": "Controllable Exaggeration for Generative Motion Models via Training-Time Adaptation and Inference-Time Guidance",
+       "url": "https://arxiv.org/abs/2610.12316v1"
+      }
+     ]
+    },
+    {
+     "id": "f-exaggeration-guidance",
+     "name": "夸张引导（Exaggeration Guidance）",
+     "category": "generative",
+     "latex": "\\tilde{v}_\\theta(x_t,c)=v_\\theta(x_t,c)+\\gamma\\,\\nabla_{x_t}\\mathcal{E}_{\\mathrm{exag}}(x_t)",
+     "symbols": [
+      [
+       "v_\\theta",
+       "预训练扩散/flow 模型的速度（或等价）预测"
+      ],
+      [
+       "x_t",
+       "第 t 步的去噪状态（动作序列）"
+      ],
+      [
+       "c",
+       "文本条件"
+      ],
+      [
+       "\\mathcal{E}_{\\mathrm{exag}}",
+       "由 DMP 定义的夸张度量"
+      ],
+      [
+       "\\gamma",
+       "引导强度，控制夸张程度"
+      ]
+     ],
+     "derivation": [
+      "预训练生成模型给出可能的动作分布，但不保证符合动画夸张原则。",
+      "用 DMP 把『夸张』写成可微度量 E_exag，例如运动幅值相对中立参考的超出程度。",
+      "在采样每一步对其梯度加项，把生成轨迹推向更夸张方向，无需重训模型。"
+     ],
+     "analogy": "像给写好的句子加一支力度笔：字不变，笔触按滑杆变粗变重。",
+     "pitfalls": [
+      "把引导当后处理缩放：它是采样过程中的梯度修正",
+      "γ 过大会破坏物理合理性与中立意图",
+      "以为引导能替代训练期微调：两者互补"
+     ],
+     "code": "import torch\ndef guided_velocity(v, x, exag_fn, gamma=0.5):\n    x = x.detach().requires_grad_(True)\n    e = exag_fn(x)\n    g = torch.autograd.grad(e.sum(), x)[0]\n    return v + gamma * g",
+     "sources": [
+      {
+       "title": "Controllable Exaggeration for Generative Motion Models via Training-Time Adaptation and Inference-Time Guidance",
+       "url": "https://arxiv.org/abs/2610.12316v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "摘要称近年运动生成模型能合成物理合理动作，但忽视动画师使用的既定动画原则",
+     "聚焦动画的 Exaggeration 原则，研究如何把它并入现代运动生成管线",
+     "框架作用于现有运动生成管线的两个阶段",
+     "训练期在自建夸张数据集上对预训练 text-to-motion 模型做监督微调",
+     "推理期基于 dynamic movement primitives 给出夸张的数学形式，并作为引导信号免训练引导扩散与 flow-matching 模型",
+     "对比三个强基线，方法生成更夸张、更有表现力的动作，同时保留中立参考意图与物理合理性"
+    ],
+    "uncertain": [
+     "DMP 变换系统与夸张引导公式为按摘要重建的通用形式，需核对原文",
+     "夸张数据集的构造方式与标注标准摘要未说明，待核实",
+     "引导在扩散与 flow-matching 两种参数化下的具体形式摘要未给出，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "给 AI 生成的动作加一个『夸张』旋钮，让动作更有表现力又不像乱动。"
+     },
+     {
+      "level": "入门",
+      "text": "现有 text-to-motion 生成的动作物理上合理，但缺动画师常用的夸张感。这篇分两步：训练时在自建的夸张动作数据集上微调模型；推理时用动态运动基元（DMP）把夸张写成可微信号，引导扩散/flow 模型生成更夸张的动作。"
+     },
+     {
+      "level": "进阶",
+      "text": "训练期做监督微调，让模型先见过夸张样本；推理期不再训练，而是把 DMP 参数化——它把运动分成收敛到目标的稳定系统加非线性强迫项，改变幅值即可按比例夸张。用这个形式构造夸张度量，其梯度作为引导项叠加到采样速度上，从而可控地放大表达性。"
+     },
+     {
+      "level": "专家",
+      "text": "关键设计是把模糊的动画原则变成可微、可调的数学信号。训练期 SFT 提供先验，推理期引导提供连续强度控制且不重训，两者互补：前者改变分布，后者在采样轨迹上偏置。对比三个强基线，方法在更夸张、更有表现力的同时保持中立参考意图与物理合理性，说明引导方向被约束在合理流形附近；这与 classifier guidance『用辅目标梯度改采样』同构，区别是辅目标是领域定制的 DMP 夸张度量。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不直接训练一个『夸张模型』，而要分训练期和推理期两步？",
+      "a": "纯训练只能得到固定强度的夸张；推理期 DMP 引导提供连续、可调的强度旋钮，并对已有多个模型即插即用，无需为每个强度重训。"
+     },
+     {
+      "q": "为什么用 DMP 而不是直接对动作线性放大？",
+      "a": "线性放大会破坏运动的时间结构与物理合理性；DMP 的动力学分解能按比例改幅值/时间缩放，同时保持轨迹形状与稳定性。"
+     },
+     {
+      "q": "引导强度 γ 太大会怎样？",
+      "a": "采样会过度偏离预训练分布，导致动作物理不合理或丢失中立参考意图，因此要在夸张与合理性之间权衡。"
+     }
+    ],
+    "mechanism": "『夸张』本身是意会的动画原则，难直接优化。作者先用 SFT 把带夸张标注的数据注入模型分布，再用 DMP 给出夸张的可微定义——DMP 把动作拆成收敛到目标的稳定动力学加非线性强迫项，幅值/时间缩放即夸张参数。取其梯度作为推理期引导，等价于在采样流上做定向偏置，从而在不改权重的前提下连续控制夸张强度，并借预训练先验保住物理合理性。",
+    "boundary": "适用前提是已有可用的预训练 text-to-motion 模型与夸张标注数据；当动作语义需要全新类别、夸张度量与物理约束冲突（大幅夸张会穿模/失稳）、或需严格遵循给定参考动作细节时，引导可能顾此失彼。摘要未给各强度下的定量退化曲线。",
+    "analogyBoundary": "把它类比成图片风格化的强度滑杆大致成立，但失效点在于：图像风格化主要改外观，而动作夸张要同时满足骨骼动力学与地面接触等硬约束，滑杆稍大就可能穿模或失衡，可行区间比图像窄得多。",
+    "misconceptions": [
+     "以为推理期引导能替代训练期微调：两者互补，一个改分布一个偏采样",
+     "以为夸张就是整体放大：须在保持意图与物理合理的前提下夸张",
+     "以为 DMP 只是曲线拟合：它是带稳定收敛性的动力学系统"
+    ],
+    "ownAnalysis": "（推断）这与 classifier guidance / universal guidance 属同一族：用可微辅目标梯度引导采样；本文新意在于把动画学原则用 DMP 数学化，使艺术意图变成可优化信号。（待核实）摘要未说明夸张数据集如何构造、标注标准是什么，也没给 DMP 参数与夸张度量的具体形式，这些决定可复现性与可控粒度。与 flow-matching 结合意味着引导加在速度场而非 score 上，需注意两种参数化的尺度差异（推断）。",
+    "officialNotes": [
+     {
+      "position": "摘要称框架作用于现有运动生成管线两个阶段：训练期在自建夸张数据集上监督微调预训练 text-to-motion 模型；推理期基于 DMP 给出夸张的数学形式并作为引导信号，免训练引导扩散与 flow-matching 模型；对比三个强基线，生成动作更夸张表达且保留中立参考意图与物理合理性。",
+      "source": "arxiv 2610.12316v1"
+     }
+    ],
+    "interviewAnswer": "这篇做动作生成的可控夸张。动机是现有 text-to-motion 模型动作物理合理但缺动画师的夸张表达。方法分两步：训练期在自建夸张数据集上监督微调，让模型见过夸张样本；推理期用动态运动基元把夸张写成数学形式——DMP 是收敛到目标的二阶稳定动力学加非线性强迫项，改幅值就能按比例夸张。把该形式的梯度当引导信号叠加到扩散/flow-matching 采样上，无需重训就能连续调夸张强度。对比三个强基线，动作更夸张表达，同时保住中立参考意图和物理合理性。",
+    "studyPath": {
+     "prerequisites": [
+      "扩散模型与 classifier guidance",
+      "flow matching 基础",
+      "运动生成/骨骼动画表示"
+     ],
+     "nextSteps": [
+      "读 classifier guidance 与 universal guidance",
+      "了解 DMP 在机器人示教中的用法",
+      "对比其他可控生成的动作条件化方法"
+     ]
+    }
+   }
+  },
+  {
+   "id": "054156dcbe200878",
+   "tldr": "把多智能体第一人称世界建模写成共享世界里的同步 ego-stream 生成，ME-World 在共享 token 序列里联合去噪多路 ego 视频流。",
+   "keyPoints": [
+    "第一人称世界模型常只建模单个智能体",
+    "真实具身场景常是多智能体在共享环境行动交互",
+    "已有多智能体世界模型只用粗粒度动作，细粒度具身交互研究不足",
+    "论文把问题表述为共享世界中经细粒度动作交互的同步 ego-stream 生成",
+    "需满足跨视角动作一致性、共享环境一致性、交互状态更新传播一致性",
+    "ME-World 在共享 token 序列联合去噪多路 ego 流，以全体智能体目标视角位姿为条件，用共享环境记忆 grounding",
+    "提出环境/更新/身份三类共享世界一致性指标，实验提升一致性与视频质量"
+   ],
+   "why": "多智能体 + 第一人称 + 细粒度动作是世界模型与具身方向的前沿交叉，考的是视频扩散条件设计与一致性建模能力。",
+   "difficulty": "hard",
+   "tags": [
+    "worldmodel",
+    "video-generation",
+    "multi-agent",
+    "embodied",
+    "diffusion"
+   ],
+   "entities": [
+    "ME-World",
+    "ego-stream",
+    "shared environment memory",
+    "target-view poses"
+   ],
+   "diagram": {
+    "kind": "architecture",
+    "title": "ME-World 联合去噪架构",
+    "caption": "多路 ego 流共享一个 token 序列联合去噪，全体目标位姿作条件、共享环境记忆作锚点，保证同一世界自洽。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='ME-World 架构流程'><rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>多智能体细粒度动作</text><text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>共享世界内交互</text><line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,70 236,62 244,62' fill='var(--line-1)'/><rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>共享 token 序列</text><text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>多路 ego 流拼接</text><line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,124 236,116 244,116' fill='var(--line-1)'/><rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>联合去噪 + 位姿条件</text><text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>全体目标视角位姿</text><line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,178 236,170 244,170' fill='var(--line-1)'/><rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>共享环境记忆</text><text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>跨视角持久锚点</text></svg>",
+    "alt": "四层流程：多智能体细粒度动作→多路 ego 流拼进共享 token 序列→以全体目标视角位姿为条件联合去噪→共享环境记忆作 grounding 锚点。"
+   },
+   "concepts": [
+    {
+     "name": "Egocentric World Model（第一人称世界模型）",
+     "readable": "以智能体动作为条件、预测它第一人称视角下下一个观测（画面）的生成模型，相当于可交互的『我眼中的世界』模拟器。",
+     "analogy": "像戴着 VR 头盔照自己的动作实时生成眼前画面：你转头、抬手，画面跟着变。",
+     "analogyBreaksDown": "VR 背后是真实渲染引擎、几何严格自洽；而世界模型是学出来的，可能出现画面逼真但几何/物理自相矛盾的幻觉，两者错误性质不同。",
+     "mechanism": "把动作当条件、观测当目标，用生成模型学动作到视角画面的映射，从而能对未来观测做预测与推演；单智能体版本忽略多个体间的相互作用。",
+     "visual": "横轴时间、纵轴画面帧；输入是动作序列，输出是一串第一人称帧，动作改变帧的内容。",
+     "prerequisites": [
+      "动作条件视频生成",
+      "扩散/自回归生成",
+      "相机位姿与视角变换"
+     ],
+     "selfTest": [
+      "第一人称世界模型的条件和目标分别是什么？",
+      "它与普通视频生成的区别？",
+      "单智能体版本缺了什么？"
+     ],
+     "formula": ""
+    },
+    {
+     "name": "Cross-View Action Consistency（跨视角动作一致性）",
+     "readable": "多个智能体同时行动时，各自看到的世界必须对同一场景几何与同一状态更新给出自洽解释，否则等于把同一个世界渲染成了多个。",
+     "analogy": "像多人联机游戏里每个玩家的屏幕必须显示同一个场景：我看到的门在你那边也得是同一扇门、同一个开合状态。",
+     "analogyBreaksDown": "联机游戏有服务器权威状态兜底，而这里没有权威真值，一致性只能靠模型学出来，可能出现观测合理却物理矛盾的『假一致』。",
+     "mechanism": "把多路 ego 流放进共享 token 序列联合去噪，使跨流注意力能在同一时刻对齐状态；再以全体智能体目标位姿为条件显式注入视角间几何关系，从而让不同视角的生成互相约束。",
+     "visual": "横轴视角 A、纵轴视角 B；画同一物体在两视角中的投影点，一致时两点由同一 3D 点生成、连线汇聚。",
+     "prerequisites": [
+      "多视角几何/极线约束",
+      "注意力机制",
+      "联合生成建模"
+     ],
+     "selfTest": [
+      "一致性具体约束哪些量？",
+      "为什么要用全体目标位姿当条件？",
+      "缺少一致性会出现什么失败模式？"
+     ],
+     "formula": "\\mathcal{C}_{\\mathrm{shared}}=\\lambda_{\\mathrm{env}}\\mathcal{C}_{\\mathrm{env}}+\\lambda_{\\mathrm{upd}}\\mathcal{C}_{\\mathrm{upd}}+\\lambda_{\\mathrm{id}}\\mathcal{C}_{\\mathrm{id}}"
+    },
+    {
+     "name": "Shared Environment Memory（共享环境记忆）",
+     "readable": "跨视角共享的一份环境状态锚点，用来稳定身份与场景结构，防止长时序生成时物体身份漂移或环境被悄悄改写。",
+     "analogy": "像几个画师共用同一本设定集：不管谁画哪个角度，家具位置、角色长相都照设定集来，不会各画各的。",
+     "analogyBreaksDown": "设定集是静态文本、可精确引用；而记忆是学出来的 latent，随时间仍会被更新与遗忘，且多个智能体同时写入时可能冲突。",
+     "mechanism": "在共享 token 序列之外维护一份环境记忆，作为生成时的 grounding 条件注入；因为它是跨视角共享的，会迫使不同 ego 流对同一环境元素给出一致解释，同时缓解长时序漂移。",
+     "visual": "横轴生成时间步、纵轴身份/结构误差；无记忆误差缓慢上升（漂移），有记忆保持平稳。",
+     "prerequisites": [
+      "记忆/缓存机制（如 KV 缓存）",
+      "长时序生成与漂移",
+      "条件注入"
+     ],
+     "selfTest": [
+      "共享环境记忆解决什么失败模式？",
+      "它和单流自回归历史有何区别？",
+      "多智能体同时写入会有什么风险？"
+     ],
+     "formula": ""
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-joint-ego-denoising",
+     "name": "多路 Ego 流联合去噪（Joint Ego-Stream Denoising）",
+     "category": "worldmodel",
+     "latex": "\\mathcal{L}=\\mathbb{E}_{t,\\epsilon}\\Big[\\sum_{i=1}^{M} w_i\\,\\big\\|\\epsilon-\\epsilon_\\theta\\big(z_t^{(i)},t,\\,a^{(i)},\\{p^{(j)}\\}_{j=1}^{M},\\mathcal{M}\\big)\\big\\|^2\\Big]",
+     "symbols": [
+      [
+       "M",
+       "共享世界中的智能体数量"
+      ],
+      [
+       "z_t^{(i)}",
+       "第 i 路 ego 流在第 t 步的噪声 latent"
+      ],
+      [
+       "a^{(i)}",
+       "第 i 个智能体的细粒度动作"
+      ],
+      [
+       "p^{(j)}",
+       "第 j 个智能体的目标视角位姿"
+      ],
+      [
+       "\\mathcal{M}",
+       "共享环境记忆（grounding 条件）"
+      ],
+      [
+       "\\epsilon_\\theta",
+       "去噪网络，在共享 token 序列上联合预测噪声"
+      ],
+      [
+       "w_i",
+       "第 i 路流的损失权重"
+      ]
+     ],
+     "derivation": [
+      "把每个智能体的第一人称观测编码为 latent，多路拼进一个共享 token 序列。",
+      "网络以各路自身动作、全体智能体目标位姿、共享环境记忆为条件，联合预测加噪 latent 中的噪声。",
+      "对全部 ego 流求和，使跨流注意力在同一时刻对齐状态，从而满足跨视角与共享环境一致性。"
+     ],
+     "analogy": "像多人同时速写同一场景：画板（token 序列）放在一起，每人都能瞄到别人的进度，于是彼此对齐。",
+     "pitfalls": [
+      "当成 M 个独立去噪：丢掉跨流对齐，一致性失效",
+      "忽略『全体』位姿条件：只用自身动作无法建模智能体间几何",
+      "token 数随智能体数快速增长带来显存/序列长度瓶颈"
+     ],
+     "code": "import torch\ndef joint_denoise_loss(eps, eps_theta, z_t_list, weights=None):\n    M = len(z_t_list)\n    w = weights or [1.0 / M] * M\n    loss = 0.0\n    for i in range(M):\n        loss = loss + w[i] * ((eps - eps_theta[i]) ** 2).mean()\n    return loss",
+     "sources": [
+      {
+       "title": "Multi-Agent Egocentric World Model with Fine-Grained Embodied Interaction",
+       "url": "https://arxiv.org/abs/2610.12299"
+      }
+     ]
+    },
+    {
+     "id": "f-shared-world-consistency",
+     "name": "共享世界一致性指标（Shared-World Consistency Metric）",
+     "category": "worldmodel",
+     "latex": "\\mathcal{C}_{\\mathrm{shared}}=\\lambda_{\\mathrm{env}}\\,\\mathcal{C}_{\\mathrm{env}}+\\lambda_{\\mathrm{upd}}\\,\\mathcal{C}_{\\mathrm{upd}}+\\lambda_{\\mathrm{id}}\\,\\mathcal{C}_{\\mathrm{id}}",
+     "symbols": [
+      [
+       "\\mathcal{C}_{\\mathrm{env}}",
+       "环境一致性：不同视角对同一场景结构的一致程度"
+      ],
+      [
+       "\\mathcal{C}_{\\mathrm{upd}}",
+       "更新一致性：交互引发的状态更新在各视角间传播的一致程度"
+      ],
+      [
+       "\\mathcal{C}_{\\mathrm{id}}",
+       "身份一致性：物体/智能体身份在多视角多时刻的保持程度"
+      ],
+      [
+       "\\lambda_{\\mathrm{env}},\\lambda_{\\mathrm{upd}},\\lambda_{\\mathrm{id}}",
+       "三项权重"
+      ]
+     ],
+     "derivation": [
+      "把笼统的『一致』拆成可度量的三轴：环境、更新、身份。",
+      "各轴分别度量对应的一致性（如跨视角结构吻合、状态更新传播吻合、身份保持）。",
+      "加权合成单一指标，便于横向比较方法并定位失败模式。"
+     ],
+     "analogy": "像给多人协作画展打分：构图一致、改动同步、人物长相不跑偏，三项分别打分再汇总。",
+     "pitfalls": [
+      "把一致性当成画面风格相似：它指几何、状态更新与身份的一致",
+      "忽略更新一致性：静态一致≠交互后仍一致",
+      "以为单指标能覆盖全部失败模式：三类各有盲区"
+     ],
+     "code": "def shared_world_consistency(env_cons, upd_cons, id_cons, lam=None):\n    lam = lam or [1/3, 1/3, 1/3]\n    return lam[0]*env_cons + lam[1]*upd_cons + lam[2]*id_cons",
+     "sources": [
+      {
+       "title": "Multi-Agent Egocentric World Model with Fine-Grained Embodied Interaction",
+       "url": "https://arxiv.org/abs/2610.12299"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "第一人称世界模型基于智能体动作预测第一人称观测，且多数只针对单个智能体",
+     "真实具身场景常有多个智能体在共享环境中行动与交互",
+     "现有多智能体世界模型依赖粗粒度动作（移动、相机控制、离散指令），细粒度具身交互研究不足",
+     "论文把多智能体第一人称世界建模表述为：共享世界中经细粒度动作交互的同步 ego-stream 生成",
+     "需满足跨视角动作一致性、共享环境一致性与交互引发状态更新的传播一致性",
+     "ME-World 在共享 token 序列中联合去噪多路 ego 流，以所有智能体目标视角位姿为条件，用共享环境记忆 grounding",
+     "引入环境/更新/身份三类共享世界一致性指标，实验改善一致性、动作控制、身份保持与视频质量"
+    ],
+    "uncertain": [
+     "联合去噪目标与一致性指标为按摘要重建的通用形式，需核对原文",
+     "共享环境记忆的具体形式（KV/全局 latent）摘要未说明，待核实",
+     "训练数据规模、智能体数量与评估协议摘要未给出，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "让多个 AI 智能体在同一世界里，各自看到符合第一人称视角、且彼此一致的世界画面。"
+     },
+     {
+      "level": "入门",
+      "text": "第一人称世界模型能根据动作预测『我看到什么』，但大多只管一个智能体。真实具身场景常有多个智能体在共享环境里交互。ME-World 同时生成多个智能体的第一人称视频流，保证它们看到的是同一个世界、动作与状态变化彼此一致。"
+     },
+     {
+      "level": "进阶",
+      "text": "论文把多智能体第一人称世界建模表述为：多智能体经细粒度动作在共享世界交互时的同步 ego-stream 生成，需满足跨视角动作一致性、共享环境一致性和交互状态更新传播一致性。ME-World 把多路 ego 流放进一个共享 token 序列联合去噪，每路都以所有智能体的目标视角位姿为条件，并用共享环境记忆做 grounding，还提出环境/更新/身份三类一致性指标。"
+     },
+     {
+      "level": "专家",
+      "text": "难点是『同一个世界』的强约束：不同视角必须对同一场景几何与状态更新给出自洽解释。联合去噪在共享 token 序列上建模，使跨流注意力天然对齐同一时刻的状态；以所有智能体目标位姿为条件，把『谁看谁』的几何关系显式注入；共享环境记忆充当跨视角持久锚点，抑制身份漂移与环境改写。指标把『一致』拆成环境、更新、身份三轴，便于定位失败模式。比单智能体或粗粒度多智能体模型更接近真实具身交互。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不能把单智能体世界模型跑 M 遍当作多智能体？",
+      "a": "独立生成会违反共享环境一致性：A 看到的桌子与 B 看到的可能对不上，交互引发的状态更新也无法互相传播，等于把同一个世界渲染成 M 个。"
+     },
+     {
+      "q": "为什么要以所有智能体的目标视角位姿为条件？",
+      "a": "细粒度交互取决于智能体之间的空间关系；把全体目标位姿作为条件，模型才能生成几何自洽的跨视角观测，而不只是各自的自我视角。"
+     },
+     {
+      "q": "共享环境记忆解决什么问题？",
+      "a": "长时序生成容易身份漂移与环境被改写，共享记忆作为跨视角持久锚点，稳定身份与场景结构。"
+     }
+    ],
+    "mechanism": "多智能体第一人称生成的真正约束是『同一世界』：不同视角必须对同一几何与状态自洽。作者用共享 token 序列联合去噪，使跨 ego 流注意力能在同一时刻对齐状态；把全体智能体目标位姿当条件，显式注入视角间几何；共享环境记忆作为持久锚点抑制漂移。三者分别对应跨视角动作一致、共享环境一致、交互状态更新一致这三个需求。",
+    "boundary": "适用前提是能获得多智能体同步数据（真实或合成）与可靠的位姿/动作标注；当智能体数量增大、交互高度非刚性（遮挡频繁、物体被共同操作）、或需长时段一致性时，共享 token 序列的容量与一致性成本上升。摘要未给智能体数量与时长上的扩展性证据。",
+    "analogyBoundary": "把它类比成『多人联机游戏里每个玩家必须看到同一个世界』很贴切，但失效点在于：游戏世界由服务器权威状态保证，而这里没有权威状态，一致性只能靠模型学出来，因此会出现观测合理却物理不一致的『假一致』，联机类比低估了这种软约束的风险。",
+    "misconceptions": [
+     "以为多智能体只是单智能体模型并行复制：会破坏共享环境一致性",
+     "以为一致性只是画面风格一致：它指几何、状态更新与身份的一致",
+     "以为共享环境记忆可有可无：它是抑制身份/环境漂移的关键 grounding"
+    ],
+    "ownAnalysis": "（推断）这与 Genie/World Models 系列同属『动作条件视频生成 = 可交互世界』一脉，但把单智能体扩展到多智能体，关键增量是跨视角一致性约束。用共享 token 序列 + 跨流注意力是自然选择，因为一致性在注意力层最容易对齐；风险是 token 数随智能体数快速上升（推断），这是可扩展性瓶颈。（待核实）摘要未给共享环境记忆的具体形式与三类指标的计算方式，需核对原文。",
+    "officialNotes": [
+     {
+      "position": "摘要将多智能体第一人称世界建模表述为：多智能体经细粒度动作在共享世界交互时的同步 ego-stream 生成，需具备跨视角动作一致性、共享环境一致性与交互引发状态更新的传播一致性；ME-World 在共享 token 序列中联合去噪多路 ego 流、以全体智能体目标视角位姿为条件、用共享环境记忆 grounding，并引入环境/更新/身份三类共享世界一致性指标。",
+      "source": "arxiv 2610.12299"
+     }
+    ],
+    "interviewAnswer": "这篇做多智能体第一人称世界模型。单智能体第一人称世界模型只预测『我根据动作看到什么』，但真实具身场景多个智能体在同一环境交互，已有方法又只用粗粒度动作。论文把它表述为共享世界里的同步 ego-stream 生成，要求跨视角动作一致、共享环境一致、交互状态更新一致。ME-World 把多路 ego 流放进一个共享 token 序列联合去噪，每路以所有智能体的目标视角位姿为条件，并用共享环境记忆做 grounding，还提出环境/更新/身份三类一致性指标，实验显示在这些一致性、动作控制、身份保持与视频质量上都优于已有方法。",
+    "studyPath": {
+     "prerequisites": [
+      "扩散/视频生成与 latent 表示",
+      "世界模型与动作条件生成",
+      "注意力与多视角几何"
+     ],
+     "nextSteps": [
+      "读单智能体第一人称/动作条件视频生成工作",
+      "了解共享 token 序列与联合去噪的工程细节",
+      "思考一致性指标如何量化与评测"
+     ]
+    }
+   }
+  },
+  {
+   "id": "2545b0a92a02b0fc",
+   "tldr": "指出 VLA 的可行性与似然缺口：局部安全动作可能堵死后续安全路径，提出免训练、告警触发的重排器 VICS-G 按留下的未来选动作。",
+   "keyPoints": [
+    "安全的动作未必可行：冻结 VLA 策略可能选局部允许却堵死安全完成路径的动作",
+    "称之为 feasibility-likelihood gap：似然排序下一个动作，可行性取决于它留下的未来",
+    "推导出限制在安全完成任务上的、历史条件策略-环境轨迹律的精确 next-block marginal",
+    "该推导给出候选相关的 feasible-future mass：支撑记录安全完成是否仍可能，幅值衡量剩余加权安全完成质量",
+    "在线精确评估不可行，故提出选择性有限候选近似，并给出恢复最佳保留可行候选的条件",
+    "免训练、告警触发的重排器 VICS-G 在六个 Safety-CHORES 设置把平均累计安全代价降 1.9%-57.5%",
+    "成功率与策略采样差距 2.5 个百分点内、平均回合长度差 0.82 步；无需重训策略或在线 rollout"
+   ],
+   "why": "「安全 ≠ 可行」与免训练推理期重排是 VLA/具身算法面试深水区，考轨迹律、边缘化与解码期对齐。",
+   "difficulty": "hard",
+   "tags": [
+    "worldmodel",
+    "vla",
+    "safety",
+    "decoding",
+    "embodied"
+   ],
+   "entities": [
+    "VICS-G",
+    "feasibility-likelihood gap",
+    "feasible-future mass",
+    "Safety-CHORES",
+    "VLA"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "VICS-G 可行未来重排",
+    "caption": "不只看下一步是否安全，而是估计每个候选留下的安全完成质量，仅在告警触发时重排有限候选。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='VICS-G 重排流程'><rect x='56' y='16' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='40' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>冻结 VLA 采样候选</text><text x='408' y='40' font-size='13' text-anchor='end' fill='currentColor'>似然排序下一动作块</text><line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,70 236,62 244,62' fill='var(--line-1)'/><rect x='56' y='70' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>似然盲区暴露</text><text x='408' y='94' font-size='13' text-anchor='end' fill='currentColor'>安全却堵死未来</text><line x1='240' y1='108' x2='240' y2='116' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,124 236,116 244,116' fill='var(--line-1)'/><rect x='56' y='124' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='148' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>估计可行未来质量</text><text x='408' y='148' font-size='13' text-anchor='end' fill='currentColor'>feasible-future mass</text><line x1='240' y1='162' x2='240' y2='170' stroke='var(--line-1)' stroke-width='1.6'/><polygon points='240,178 236,170 244,170' fill='var(--line-1)'/><rect x='56' y='178' width='368' height='38' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/><text x='72' y='202' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>告警触发重排</text><text x='408' y='202' font-size='13' text-anchor='end' fill='currentColor'>免训练、免 rollout</text></svg>",
+    "alt": "四步流程：冻结 VLA 采样候选动作块→暴露似然盲区（安全却堵死未来）→估计候选的 feasible-future mass→告警触发时重排，免训练免在线 rollout。"
+   },
+   "concepts": [
+    {
+     "name": "Feasibility-Likelihood Gap（可行性与似然缺口）",
+     "readable": "策略按似然挑的下一步动作可能局部安全、却让之后再也无法安全完成任务；似然衡量当前步是否合理，可行性衡量它留下的未来，二者不是一回事。",
+     "analogy": "像走迷宫只挑眼前最宽的路：这一步确实好走，但它可能通向死胡同，让你再也走不到出口。",
+     "analogyBreaksDown": "迷宫规则完全已知可精确搜索；这里的策略与环境都是随机的，可行性只能在概率意义上估计，所以缺口是统计量上的、无法像迷宫那样一票否决。",
+     "mechanism": "自回归/动作分块的策略只对当前块做似然排序，没有把『之后是否还有安全完成路径』纳入打分，于是会出现高似然但未来被堵死的动作；论文把安全判据从单步约束改成对未来分布的约束来弥合该缺口。",
+     "visual": "横轴动作候选、纵轴分数；画似然条与可行未来质量条，两者高度排序不一致，高似然候选的可行质量可能为 0。",
+     "prerequisites": [
+      "VLA 策略与动作分块",
+      "似然/自回归解码",
+      "安全约束基本概念"
+     ],
+     "selfTest": [
+      "似然高为什么不等于可行？",
+      "缺口出现在解码的哪一步？",
+      "为什么要改变判据而非微调阈值？"
+     ],
+     "formula": "F(b\\mid h)=\\mathbb{E}_{\\tau\\sim p_\\pi}\\big[\\mathbf{1}[b(\\tau)=b]\\,\\mathbf{1}[\\mathrm{SafeComplete}(\\tau)]\\big]"
+    },
+    {
+     "name": "Feasible-Future Mass（可行未来质量）",
+     "readable": "某个候选动作块留下的、加权安全完成任务的质量：支撑非空说明安全完成仍可能，幅值说明还剩多少安全完成的质量。",
+     "analogy": "像过桥前先掂量：这条桥过去之后，还有多少条通往对岸的路，路越多越踏实。",
+     "analogyBreaksDown": "桥与路是离散可数的；这里的质量是连续概率量，且必须相对冻结策略来定义——换一个策略，同一个动作的可行未来质量会变。",
+     "mechanism": "由历史条件策略-环境轨迹律限制到安全完成任务事件、再对候选块取边缘得到，因此它是精确的策略相对目标；工程上用有限候选近似估计它，用于重排。",
+     "visual": "横轴候选动作块、纵轴可行未来质量；画柱状，安全候选柱高、堵死未来的候选高度为 0。",
+     "prerequisites": [
+      "轨迹律与边缘化",
+      "条件期望",
+      "策略相对评估"
+     ],
+     "selfTest": [
+      "支撑与幅值分别表示什么？",
+      "为什么它必须是策略相对的？",
+      "质量估成 0 意味着什么？"
+     ],
+     "formula": "\\hat{F}(b\\mid h)\\approx\\frac{1}{N}\\sum_{i=1}^{N}\\mathbf{1}[\\mathrm{SafeComplete}(\\tau_i)\\,\\wedge\\,b(\\tau_i)=b]"
+    },
+    {
+     "name": "Selective Finite-Candidate Reranking（选择性有限候选重排）",
+     "readable": "只在告警触发时，对有限个候选估计可行未来质量并重排挑选，避免全时重排的开销，也无需重训策略或在线 rollout。",
+     "analogy": "像只在仪表报警时才停下车重新权衡路线，平时照常往前开。",
+     "analogyBreaksDown": "报警只在有明显征兆时出现；而这里的可行性丧失可能毫无表面征兆，告警阈值定得太迟钝就会漏掉危险，安全性依赖告警设计。",
+     "mechanism": "在线精确评估不可行，故每次只在触发时刻保留少量候选做近似估计，再取估计质量最大的候选；论文还给出能恢复最佳保留可行候选的条件，保证近似不至于选错。",
+     "visual": "横轴时间、纵轴是否重排；画脉冲信号，只在告警时刻出现重排脉冲。",
+     "prerequisites": [
+      "重排/reranking 与 best-of-N",
+      "推理期对齐",
+      "阈值触发机制"
+     ],
+     "selfTest": [
+      "『选择性』省掉了什么开销？",
+      "为什么需要恢复最佳候选的条件？",
+      "告警漏报会有什么后果？"
+     ],
+     "formula": "b^{\\star}=\\arg\\max_{b\\in\\mathcal{B}_{\\mathrm{cand}}}\\hat{F}(b\\mid h)\\ \\ \\mathrm{s.t.}\\ \\ \\mathrm{Alarm}(h)=1"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-feasible-future-mass",
+     "name": "可行未来质量（Feasible-Future Mass）",
+     "category": "worldmodel",
+     "latex": "F(b\\mid h)=\\mathbb{E}_{\\tau\\sim p_\\pi(\\cdot\\mid h)}\\big[\\mathbf{1}[b(\\tau)=b]\\,\\mathbf{1}[\\mathrm{SafeComplete}(\\tau)]\\big]",
+     "symbols": [
+      [
+       "h",
+       "当前历史（观测-动作序列）"
+      ],
+      [
+       "b",
+       "候选动作块（next block）"
+      ],
+      [
+       "p_\\pi(\\cdot\\mid h)",
+       "冻结策略 π 下、历史条件的策略-环境轨迹律"
+      ],
+      [
+       "\\tau",
+       "一条策略-环境轨迹"
+      ],
+      [
+       "\\mathbf{1}[\\cdot]",
+       "指示函数"
+      ],
+      [
+       "\\mathrm{SafeComplete}(\\tau)",
+       "轨迹是否安全完成任务"
+      ],
+      [
+       "F(b\\mid h)",
+       "候选 b 的可行未来质量"
+      ]
+     ],
+     "derivation": [
+      "候选动作块的取舍应由它留下的未来决定，而非仅看当前步似然。",
+      "对冻结策略下的策略-环境轨迹律，限制到安全完成任务事件并对候选块取边缘。",
+      "得到 F(b|h)：支撑非空表示安全完成仍可能，幅值表示剩余加权安全完成质量。"
+     ],
+     "analogy": "像选岔路口时不仅看这条路限速是否合法，还看走完它之后是否还有通向目的地的路。",
+     "pitfalls": [
+      "把 F 当概率归一化值：它是加权质量，非负但不必求和为 1",
+      "忽略它相对冻结策略定义：换策略则可行性随之改变",
+      "以为支撑为空能靠重排补救：无可行候选时无解"
+     ],
+     "code": "def feasible_future_mass(traj_samples, choose_block, safe_flags):\n    n = len(traj_samples)\n    total = 0.0\n    for tr, safe in zip(traj_samples, safe_flags):\n        if safe and choose_block(tr) is not None:\n            total += 1.0\n    return total / max(n, 1)",
+     "sources": [
+      {
+       "title": "A Safe Action Is Not Enough: Feasible-Future Decoding for Vision-Language-Action Policies",
+       "url": "https://arxiv.org/abs/2610.05166"
+      }
+     ]
+    },
+    {
+     "id": "f-vicsg-rerank",
+     "name": "VICS-G 可行未来重排（VICS-G Feasible-Future Reranking）",
+     "category": "worldmodel",
+     "latex": "b^{\\star}=\\arg\\max_{b\\in\\mathcal{B}_{\\mathrm{cand}}}\\hat{F}(b\\mid h)\\quad \\mathrm{s.t.}\\quad \\mathrm{Alarm}(h)=1",
+     "symbols": [
+      [
+       "\\mathcal{B}_{\\mathrm{cand}}",
+       "有限候选动作块集合"
+      ],
+      [
+       "\\hat{F}(b\\mid h)",
+       "可行未来质量的估计"
+      ],
+      [
+       "\\mathrm{Alarm}(h)",
+       "告警触发条件，决定是否重排"
+      ],
+      [
+       "b^{\\star}",
+       "被选中的动作块"
+      ]
+     ],
+     "derivation": [
+      "在线精确评估所有候选的可行未来质量不可行，只保留有限候选。",
+      "用选择性近似估计各候选的 F，作为筛选依据。",
+      "仅当告警触发时用 argmax 重排，兼顾安全与任务性能。"
+     ],
+     "analogy": "像只在仪表报警时才停下来重新权衡路线，平时照常开。",
+     "pitfalls": [
+      "对所有时刻都重排会拖慢推理，甚至损害任务性能",
+      "候选池太小可能不含任何可行候选",
+      "告警阈值太敏感会频繁干预、太迟钝会漏掉危险"
+     ],
+     "code": "def vics_g_rerank(candidates, est_mass, alarm):\n    if not alarm:\n        return candidates[0]\n    best = max(candidates, key=lambda b: est_mass[b])\n    return best",
+     "sources": [
+      {
+       "title": "A Safe Action Is Not Enough: Feasible-Future Decoding for Vision-Language-Action Policies",
+       "url": "https://arxiv.org/abs/2610.05166"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "摘要称安全的动作未必可行：冻结 VLA 策略可能偏好局部允许、却堵死安全完成路径的动作",
+     "称之为 feasibility-likelihood gap：似然排序下一个动作，可行性取决于它留下的未来",
+     "推导出限制在安全完成任务上的、历史条件策略-环境轨迹律的精确 next-block marginal",
+     "该推导给出候选相关的 feasible-future mass：支撑记录安全完成是否仍可能，幅值衡量剩余加权安全完成质量",
+     "精确在线评估不现实，故提出选择性有限候选近似，并给出恢复最佳保留可行候选的条件",
+     "VICS-G 在六个 Safety-CHORES 设置把平均累计安全代价降 1.9%-57.5%，成功率与策略采样差距 2.5 个百分点内、平均回合长度差 0.82 步",
+     "无需重训策略，也无需在线 rollout"
+    ],
+    "uncertain": [
+     "可行未来质量与重排公式为按摘要重建的通用形式，需核对原文",
+     "安全完成任务事件的判定方式、近似误差界与安全代价度量摘要未给出，待核实",
+     "『选择性』近似的选择准则与恢复最佳候选的条件摘要未说明，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "有些动作当下看着安全，却把后面安全完成任务的路堵死了；这篇教机器人按留下的未来来选动作。"
+     },
+     {
+      "level": "入门",
+      "text": "VLA 策略通常按似然挑下一步动作，但似然高只说明这一步合理，不保证后面还能安全完成任务。论文把这种差别叫 feasibility-likelihood gap，并提出一个免训练的重排器，替策略挑那些仍保留安全完成路径的动作。"
+     },
+     {
+      "level": "进阶",
+      "text": "论文从策略-环境轨迹律出发，推导出限制在安全完成任务事件上的精确 next-block marginal，得到候选相关的 feasible-future mass：支撑告诉你在冻结策略继续执行下安全完成是否仍可能，幅值衡量还剩多少加权的安全完成质量。因为在线精确计算不现实，作者给出选择性有限候选近似，并证明在什么条件下能恢复最佳保留候选。"
+     },
+     {
+      "level": "专家",
+      "text": "核心洞见是把安全从对单个动作的约束升级为对动作所留下未来分布的约束：一个动作可行当且仅当在冻结策略下仍有正的加权安全完成质量。feasible-future mass 正是这个量，且可由策略-环境联合律的边缘化精确写出，因此有明确的理论目标。工程上以告警触发、只在可疑时重排有限候选，故免训练、免在线 rollout。六个 Safety-CHORES 设置把平均累计安全代价降 1.9%-57.5%，成功与回合长度几乎不掉，说明可行性重排几乎没有牺牲任务性能。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么似然高不等于可行？",
+      "a": "似然只对下一个动作块排序，衡量当前步是否合理；可行性取决于该动作之后仍能安全完成的概率质量，二者是不同量，故出现 feasibility-likelihood gap。"
+     },
+     {
+      "q": "为什么它能免训练、免在线 rollout？",
+      "a": "目标是策略-环境轨迹律在安全完成任务上的边缘量，可用有限候选近似估计；只在告警触发时对少量候选重排，既不需梯度更新策略，也不需真跑模拟。"
+     },
+     {
+      "q": "选择性有限候选近似里的『选择性』指什么？",
+      "a": "指只在告警触发、且只对少数候选估计可行未来质量，以控制在线代价；因此对估计准确性有额外要求，需要恢复最佳保留候选的条件。"
+     }
+    ],
+    "mechanism": "关键是把安全判据从『动作是否局部允许』改成『动作留下的未来里还剩多少安全完成任务的质量』。作者从历史条件策略-环境轨迹律出发，对安全完成任务事件取条件，得到 next-block marginal——即候选动作块的可行未来质量：支撑刻画可行性，幅值刻画剩余安全完成质量。在线精确评估不可行，于是用有限候选近似并在触发时重排，既不重训策略也不在线 rollout。",
+    "boundary": "适用前提是有可判定的『安全完成任务』事件与冻结的策略-环境转移模型；当任务无清晰安全完成定义、环境强随机导致轨迹律难估计、或候选池不含任何可行候选（支撑为空）时，重排无法挽回。摘要未给失败案例与近似误差的定量边界。",
+    "analogyBoundary": "把它类比成下棋时『不只看这一步是否合法，还看是否还有通向将死的路』很贴切，但失效点在于：棋的规则完全已知、可精确搜索，而这里环境与策略是随机的，可行未来质量只能近似估计，因此它给的是概率意义下的可行性，而非确定性保证。",
+    "misconceptions": [
+     "以为安全 = 可行：论文的核心正是这两者不等价",
+     "以为需要重训策略：VICS-G 免训练，只做推理期重排",
+     "以为要做在线 rollout：摘要明确不需要在线 rollout"
+    ],
+    "ownAnalysis": "（推断）feasible-future mass 可看成对动作块按『安全完成事件』加权的后验质量，与 risk-sensitive / constrained RL 里的安全 Q 值或可行性价值函数同族，但这里不改策略、只改解码，属于推理期对齐。它利用冻结策略作为参考过程，故其评估天然限制在该策略可达的分布内。（待核实）摘要未给安全完成事件的判定方式、近似误差界与安全代价的具体度量，这些决定它能否迁移到真实机器人。",
+    "officialNotes": [
+     {
+      "position": "摘要称冻结 VLA 策略可能偏好局部允许却堵死安全完成路径的动作，称之为 feasibility-likelihood gap；推导出限制在安全完成任务上的精确 next-block marginal，给出候选相关的 feasible-future mass；因在线精确评估不现实，提出选择性有限候选近似并给出恢复最佳保留可行候选的条件；VICS-G 在六个 Safety-CHORES 设置把平均累计安全代价降 1.9%-57.5%，成功与策略采样差距在 2.5 个百分点内、平均回合长度差 0.82 步，且无需重训策略或在线 rollout。",
+      "source": "arxiv 2610.05166"
+     }
+    ],
+    "interviewAnswer": "这篇讲 VLA 里『安全不等于可行』。冻结策略按似然挑动作，可能选一个当前允许、却让后面没有安全完成路径的动作，作者称之为 feasibility-likelihood gap。他们把安全判据从单步约束升级成对未来分布的约束：从历史条件策略-环境轨迹律出发，推导出限制在安全完成任务上的精确 next-block marginal，得到候选相关的 feasible-future mass——支撑说明安全完成是否仍可能，幅值说明还剩多少加权安全完成质量。在线精确算不了，就用选择性有限候选近似并在告警时重排，得到免训练、免 rollout 的 VICS-G，六个 Safety-CHORES 设置下安全代价大降而成功率几乎不掉。",
+    "studyPath": {
+     "prerequisites": [
+      "VLA 策略与动作分块",
+      "马尔可夫决策过程与轨迹律",
+      "条件概率与边缘化"
+     ],
+     "nextSteps": [
+      "读 constrained / safe RL 与可行性价值函数",
+      "了解 classifier/reranker 式推理期对齐",
+      "思考安全代价指标如何设计与评测"
+     ]
+    }
+   }
+  }
+ ],
+ "skipped": []
+}

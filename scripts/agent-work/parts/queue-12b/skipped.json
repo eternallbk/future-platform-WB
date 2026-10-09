@@ -1,0 +1,9 @@
+{
+ "skipped": [
+  {
+   "id": "2459123f398960a0",
+   "reason": "off-direction",
+   "evidence": "摘要为无线感知与传感器融合的可复现性研究：'We investigate whether ambient WiFi Channel State Information (CSI) can substitute for a body-worn inertial measurement unit (IMU) in human activity recognition (HAR)'，结论为 'Under a controlled, multi-seed evaluation, WiFi is systematically weak: every backbone we try reaches 6-11% weighted accuracy on the 27-class set, against 73-80% for IMU'。其核心是 WiFi CSI 表征修复、受试者独立评测与 CSI-IMU 门控融合的对比，属无线感知/人体活动识别领域；标题中的 'Multimodal' 仅指传感器模态融合，与多模态算法 / post-training / 生成式 / 世界模型方向无实质技术关联。"
+  }
+ ]
+}

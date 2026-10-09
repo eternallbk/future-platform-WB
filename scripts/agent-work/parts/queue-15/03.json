@@ -1,0 +1,192 @@
+{
+  "id": "b6599b92013b6f4a",
+  "tldr": "用 Kahn 拓扑排序（BFS）判断课程依赖能否全部修完：入度为 0 入队、逐个出队并削减邻居入度，出队数等于课程数即无环。",
+  "keyPoints": [
+    "把先修关系建成有向图，边由先修课指向后继课",
+    "统计每门课的入度（还有多少门先修课没修）",
+    "入度为 0 的课入队，逐个出队",
+    "出队时把后继入度减 1，减到 0 就入队",
+    "最终出队数等于课程数则无环、能修完；否则存在环"
+  ],
+  "why": "拓扑排序是图论高频题，也是任务调度、构建依赖、编译顺序的通用模型；BFS 与 DFS 三色两条路线都值得掌握。",
+  "difficulty": "medium",
+  "tags": ["leetcode", "graph", "topological-sort", "bfs", "interview"],
+  "entities": ["拓扑排序", "Kahn 算法", "入度", "BFS", "DFS 三色", "有向无环图"],
+  "diagram": {
+    "kind": "flow",
+    "title": "Kahn 算法四步",
+    "caption": "能否修完，等价于有向图是否存在拓扑序，也就是是否有环。",
+    "svg": "<svg viewBox='0 0 480 240' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Kahn 拓扑排序四步：建图统计入度、入度为零入队、出队并削减邻居入度、比较出队数与课程数'>\n<rect x='24' y='16' width='432' height='42' rx='8' fill='none' stroke='var(--accent)' stroke-width='1.4'/>\n<text x='40' y='42' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>① 建图 + 统计入度</text>\n<text x='440' y='42' font-size='13' text-anchor='end' fill='currentColor'>先修课 b → 后继课 a</text>\n<line x1='240' y1='58' x2='240' y2='66' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,74 236,66 244,66' fill='var(--line-1)'/>\n<rect x='24' y='74' width='432' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='40' y='100' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>② 入度为 0 的课入队</text>\n<text x='440' y='100' font-size='13' text-anchor='end' fill='currentColor'>没有未满足的先修要求</text>\n<line x1='240' y1='116' x2='240' y2='124' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,132 236,124 244,124' fill='var(--line-1)'/>\n<rect x='24' y='132' width='432' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='40' y='158' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>③ 出队 done++，邻居入度 -1</text>\n<text x='440' y='158' font-size='13' text-anchor='end' fill='currentColor'>减到 0 就入队</text>\n<line x1='240' y1='174' x2='240' y2='182' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,190 236,182 244,182' fill='var(--line-1)'/>\n<rect x='24' y='190' width='432' height='42' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='40' y='216' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>④ done == numCourses ?</text>\n<text x='440' y='216' font-size='13' text-anchor='end' fill='currentColor'>相等可修完，否则有环</text>\n</svg>",
+    "alt": "竖排四步：建图并统计入度、入度为零入队、出队并削减邻居入度、比较出队数与课程总数得出是否能修完。"
+  },
+  "concepts": [
+    {
+      "name": "拓扑排序与入度（Topological Sort & Indegree）",
+      "readable": "把有依赖关系的有向图排成一个线性顺序，使每条边的方向都朝后；节点的入度就是有多少条边指向它，即还有多少个前置依赖没被处理。",
+      "analogy": "做菜流程：洗菜、切菜、下锅、装盘，每道工序只能等它前面的工序做完；入度为 0 的工序就是那些前置都已完成、可以马上开工的。",
+      "analogyBreaksDown": "做菜流程通常只有一条线（本身就是一个线性序），而图可以分叉、可以有多个入度为 0 的起点；更关键的是现实里很难出现「互相等待」的死循环工序，而图里一个环就足以让拓扑序不存在。",
+      "mechanism": "Kahn 算法每步只挑选入度为 0 的节点，等价于「当前所有前置依赖都已满足」；处理它时删掉它的出边，再看有没有新节点入度归零。如果存在环，环上节点入度永远不小于 1，永远不会被选到，于是出队节点数少于总数。",
+      "visual": "画一个有向图，节点旁标出入度数字，把入度为 0 的节点涂成强调色放进队列；每处理一个就擦掉它的出边，并刷新邻居的入度数字。",
+      "prerequisites": ["图的邻接表表示", "队列（BFS 模板）", "入度概念"],
+      "selfTest": ["为什么入度为 0 的节点一定可以立刻处理？", "有环时 Kahn 算法会在哪里停下来？", "如果图不连通，怎么保证所有节点都被访问到？"],
+      "formula": "\\mathrm{indeg}(v) = \\left|\\{\\, u : (u, v) \\in E \\,\\}\\right|"
+    },
+    {
+      "name": "DFS 三色标记（Three-Color DFS）",
+      "readable": "用三种颜色记录节点状态：白色表示还没访问，灰色表示正在当前递归路径上，黑色表示已经安全访问完。遍历时若又碰到灰色节点，就说明找到了一个环。",
+      "analogy": "走迷宫时用三种标记：没走的、正在走的这条路上的、以及确认走不通的死胡同；如果走着走着踩回「正在走」的脚印，就说明绕成了一个圈。",
+      "analogyBreaksDown": "迷宫类比里「死胡同」是空间概念，而这里黑色节点不一定走不通，它只是被证明不在任何环上；同一节点从不同起点再访问时要靠颜色直接返回，类比体现不出这种记忆化。",
+      "mechanism": "递归进入节点时把白色染成灰色，递归返回时染成黑色。若在递归中途遇到一个灰色节点，说明当前正在走的路径回到了自己，构成环；遇到黑色节点说明该子树已确认无环，直接返回 true，避免重复计算。",
+      "visual": "在同一张有向图上，用三种颜色标注节点：白色为未访问、灰色为递归栈中、黑色为已完成；用一条加粗箭头标出指向灰色节点的那条「回边」。",
+      "prerequisites": ["递归", "图的邻接表表示", "有向图的环"],
+      "selfTest": ["灰色节点代表什么？", "遇到黑色节点为什么可以直接返回？", "为什么无向图判环只需记录父节点，而这里需要三色？"],
+      "formula": ""
+    }
+  ],
+  "formulas": [
+    {
+      "id": "f-topological-indegree",
+      "name": "入度定义（Indegree）",
+      "category": "engineering",
+      "latex": "\\mathrm{indeg}(v) = \\left|\\{\\, u : (u, v) \\in E \\,\\}\\right|",
+      "symbols": [
+        ["\\mathrm{indeg}(v)", "节点 v 的入度"],
+        ["E", "有向图的边集"],
+        ["(u, v)", "从 u 指向 v 的一条有向边"],
+        ["|\\cdot|", "集合的元素个数"]
+      ],
+      "derivation": [
+        "第 1 步：把课程依赖建成有向图，先修课 b 到后继课 a 连一条边 b 指向 a",
+        "第 2 步：节点 v 的入度定义为指向它的边数，也就是「还差几门先修课没修」",
+        "第 3 步：因此入度为 0 的节点没有任何未满足的依赖，可以立刻处理",
+        "第 4 步：处理 v 时删除它出发的所有边，等价于把每个后继的入度减 1"
+      ],
+      "analogy": "工序前置清单：某道工序的入度就是还剩几件前置材料没到；归零了就说明材料齐了，可以开工。",
+      "pitfalls": [
+        "边的方向建反（把 a→b 写成 b→a），入度统计与出队顺序全错",
+        "统计入度时只覆盖出现过的节点，漏掉没有依赖的孤立课程",
+        "对有重复边的输入不去重，入度偏大（本题保证边互异，但工程实现要留意）"
+      ],
+      "code": "from collections import defaultdict\n\ndef build_graph(numCourses, prerequisites):\n    graph = defaultdict(list)\n    indeg = [0] * numCourses\n    for a, b in prerequisites:   # 先修 b -> 后继 a\n        graph[b].append(a)\n        indeg[a] += 1\n    return graph, indeg",
+      "sources": [
+        {"title": "207. 课程表：拓扑排序（BFS） · 题解", "url": "https://programmercarl.com/algo/other/0207-course-schedule.html"}
+      ]
+    },
+    {
+      "id": "f-topological-done-count",
+      "name": "拓扑序存在判据（Acyclic iff Done Equals V）",
+      "category": "engineering",
+      "latex": "\\mathrm{done} = |V| \\;\\Longrightarrow\\; \\mathrm{canFinish} = \\mathrm{true}",
+      "symbols": [
+        ["\\mathrm{done}", "Kahn 算法中成功出队的节点数"],
+        ["|V|", "图的节点总数（课程总数）"],
+        ["\\mathrm{canFinish}", "最终返回结果"]
+      ],
+      "derivation": [
+        "第 1 步：每次取出一个入度为 0 的节点，说明它的全部前置依赖都已满足",
+        "第 2 步：若图中无环，反复取入度 0 节点必然能覆盖全部 |V| 个节点",
+        "第 3 步：若图中有环，环上每个节点的入度始终不小于 1，永远不会入队",
+        "第 4 步：因此出队数 done 严格小于 |V|；反之 done=|V| 即代表无环、可以完成"
+      ],
+      "analogy": "点名：如果所有人都能按顺序点到，说明排队规则没有死锁；只要有一小圈人互相等着谁也不肯先动，点名册上就会永远缺他们几个。",
+      "pitfalls": [
+        "只看队列是否为空，不比较 done 与 |V|，在图不连通时误判为无环",
+        "把 done 与入度为 0 的初始个数混为一谈",
+        "提前返回 true 而没跑完整个 BFS"
+      ],
+      "code": "from collections import deque\n\ndef canFinish(numCourses, prerequisites):\n    graph, indeg = build_graph(numCourses, prerequisites)\n    q = deque(i for i in range(numCourses) if indeg[i] == 0)\n    done = 0\n    while q:\n        u = q.popleft()\n        done += 1\n        for v in graph[u]:\n            indeg[v] -= 1\n            if indeg[v] == 0:\n                q.append(v)\n    return done == numCourses",
+      "sources": [
+        {"title": "207. 课程表：拓扑排序（BFS） · 题解", "url": "https://programmercarl.com/algo/other/0207-course-schedule.html"}
+      ]
+    }
+  ],
+  "selfCheck": {
+    "claims": [
+      "摘要说明本条用拓扑排序的广度优先搜索（BFS）方法解决力扣 207 题课程表",
+      "摘要说明目标是实现有向无环图的线性排序",
+      "题干为课程先修关系，判断能否完成所有课程"
+    ],
+    "uncertain": [
+      "DFS 三色方案与 BFS 的对比为通用算法常识补充，源摘要只提到 BFS 一种方法（待核实原文是否给出 DFS 版）",
+      "示例为 LeetCode 207 的经典示例，已用参考代码逐一验证通过"
+    ]
+  },
+  "teaching": {
+    "progressive": [
+      {"level": "一句话", "text": "判断这些课程能不能按先修顺序全部修完，等价的问法是依赖图里有没有环。"},
+      {"level": "入门", "text": "把每门先修关系当成一条箭头：先修课指向后继课。每门课记一个入度，表示还差几门先修课。入度为 0 的课可以马上修，修完就把它指向的课入度各减 1，减到 0 的又变成可修。这样一路修下去，如果所有课都修完就返回 true，否则说明剩下的课互相锁死成一个环。"},
+      {"level": "进阶", "text": "这就是 Kahn 算法：用队列装所有入度为 0 的节点，逐个出队并递减后继入度。判断的核心不是「队列空没空」，而是「出队的课程数是否等于课程总数」——因为图可能不连通，有些课本来就没有依赖，必须保证它们也被处理到。复杂度是 O(V+E)，每条边恰好被看一次。"},
+      {"level": "专家", "text": "同一题有两条路：BFS 版用一个队列加出队计数，额外需要存整张图的入度数组；DFS 三色版用白色/灰色/黑色标记递归状态，遇到灰色即发现后向边、说明有环。BFS 更直观、天然给出一个拓扑序，DFS 更省内存、适合要顺带做其它后序操作的场景。两者都是 O(V+E)。面试里建议先讲清「拓扑序存在等价于无环」，再按面试官偏好选一条实现。"}
+    ],
+    "socratic": [
+      {"q": "为什么入度为 0 的课一定能立刻修？", "a": "入度是「还有几门先修课没修」，为 0 表示所有前置依赖都已满足，没有任何阻碍，所以在任何合法顺序里它都可以排在最前面。"},
+      {"q": "有环时算法会卡在哪里？", "a": "环上的课互相是对方的先修，任何一门的入度都永远不小于 1，永远进不了队列；BFS 把无环部分处理完就停了，出队数小于课程总数。"}
+    ],
+    "mechanism": "必须用「入度」而不是别的指标，是因为它恰好刻画了「当前是否可执行」：入度为 0 就是无未满足依赖。每处理一个节点就删掉它的出边，这是唯一会改变其它节点入度的操作，于是整个算法就是把「可执行集合」的更新用队列维护起来，每条边只参与一次推导，天然 O(V+E)。",
+    "boundary": "拓扑排序只对有向图有意义，且只有当图无环（DAG）时拓扑序才存在；无向图或含环的有向图都不能直接用。若题目只要判断是否存在而不是真的排出顺序，仍可用同一套计数；但若要字典序最小的拓扑序，就得把队列换成优先队列。",
+    "analogyBoundary": "做菜流程类比是一条链，天然只有一个下一步；真实依赖图可以分叉、有多个入度为 0 的起点。更重要的是现实里几乎不会出现「互相等待」的环形工序，而本题的关键恰恰在于识别这种环，类比不足以传达「环导致永不入队」这一机制。",
+    "misconceptions": [
+      "边方向建反，把「先修→后继」建成了「后继→先修」",
+      "只看队列是否为空就返回，忽略图不连通导致漏判",
+      "只统计出现在 prerequisites 里的课程，漏掉无依赖的孤立课程",
+      "把拓扑排序当成「排序算法」，误以为时间复杂度与其元素比较有关。"
+    ],
+    "ownAnalysis": "（推断）207 是「依赖图可执行性」的最小模型，构建系统（如 make、Bazel）判断编译顺序、任务调度器判断能否排期，都是同一个 Kahn 算法。它也和本批次 01 的回溯去重重构出同一类思维：先精确定义「要排除的结构」（重复分支 / 环），再选最省的判定方式（set / 入度计数）。把 207 吃透，210 课程表 II（要求返回顺序）与 269 火星词典（拓扑排序 + 建图）可直接迁移。",
+    "officialNotes": [
+      {"position": "原文介绍使用拓扑排序的广度优先搜索（BFS）方法解决力扣 207 课程表，实现有向无环图的线性排序", "source": "https://programmercarl.com/algo/other/0207-course-schedule.html"}
+    ],
+    "interviewAnswer": "我把先修关系建成有向图，边由先修课指向后继课，并统计每门课的入度。先把所有入度为 0 的课入队，然后逐个出队，出队一次就把它的后继课入度减 1，减到 0 就继续入队，同时统计出队的课程数。最后看出队数是否等于课程总数：相等说明无环、可以修完，否则说明存在互相依赖的环。时间 O(V+E)，空间 O(V+E)。如果面试官想看另一条路线，我会补上 DFS 三色版，遇到灰色节点即判环。",
+    "studyPath": {
+      "prerequisites": ["图的邻接表", "BFS 与队列", "入度概念"],
+      "nextSteps": ["课程表 II（LeetCode 210）返回拓扑序", "DFS 三色判环", "字典序最小拓扑序（优先队列版）"]
+    }
+  },
+  "problem": {
+    "title": "课程表",
+    "number": 207,
+    "difficulty": "medium",
+    "statement": "你这个学期必须选修 numCourses 门课程，记为 0 到 numCourses-1。在选修某些课程之前需要先修课程：先修关系由数组 prerequisites 给出，其中 prerequisites[i]=[a, b] 表示若要选修课程 a，则必须先选修课程 b。请判断是否可能完成所有课程的学习，可以则返回 true，否则返回 false。",
+    "examples": [
+      {"input": "numCourses = 2, prerequisites = [[1,0]]", "output": "true", "why": "先修 0 再修 1，顺序存在"},
+      {"input": "numCourses = 2, prerequisites = [[1,0],[0,1]]", "output": "false", "why": "两门课互为先修，形成环"}
+    ],
+    "approach": {
+      "idea": "把课程依赖建成有向图（先修课指向后继课），统计每门课的入度。用队列装所有入度为 0 的课，逐个出队并把后继入度减 1，减到 0 就继续入队。若最终出队课程数等于 numCourses，说明无环、能修完；否则存在环。",
+      "steps": [
+        "1. 建立邻接表 graph 与入度数组 indeg，遍历 prerequisites 时把 b→a 加入 graph 并让 indeg[a]+=1",
+        "2. 把所有 indeg 为 0 的课程（含无依赖的孤立课程）放入队列",
+        "3. 循环出队：每出队一门课 done 加一",
+        "4. 对该课的每个后继 v：indeg[v] 减 1，若减到 0 则把 v 入队",
+        "5. 返回 done == numCourses"
+      ],
+      "whyItWorks": "入度为 0 表示该课没有任何未满足的先修要求，可以立刻修。修完一门课后删除它出发的所有边，即后继入度各减 1；当某后继入度归零，说明其全部先修都已完成。若图中存在环，环上课程互为先修，入度永远不小于 1，永远不会入队，于是出队数严格小于课程总数，判为 false。",
+      "alternatives": [
+        {"name": "DFS 三色标记", "complexity": "O(V+E) / O(V)", "when": "想省掉入度数组、或需要顺带做后序处理时；遇到灰色节点即判环"},
+        {"name": "反复扫描入度为 0 的节点（不做队列优化）", "complexity": "O(V^2+E) / O(V)", "when": "课程数很小、只想快速写一个直观版本时"}
+      ]
+    },
+    "solution": {
+      "python": "from collections import deque, defaultdict\n\ndef canFinish(numCourses, prerequisites):\n    graph = defaultdict(list)\n    indeg = [0] * numCourses\n    for a, b in prerequisites:      # 先修 b -> 后继 a\n        graph[b].append(a)\n        indeg[a] += 1\n\n    q = deque(i for i in range(numCourses) if indeg[i] == 0)\n    done = 0\n    while q:\n        u = q.popleft()\n        done += 1\n        for v in graph[u]:\n            indeg[v] -= 1\n            if indeg[v] == 0:\n                q.append(v)\n    return done == numCourses",
+      "python_alt": "from collections import defaultdict\n\ndef canFinish_dfs(numCourses, prerequisites):\n    graph = defaultdict(list)\n    for a, b in prerequisites:\n        graph[b].append(a)\n\n    color = [0] * numCourses   # 0 白：未访问, 1 灰：递归栈中, 2 黑：已完成\n\n    def dfs(u):\n        if color[u] == 1:\n            return False       # 遇到灰色节点 => 有环\n        if color[u] == 2:\n            return True        # 已完成，直接复用结论\n        color[u] = 1\n        for v in graph[u]:\n            if not dfs(v):\n                return False\n        color[u] = 2\n        return True\n\n    return all(dfs(i) for i in range(numCourses))",
+      "notes": "BFS 版务必用「出队计数 done」是否等于 numCourses 来判断，而不是「队列是否为空」——图不连通时无依赖的孤立课程也必须被访问到。建边方向 a、b 的语义（prerequisites[i]=[a,b] 表示先修 b 再修 a）是最容易搞反的地方。"
+    },
+    "complexity": {
+      "time": "O(V + E)",
+      "space": "O(V + E)",
+      "why": "每个节点入队出队一次、每条边被检查一次；空间存邻接表与入度数组，最坏 O(V+E)。"
+    },
+    "pitfalls": [
+      "边的方向建反，把「先修→后继」写成「后继→先修」，入度统计全错",
+      "只用「队列为空」判断而不比较出队计数，图不连通时误判",
+      "初始化队列时只收集 prerequisites 里出现过的课，漏掉无依赖的孤立课程",
+      "重复边导致入度偏大，使本可入队的节点一直不为 0"
+    ],
+    "edgeCases": [
+      "prerequisites 为空：没有依赖，直接返回 true",
+      "numCourses = 1：单门课无依赖，返回 true",
+      "存在两门及以上互相依赖形成的环：返回 false",
+      "依赖图不连通：所有连通分量都要被遍历到，靠出队计数才能不漏判"
+    ],
+    "interviewTips": "先一句话点明「判断能否修完等价于判断依赖图是否有环」，再写 Kahn 算法。写完强调两个细节：一是入度数组要按 numCourses 初始化以覆盖孤立课程，二是用出队计数而非队列空否来判定。面试官若质疑，可切到 DFS 三色版说明「遇到灰色节点即有环」，两条路线交替讲通常能加分。"
+  }
+}

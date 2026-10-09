@@ -1,0 +1,302 @@
+{
+ "id": "814e895b8d210660",
+ "tldr": "遍历网格遇 '1' 就计数并 DFS/BFS 把整座岛标记掉，保证每座岛只数一次；O(mn)。",
+ "keyPoints": [
+  "岛屿 = 上下左右四连通的 '1' 连通块",
+  "遇 '1' 计数 +1，随即把整岛标为已访问",
+  "DFS 可原地把 '1' 改 '0'，省 visited 数组",
+  "BFS 用队列避免极深递归爆栈",
+  "并查集把相邻陆地合并，最后数不同根个数"
+ ],
+ "why": "网格连通块是最经典的 DFS/BFS 模板，字节/华为高频；它同时是并查集、洪水填充、图论入门的底座。",
+ "difficulty": "medium",
+ "tags": [
+  "leetcode",
+  "dfs",
+  "bfs",
+  "union-find",
+  "grid",
+  "graph"
+ ],
+ "entities": [
+  "深度优先搜索",
+  "广度优先搜索",
+  "并查集",
+  "洪水填充"
+ ],
+ "diagram": {
+  "kind": "matrix",
+  "title": "岛屿数量：网格扩散",
+  "caption": "遇 '1' 触发一次漫水遍历，把整座岛淹掉；标记顺序 1→7 覆盖三座岛。",
+  "alt": "在 4x5 网格上按 1 到 7 的顺序扩展三座岛屿的示意，答案为 3",
+  "svg": "<svg viewBox='0 0 560 302' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='网格漫水遍历标记三座岛屿'><rect x='20' y='30' width='52' height='52' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='46' y='61' font-size='14' text-anchor='middle' fill='currentColor'>1</text><rect x='72' y='30' width='52' height='52' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='98' y='61' font-size='14' text-anchor='middle' fill='currentColor'>2</text><rect x='124' y='30' width='52' height='52' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.1'/><text x='150' y='61' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='176' y='30' width='52' height='52' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.1'/><text x='202' y='61' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='228' y='30' width='52' height='52' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.1'/><text x='254' y='61' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='20' y='82' width='52' height='52' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='46' y='113' font-size='14' text-anchor='middle' fill='currentColor'>3</text><rect x='72' y='82' width='52' height='52' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='98' y='113' font-size='14' text-anchor='middle' fill='currentColor'>4</text><rect x='124' y='82' width='52' height='52' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.1'/><text x='150' y='113' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='176' y='82' width='52' height='52' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.1'/><text x='202' y='113' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='228' y='82' width='52' height='52' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.1'/><text x='254' y='113' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='20' y='134' width='52' height='52' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.1'/><text x='46' y='165' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='72' y='134' width='52' height='52' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.1'/><text x='98' y='165' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='124' y='134' width='52' height='52' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='150' y='165' font-size='14' text-anchor='middle' fill='currentColor'>5</text><rect x='176' y='134' width='52' height='52' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.1'/><text x='202' y='165' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='228' y='134' width='52' height='52' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.1'/><text x='254' y='165' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='20' y='186' width='52' height='52' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.1'/><text x='46' y='217' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='72' y='186' width='52' height='52' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.1'/><text x='98' y='217' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='124' y='186' width='52' height='52' rx='6' fill='none' stroke='var(--line-1)' stroke-width='1.1'/><text x='150' y='217' font-size='14' text-anchor='middle' fill='currentColor'>0</text><rect x='176' y='186' width='52' height='52' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='202' y='217' font-size='14' text-anchor='middle' fill='currentColor'>6</text><rect x='228' y='186' width='52' height='52' rx='6' fill='none' stroke='var(--accent)' stroke-width='2.0'/><text x='254' y='217' font-size='14' text-anchor='middle' fill='currentColor'>7</text><text x='16' y='254' font-size='13' fill='currentColor' opacity='0.78'>① 遇 &#39;1&#39; 计数 +1，DFS 淹掉整岛（1→4）</text><text x='16' y='276' font-size='13' fill='currentColor' opacity='0.78'>② 再遇 &#39;1&#39; 又是新岛（5）……三座岛 → 答案 3</text></svg>"
+ },
+ "concepts": [
+  {
+   "name": "洪水填充（Flood Fill / 连通块遍历）",
+   "readable": "从一块陆地出发，沿上下左右不断蔓延，把与之相连的所有陆地都染成同一色（或标记为已访问），一个连通块对应一次完整的漫水。",
+   "analogy": "像往一张方格纸上滴一滴墨水，它会顺着相邻的格子渗开，渗不到的格子就是别的岛。",
+   "analogyBreaksDown": "四连通与八连通结果不同：本题是上下左右四连通，斜对角相连不算同一座岛。把八连通当成四连通会少算岛屿数。",
+   "mechanism": "遍历每个格子，首次遇到未访问的陆地就启动一次漫水；漫水期间所有可达陆地被标记，之后遍历再遇到它们时直接跳过。这样每座岛恰好被计数一次。",
+   "visual": "在方格图上，起点用实心点，扩散过程用波浪箭头指向四个邻居；已访问格子画成灰色（--line-1）。",
+   "prerequisites": [
+    "二维数组与下标",
+    "递归或队列",
+    "连通性定义"
+   ],
+   "selfTest": [
+    "为什么斜对角相连不算同一座岛？",
+    "如果网格很大，递归 DFS 会有什么风险？",
+    "如何只统计「四面环水的岛」而不是所有岛（LC1020 思路）？"
+   ],
+   "formula": "N_{\\mathrm{islands}} = \\#\\{\\text{connected land components}\\}"
+  },
+  {
+   "name": "并查集数连通块（Union-Find）",
+   "readable": "给每个陆地格子建一个集合，相邻的陆地就 union 合并；全部合并完后，统计有多少个不同的根，就等于有多少座岛。",
+   "analogy": "像每个岛先各插一面自己的小旗，相邻的岛把旗换成同一面；最后数场上有几种颜色的旗。",
+   "analogyBreaksDown": "并查集必须只处理「右、下」两个方向（或先判再 union）以避免同一条边被合并两次；重复合并不会改变结果但会浪费，且末计数时对每个陆地都要 find 一次而不是直接数 parent。",
+   "mechanism": "用「按秩合并 + 路径压缩」把单次 find 均摊压到几乎 O(1)；相比 DFS/BFS 不需要递归栈，适合网格很大或需要动态加边（如 LC305）的场景。",
+   "visual": "每个陆地格子上方标它当前的根 id；相邻格用虚线连起来表示 union；根用特殊颜色圈出。",
+   "prerequisites": [
+    "集合与等价关系",
+    "树与路径压缩"
+   ],
+   "selfTest": [
+    "为什么并查集也要只往两个方向合并？",
+    "路径压缩和按秩合并分别解决什么问题？",
+    "什么时候并查集比 DFS 更合适？"
+   ],
+   "formula": "N_{\\mathrm{islands}} = \\bigl|\\{\\, \\mathrm{find}(x) : x \\in \\mathrm{Land} \\,\\}\\bigr|"
+  }
+ ],
+ "formulas": [
+  {
+   "id": "f-unionfind-islands",
+   "name": "并查集连通块计数（Connected Components）",
+   "category": "engineering",
+   "latex": "N_{\\mathrm{islands}} = \\bigl|\\{\\, \\mathrm{find}(x) : x \\in \\mathrm{Land} \\,\\}\\bigr|",
+   "symbols": [
+    [
+     "\\mathrm{Land}",
+     "所有值为 '1' 的格子集合"
+    ],
+    [
+     "\\mathrm{find}(x)",
+     "格子 x 所在连通块的根"
+    ],
+    [
+     "|\\cdot|",
+     "集合的势（不同根的个数）"
+    ]
+   ],
+   "derivation": [
+    "把每个陆地格子看成一个集合，初始每个 '1' 各自成岛。",
+    "对每个陆地格子，只与右、下相邻的陆地 union，把同岛格子合并。",
+    "路径压缩 + 按秩合并后 find 均摊近似 O(1)。",
+    "最终岛屿数 = 所有陆地格子中不同根的数量。"
+   ],
+   "analogy": "像给每座岛发旗，相邻的岛把旗换成同一面；最后数场上有几种旗色就是几座岛。",
+   "pitfalls": [
+    "直接数 parent[i]==i 的格子，但未做路径压缩时根不一定是自己，应先 find",
+    "把水域 '0' 也建成集合，末计数时被算进去",
+    "四个方向都 union，虽不改结果但重复合并、编号易乱"
+   ],
+   "code": "def find(p, x):\n    while p[x] != x:\n        p[x] = p[p[x]]; x = p[x]\n    return x\n\ndef union(p, rk, a, b):\n    ra, rb = find(p, a), find(p, b)\n    if ra == rb:\n        return False\n    if rk[ra] < rk[rb]:\n        ra, rb = rb, ra\n    p[rb] = ra\n    if rk[ra] == rk[rb]:\n        rk[ra] += 1\n    return True\n\nprint(union([0, 1, 2], [0, 0, 0], 0, 1))   # True",
+   "sources": [
+    {
+     "title": "200. 岛屿数量 · 题解",
+     "url": "https://programmercarl.com/algo/other/0200-number-of-islands-dfs.html"
+    }
+   ]
+  },
+  {
+   "id": "f-unionfind-amortized",
+   "name": "并查集均摊复杂度（Inverse Ackermann）",
+   "category": "engineering",
+   "latex": "T_{\\mathrm{find}} = O\\bigl(\\alpha(n)\\bigr)",
+   "symbols": [
+    [
+     "n",
+     "元素个数"
+    ],
+    [
+     "\\alpha(n)",
+     "反阿克曼函数，增长极慢"
+    ]
+   ],
+   "derivation": [
+    "用「按秩合并」保证树高不超过 O(log n)。",
+    "再加「路径压缩」把查询过的路径摊平，使后续查询更快。",
+    "两者叠加后，单次 find 的均摊代价降为反阿克曼函数 α(n)。",
+    "α(n) 在实际规模（n<10^600）下不超过 5，可视为常数。"
+   ],
+   "analogy": "像公司层层上报：路径压缩把中间层直接接到总裁，下次问同一个人一步到位。",
+   "pitfalls": [
+    "把 O(α(n)) 说成严格 O(1)：它只是均摊而非最坏单次",
+    "只提路径压缩、不提按秩合并，最坏会退化成一条链"
+   ],
+   "code": "def find(p, x):\n    while p[x] != x:\n        p[x] = p[p[x]]\n        x = p[x]\n    return x\np = [0, 0, 1]\nprint(find(p, 2), find(p, 1))   # 压缩后根为 0",
+   "sources": [
+    {
+     "title": "200. 岛屿数量 · 题解",
+     "url": "https://programmercarl.com/algo/other/0200-number-of-islands-bfs.html"
+    }
+   ]
+  }
+ ],
+ "selfCheck": {
+  "claims": [
+   "本题通过深度优先搜索遍历陆地并标记访问节点，统计未访问陆地数量（摘要原文）。",
+   "题目要求计算二维网格中的岛屿数量（摘要原文）。",
+   "给定 4x5 网格 [11000/11000/00100/00011] 的答案是 3（示例自验）。"
+  ],
+  "uncertain": [
+   "源摘要只描述了 DFS 基本思路，未给示例；grid 示例按 LeetCode 200 题面构造，已用代码验证结果为 3。",
+   "示例为自行构造"
+  ]
+ },
+ "teaching": {
+  "progressive": [
+   {
+    "level": "一句话",
+    "text": "每找到一块新陆地就数一座岛，然后把它连着的陆地全都淹掉。"
+   },
+   {
+    "level": "入门",
+    "text": "从左到右、从上到下扫描网格。遇到没访问过的 '1'，岛屿数加一，然后从它出发做一次 DFS/BFS，把上下左右能到的 '1' 全标记为已访问。这样同一座岛不会被数第二次。"
+   },
+   {
+    "level": "进阶",
+    "text": "DFS 递归写法最短：进入时把当前格置 '0'，再递归四个邻居。要小心两个坑：一是网格很大时递归会爆栈，改用显式栈或 BFS；二是 BFS 要在入队时就把格子置 '0'，否则同一格会被多次入队。复杂度 O(mn)。"
+   },
+   {
+    "level": "专家",
+    "text": "同一问题有三种武器：DFS（最短）、BFS（不爆栈）、并查集（可动态加边、适合 LC305 的在线版本）。并查集要用路径压缩 + 按秩合并，末计数统计不同根。它们的共同本质是「找出所有四连通分量」，差别只在遍历/合并的实现与适用场景。"
+   }
+  ],
+  "socratic": [
+   {
+    "q": "为什么遇到 '1' 后要立刻把整岛淹掉，而不是直接继续扫描？",
+    "a": "否则同一座岛的其他格子会被再次计数，答案偏大；标记保证每座岛只贡献一次。"
+   },
+   {
+    "q": "递归 DFS 在这题有什么风险？",
+    "a": "最坏情况 300x300 全是陆地，递归深度可达 9 万，Python 默认递归上限约 1000，会报 RecursionError。"
+   },
+   {
+    "q": "BFS 里为什么入队时就要置 '0'？",
+    "a": "若出队时才置，同一格可能被多个邻居重复入队，队列膨胀甚至答案/效率出错。"
+   }
+  ],
+  "mechanism": "「数岛屿」等价于「数四连通分量」。遍历时每个分量只需被触发一次：首次遇到未访问陆地即计数并启动一次漫水，把该分量的所有格子标掉，此后扫描跳过它们。这一「首次触发 + 全量标记」的组合保证每个分量恰好计数一次，无需额外 visited 表（用原地改写就能代替）。",
+  "boundary": "四连通定义下斜对角不算连通；若题目改成八连通需补四个对角方向。网格用字符 '1'/'0' 存储时要按字符比较，不能当整数。DFS 在超大网格有爆栈风险；并查集虽稳但代码更长、常数更大。",
+  "analogyBoundary": "「滴墨水」的类比会让人以为岛的形状是圆形扩散，实际 DFS/BFS 只沿四方向单步格移动，遇到水域就停；路径依赖——不同的起点不会改变连通性，但会改变标记顺序。类比也无法体现「斜对角不相连」这条硬规则。",
+  "misconceptions": [
+   "把 '1'（字符）当成整数 1 比较，或反过来，导致对不上。",
+   "BFS 出队时才标记，造成同一格重复入队。",
+   "只数第一次出现的 '1'，不标记整岛，答案偏大。"
+  ],
+  "ownAnalysis": "这题是「模板题」，真正拉开差距的是追问：网格极大怎么办（改迭代/BFS）、要动态加陆地（并查集，LC305）、要数封闭岛屿（LC1254/1020，先淹没边界）。（推断）面试官常从这道题延伸到「最大岛屿面积」（LC695），只需把计数改成累加面积。把 200 写成可复用的「遍历分量」骨架，后面几题都能套。",
+  "officialNotes": [
+   {
+    "position": "本题通过深度优先搜索遍历陆地并标记访问节点，统计未访问陆地数量。",
+    "source": "https://programmercarl.com/algo/other/0200-number-of-islands-dfs.html"
+   },
+   {
+    "position": "亦可用广度优先搜索做同样的遍历。",
+    "source": "https://programmercarl.com/algo/other/0200-number-of-islands-bfs.html"
+   }
+  ],
+  "interviewAnswer": "我扫描整个网格，遇到值为 '1' 的格子就说明发现新岛，计数加一，然后从它 DFS，把上下左右相连的 '1' 全部置为 '0' 表示已访问。这样每座岛只被数一次。时间 O(mn)（每格最多访问一次），空间 O(mn)（递归栈最坏）。如果担心栈深度，我会换成 BFS 或显式栈；如果要动态加陆地，就用并查集。",
+  "studyPath": {
+   "prerequisites": [
+    "二维数组遍历",
+    "递归/队列",
+    "连通性概念"
+   ],
+   "nextSteps": [
+    "做「岛屿的最大面积」（LC695），把计数改为累加面积",
+    "做「封闭岛屿的数量」（LC1254），先淹没边界再计数",
+    "做「被围绕的区域」（LC130），体会「从边界反向漫水」的技巧"
+   ]
+  }
+ },
+ "problem": {
+  "title": "岛屿数量",
+  "number": 200,
+  "difficulty": "medium",
+  "statement": "给你一个由字符 '1'（陆地）和 '0'（水）组成的二维网格 grid。岛屿由上下左右四个方向相邻的陆地相连而成，四周被水包围。假设网格四条边外全是水，返回网格中岛屿的数量。约束：1 <= m, n <= 300，grid[i][j] 为 '0' 或 '1'。",
+  "examples": [
+   {
+    "input": "grid = [[\"1\",\"1\",\"0\",\"0\",\"0\"],[\"1\",\"1\",\"0\",\"0\",\"0\"],[\"0\",\"0\",\"1\",\"0\",\"0\"],[\"0\",\"0\",\"0\",\"1\",\"1\"]]",
+    "output": "3",
+    "why": "左上一个 2x2 岛 + 中部一个 + 右下两个连成一个",
+    "explanation": "左上一个 2x2 岛 + 中部一个 + 右下两个连成一个"
+   },
+   {
+    "input": "grid = [[\"0\"]]",
+    "output": "0",
+    "why": "只有水，没有岛",
+    "explanation": "只有水，没有岛"
+   },
+   {
+    "input": "grid = [[\"1\"]]",
+    "output": "1",
+    "why": "单个陆地就是一座岛",
+    "explanation": "单个陆地就是一座岛"
+   }
+  ],
+  "approach": {
+   "idea": "岛屿就是网格里的四连通分量。从左到右、从上到下扫描每个格子，首次遇到未访问的 '1' 就让答案加一，并从该格出发做一次 DFS/BFS，把与之相连的所有 '1' 原地改成 '0'（等价于「淹掉整座岛」）。这样每座岛只在它的第一个格子处被计数一次。",
+   "steps": [
+    "特判空网格，返回 0。",
+    "双重循环遍历每个格子 (i, j)。",
+    "若 grid[i][j] == '1'：count += 1，然后启动 dfs(i, j)。",
+    "dfs 中：越界或当前格不是 '1' 则返回；否则置 '0' 并递归上下左右四个邻居。",
+    "遍历结束返回 count。"
+   ],
+   "whyItWorks": "每个连通分量（岛）内部的格子能通过四方向互相到达，因此从分量中任一格启动漫水，都会且只会覆盖该分量全部格子。漫水把它们置 '0' 后，外层扫描不会再触发同一分量，故每次触发恰好对应一座新岛，计数不重不漏。",
+   "alternatives": [
+    {
+     "name": "广度优先搜索 BFS",
+     "complexity": "O(mn)/O(mn)",
+     "when": "网格很大、担心递归爆栈时；用队列逐层扩散，入队即标记。"
+    },
+    {
+     "name": "并查集 Union-Find",
+     "complexity": "O(mn·α)/O(mn)",
+     "when": "需要动态加入陆地、或要求在线查询连通块（如 LC305）；遍历时只向右、下合并。"
+    },
+    {
+     "name": "递归 DFS + sys.setrecursionlimit",
+     "complexity": "O(mn)/O(mn)",
+     "when": "代码最简，但要把递归上限调高；生产环境不推荐依赖它。"
+    }
+   ]
+  },
+  "solution": {
+   "python": "class Solution:\n    def numIslands(self, grid) -> int:\n        if not grid or not grid[0]:\n            return 0\n        m, n = len(grid), len(grid[0])\n\n        def dfs(i, j):\n            if i < 0 or i >= m or j < 0 or j >= n or grid[i][j] != \"1\":\n                return\n            grid[i][j] = \"0\"          # 原地标记，省 visited 数组\n            dfs(i + 1, j)\n            dfs(i - 1, j)\n            dfs(i, j + 1)\n            dfs(i, j - 1)\n\n        count = 0\n        for i in range(m):\n            for j in range(n):\n                if grid[i][j] == \"1\":\n                    count += 1\n                    dfs(i, j)\n        return count\n",
+   "python_alt": "from collections import deque\n\nclass Solution:\n    def numIslands(self, grid) -> int:\n        if not grid or not grid[0]:\n            return 0\n        m, n = len(grid), len(grid[0])\n        count = 0\n        for i in range(m):\n            for j in range(n):\n                if grid[i][j] != \"1\":\n                    continue\n                count += 1\n                grid[i][j] = \"0\"          # 入队即标记\n                q = deque([(i, j)])\n                while q:\n                    x, y = q.popleft()\n                    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):\n                        nx, ny = x + dx, y + dy\n                        if 0 <= nx < m and 0 <= ny < n and grid[nx][ny] == \"1\":\n                            grid[nx][ny] = \"0\"\n                            q.append((nx, ny))\n        return count\n",
+   "notes": "原地把 '1' 改 '0' 代替 visited，注意这会修改输入（面试可先说明）。dfs 的越界与字符判断要写在最前面，否则会递归进水域。BFS 必须在入队时置 '0'，只有出队时置会导致同一格重复入队。"
+  },
+  "complexity": {
+   "time": "O(m·n)",
+   "space": "O(m·n)",
+   "why": "每个格子最多被访问一次，故时间 O(mn)（n 为格数）；空间来自递归栈或队列，最坏全陆地时 O(mn)。"
+  },
+  "pitfalls": [
+   "用 grid[i][j] != 1 比较整数，而输入是字符 '1'，永远不匹配。",
+   "BFS 在出队时才把格子置 '0'，导致同一格被多个邻居重复入队。",
+   "递归 DFS 在大网格上爆栈（Python 默认递归上限约 1000）。",
+   "并查集方案里把水域也建集合，末计数误算进水格。"
+  ],
+  "edgeCases": [
+   "空网格或空行 → 返回 0。",
+   "全为 '0' → 返回 0。",
+   "全为 '1' → 返回 1。",
+   "单格网格 → 返回 0 或 1。"
+  ],
+  "interviewTips": "先声明四连通，再写「扫描 + 淹岛」骨架。主动说「原地改 0 代替 visited」。写完立刻补复杂度 O(mn)/O(mn) 并说明最坏情况是全陆地。被追问大数据量就切换到 BFS，被追问动态加陆地就切并查集——把三条路都提一句最稳。"
+ }
+}

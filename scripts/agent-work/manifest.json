@@ -1,0 +1,362 @@
+{
+ "generatedBy": "agent_work_prep.py",
+ "date": "2026-10-02",
+ "batches": [
+  {
+   "batchId": "queue-01",
+   "mode": "full",
+   "count": 4,
+   "input": "scripts/agent-work/in-queue-01.json",
+   "output": "scripts/agent-work/out-queue-01.json",
+   "ids": [
+    "221b6496ea4cd2f6",
+    "3ea906c6a7cd33f8",
+    "67322b1664692cd2",
+    "cbfe6087f9c43604"
+   ],
+   "bytes": 8233
+  },
+  {
+   "batchId": "queue-02",
+   "mode": "full",
+   "count": 4,
+   "input": "scripts/agent-work/in-queue-02.json",
+   "output": "scripts/agent-work/out-queue-02.json",
+   "ids": [
+    "287c98149d1c6c8c",
+    "97fae90c627e5adb",
+    "6eeb8b8a088c51e2",
+    "34943744e1ea5edd"
+   ],
+   "bytes": 6000
+  },
+  {
+   "batchId": "queue-03",
+   "mode": "full",
+   "count": 4,
+   "input": "scripts/agent-work/in-queue-03.json",
+   "output": "scripts/agent-work/out-queue-03.json",
+   "ids": [
+    "edfefc7dc6799d27",
+    "a269d242962e0bae",
+    "e642b13b2a0d9d5e",
+    "e57e1974a45388b9"
+   ],
+   "bytes": 3966
+  },
+  {
+   "batchId": "queue-04",
+   "mode": "full",
+   "count": 4,
+   "input": "scripts/agent-work/in-queue-04.json",
+   "output": "scripts/agent-work/out-queue-04.json",
+   "ids": [
+    "0b3e16ecf4f67dcb",
+    "f92d0f5913e59e39",
+    "205120feb76f0e57",
+    "4151aaf2fefa6d1c"
+   ],
+   "bytes": 6541
+  },
+  {
+   "batchId": "queue-05",
+   "mode": "full",
+   "count": 4,
+   "input": "scripts/agent-work/in-queue-05.json",
+   "output": "scripts/agent-work/out-queue-05.json",
+   "ids": [
+    "315b7aab33398d3e",
+    "70f01a18cda7c82a",
+    "fecb76418bb791ae",
+    "33a839bdbb8f8bf4"
+   ],
+   "bytes": 7630
+  },
+  {
+   "batchId": "queue-06",
+   "mode": "full",
+   "count": 4,
+   "input": "scripts/agent-work/in-queue-06.json",
+   "output": "scripts/agent-work/out-queue-06.json",
+   "ids": [
+    "567c7131b3a62afc",
+    "7c9a6438bd4ebde0",
+    "04fcddde1afe9558",
+    "f8f027476fe03e67"
+   ],
+   "bytes": 9327
+  },
+  {
+   "batchId": "queue-07",
+   "mode": "full",
+   "count": 4,
+   "input": "scripts/agent-work/in-queue-07.json",
+   "output": "scripts/agent-work/out-queue-07.json",
+   "ids": [
+    "d22e907ed53bb208",
+    "99fb8b7ff588817d",
+    "ec14cdfd4cf3fff4",
+    "d127fd2340692ed8"
+   ],
+   "bytes": 6892
+  },
+  {
+   "batchId": "queue-08",
+   "mode": "full",
+   "count": 4,
+   "input": "scripts/agent-work/in-queue-08.json",
+   "output": "scripts/agent-work/out-queue-08.json",
+   "ids": [
+    "8169a50640e190c4",
+    "5f328ad857313df1",
+    "e57400cfc63e2ecc",
+    "07bc5c3687968645"
+   ],
+   "bytes": 7781
+  },
+  {
+   "batchId": "queue-09",
+   "mode": "full",
+   "count": 4,
+   "input": "scripts/agent-work/in-queue-09.json",
+   "output": "scripts/agent-work/out-queue-09.json",
+   "ids": [
+    "f32b36ee07ec60ba",
+    "05fcd1723c34ab79",
+    "ba56b9931ac7df09",
+    "8ee29a23442adc89"
+   ],
+   "bytes": 5685
+  },
+  {
+   "batchId": "queue-10",
+   "mode": "full",
+   "count": 4,
+   "input": "scripts/agent-work/in-queue-10.json",
+   "output": "scripts/agent-work/out-queue-10.json",
+   "ids": [
+    "d4fbb4ebf08ca5e3",
+    "c3de96fe54995d79",
+    "c0c691f69c83245b",
+    "8633dfe2b6d1e3ee"
+   ],
+   "bytes": 8576
+  },
+  {
+   "batchId": "queue-11",
+   "mode": "full",
+   "count": 4,
+   "input": "scripts/agent-work/in-queue-11.json",
+   "output": "scripts/agent-work/out-queue-11.json",
+   "ids": [
+    "d0df2bf0ccfaf4a3",
+    "20fca658b7320c60",
+    "32618371afde6aaf",
+    "2f4c14d6624eecdd"
+   ],
+   "bytes": 8309
+  },
+  {
+   "batchId": "queue-12",
+   "mode": "full",
+   "count": 4,
+   "input": "scripts/agent-work/in-queue-12.json",
+   "output": "scripts/agent-work/out-queue-12.json",
+   "ids": [
+    "2cb831a4994e7d2c",
+    "d5797a577a0b337d",
+    "ffef356681d5686d",
+    "6c50b68786c40dfc"
+   ],
+   "bytes": 8916
+  },
+  {
+   "batchId": "queue-13",
+   "mode": "full",
+   "count": 4,
+   "input": "scripts/agent-work/in-queue-13.json",
+   "output": "scripts/agent-work/out-queue-13.json",
+   "ids": [
+    "7d2f1016a053206d",
+    "28f899c9d5f4731d",
+    "7ca2e20b3b95038a",
+    "df3dd0de59a5f225"
+   ],
+   "bytes": 7440
+  },
+  {
+   "batchId": "queue-14",
+   "mode": "full",
+   "count": 4,
+   "input": "scripts/agent-work/in-queue-14.json",
+   "output": "scripts/agent-work/out-queue-14.json",
+   "ids": [
+    "dc788b2e9083e5d5",
+    "605a94e5b0dde801",
+    "ba42ae2763a28039",
+    "6ab3ece3ad8a35bc"
+   ],
+   "bytes": 7982
+  },
+  {
+   "batchId": "queue-15",
+   "mode": "full",
+   "count": 4,
+   "input": "scripts/agent-work/in-queue-15.json",
+   "output": "scripts/agent-work/out-queue-15.json",
+   "ids": [
+    "dd7bec184f4bc0d2",
+    "73b1e746907e38f3",
+    "234de1752740810d",
+    "d81df02863d8fdbc"
+   ],
+   "bytes": 7974
+  },
+  {
+   "batchId": "queue-16",
+   "mode": "full",
+   "count": 4,
+   "input": "scripts/agent-work/in-queue-16.json",
+   "output": "scripts/agent-work/out-queue-16.json",
+   "ids": [
+    "003db6219a9aaafd",
+    "d613d008ba01448a",
+    "66b6c7b595dbefda",
+    "88cba831c2eec94e"
+   ],
+   "bytes": 7760
+  },
+  {
+   "batchId": "queue-17",
+   "mode": "full",
+   "count": 4,
+   "input": "scripts/agent-work/in-queue-17.json",
+   "output": "scripts/agent-work/out-queue-17.json",
+   "ids": [
+    "487e45567394eb7d",
+    "3065a7da249d13c3",
+    "44c5c6789d8a432d",
+    "1bb1dcc65cda2a4e"
+   ],
+   "bytes": 8489
+  },
+  {
+   "batchId": "queue-18",
+   "mode": "full",
+   "count": 3,
+   "input": "scripts/agent-work/in-queue-18.json",
+   "output": "scripts/agent-work/out-queue-18.json",
+   "ids": [
+    "10c6cb7bbc88ceef",
+    "96f03ee12d160d44",
+    "8edb720efe00228f"
+   ],
+   "bytes": 6317
+  },
+  {
+   "batchId": "backfill-01",
+   "mode": "backfill",
+   "count": 8,
+   "input": "scripts/agent-work/in-backfill-01.json",
+   "output": "scripts/agent-work/out-backfill-01.json",
+   "ids": [
+    "c31038343524cca2",
+    "2f84c181617f7429",
+    "49cb899dc35e83a0",
+    "f1959ffd8e7058e7",
+    "38b311baeaddf577",
+    "525ceb8535fee263",
+    "e82ba51d6a4c33e2",
+    "1f2a2da9e59225fd"
+   ],
+   "bytes": 118432
+  },
+  {
+   "batchId": "backfill-02",
+   "mode": "backfill",
+   "count": 8,
+   "input": "scripts/agent-work/in-backfill-02.json",
+   "output": "scripts/agent-work/out-backfill-02.json",
+   "ids": [
+    "0cba51532f6021bd",
+    "5edfee114f60afd1",
+    "fb8063dfdeda93d7",
+    "ff26e0bb61fb7364",
+    "9abd174e0b0ef99f",
+    "d3e5d21ce6e1f22d",
+    "d5b06f5694d9123e",
+    "da13c9f17083344c"
+   ],
+   "bytes": 105962
+  },
+  {
+   "batchId": "backfill-03",
+   "mode": "backfill",
+   "count": 8,
+   "input": "scripts/agent-work/in-backfill-03.json",
+   "output": "scripts/agent-work/out-backfill-03.json",
+   "ids": [
+    "efb9313dbc043c12",
+    "29301e2028e2267d",
+    "324ee823fef4dbb4",
+    "35bd80f6f875b3e6",
+    "4de3fbdcfdb43eff",
+    "ce4c4e04726b1248",
+    "f192b93c4998b755",
+    "63e2ea5d702c742c"
+   ],
+   "bytes": 119218
+  },
+  {
+   "batchId": "backfill-04",
+   "mode": "backfill",
+   "count": 8,
+   "input": "scripts/agent-work/in-backfill-04.json",
+   "output": "scripts/agent-work/out-backfill-04.json",
+   "ids": [
+    "9672dc8fe08e75d2",
+    "aa59255c96356e14",
+    "2249a2664c17959b",
+    "d87fd23589892f16",
+    "4a643af09b98ef5b",
+    "764c0c088c2c1372",
+    "c116aff0dfdf69ae",
+    "171b76b97d2612ff"
+   ],
+   "bytes": 110629
+  },
+  {
+   "batchId": "backfill-05",
+   "mode": "backfill",
+   "count": 8,
+   "input": "scripts/agent-work/in-backfill-05.json",
+   "output": "scripts/agent-work/out-backfill-05.json",
+   "ids": [
+    "77e544498b6fdcba",
+    "9ae4c993750e49a5",
+    "9f48a350d01de4cc",
+    "2e1f908ff2f8f54c",
+    "e6171b12b44b3aee",
+    "5cfce255508d4df1",
+    "8508d26e1576b713",
+    "63407a061b2b8139"
+   ],
+   "bytes": 100626
+  },
+  {
+   "batchId": "backfill-06",
+   "mode": "backfill",
+   "count": 5,
+   "input": "scripts/agent-work/in-backfill-06.json",
+   "output": "scripts/agent-work/out-backfill-06.json",
+   "ids": [
+    "2d66048b20488b7d",
+    "36e87c365265467a",
+    "9ca183eb8171af98",
+    "d7f5135eaae78aaf",
+    "e36e0b5b2f469a8b"
+   ],
+   "bytes": 79042
+  }
+ ]
+}

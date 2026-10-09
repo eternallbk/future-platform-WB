@@ -1,0 +1,1152 @@
+{
+ "batchId": "queue-02",
+ "entries": [
+  {
+   "id": "0a00d4e02dc50cc4",
+   "tldr": "VLA 对指令措辞极敏感，用 LLM 蒸馏改写规则、部署前重写指令，冻结策略即提升。",
+   "keyPoints": [
+    "VLA 对措辞敏感，不继承基础 VLM 的语言鲁棒性",
+    "一词之差可让成功率变动数十点",
+    "单编辑摆动 + oracle 短语搜索量化敏感度",
+    "LLM 蒸馏 10–20 条规则，部署时重写一次，免重训"
+   ],
+   "why": "VLA 是具身多模态前沿，指令鲁棒性属泛化高频考点；该法免训练、可接任意 VLA。",
+   "difficulty": "medium",
+   "tags": [
+    "vla",
+    "multimodal",
+    "robustness",
+    "instruction-following"
+   ],
+   "entities": [
+    "Vision-Language-Action models",
+    "π0.5",
+    "π0",
+    "LIBERO"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "规则重写式 VLA 流水线",
+    "caption": "少量任务蒸馏改写规则，部署时重写一次指令再喂冻结策略（不重训）。",
+    "svg": "<svg viewBox='0 0 480 178' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='规则重写式 VLA 三层流程'>\n<rect x='40' y='14' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='38' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>少量任务：对多种改写评分</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='40' y='70' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>LLM 蒸馏 10–20 条改写规则</text>\n<line x1='240' y1='110' x2='240' y2='118' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,126 236,118 244,118' fill='var(--line-1)'/>\n<rect x='40' y='126' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='150' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>部署：重写指令一次 → 冻结 VLA</text>\n</svg>",
+    "alt": "三层竖排流程：少量任务评分→LLM 蒸馏改写规则→部署时重写指令并交冻结 VLA 执行。"
+   },
+   "concepts": [
+    {
+     "name": "Instruction Phrasing Sensitivity（措辞敏感度）",
+     "readable": "同一任务换个说法，VLA 成功率能从接近满分掉到个位数。",
+     "analogy": "像点菜：同一后厨，换个说法就愣住。",
+     "analogyBreaksDown": "餐厅能澄清；策略权重没建语言不变性，措辞直接改内部视觉-语言对齐。",
+     "mechanism": "固定任务只替换措辞测成功率，用单词编辑摆动与 oracle 搜索证明差异源自措辞而非任务难度。",
+     "visual": "横轴措辞、纵轴成功率柱状，同任务柱子高低差极大，最低一根标红。",
+     "prerequisites": [
+      "VLA 基础",
+      "成功率评估"
+     ],
+     "selfTest": [
+      "为何不继承 VLM 鲁棒性？",
+      "oracle 搜索证明什么？",
+      "单词摆动为何更有说明力？"
+     ],
+     "formula": "\\Delta=\\max_{e}|S(\\phi)-S(\\phi_e)|"
+    },
+    {
+     "name": "Rule-Distilled Instruction Rewriting（规则蒸馏重写）",
+     "readable": "不改策略：LLM 把「怎么换说法更稳」总结成 10–20 条规则，部署时重写指令再喂冻结 VLA。",
+     "analogy": "像给前台一张「客人这样说就那样翻译」的对照表。",
+     "analogyBreaksDown": "对照表靠离线评分蒸馏，新任务措辞差异大时覆盖不到，重写即失效。",
+     "mechanism": "少量任务给多改写评分，LLM 归纳规则；推理只改写一次，免重训、免逐步验证。",
+     "visual": "左列原句与改写、中间规则、右列重写后指令，高亮被改写的关键词。",
+     "prerequisites": [
+      "少样本改写",
+      "VLA 部署"
+     ],
+     "selfTest": [
+      "为何用规则而非微调？",
+      "规则凭什么零样本迁移？",
+      "为何只改写一次？"
+     ],
+     "formula": "\\phi'=R(\\phi;\\ \\rho_{1:k})"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-rephrase-rule-distill",
+     "name": "规则蒸馏式指令重写（Rule-Distilled Rewriting）",
+     "category": "multimodal",
+     "latex": "\\rho_{1:k} = \\mathrm{Distill}\\!\\left(\\{(\\phi_j, S(\\pi,\\phi_j))\\}_{j=1}^{m}\\right),\\quad \\phi' = R(\\phi;\\ \\rho_{1:k})",
+     "symbols": [
+      [
+       "\\phi",
+       "原始指令"
+      ],
+      [
+       "R",
+       "LLM 重写器"
+      ],
+      [
+       "\\rho_{1:k}",
+       "10–20 条改写规则"
+      ],
+      [
+       "S",
+       "训练任务成功率证据"
+      ],
+      [
+       "m",
+       "被评分改写数"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：小规模训练任务上对大量措辞评分，得证据对 (φ_j,S)。",
+      "第 2 步：让 LLM 从证据归纳 k 条显式改写规则 ρ。",
+      "第 3 步：部署时按规则对每条指令重写一次得 φ'。",
+      "第 4 步：冻结策略直接吃 φ'，免重训。"
+     ],
+     "analogy": "把「哪种说法旺单」抄成一份话术手册，一线照着念即可。",
+     "pitfalls": [
+      "以为规则等价于训练出语言不变性",
+      "把重写做成每步验证，丢失免验证优势"
+     ],
+     "code": "RULES = ['prefer verb over noun']\ndef rewrite(phi, llm):\n    return llm(f'rules={RULES}; rewrite once: {phi}')",
+     "sources": [
+      {
+       "title": "Rephrase Before You Act",
+       "url": "https://arxiv.org/abs/2610.10526v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "VLA 对指令措辞高度敏感，不继承基础 VLM 的语言鲁棒性",
+     "π0.5 在 LIBERO 炉灶任务上「switch on the stove」100%、「switch on the hot plate」仅 2%",
+     "用改写增强微调的 π0 检查点仍有高达 61 点摆动",
+     "仅靠措辞即可几乎抹平 ID 与 OOD 间 21 点差距",
+     "不改策略、不重训、不做逐步验证，可零样本用于未见任务",
+     "规则使冻结 π0 在 12 个留出任务上相对提升 16–27%；π0.5 上 93.6%→97.8%"
+    ],
+    "uncertain": [
+     "敏感度指标与 oracle 搜索精确公式摘要未给，概念内公式为按摘要重建的通用形式，需核对原文",
+     "蒸馏所用 LLM 与规则生成细节摘要未说明，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "VLA 会因指令换说法而成功率暴跌，先按规则把话说顺再交给它。"
+     },
+     {
+      "level": "入门",
+      "text": "同一任务改一个词就能让 VLA 从几乎全对掉到几乎全错，且不是从底层视觉语言模型继承的。作者先量化这种敏感度，再用大模型总结改写规则，部署时把指令改一遍再喂冻结策略。"
+     },
+     {
+      "level": "进阶",
+      "text": "三点设计：用单编辑摆动与 oracle 短语搜索把敏感度做成可检验量；蒸馏成 10–20 条显式改写规则；只在部署前改写一次、不动权重，因此免重训、免逐步验证、可零样本迁移，增益集中在 OOD。"
+     },
+     {
+      "level": "专家",
+      "text": "与在策略里微调不变性不同，这篇把问题定位为输入分布适配：改写增强后的 π0 仍有 61 点摆动，说明增强没内化不变性。价值是把措辞鲁棒性外包给免训练重写器，代价是规则覆盖面有限。摘要自述冻结 π0 相对提升 16–27%。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不直接做改写增强微调？",
+      "a": "摘要指出改写增强后的 π0 仍有 61 点摆动，说明不变性没学进去，收益不稳且需重训。"
+     },
+     {
+      "q": "为何改写只需一次、不做逐步验证？",
+      "a": "敏感度是指令级属性，改一次就能把输入搬到策略经验区间；逐步验证会增开销并丢失零样本优势。"
+     }
+    ],
+    "mechanism": "VLA 的语言-动作对齐只在有限措辞分布上拟合，权重里没有内建语言不变性，输入措辞偏移直接移动内部表示。作者不改权重，而把「哪种说法更稳」当作可归纳规则，用少量任务评分蒸馏成显式规则，在输入端把指令搬到策略经验区间。",
+    "boundary": "规则从少数任务蒸馏，目标措辞分布差异过大时可能覆盖不到；策略能力不足或任务已饱和时收益有限。",
+    "analogyBoundary": "「话术手册」类比在固定菜单时成立；客人措辞不断出新，手册条目有限，未收录的表达仍失效。",
+    "misconceptions": [
+     "以为 VLA 敏感是因底层 VLM 语言差——它是不继承 VLM 的鲁棒性。",
+     "把该方法当微调——它完全不改策略权重。"
+    ],
+    "ownAnalysis": "最可迁移的是「把脆弱性当输入分布问题、用免训练模块修补」（推断），与多模态后训练用 prompt 做分布适配同构。可疑处：规则从少量任务蒸馏，可能过拟合其措辞风格；摘要只给相对提升，未说清留出任务措辞分布是否同源（待核实）。",
+    "officialNotes": [
+     {
+      "position": "VLA 对措辞高度敏感，仅靠措辞即可近乎抹平 ID/OOD 差距；不改策略的规则重写使冻结 π0 相对提升 16–27%",
+      "source": "arxiv: 2610.10526v1"
+     }
+    ],
+    "interviewAnswer": "现象是 VLA 换个说法成功率能掉几十点，同一炉灶任务「switch on the stove」100%、「switch on the hot plate」仅 2%，且它没继承底层 VLM 的语言鲁棒性。作者用单编辑摆动和 oracle 短语搜索量化，发现光靠措辞就能抹平 ID/OOD 间 21 点差距。做法不改策略：少量任务给多改写打分，让 LLM 蒸馏 10–20 条规则，部署时重写一次再喂冻结策略，免重训、可零样本迁移。",
+    "studyPath": {
+     "prerequisites": [
+      "VLA / 视觉-语言-动作基本结构",
+      "ID/OOD 泛化概念"
+     ],
+     "nextSteps": [
+      "读原文与项目页",
+      "复现单编辑敏感度度量"
+     ]
+    }
+   }
+  },
+  {
+   "id": "f10b3a64fea8504a",
+   "tldr": "把 RL 采样集中到策略能力前沿附近的任务配置上（SGS），让百万并行环境的经验不被浪费。",
+   "keyPoints": [
+    "sim-to-real RL 依赖手工奖励、示教等按任务先验",
+    "多样重置 + 大规模并行能省工程，但朴素放大不稳",
+    "均匀采样把经验浪费在已掌握或无法尝试的配置上",
+    "SGS 自适应采样聚焦策略能力前沿",
+    "百万并行环境下解出四足多地形与接触密集装配"
+   ],
+   "why": "大规模并行 RL 与自适应课程是 RL 实习高频考点；「把算力花在能力边界」可直接迁移到后训练采样。",
+   "difficulty": "medium",
+   "tags": [
+    "rl",
+    "sim-to-real",
+    "curriculum",
+    "robot-control",
+    "sampling"
+   ],
+   "entities": [
+    "Success Guided Sampling",
+    "sim-to-real RL",
+    "quadruped locomotion",
+    "contact-rich assembly"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "SGS 采样闭环",
+    "caption": "估计各配置成功率，按能力前沿重采样，策略变强后前沿自动外扩。",
+    "svg": "<svg viewBox='0 0 480 178' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='SGS 四层流程'>\n<rect x='40' y='14' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='38' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>大量并行重置配置（至多 2^20 环境）</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='40' y='70' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>估计各配置成功率</text>\n<line x1='240' y1='110' x2='240' y2='118' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,126 236,118 244,118' fill='var(--line-1)'/>\n<rect x='40' y='126' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='150' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>SGS 按能力前沿重采样 → 策略外扩</text>\n</svg>",
+    "alt": "三层闭环：大量并行重置配置→估计各配置成功率→SGS 按能力前沿重采样使策略外扩。"
+   },
+   "concepts": [
+    {
+     "name": "Exploration Bottleneck in Uniform Sampling（均匀采样的探索瓶颈）",
+     "readable": "均匀随机出任务时，策略已经会做或根本做不了的任务占了大部分，真正能带来提升的「中间难度」样本越来越少。",
+     "analogy": "像刷题只按题库顺序抽，抽到的多是已会的送分题或完全超纲题，进步最慢。",
+     "analogyBreaksDown": "题库难度固定；这里任务难度随策略变化，越练「中间难度」越会移动，不是静态分布。",
+     "mechanism": "学习信号只来自成功率非 0 非 1 的样本。采样分布固定而策略能力前沿上移，落在前沿的配置占比递减，使放大的并行算力被稀释、收益不显。",
+     "visual": "横轴按难度排列的配置，纵轴数量；中间可学区间是一段窄带，随训练向右移动且变窄。",
+     "prerequisites": [
+      "RL 策略梯度基础",
+      "回放与采样分布"
+     ],
+     "selfTest": [
+      "为什么均匀采样在大规模并行下反而低效？",
+      "「可学区间」为什么随训练移动？",
+      "这与稀疏奖励问题是一回事吗？"
+     ],
+     "formula": "\\eta=\\mathbb{E}_{c\\sim U}\\left[\\mathbf{1}\\{0<\\hat{s}(c)<1\\}\\right]"
+    },
+    {
+     "name": "Success Guided Sampling（成功率引导采样）",
+     "readable": "按每个任务配置「离策略能力边界有多近」来重新分配采样概率，越靠近前沿越常被抽到。",
+     "analogy": "像教练按你当前水平挑陪练，专挑略强于你的对手，进步最快。",
+     "analogyBreaksDown": "陪练强度是外生给定的；这里难度由策略成功率定义，重采样又反过来改变策略，形成自指回路。",
+     "mechanism": "用估计成功率给配置加权，使采样密度跟随能力前沿移动；从而在固定并行规模下提高每批的经验利用率，让大规模并行的收益真正体现。",
+     "visual": "横轴难度、纵轴采样权重；在目标成功率处出现一个峰，峰随训练向右滑。",
+     "prerequisites": [
+      "重要性采样概念",
+      "课程学习"
+     ],
+     "selfTest": [
+      "SGS 与 prioritized replay 有何异同？",
+      "成功率估计不准会怎样？",
+      "为何它能免任务先验？"
+     ],
+     "formula": "w(c)\\propto g(\\hat{s}(c))"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-sgs-frontier-reweight",
+     "name": "成功率引导重加权（Success-Guided Reweighting）",
+     "category": "rl",
+     "latex": "w(c)=\\frac{g(\\hat{s}(c))}{\\sum_{c'} g(\\hat{s}(c'))},\\quad g(s)=\\exp\\!\\left(-\\lambda\\,|s-s^{\\star}|\\right)",
+     "symbols": [
+      [
+       "c",
+       "一个任务配置（如地形、装配参数）"
+      ],
+      [
+       "\\hat{s}(c)",
+       "策略在该配置上的估计成功率"
+      ],
+      [
+       "s^{\\star}",
+       "能力前沿的目标成功率"
+      ],
+      [
+       "\\lambda",
+       "聚焦强度"
+      ],
+      [
+       "g",
+       "权重核函数"
+      ],
+      [
+       "w(c)",
+       "重采样概率"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：均匀采样忽略配置难度，导致可学样本被稀释。",
+      "第 2 步：统计/估计每个配置的成功率 ŝ(c)。",
+      "第 3 步：以核函数 g 让 ŝ 接近前沿目标 s* 的配置获得高权重。",
+      "第 4 步：归一化得采样分布 w，用于下一批并行环境。"
+     ],
+     "analogy": "像按「差一点就能做对」的距离给练习题打权重，越接近临界分越高。",
+     "pitfalls": [
+      "把 s* 当成固定 0.5——前沿应随训练移动",
+      "忽略 ŝ 估计噪声，会把采样误导到伪前沿",
+      "误以为重加权不改变最优解——它改的是采样分布而非目标"
+     ],
+     "code": "import torch\ndef sgs(hat_s, s_star=0.5, lam=8.0):\n    g = torch.exp(-lam * (hat_s - s_star).abs())\n    return g / g.sum()  # 采样概率",
+     "sources": [
+      {
+       "title": "A Balanced Data Diet: Exploration Bottleneck in Mega-Scale RL",
+       "url": "https://arxiv.org/abs/2610.12465v1"
+      }
+     ]
+    },
+    {
+     "id": "f-frontier-learning-efficiency",
+     "name": "可学样本占比（Frontier Learnable Fraction）",
+     "category": "rl",
+     "latex": "\\eta=\\frac{1}{N}\\sum_{i=1}^{N}\\mathbf{1}\\!\\left[\\,s_{\\mathrm{lo}}\\le \\hat{s}(c_i)\\le s_{\\mathrm{hi}}\\,\\right]",
+     "symbols": [
+      [
+       "N",
+       "一个 batch 内的环境数"
+      ],
+      [
+       "c_i",
+       "第 i 个环境的任务配置"
+      ],
+      [
+       "\\hat{s}(c_i)",
+       "该配置估计成功率"
+      ],
+      [
+       "s_{\\mathrm{lo}},s_{\\mathrm{hi}}",
+       "可学区间的下/上界"
+      ],
+      [
+       "\\eta",
+       "批次中带学习信号的样本占比"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：成功率≈0 或≈1 的样本几乎不产生策略梯度。",
+      "第 2 步：用一对阈值界定「可学区间」。",
+      "第 3 步：数出落在区间的样本占比 η。",
+      "第 4 步：SGS 的目标即是提高 η，从而提升每批经验利用率。"
+     ],
+     "analogy": "像班级里「跳一跳够得着」的题所占比例，才是这次练习的有效题量。",
+     "pitfalls": [
+      "把 η 当成最终性能——它是过程指标",
+      "阈值选取无依据，η 变得不可比",
+      "忽略长尾困难任务仍有探索价值"
+     ],
+     "code": "def learnable_frac(hat_s, lo=0.05, hi=0.95):\n    return ((hat_s > lo) & (hat_s < hi)).float().mean()",
+     "sources": [
+      {
+       "title": "A Balanced Data Diet: Exploration Bottleneck in Mega-Scale RL",
+       "url": "https://arxiv.org/abs/2610.12465v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "sim-to-real RL 依赖按任务的结构先验（手工奖励、示教等）",
+     "多样模拟器重置 + 大规模并行可减轻部分操作任务的工程负担",
+     "均匀采样把经验浪费在策略已掌握或无法尝试的配置上，稀释学习信号",
+     "提出 Success Guided Sampling（SGS），聚焦策略能力前沿",
+     "实验用至多 2^20（超百万）并行环境",
+     "SGS 解出多地形四足运动与接触密集装配任务",
+     "把学到的操作策略蒸馏为 RGB 策略并零样本迁移真机"
+    ],
+    "uncertain": [
+     "SGS 的精确采样分布/核函数摘要未给，公式为按摘要重建的通用形式，需核对原文",
+     "「能力前沿」判据（目标成功率数值）与成功率估计方式摘要未说明，待核实",
+     "各任务具体提升数值摘要未给，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "RL 训练把仿真经验集中在策略「刚好还不会」的难度上，别耗在太易或太难的任务。"
+     },
+     {
+      "level": "入门",
+      "text": "大规模并行仿真能给机器人省掉手工奖励设计，但均匀随机出任务时，很多经验花在策略已会或还做不了的任务上。SGS 按任务难度重新分配采样，把训练集中到能力边界附近，于是在百万级并行环境里也能解出难任务。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键在采样分布：均匀采样下能提供学习信号的「中间难度」配置占比随训练推进不断缩小，批次里大量样本无梯度收益。SGS 估计各配置成功率，按接近前沿的程度重加权采样，让每个批次学习信号更密，于是放大并行的收益才真正体现。"
+     },
+     {
+      "level": "专家",
+      "text": "与手工课程学习不同，SGS 从策略自身成功率在线估计出自适应采样，免任务先验，且前沿随策略变强自动外扩。代价是依赖可靠成功率估计，对稀疏奖励/不可重置任务不友好。摘要称其解出前人失败的四足多地形与接触密集装配，并蒸馏为 RGB 策略零样本上真机。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不直接继续扩大并行环境数量？",
+      "a": "并行放大后若采样仍均匀，落在中间难度的样本占比不增，学习信号被稀释，算力收益看不出来。"
+     },
+     {
+      "q": "为什么不用人工课程学习？",
+      "a": "人工课程要按任务手工设计难度顺序与先验，正是摘要想摆脱的工程负担；SGS 用策略自身成功率在线自适应，免这些先验。"
+     }
+    ],
+    "mechanism": "RL 的学习信号只来自成功率既非 0 也非 1 的样本。均匀采样分布固定，而策略能力前沿随训练移动，落在前沿的配置占比越来越小，批次里多数样本对梯度无贡献，形成探索瓶颈。SGS 用估计成功率给配置重加权，使采样密度跟随前沿移动，把「放大并行」的算力转为有效学习信号。",
+    "boundary": "SGS 需能估计每个任务配置的成功率并可靠重置环境；对稀疏奖励、成功信号难判定或不可重置的任务不适用。若成功率估计噪声大，采样会被误导到伪前沿。",
+    "analogyBoundary": "「只练刚好不会的题」类比忽略了：这里难度不是独立给定的，改采样会改变策略、进而改变各配置真实难度，是反馈回路。",
+    "misconceptions": [
+     "以为 SGS 是人工课程学习——它是从策略成功率在线自适应的采样。",
+     "以为瓶颈在并行规模——真正的瓶颈是采样分布与学习信号密度。",
+     "以为只是调参——它改变的是任务配置的采样分布。"
+    ],
+    "ownAnalysis": "「采样分布随能力前沿移动」这一抽象很像 prioritized replay / 自适应课程（推断）。可迁移点：任何大规模 rollout 训练都可问「批次里多大比例落在可学区间」。可疑处：摘要强调成功率引导，但未说明如何在不额外训练下估计配置难度（待核实）；标题「平衡的数据饮食」暗示可能还有多样性/配比约束，摘要未展开。",
+    "officialNotes": [
+     {
+      "position": "均匀采样会把经验浪费在已掌握或无法尝试的配置；SGS 聚焦能力前沿，使至多 2^20 并行环境的 RL 解出前人失败的运动与装配任务，并蒸馏为 RGB 策略零样本上真机",
+      "source": "arxiv: 2610.12465v1"
+     }
+    ],
+    "interviewAnswer": "问题是大规模并行 sim-to-real RL 虽省掉手工奖励，但均匀采样会把算力浪费在策略已会或还不会的配置上，批次学习信号越来越稀，放大并行也看不出收益。SGS 的做法是估计每个任务配置的成功率，按接近策略能力前沿的程度重加权采样，让采样密度跟着前沿走。结果是在至多一百万个并行环境里解出四足多地形和接触密集装配，还能蒸馏成 RGB 策略零样本上真机。",
+    "studyPath": {
+     "prerequisites": [
+      "RL 基础（策略梯度/回放）",
+      "课程学习概念"
+     ],
+     "nextSteps": [
+      "读原文与项目页 sgs-rl.github.io",
+      "对比均匀采样与 SGS 的批次学习信号密度"
+     ]
+    }
+   }
+  },
+  {
+   "id": "6ed7fdf25c9dfe52",
+   "tldr": "把任意相机集合编码成固定大小场景 token 注入预训练 VLA，使策略对相机数量与位姿变化鲁棒。",
+   "keyPoints": [
+    "VLA 依赖固定相机配置，部署时数量/位姿一变就脆弱",
+    "VersaCamVLA 把相机集合表征与动作学习解耦",
+    "统一 scene-token 接口：任意 posed RGB 视角 → 定长 token",
+    "多信号目标视角预测 + WAPS 借手腕相机运动获得位姿多样性",
+    "轻量空间编码器注入 token；RoboTwin/LIBERO/真机优于基线"
+   ],
+   "why": "相机配置泛化是具身 VLA 与世界模型的关键鲁棒性维度；多视角融合与位姿外推常被一起考。",
+   "difficulty": "hard",
+   "tags": [
+    "vla",
+    "multimodal",
+    "multi-view",
+    "world-model",
+    "robot-manipulation"
+   ],
+   "entities": [
+    "VersaCamVLA",
+    "Wrist-Augmented Pose Sampling",
+    "scene tokens",
+    "RoboTwin",
+    "LIBERO"
+   ],
+   "diagram": {
+    "kind": "architecture",
+    "title": "VersaCamVLA 架构",
+    "caption": "可变相机集合经定长 scene token 注入预训练 VLA，动作学习与相机配置解耦。",
+    "svg": "<svg viewBox='0 0 480 178' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='VersaCamVLA 四层架构'>\n<rect x='40' y='14' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='38' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>可变相机集合 {相机数 K、位姿可变形}</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='40' y='70' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>scene-token 编码器 → 定长 M 个 token</text>\n<line x1='240' y1='110' x2='240' y2='118' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,126 236,118 244,118' fill='var(--line-1)'/>\n<rect x='40' y='126' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='150' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>空间编码器注入预训练 VLA → 动作</text>\n</svg>",
+    "alt": "三层架构：可变相机集合→定长 scene token 编码→注入预训练 VLA 输出动作。"
+   },
+   "concepts": [
+    {
+     "name": "Camera-Set Decoupling（相机集合解耦）",
+     "readable": "把「这组相机在哪、有几台」压成固定大小的场景 token，动作学习的输入形状就不随相机配置变化。",
+     "analogy": "像把多张不同角度的现场照片整理成一页标准摘要，读摘要的人不必知道原本拍了几张。",
+     "analogyBreaksDown": "摘要会丢细节；当目标所需信息不在任何输入视角里（遮挡/盲区），定长 token 也无法恢复，只是让形状稳定。",
+     "mechanism": "统一 scene-token 接口把任意数量 posed RGB 视角映射到定长 latent tokens；空间编码器再把它作为补充视觉条件注入预训练 VLA，从而解耦相机集合与动作头。",
+     "visual": "左列 K 个带位姿的相机图标（数量可变），中间压成固定 M 个 token 方块，右侧接固定结构的 VLA。",
+     "prerequisites": [
+      "VLA 结构",
+      "多视角相机位姿",
+      "ViT 表征"
+     ],
+     "selfTest": [
+      "为什么要固定 token 数量？",
+      "它需要显式 3D 重建吗？",
+      "相机集合变了策略为何还能用？"
+     ],
+     "formula": "z=E_{\\theta}\\!\\left(\\{(I_i,P_i)\\}_{i=1}^{K}\\right),\\quad |z|=M"
+    },
+    {
+     "name": "Multi-Signal Target-View Prediction & WAPS（目标视角预测与腕部增广采样）",
+     "readable": "用「从已有视角预测某个新视角」当训练信号，逼 token 编码场景几何；并借机械臂手腕相机自然运动，免费收集大量相机位姿。",
+     "analogy": "像通过「看图猜另一个角度的样子」来确认自己真的理解了空间，而不是死记像素。",
+     "analogyBreaksDown": "预测新视角只逼出「可渲染」的几何线索，不等于学会物理可操作语义；且手腕视角多为近距，远距离位姿覆盖有限。",
+     "mechanism": "目标视角预测让 scene token 承载跨视角一致的场景信息；WAPS 用腕部相机随动作产生的位姿变化做增广，无需额外设备即可获得位姿多样性。",
+     "visual": "时间轴上腕部相机随抓取移动，采样出不同位姿；箭头指向目标视角预测头，误差回传更新 token。",
+     "prerequisites": [
+      "新颖视角合成概念",
+      "自监督预测任务",
+      "数据增广"
+     ],
+     "selfTest": [
+      "目标视角预测为何能逼出几何？",
+      "WAPS 免费在哪？",
+      "它与 NeRF/3DGS 有何区别？"
+     ],
+     "formula": "\\mathcal{L}=\\sum_{t}\\|D_{\\psi}(z,P_t)-I_t\\|_1"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-scene-token-interface",
+     "name": "场景 token 接口（Scene-Token Interface）",
+     "category": "worldmodel",
+     "latex": "z=E_{\\theta}\\!\\left(\\{(I_i,P_i)\\}_{i=1}^{K}\\right)\\in\\mathbb{R}^{M\\times d}",
+     "symbols": [
+      [
+       "I_i",
+       "第 i 个 RGB 视角"
+      ],
+      [
+       "P_i",
+       "第 i 个相机位姿"
+      ],
+      [
+       "K",
+       "相机数（可变）"
+      ],
+      [
+       "E_{\\theta}",
+       "场景 token 编码器"
+      ],
+      [
+       "z",
+       "定长场景 token"
+      ],
+      [
+       "M",
+       "token 数"
+      ],
+      [
+       "d",
+       "token 维度"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：部署时相机数与位姿可变，动作头需要固定输入形状。",
+      "第 2 步：把每个视角与位姿分别编码。",
+      "第 3 步：聚合成固定 M 个 latent token，与相机数 K 无关。",
+      "第 4 步：该 token 作为补充视觉条件注入预训练 VLA。"
+     ],
+     "analogy": "把任意长度的一摞现场照片整理成一页固定格式的摘要。",
+     "pitfalls": [
+      "以为 K 越大 token 越多——接口是定长的",
+      "把 token 当显式 3D 表征（摘要明确说无需显式 3D 感知）"
+     ],
+     "code": "import torch, torch.nn as nn\nclass SceneEncoder(nn.Module):\n    def __init__(self, d=256, M=16):\n        super().__init__()\n        self.q = nn.Parameter(torch.randn(M, d))\n    def forward(self, views, poses):\n        pooled = views.mean(1, keepdim=True)  # [B,1,d]\n        return self.q.unsqueeze(0) + pooled      # [B,M,d]，与 K 无关",
+     "sources": [
+      {
+       "title": "VersaCamVLA: Camera-Configurable VLA Policies",
+       "url": "https://arxiv.org/abs/2610.12451v1"
+      }
+     ]
+    },
+    {
+     "id": "f-target-view-prediction",
+     "name": "多信号目标视角预测（Multi-Signal Target-View Prediction）",
+     "category": "worldmodel",
+     "latex": "\\mathcal{L}=\\mathbb{E}_{t}\\!\\left[\\|D_{\\psi}(z,P_t)-I_t\\|_1\\right]",
+     "symbols": [
+      [
+       "z",
+       "场景 token"
+      ],
+      [
+       "D_{\\psi}",
+       "视角解码器"
+      ],
+      [
+       "P_t",
+       "目标视角位姿"
+      ],
+      [
+       "I_t",
+       "目标视角真值图像"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：scene token 需承载场景几何而非像素记忆。",
+      "第 2 步：令解码器从 token 与目标位姿重建该视角图像。",
+      "第 3 步：用重建误差作自监督信号更新 token。",
+      "第 4 步：多信号与 WAPS 提供位姿，使 token 跨视角一致。"
+     ],
+     "analogy": "用「能不能画出另一个角度看的样子」检验是否真懂空间。",
+     "pitfalls": [
+      "只优化像素误差，可能学出可渲染但物理语义弱的表征",
+      "把重建质量当唯一目标，忽略下游动作表现"
+     ],
+     "code": "import torch.nn.functional as F\ndef tv_pred_loss(decoder, z, P_t, I_t):\n    I_hat = decoder(z, P_t)\n    return F.l1_loss(I_hat, I_t)",
+     "sources": [
+      {
+       "title": "VersaCamVLA: Camera-Configurable VLA Policies",
+       "url": "https://arxiv.org/abs/2610.12451v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "VLA 依赖固定相机配置，部署时对相机数量/位姿变化脆弱",
+     "VersaCamVLA 把相机集合表征与动作学习解耦（camera-configurable）",
+     "学统一 scene-token 接口，把任意数量的 posed RGB 视角映射到定长 latent scene tokens",
+     "用多信号目标视角预测与 WAPS，借手腕相机运动获得免费位姿多样性",
+     "部署时轻量空间编码器把场景 token 作为补充视觉条件注入预训练 VLA，无需显式 3D 感知或新视角渲染",
+     "在 RoboTwin、LIBERO 与真机平台优于先前 VLA 与直接多视角基线，并在可变相机数与未见位姿下稳健"
+    ],
+    "uncertain": [
+     "scene-token 编码器与目标视角预测的精确形式摘要未给，公式为按摘要重建的通用形式，需核对原文",
+     "基础 VLA 是否冻结、注入方式细节摘要未说明，待核实",
+     "具体性能数值与「直接多视角基线」的定义摘要未给，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "把任意相机集合压成固定大小的场景 token 再喂 VLA，相机怎么变都不怕。"
+     },
+     {
+      "level": "入门",
+      "text": "VLA 常在固定相机配置上训练，换相机数量或位姿就容易失灵。VersaCamVLA 用统一接口把任意多个带位姿的 RGB 视角压成定长场景 token，再用轻量空间编码器作为补充条件注入预训练 VLA，无需 3D 重建或新视角渲染。"
+     },
+     {
+      "level": "进阶",
+      "text": "关键是把相机集合表征与动作学习解耦：token 数量固定，动作头输入形状不随相机配置变化。训练用多信号目标视角预测逼 token 承载跨视角几何，并用 WAPS 借手腕相机运动带来免费位姿多样性，于是可变相机数与未见位姿下仍鲁棒。"
+     },
+     {
+      "level": "专家",
+      "text": "与直接多视角基线（把多张图堆进网络）不同，它把相机配置变成可变的输入接口而非固定架构假设，也不需要 NeRF/3DGS 那类显式重建或新视角渲染。代价是信息经定长 token 有损，目标视角预测只逼几何一致性、不保证操作语义。摘要称在 RoboTwin、LIBERO 与真机均优于先前 VLA 与直接多视角基线。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不直接把多视角图像拼给 VLA？",
+      "a": "拼接会让输入形状随相机数量变化，固定架构的 VLA 无法直接消化，也难泛化到未见位姿；定长 token 接口把配置变化吸收掉。"
+     },
+     {
+      "q": "为什么需要 WAPS？",
+      "a": "目标视角预测需要多样位姿作监督，手腕相机随动作自然产生位姿变化，省去额外采集即可得到位姿多样性。"
+     }
+    ],
+    "mechanism": "相机配置变化破坏 VLA 固定输入假设，是脆弱性根因。作者把配置编码成与相机数无关的定长场景 token，使动作学习的输入分布对相机集合不变；再用跨视角预测信号让 token 编码几何而非像素，用腕部运动补足位姿覆盖，从而在部署时无需显式 3D 或渲染新视角即可迁移。",
+    "boundary": "当目标所需信息在所有输入视角中都缺失时（严重遮挡、完全盲区），定长 token 无法凭空恢复；WAPS 的腕部视角多为近距，远距离/大范围位姿覆盖有限，超出训练分布仍可能失效。",
+    "analogyBoundary": "「一页摘要」类比忽略了 token 是有损且任务相关的：摘要内容由预测任务塑造，未必保留对操作最关键的细节。",
+    "misconceptions": [
+     "以为需要显式 3D 感知或新视角渲染——摘要说都不需要。",
+     "以为 token 数随相机数增长——接口是定长的。",
+     "以为 WAPS 需要额外传感器——它用的是已有的手腕相机。"
+    ],
+    "ownAnalysis": "把「可变传感器配置」抽象成定长 token 接口，与多模态里的 modality-agnostic tokenizer、世界模型里的 latent scene 表征同源（推断）。可疑处：摘要说注入预训练 VLA，但未说基础 VLA 是否冻结、注入是否有损动作先验（待核实）；目标视角预测只保证视觉一致性，是否提升物理可操作性无法从摘要判断。",
+    "officialNotes": [
+     {
+      "position": "把任意数量 posed RGB 视角映射为定长 scene token、解耦相机集合与动作学习，无需显式 3D 感知或新视角渲染；在 RoboTwin/LIBERO/真机优于先前 VLA 与直接多视角基线",
+      "source": "arxiv: 2610.12451v1"
+     }
+    ],
+    "interviewAnswer": "VLA 通常在固定相机配置上训练，部署时相机数量或位姿一变就脆弱。VersaCamVLA 把这部分解耦：用统一接口把任意多个带位姿的 RGB 视角编码成定长 scene token，再用轻量空间编码器作为补充视觉条件注入预训练 VLA，完全不需要显式 3D 感知或新视角渲染。训练用多信号目标视角预测逼 token 编码跨视角几何，并用 WAPS 借手腕相机运动拿到免费位姿多样性。实验在 RoboTwin、LIBERO 和真机上优于先前 VLA 和直接多视角基线，且在可变相机数与未见位姿下稳健。",
+    "studyPath": {
+     "prerequisites": [
+      "VLA 结构",
+      "多视角相机几何",
+      "自监督表征学习"
+     ],
+     "nextSteps": [
+      "读原文",
+      "对比 scene-token 接口与显式 3D 重建方案",
+      "思考把该接口用于其它可变传感器"
+     ]
+    }
+   }
+  },
+  {
+   "id": "dafc1b4d7cbbd25b",
+   "tldr": "把「AI 会不会挑训练数据」做成分层基准：让 agent 选并排序候选微调子集，再验证其预测是否准。",
+   "keyPoints": [
+    "追问前沿模型是否有「数据感」：能否可靠挑对训练数据",
+    "让 agent 选并排序候选训练子集以微调一个小 LLM",
+    "agent 可检视数据、写跑分析代码、跑前向，但不能训练模型或看评测",
+    "之后按标准化协议在每个子集上微调并评测",
+    "两维度：top 子集表现 + 排序准确率",
+    "结果：相对随机增益有限、排序不可靠且跨任务不稳"
+   ],
+   "why": "数据选择与训练价值预测是 post-training 与「AI scientist/数据引擎」的核心问题，面试常问如何为微调选题。",
+   "difficulty": "medium",
+   "tags": [
+    "posttraining",
+    "data-selection",
+    "benchmark",
+    "llm-agents",
+    "fine-tuning"
+   ],
+   "entities": [
+    "DataSense-Bench",
+    "OpenThoughts-Agent",
+    "EnvScaler",
+    "TBLite",
+    "BFCL",
+    "Astra"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "DataSense-Bench 流程",
+    "caption": "agent 在不训练、不看评测的前提下排序候选子集，再统一微调评测两轴打分。",
+    "svg": "<svg viewBox='0 0 480 178' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='DataSense-Bench 四层流程'>\n<rect x='40' y='14' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='38' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>候选训练子集（多组）</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='40' y='70' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>agent：看数据 / 写代码 / 跑前向 → 排序</text>\n<line x1='240' y1='110' x2='240' y2='118' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,126 236,118 244,118' fill='var(--line-1)'/>\n<rect x='40' y='126' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='150' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>逐子集微调 + 评测 → 两轴打分</text>\n</svg>",
+    "alt": "三层流程：候选训练子集→agent 检视并排序→逐子集微调评测得到两轴分数。"
+   },
+   "concepts": [
+    {
+     "name": "Data Sense（数据感：数据选择与表现预测）",
+     "readable": "问前沿模型能不能「挑对训练数据」：给它一批候选微调子集，让它排序并预测哪个子集训出来的模型更好。",
+     "analogy": "像教练从一堆训练素材里挑出最该用的那批，而不是随机抓一把。",
+     "analogyBreaksDown": "教练能从经验判断；这里的模型不许真正训练或看评测集，只能看数据、写分析代码、跑前向，信息受限。",
+     "mechanism": "把数据选择做成分层任务：agent 检视数据、写并执行分析代码、跑前向，但不能训练模型或访问真实评测；之后在标准化协议下对每个子集微调评测，据此衡量选择与排序能力。",
+     "visual": "横轴为候选子集按真实表现的排序，纵轴为 agent 预测排名；完全正确是一条对角线，散点偏离即预测错。",
+     "prerequisites": [
+      "LLM 微调流程",
+      "数据选择/主动学习概念",
+      "排序指标"
+     ],
+     "selfTest": [
+      "为何不许 agent 训练模型或看评测集？",
+      "「选择增益」与「排序准确率」分别考什么？",
+      "无监督代理信号能否替代真实表现？"
+     ],
+     "formula": "\\Delta_{\\mathrm{sel}}=\\mathrm{Perf}(\\mathrm{top})-\\mathrm{Perf}(\\mathrm{random})"
+    },
+    {
+     "name": "Two-Axis Evaluation（双轴评测）",
+     "readable": "一条看最优子集训出来的模型强不强，另一条看 agent 给候选子集排的序是否与真实表现一致。",
+     "analogy": "像考试既看你选出的第一名对不对，也看你把整张榜单排得多准。",
+     "analogyBreaksDown": "榜首对不代表整体排序对；排序相关高也可能榜首选错，两轴不互相蕴含。",
+     "mechanism": "top 子集表现反映「能否挑到高价值数据」，排序准确率反映「能否预测子集相对好坏」；两轴分离可暴露 agent 是「碰巧挑对」还是「真会预测」。",
+     "visual": "两个并列条形图：左为 top 子集微调后性能 vs 随机基线，右为预测排序与真实排序的相关系数。",
+     "prerequisites": [
+      "排序相关系数",
+      "微调评测协议"
+     ],
+     "selfTest": [
+      "两轴为何都要看？",
+      "只看排序准确率会漏掉什么？",
+      "跨任务不一致说明什么？"
+     ],
+     "formula": "\\mathrm{RA}=\\frac{1}{\\binom{M}{2}}\\sum_{a<b}\\mathbf{1}\\{(\\hat{p}_a-\\hat{p}_b)(p_a-p_b)>0\\}"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-selection-gain",
+     "name": "数据选择增益（Selection Gain over Random）",
+     "category": "posttraining",
+     "latex": "\\Delta_{\\mathrm{sel}}=\\mathrm{Perf}\\!\\left(S_{\\mathrm{top}}\\right)-\\mathbb{E}\\!\\left[\\mathrm{Perf}(S_{\\mathrm{rand}})\\right]",
+     "symbols": [
+      [
+       "S_{\\mathrm{top}}",
+       "agent 排名最高的子集"
+      ],
+      [
+       "S_{\\mathrm{rand}}",
+       "随机子集"
+      ],
+      [
+       "\\mathrm{Perf}",
+       "微调后评测表现"
+      ],
+      [
+       "\\Delta_{\\mathrm{sel}}",
+       "相对随机的选择增益"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：在同一基座模型与协议下微调不同数据子集。",
+      "第 2 步：评测每个子集得到的模型表现 Perf。",
+      "第 3 步：取 agent 排第一的子集表现减去随机子集期望表现。",
+      "第 4 步：差值即选择增益，衡量是否会挑数据。"
+     ],
+     "analogy": "像从一堆食材里挑出最好一批，成品好不好才是真判据。",
+     "pitfalls": [
+      "增益小不代表没信号，只说明相对随机优势有限",
+      "把单次随机基线当期望，方差大",
+      "子集大小/预算不同会破坏可比性"
+     ],
+     "code": "import statistics\ndef selection_gain(perf_top, perf_rand_list):\n    return perf_top - statistics.mean(perf_rand_list)",
+     "sources": [
+      {
+       "title": "DataSense-Bench: The First Step Toward an AI Scientist",
+       "url": "https://arxiv.org/abs/2610.12190v1"
+      }
+     ]
+    },
+    {
+     "id": "f-ranking-accuracy",
+     "name": "排序准确率（Ranking Accuracy）",
+     "category": "posttraining",
+     "latex": "\\mathrm{RA}=\\frac{2}{M(M-1)}\\sum_{1\\le a<b\\le M}\\mathbf{1}\\!\\left[(\\hat{p}_a-\\hat{p}_b)(p_a-p_b)>0\\right]",
+     "symbols": [
+      [
+       "M",
+       "候选子集数"
+      ],
+      [
+       "p_a",
+       "子集 a 的真实表现"
+      ],
+      [
+       "\\hat{p}_a",
+       "agent 对子集 a 的预测表现/排名"
+      ],
+      [
+       "\\mathrm{RA}",
+       "成对一致比例"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：枚举所有候选子集对 (a,b)。",
+      "第 2 步：比较 agent 预测顺序与真实顺序是否一致。",
+      "第 3 步：一致记 1，否则记 0。",
+      "第 4 步：对所有子集对取平均得 RA（Kendall 一致率）。"
+     ],
+     "analogy": "像给选手排实力，不看绝对分，只看两两谁更强有没有排反。",
+     "pitfalls": [
+      "把 RA 当线性相关——它是成对序关系",
+      "候选子集太相似时 RA 不稳",
+      "预算/规模不等时真实表现噪声大"
+     ],
+     "code": "import itertools\ndef ranking_acc(p_hat, p):\n    ok=tot=0\n    for a,b in itertools.combinations(range(len(p)),2):\n        ok += ((p_hat[a]-p_hat[b])*(p[a]-p[b])>0); tot+=1\n    return ok/tot",
+     "sources": [
+      {
+       "title": "DataSense-Bench: The First Step Toward an AI Scientist",
+       "url": "https://arxiv.org/abs/2610.12190v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "追问前沿模型是否可靠地选出对的训练数据（「数据感」）",
+     "让 agent 选并排序候选训练子集以微调一个小 LLM",
+     "agent 可检视数据、写并执行分析代码、跑前向，但不能训练模型或访问真实评测任务",
+     "之后按标准化协议在每个子集上微调并评测",
+     "在终端解题与工具使用两域实例化（OpenThoughts-Agent/EnvScaler → TBLite/BFCL）",
+     "两维度：top 子集的微调表现、排序准确率",
+     "相对随机增益有限、排序不可靠且跨任务不稳（Astra 三次工具使用全对最佳组，终端仅 1/3）",
+     "执行轨迹显示 agent 常用相似数据信号但对其训练价值解读不同"
+    ],
+    "uncertain": [
+     "排序准确率/选择增益的精确度量摘要未给，公式为按摘要重建的通用形式，需核对原文",
+     "「selection gains over random are limited」的具体幅度摘要未给，待核实",
+     "所用 agent 除 Astra 外未列名，评测协议细节待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "考 AI 会不会挑训练数据：给它候选子集排序，再看它排得准不准。"
+     },
+     {
+      "level": "入门",
+      "text": "数据决定微调效果，但模型能不能自己挑对数据并不清楚。DataSense-Bench 让 agent 在只能看数据、写分析代码、跑前向（不能训练、不能看评测）的约束下，给候选训练子集排序并预测谁更好，再逐一微调评测。"
+     },
+     {
+      "level": "进阶",
+      "text": "评测分两轴：一是 top 子集训出来的模型表现，看能否挑到高价值数据；二是排序准确率，看能否预测子集相对好坏。两轴分离能区分「碰巧挑对」和「真会预测」。摘要结论偏负面：相对随机增益有限、排序不可靠，且能力跨任务不稳定。"
+     },
+     {
+      "level": "专家",
+      "text": "它的价值是把「数据感」变成一个可复现的受限决策任务：被禁止训练与看评测，逼 agent 只用代理信号预测训练价值，从而贴近真实的数据引擎场景。结果说明前沿模型仍缺乏可靠的数据选择与表现预测能力，且同一 agent 在工具使用与终端解题上表现不一致，存在任务依赖。摘要还指出 agent 常用相似数据信号却给出不同价值判断，暗示其推理并不稳定。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么禁止 agent 训练模型？",
+      "a": "若允许训练，agent 就能直接试出哪个子集好，测的就不再是「预测训练价值」的能力，而是算力。"
+     },
+     {
+      "q": "只看排序准确率会漏掉什么？",
+      "a": "排序相关高也可能把真正最好的子集排到后面，漏掉 top 子集表现这一「实际选到好数据」的维度。"
+     }
+    ],
+    "mechanism": "数据选择的核心是「在不真正训练的前提下预测哪个数据更好」。基准用禁令（不能训练、不能看评测）强制 agent 只用代理信号推断，再用真实微调结果作金标准，从而把主观的「数据感」变成可度量、可复现的选择与排序任务。",
+    "boundary": "基准只在终端解题与工具使用两域实例化，结论未必推广到其它领域；代理信号与真实训练价值的相关性本身可能因任务而异。相对随机增益有限也可能部分来自候选子集差异太小。",
+    "analogyBoundary": "「教练挑素材」类比忽略了：教练能通过试训反馈调整，而这里 agent 被禁止试训，只能盲预测，反馈回路被切断。",
+    "misconceptions": [
+     "以为 agent 可以试训再选——摘要明确禁止训练模型。",
+     "把「相对随机增益有限」理解为完全没用——是增益弱而非为零。",
+     "以为一次任务表现好就代表数据感强——Astra 的工具使用与终端表现并不一致。"
+    ],
+    "ownAnalysis": "把「数据价值预测」当作受限 agent 任务，与数据引擎/自举微调（self-instruct、数据筛选）方向直接相关（推断）。可疑处：摘要说 agent 常用相似数据信号但解读不同，说明信号本身可能是好的，短板在价值映射；若换成有监督校准可能改善（推断）。另：候选子集由谁构造、规模差多少摘要未说，可能影响「相对随机增益有限」这一结论（待核实）。",
+    "officialNotes": [
+     {
+      "position": "前沿模型的数据选择相对随机增益有限，排序不可靠且跨任务不一致；agent 常用相似数据信号但对其训练价值解读不同",
+      "source": "arxiv: 2610.12190v1"
+     }
+    ],
+    "interviewAnswer": "它问的是前沿模型有没有「数据感」——能不能自己挑对训练数据。做法是让 agent 在只能看数据、写分析代码、跑前向，但不能训练模型也不能看评测的约束下，给候选训练子集排序并预测表现；然后按标准化协议逐子集微调评测。评测两轴：top 子集的微调表现和排序准确率。结论偏负面：相对随机增益有限，排序不可靠且跨任务不稳，比如 Astra 在工具使用三次都挑对最佳组，但终端解题只有一次。轨迹分析还发现 agent 常用相似数据信号却给出不同价值判断。",
+    "studyPath": {
+     "prerequisites": [
+      "LLM 微调与数据筛选",
+      "排序/相关系数指标"
+     ],
+     "nextSteps": [
+      "读原文",
+      "复现选择增益与排序准确率",
+      "思考用有监督校准提升数据价值预测"
+     ]
+    }
+   }
+  },
+  {
+   "id": "007283de44a19771",
+   "tldr": "让 LLM agent 在代码骨架上补全物理求解器的 168 题基准，考可执行、视觉保真、物理合理三关。",
+   "keyPoints": [
+    "用求解器生成考 LLM agent 的物理仿真能力",
+    "造 solver 需物理理解 + 数学推导 + 软件实现",
+    "WorldSolver：168 任务，取自 61 篇经典图形学论文，跨 7 个物理域",
+    "每题给固定仿真环境代码骨架，solver 由 agent 补全",
+    "三维评测：执行检查、视觉保真、物理合理性",
+    "前沿 agent 仍难：GPT-5.6-Sol 48.7%、Claude-Opus-5 46.7%"
+   ],
+   "why": "世界模型需要物理可信的动态建模；agentic solver 生成把「让 LLM 理解物理动力学」变成可评测任务。",
+   "difficulty": "hard",
+   "tags": [
+    "agent",
+    "world-model",
+    "physics-simulation",
+    "benchmark",
+    "code-generation"
+   ],
+   "entities": [
+    "WorldSolver",
+    "GPT-5.6-Sol",
+    "Claude-Opus-5",
+    "computer graphics"
+   ],
+   "diagram": {
+    "kind": "flow",
+    "title": "WorldSolver 基准流程",
+    "caption": "固定仿真环境骨架留给 agent 补全求解器，再按执行/视觉/物理三维评测。",
+    "svg": "<svg viewBox='0 0 480 178' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='WorldSolver 四层流程'>\n<rect x='40' y='14' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='38' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>任务：固定场景 + code scaffold</text>\n<line x1='240' y1='54' x2='240' y2='62' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,70 236,62 244,62' fill='var(--line-1)'/>\n<rect x='40' y='70' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='94' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>agent 补全 solver 实现</text>\n<line x1='240' y1='110' x2='240' y2='118' stroke='var(--line-1)' stroke-width='1.6'/>\n<polygon points='240,126 236,118 244,118' fill='var(--line-1)'/>\n<rect x='40' y='126' width='400' height='40' rx='8' fill='none' stroke='var(--line-1)' stroke-width='1.4'/>\n<text x='56' y='150' font-size='14' text-anchor='start' fill='currentColor' font-weight='bold'>执行 / 视觉保真 / 物理合理性</text>\n</svg>",
+    "alt": "三层流程：固定场景代码骨架→agent 补全求解器→三维评测执行/视觉/物理。"
+   },
+   "concepts": [
+    {
+     "name": "Agentic Solver Generation（agent 式求解器生成）",
+     "readable": "给 agent 一个固定仿真环境的代码骨架，让它补齐「状态如何随时间演化」的求解器，一次考物理理解、数学推导和编程。",
+     "analogy": "像给一栋楼的框架让你补全水电：既要知道水往哪流（物理）、会算流量（数学），还得会施工（写代码）。",
+     "analogyBreaksDown": "水电有统一规范；物理现象跨 7 个域、模型各异（流体、刚体、布料…），没有统一模板，agent 必须按现象选对模型。",
+     "mechanism": "每个任务把场景与仿真环境固定成 code scaffold，只把求解器实现留给 agent；难点集中在「选对物理模型 + 正确推导动力学 + 写出可运行代码」，三维评测分别对应不同失败模式。",
+     "visual": "左侧固定 scaffold 框、右侧 agent 补的 solver 框；下方三条流水线分别输出「能跑」「像」「物理合理」。",
+     "prerequisites": [
+      "数值积分基础",
+      "物理动画/图形学概念",
+      "LLM 代码 agent"
+     ],
+     "selfTest": [
+      "为什么要把 scaffold 固定住？",
+      "三维评测各自捕捉哪种失败？",
+      "可执行却不物理合理说明什么？"
+     ],
+     "formula": "\\dot{s}=f(s,t),\\quad s_{t+1}=s_t+\\Delta t\\,f(s_t,t)"
+    },
+    {
+     "name": "Tri-axis Evaluation（三维评测）",
+     "readable": "执行检查看能不能跑通、视觉保真看动画像不像、物理合理性看动力学是否符合物理，三关各卡一种问题。",
+     "analogy": "像验收一座桥：能建起来（执行）、外观像设计图（视觉）、承重真达标（物理），三者不能互相替代。",
+     "analogyBreaksDown": "桥梁验收标准明确可测；这里「视觉保真」与「物理合理」都依赖渲染与判定，边界带有主观与实现相关成分。",
+     "mechanism": "执行检查排除语法/运行错误；视觉保真在渲染结果上比对预期动态行为；物理合理性用基于物理的验证检查生成动力学。三者分离使「能跑但不像」或「像但违反物理」都能被单列。",
+     "visual": "三个并列评分条 E/V/P，各自百分比，用颜色标出最弱一维。",
+     "prerequisites": [
+      "物理动画",
+      "渲染/图像相似度",
+      "动力学验证"
+     ],
+     "selfTest": [
+      "为什么执行成功不等于物理对？",
+      "视觉保真可能被什么骗过？",
+      "三维取平均会掩盖什么？"
+     ],
+     "formula": "\\mathrm{Score}=\\frac{1}{3}\\left(E+V+P\\right)"
+    }
+   ],
+   "formulas": [
+    {
+     "id": "f-solver-state-evolution",
+     "name": "求解器：状态随时间的演化（Solver as an ODE）",
+     "category": "worldmodel",
+     "latex": "\\dot{s}=f(s,t),\\quad s_{t+1}=s_t+\\Delta t\\,f(s_t,t)",
+     "symbols": [
+      [
+       "s",
+       "系统状态（位置/速度等）"
+      ],
+      [
+       "f",
+       "动力学右端项（由物理模型决定）"
+      ],
+      [
+       "\\Delta t",
+       "时间步长"
+      ],
+      [
+       "s_{t+1}",
+       "下一步状态"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：物理现象都可用状态 s 随时间演化的方程描述。",
+      "第 2 步：右端 f 由选定物理模型（重力、弹性、流体等）给出。",
+      "第 3 步：用数值积分（如显式欧拉）离散推进时间。",
+      "第 4 步：代码实现即把该递推写成可运行求解器。"
+     ],
+     "analogy": "像按帧播放动画：每帧根据当前受力算出下一帧的位置。",
+     "pitfalls": [
+      "把积分步长当无关紧要——过大导致不稳定/爆炸",
+      "选错物理模型（如用弹性模型做流体），数值再准也不对",
+      "混淆「能跑」与「物理正确」"
+     ],
+     "code": "def step(s, f, dt):\n    return s + dt * f(s)  # 显式欧拉一步",
+     "sources": [
+      {
+       "title": "WorldSolver: Can LLM Agents Simulate the Physical Dynamics via Solver Generation?",
+       "url": "https://arxiv.org/abs/2610.08720v1"
+      }
+     ]
+    },
+    {
+     "id": "f-worldsolver-score",
+     "name": "WorldSolver 三维总分（Tri-axis Score）",
+     "category": "agent",
+     "latex": "\\mathrm{Score}=\\frac{1}{3}\\left(\\mathrm{Exec}+\\mathrm{Visual}+\\mathrm{Physical}\\right)",
+     "symbols": [
+      [
+       "\\mathrm{Exec}",
+       "执行检查得分"
+      ],
+      [
+       "\\mathrm{Visual}",
+       "视觉保真得分"
+      ],
+      [
+       "\\mathrm{Physical}",
+       "物理合理性得分"
+      ]
+     ],
+     "derivation": [
+      "第 1 步：对每个任务分别在三维上评测。",
+      "第 2 步：执行检查——代码能否成功运行。",
+      "第 3 步：视觉保真——渲染是否复现预期动态行为。",
+      "第 4 步：物理合理性——动力学是否有物理依据。",
+      "第 5 步：三维等权平均得总分。"
+     ],
+     "analogy": "像三项全能：能跑、像、物理对各占三分之一。",
+     "pitfalls": [
+      "三维等权平均会掩盖某一维极弱",
+      "把执行成功当主要指标，忽略视觉/物理",
+      "跨任务平均隐藏域间差异"
+     ],
+     "code": "def score(e, v, p):\n    return (e + v + p) / 3.0",
+     "sources": [
+      {
+       "title": "WorldSolver: Can LLM Agents Simulate the Physical Dynamics via Solver Generation?",
+       "url": "https://arxiv.org/abs/2610.08720v1"
+      }
+     ]
+    }
+   ],
+   "selfCheck": {
+    "claims": [
+     "LLM agent 在科学/工程问题求解上日益进步；物理仿真是有挑战又实用的试验台（应用于具身 AI、游戏、电影）",
+     "求解器计算动态系统状态如何随时间演化",
+     "造 solver 需物理理解、数学推导与软件工程三方面能力",
+     "WorldSolver 含 168 个仿真任务，取自 61 篇经典计算机图形学论文，跨 7 个物理域",
+     "每题有固定仿真环境的 code scaffold，solver 实现留给 agent 补全",
+     "三维评测：执行检查、视觉保真、物理合理性",
+     "前沿 agent 产可执行 solver 已难，满足视觉与物理正确更难",
+     "GPT-5.6-Sol 48.7%、Claude-Opus-5 46.7%，相对更好但仍偏低",
+     "代码在 github.com/sirujiang/WorldSolver"
+    ],
+    "uncertain": [
+     "三维评测的精确度量与加权摘要未给，Score 公式为按摘要重建的通用形式，需核对原文",
+     "「物理合理性」验证的具体判据摘要未说明，待核实",
+     "各物理域得分细节摘要未给，待核实"
+    ]
+   },
+   "teaching": {
+    "progressive": [
+     {
+      "level": "一句话",
+      "text": "考 AI 会不会写物理仿真代码：给骨架让它补求解器，再看跑得通、像不像、合不合理。"
+     },
+     {
+      "level": "入门",
+      "text": "物理仿真要写出「状态随时间怎么变」的求解器，需要同时懂物理、会数学推导、能写代码。WorldSolver 把 168 个图形学经典现象的仿真环境固定成代码骨架，只让 agent 补求解器，再从可执行、视觉保真、物理合理三方面打分。"
+     },
+     {
+      "level": "进阶",
+      "text": "固定 scaffold 是有意为之：把变量隔离到「求解器实现」上，考的就只是物理建模与推导。三维评测分工明确——执行检查抓语法/运行错误，视觉保真抓动态行为不符，物理合理性抓动力学违反物理。这样「能跑但不像」和「像但违背物理」能被分开定位。"
+     },
+     {
+      "level": "专家",
+      "text": "它把「世界模型/物理理解」落成一个可自动判分的代码生成任务：169 题的场景与渲染管线给定，agent 只需补动力学。结果说明前沿 agent 连产出可执行求解器都难，视觉与物理正确更难，GPT-5.6-Sol 与 Claude-Opus-5 也只在 48.7% 与 46.7%。这提示当前 LLM 的「物理直觉」与「把物理写成数值代码」之间仍有明显鸿沟。"
+     }
+    ],
+    "socratic": [
+     {
+      "q": "为什么不直接考物理问答题？",
+      "a": "问答可能靠记忆蒙对；让 agent 写可运行求解器，必须真把动力学公式化成数值代码，且结果可执行可验证。"
+     },
+     {
+      "q": "执行成功为什么不等于物理正确？",
+      "a": "代码能跑只说明语法与流程对；若物理模型选错或推导错，仍会渲染出错误但可运行的动态，需视觉与物理两维才能抓住。"
+     }
+    ],
+    "mechanism": "物理仿真的难点可拆成「选对模型、推对动力学、写成代码」三步。把仿真环境与渲染固定成 scaffold，可把前两步暴露为可观测的代码产物；再用执行、视觉、物理三维分别对应工程、表象、物理三层正确性，使不同失败模式可被单独量化，从而把「理解物理」变成可自动评测的任务。",
+    "boundary": "基准覆盖 7 个物理域、168 个源自图形学论文的现象，未必代表全部物理场景；三维中的视觉保真与物理合理性依赖渲染与判定实现，可能带实现偏置。等权平均也可能掩盖某一维的极端失败。",
+    "analogyBoundary": "「验收桥」类比忽略了：桥梁标准客观统一，而这里的「视觉保真」由渲染对比定义、「物理合理」由验证器定义，判定本身是近似且可被特定写法迎合的。",
+    "misconceptions": [
+     "以为 benchmark 只要代码跑通就给分——还有视觉与物理两维。",
+     "以为 agent 连 scaffold 都要自己写——场景与环境是给定的。",
+     "把 48.7% 当作「接近一半会做」——三维平均，单项可能更低。"
+    ],
+    "ownAnalysis": "把「物理理解」落成「写求解器代码」是巧妙的可自动化设计（推断），与 program synthesis 评测、以及世界模型里「用可执行模型预测动力学」的思路同源。可疑处：物理合理性如何做到客观判定摘要未说，可能依赖参考实现或守恒量检查（推断）；三维等权也可能让「只会跑通」拿到不低的分数。该基准对具身/世界模型方向的直接价值是：它提供了一个衡量模型是否真懂动力学的探针。",
+    "officialNotes": [
+     {
+      "position": "前沿 agent 产出可执行求解器本身已难，满足视觉与物理正确性更难；GPT-5.6-Sol 与 Claude-Opus-5 总分仅 48.7% 与 46.7%",
+      "source": "arxiv: 2610.08720v1"
+     }
+    ],
+    "interviewAnswer": "它问 LLM agent 能不能真的做物理仿真。做法是造 WorldSolver 基准：168 个任务取自 61 篇经典图形学论文，跨 7 个物理域，每个任务把场景和仿真环境固定成代码骨架，只留给 agent 补求解器实现。评测三维——执行检查能否跑通、视觉保真动态行为像不像、物理合理性动力学是否站得住。结果显示前沿 agent 连产出可执行求解器都难，视觉和物理正确更难，GPT-5.6-Sol 和 Claude-Opus-5 也只有 48.7% 和 46.7%。对世界模型方向，它是一个衡量模型是否真懂动力学的探针。",
+    "studyPath": {
+     "prerequisites": [
+      "数值积分与动力学基础",
+      "计算机图形学/物理动画常识",
+      "LLM 代码生成 agent"
+     ],
+     "nextSteps": [
+      "读原文与代码库 github.com/sirujiang/WorldSolver",
+      "实现一个简单求解器通过执行检查",
+      "思考物理合理性验证如何客观化"
+     ]
+    }
+   }
+  }
+ ],
+ "skipped": []
+}

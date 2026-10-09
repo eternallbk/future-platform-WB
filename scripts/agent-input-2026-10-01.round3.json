@@ -1,0 +1,352 @@
+{
+  "date": "2026-10-01",
+  "generatedBy": "daily-agent",
+  "root": "D:\\pythonProject\\DS-daily",
+  "selection": {
+    "basis": "web/data/deep-read-plan.json 的 queue（scripts/plan_deep_read.py 生成：质量闸门 + 每类 2-10 条配额）",
+    "readFrom": "web/data/deep-read-plan.json",
+    "queueSize": 1,
+    "categories": ["coding"],
+    "channels": ["nowcoder"],
+    "corpusSize": 512,
+    "alreadyEnriched": 18,
+    "note": "本轮确定性采集只新增 1 条（manifest.newItems=1，plan.totals.candidates=1），因此计划队列只有 1 条；严格按清单执行，不另挑条目。"
+  },
+  "enrichment": [
+    {
+      "id": "525ceb8535fee263",
+      "tldr": "牛客面经题：面试官问如何排查 Kafka 消息堆积；帖子正文未被采集，此处给出可复述的排查链路与量化式。",
+      "keyPoints": [
+        "标题即问题：面试官让候选人讲 Kafka 消息堆积的排查思路",
+        "来源是牛客公开讨论页，采集摘要只有一句，没有正文与回答",
+        "下述排查链路、概念与公式是通用参考答案框架，不是原帖内容",
+        "主线：量化 LAG → 判生产/消费方向 → 定位根因 → 处置 → 验证回落",
+        "两个可复述量化式：排空时间 B0/(R−A)；有效并行度 min(消费者, 分区)"
+      ],
+      "why": "Kafka 堆积排查是后端/基础架构岗高频面试题；LAG、排空时间、并行度上限这套量化语言，也能用于多模态数据管道与训练任务队列的容量估算。",
+      "difficulty": "medium",
+      "tags": [
+        "kafka",
+        "consumer-lag",
+        "message-queue",
+        "troubleshooting",
+        "distributed-systems",
+        "interview"
+      ],
+      "entities": [
+        "Apache Kafka",
+        "Consumer Group",
+        "Consumer Lag",
+        "Partition",
+        "Rebalance"
+      ],
+      "diagram": {
+        "kind": "flow",
+        "title": "Kafka 堆积排查五步",
+        "caption": "记住主线：先量化分区级 LAG，再判生产涨还是消费慢，最后按根因处置并验证 LAG 回落。",
+        "svg": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 270'><g font-size='13' fill='var(--fg-1)'><rect x='14' y='30' width='108' height='56' rx='8' fill='none' stroke='var(--line-1)'/><text x='68' y='52' text-anchor='middle'>① 发现堆积</text><text x='68' y='70' text-anchor='middle' fill='var(--accent)'>LAG 持续偏高</text><rect x='140' y='30' width='108' height='56' rx='8' fill='none' stroke='var(--accent)' stroke-width='2'/><text x='194' y='52' text-anchor='middle'>② 量化 LAG</text><text x='194' y='70' text-anchor='middle' fill='var(--accent)'>分区级 describe</text><rect x='266' y='30' width='108' height='56' rx='8' fill='none' stroke='var(--line-1)'/><text x='320' y='52' text-anchor='middle'>③ 判方向</text><text x='320' y='70' text-anchor='middle' fill='var(--accent)'>生产涨 / 消费慢</text><rect x='392' y='30' width='108' height='56' rx='8' fill='none' stroke='var(--line-1)'/><text x='446' y='52' text-anchor='middle'>④ 定位根因</text><text x='446' y='70' text-anchor='middle' fill='var(--accent)'>消费端 / Broker</text><rect x='518' y='30' width='108' height='56' rx='8' fill='none' stroke='var(--line-1)'/><text x='572' y='52' text-anchor='middle'>⑤ 处置验证</text><text x='572' y='70' text-anchor='middle' fill='var(--accent)'>扩容 · 限流</text><line x1='122' y1='58' x2='133' y2='58' stroke='var(--line-1)'/><polygon points='140,58 133,54 133,62' fill='currentColor'/><line x1='248' y1='58' x2='259' y2='58' stroke='var(--line-1)'/><polygon points='266,58 259,54 259,62' fill='currentColor'/><line x1='374' y1='58' x2='385' y2='58' stroke='var(--line-1)'/><polygon points='392,58 385,54 385,62' fill='currentColor'/><line x1='500' y1='58' x2='511' y2='58' stroke='var(--line-1)'/><polygon points='518,58 511,54 511,62' fill='currentColor'/><rect x='14' y='140' width='612' height='112' rx='10' fill='none' stroke='var(--line-1)'/><text x='30' y='164'>三类根因（按方向分流）</text><rect x='30' y='178' width='180' height='52' rx='6' fill='none' stroke='var(--accent)'/><text x='120' y='200' text-anchor='middle' fill='var(--accent)'>消费端</text><text x='120' y='218' text-anchor='middle'>逻辑慢 · GC · rebalance</text><rect x='232' y='178' width='180' height='52' rx='6' fill='none' stroke='var(--accent)'/><text x='322' y='200' text-anchor='middle' fill='var(--accent)'>Broker</text><text x='322' y='218' text-anchor='middle'>磁盘 IO · 网络 · 副本</text><rect x='434' y='178' width='178' height='52' rx='6' fill='none' stroke='var(--accent)'/><text x='523' y='200' text-anchor='middle' fill='var(--accent)'>生产端</text><text x='523' y='218' text-anchor='middle'>流量突增 · key 倾斜</text><line x1='320' y1='140' x2='320' y2='94' stroke='var(--accent)' stroke-dasharray='4 3'/><polygon points='320,86 315,94 325,94' fill='var(--accent)'/><text x='330' y='120' fill='var(--accent)'>按方向分流</text></g></svg>",
+        "spec": {
+          "type": "flow",
+          "nodes": [
+            { "label": "发现堆积", "detail": "监控看到 consumer group 的 LAG 持续偏高，先确认是持续堆积还是一次性抖动" },
+            { "label": "量化 LAG", "detail": "kafka-consumer-groups.sh --describe 读每个分区的 current-offset / log-end-offset / LAG" },
+            { "label": "判方向", "detail": "是生产速率突增（上游放量）还是消费速率下降（下游变慢、重试放大）" },
+            { "label": "定位根因", "detail": "消费端：单条处理慢、GC、频繁 rebalance、下游 DB/RPC 超时；Broker：磁盘 IO/网络/副本；生产端：流量突增或 key 倾斜" },
+            { "label": "处置", "detail": "扩消费者（不超过分区数）、加分区、批量+异步、生产端限流、临时转储；重置 offset 要谨慎" },
+            { "label": "验证", "detail": "LAG 回落到稳定区间，补 lag 告警与容量评估，避免只压症状不治根因" }
+          ],
+          "edges": [
+            { "from": 0, "to": 1, "label": "确认是堆积而非抖动" },
+            { "from": 1, "to": 2, "label": "看 LAG 随时间与分区的分布" },
+            { "from": 2, "to": 3, "label": "按方向缩小范围" },
+            { "from": 3, "to": 4, "label": "对症处置" },
+            { "from": 4, "to": 5, "label": "观察 LAG 是否回落" }
+          ]
+        },
+        "alt": "流程图：发现堆积后用 kafka-consumer-groups.sh --describe 量化每个分区的 LAG，判断是生产速率突增还是消费速率下降，再定位消费端、Broker 或生产端根因，随后扩容/加分区/限流处置，最后验证 LAG 回落。"
+      },
+      "concepts": [
+        {
+          "name": "消费者滞后 Consumer Lag",
+          "readable": "LAG = 分区最新消息位点（log-end-offset）减去消费者组已提交位点（committed offset）。它衡量「还有多少条没消费」，是判断堆积严重程度与恢复趋势的第一指标；必须按分区看，不能只看总和。",
+          "analogy": "像食堂出餐口：log-end-offset 是已经做好的餐数，committed offset 是已经取走的餐数，两者之差就是排队还没被取走的份数。",
+          "analogyBreaksDown": "食堂只有一条队；Kafka 每个分区各自一条队，几条队长度不同才是真问题。而且「已取走」指位点已提交，不等于业务真的处理成功——先提交后处理会低估 LAG。",
+          "mechanism": "Kafka 把消费进度存在 __consumer_offsets 里，消费者按分区批量拉取并提交位点。用 describe 读每个分区的 LAG，既能确认是否真的堆积，也能看出是整体均匀变慢还是个别分区过热。",
+          "visual": "横轴时间、纵轴消息位点，画两条线：log-end-offset 单调上升，committed offset 跟随其后；两线之间的竖直距离就是 LAG，用 accent 阴影填充。再画一张分区级柱状图，横轴分区号、纵轴当前 LAG，突出最高的那根。",
+          "prerequisites": [
+            "Kafka 主题 / 分区 / 消费者组基本模型",
+            "offset 提交语义（自动或手动、至多一次或至少一次）"
+          ],
+          "selfTest": [
+            "LAG 的定义式是什么？分子分母分别读哪个字段？",
+            "为什么总 LAG 看起来正常，仍可能有分区级堆积？",
+            "位点已提交是否等于消息已被成功处理？"
+          ],
+          "formula": "L_p = \\mathrm{LEO}_p - \\mathrm{CommittedOffset}_p"
+        },
+        {
+          "name": "再平衡放大堆积 Rebalance Amplification",
+          "readable": "消费者组内成员变化，或心跳 / 处理超时，都会触发 rebalance：分区被收回再分配，期间消费短暂停止。如果单次处理超过 max.poll.interval.ms，消费者会被判掉线，于是反复 rebalance，出现「越扩容、堆积越涨」的假象。",
+          "analogy": "像换班时收银员集体离岗重新分工：每次分工都要停几分钟，顾客越排越长；如果某个收银员结一单太久被认定离岗，还得再分一次工。",
+          "analogyBreaksDown": "换班是一次性成本；Kafka 的心跳线程与处理线程是分开的，只有 poll 间隔超时才会被踢出组。而且扩容本意是加人，却可能因为触发 rebalance 让吞吐先掉一段，因果方向和时间尺度都不能照搬。",
+          "mechanism": "排查时先看消费者日志有没有连续 rebalance，以及 max.poll.interval.ms 与单批处理耗时的关系。对策是缩小 max.poll.records、把处理异步化或适当加长超时，让单次 poll 的处理时间稳定小于阈值。",
+          "visual": "画时间轴：正常消费的吞吐平台期之间插入若干短促的「rebalance 停摆」谷底，用红色竖条标出触发原因（成员加入/离开、poll 超时）；再叠加一条 LAG 曲线，显示每次停摆后 LAG 台阶式抬升。",
+          "prerequisites": [
+            "消费者组协调器与分区分配策略",
+            "max.poll.interval.ms / session.timeout.ms / heartbeat 的区别"
+          ],
+          "selfTest": [
+            "rebalance 期间被收回的分区还能继续被消费吗？",
+            "为什么扩容消费者反而可能先让堆积变多？",
+            "max.poll.interval.ms 与 session.timeout.ms 各管什么？"
+          ],
+          "formula": "T_{\\mathrm{batch}} < \\mathrm{max.poll.interval.ms}"
+        },
+        {
+          "name": "并行度上限与分区倾斜 Parallelism Ceiling & Partition Skew",
+          "readable": "同一个分区同一时刻只能被组内一个消费者消费，所以消费者再多，有效并行度也只是 min(消费者数, 分区数)。如果消息按 key 分区且分布不均，个别分区会远高于平均值，扩容也救不了那条热分区。",
+          "analogy": "像超市只开 N 个收银台：收银员再多，同时结账的也只有 N 个；如果某条队特别长，说明客流没被均匀分到各队，加收银员不如先把队伍重新分。",
+          "analogyBreaksDown": "超市可以随时让顾客换队；Kafka 分区键一旦确定，同一 key 的消息永远进同一分区，不能靠「重新排队」解决。要真正打散只能改分区键或增加分区数，而后者会破坏同 key 的顺序性。",
+          "mechanism": "排查时把 LAG 按分区分组，先算有效并行度 min(C, Np)，再看倾斜度 max LAG / mean LAG。若倾斜高，说明瓶颈在分区键分布而不是总消费能力，处置应是改 key、加分区或对热 key 单独降级。",
+          "visual": "左右两张图：左边横轴消费者数、纵轴有效并行度，画一条到分区数就压平的饱和曲线，用 accent 标出饱和点；右边画分区级 LAG 柱状图，最高的柱子标红，并用虚线画平均 LAG 作为参照。",
+          "prerequisites": [
+            "Kafka 分区与分区键的对应关系",
+            "消费者组分区分配策略（range / round-robin / sticky）"
+          ],
+          "selfTest": [
+            "消费者数超过分区数时，吞吐会继续线性上涨吗？",
+            "倾斜度 skew 的定义是什么，多大算需要处理？",
+            "为什么增加分区可能破坏顺序语义？"
+          ],
+          "formula": "P_{\\mathrm{eff}} = \\min(C,\\,N_p)"
+        }
+      ],
+      "formulas": [
+        {
+          "id": "f-consumer-lag-drain",
+          "name": "堆积排空时间 (Backlog Drain Time)",
+          "category": "engineering",
+          "glyph": "∑",
+          "tags": ["kafka", "consumer-lag", "capacity-planning", "backlog"],
+          "latex": "T_{\\mathrm{drain}} = \\frac{B_0}{R - A}, \\quad R > A",
+          "html": "<code>T_drain = B0 / (R − A)，仅当 R &gt; A</code>",
+          "symbols": [
+            ["B_0", "初始堆积消息数（当前 LAG 总量）"],
+            ["R", "消费者组当前消费速率（条/秒）"],
+            ["A", "消息到达速率（条/秒），即生产者写入速率"],
+            ["T_{\\mathrm{drain}}", "把 B_0 排空所需时间（秒）；R ≤ A 时不存在有限解"]
+          ],
+          "derivation": [
+            "把堆积看成水位：单位时间净减少量 = 消费速率 R 减去到达速率 A。",
+            "初始水位是 B_0，在 R、A 近似稳定的假设下按净速率线性下降。",
+            "令 B_0 − (R−A)·T = 0，解出 T = B_0/(R−A)。",
+            "若 R ≤ A，水位不降反升，必须先扩容消费者或对生产端限流，让 R 真正大于 A。"
+          ],
+          "analogy": "水池一边进水一边放水：只有放水比进水快，水位才会下降；问「多久排空」就是初始水量除以净流出速度。",
+          "pitfalls": [
+            "把总 LAG 当 B_0，却忽略 R 会随下游变慢、重试放大而下降，估出的排空时间过于乐观。",
+            "只用消费者数估 R：消费者数超过分区数后 R 不再线性增长，min(C, Np) 才是并行度上限。",
+            "忽略 A 的变化：上游回补或大促时 A 可能突然翻倍，原本 R > A 的结论会失效。"
+          ],
+          "code": "def drain_seconds(backlog, rate, arrival):\n    \"\"\"backlog: 当前 LAG 总量; rate: 消费速率 msg/s; arrival: 到达速率 msg/s.\"\"\"\n    if rate <= arrival:\n        return None  # 永远排不空，必须先扩容或限流\n    return backlog / (rate - arrival)\n\n# 例：LAG 120 万，消费 8000/s，到达 5000/s -> 400 秒排空\nprint(drain_seconds(1_200_000, 8000, 5000))\n",
+          "sources": [
+            { "title": "面试官：“介绍一下你怎么排查Kafka消息堆积的？”", "url": "https://nowcoder.com/discuss/933796596888662016" }
+          ]
+        },
+        {
+          "id": "f-partition-parallelism",
+          "name": "有效并行度与分区倾斜 (Effective Parallelism & Partition Skew)",
+          "category": "engineering",
+          "glyph": "∥",
+          "tags": ["kafka", "partition", "parallelism", "skew", "capacity-planning"],
+          "latex": "P_{\\mathrm{eff}}=\\min(C,\\,N_p),\\qquad \\mathrm{skew}=\\frac{\\max_p L_p}{\\frac{1}{N_p}\\sum_{p=1}^{N_p} L_p}",
+          "html": "<code>P_eff = min(C, Np)；skew = max LAG / mean LAG</code>",
+          "symbols": [
+            ["C", "消费者组内实例数"],
+            ["N_p", "主题分区数"],
+            ["L_p", "第 p 个分区当前的 LAG"],
+            ["P_{\\mathrm{eff}}", "有效并行度：同时被消费的分区数上限"],
+            ["\\mathrm{skew}", "倾斜度：最大分区 LAG 与平均 LAG 的比值，1 表示均匀"]
+          ],
+          "derivation": [
+            "Kafka 保证同一分区在同一时刻只被组内一个消费者消费，因此并行消费的分区数不超过消费者数。",
+            "并行度也不可能超过分区总数，两个上限取最小，得到 P_eff = min(C, Np)。",
+            "并行度够但仍堆积，往往是分区之间不均衡：某个 key 的消息全落在一个分区。",
+            "用最大分区 LAG 除以平均 LAG 得到 skew，把「有没有热分区」变成一个可比较的数。"
+          ],
+          "analogy": "超市只开 N 个收银台，收银员再多也只有 N 个能同时结账；某条队排得特别长，说明顾客没被均匀分到各队，加人不如重新分流。",
+          "pitfalls": [
+            "只看消费者数就认定「已扩容」：超过分区数的实例只是空转，还可能因 rebalance 拖慢整体。",
+            "把 skew 当绝对值：它是相对平均值的倍数，LAG 整体很小时高 skew 未必需要处理。",
+            "为打散热分区而随意加分区：同 key 的顺序性会被破坏，消费者端若有顺序假设需同步评估。"
+          ],
+          "code": "def parallelism(consumers, partitions):\n    return min(consumers, partitions)\n\n\ndef partition_skew(lags):\n    \"\"\"lags: 每个分区的当前 LAG 列表.\"\"\"\n    if not lags or sum(lags) == 0:\n        return 0.0\n    mean = sum(lags) / len(lags)\n    return max(lags) / mean if mean else 0.0\n\nlags = [9000, 120, 150, 8000, 130]\nprint(parallelism(8, 5), partition_skew(lags))  # 5, 4.17 -> 有热分区\n",
+          "sources": [
+            { "title": "面试官：“介绍一下你怎么排查Kafka消息堆积的？”", "url": "https://nowcoder.com/discuss/933796596888662016" }
+          ]
+        }
+      ],
+      "selfCheck": {
+        "claims": [
+          "该条目 id 为 525ceb8535fee263，channel 为 nowcoder，分类为 coding，相关度 51.0。",
+          "标题为「面试官：“介绍一下你怎么排查Kafka消息堆积的？”」，即题目本身是排查 Kafka 消息堆积。",
+          "采集层写入的摘要只有「牛客社区公开讨论页，可能包含面经或招聘信息。」，没有正文与回答内容。",
+          "该条目是本轮唯一 fresh 条目（manifest.newItems=1，plan.totals.candidates=1，queueSize=1）。"
+        ],
+        "uncertain": [
+          "原帖正文与高赞回答未被采集；本条的排查链路、概念与公式是通用工程参考答案，不是对原帖内容的复述，请人工打开 https://nowcoder.com/discuss/933796596888662016 核对。",
+          "题目是否指定 Kafka 版本、是否讨论特定积压场景（如 rebalance、顺序消费、重复消费），无法从标题与摘要判断。",
+          "帖子发布于 2026-10-01 20:42，与采集时间接近，正文与高赞答案可能仍在更新。",
+          "该题是系统/后端运维题却被编码层因「面经」归入 coding（面试手撕题），分类是否应改判为 engineering 需人工确认。"
+        ]
+      }
+    }
+  ],
+  "jobs": [],
+  "proposals": {
+    "channelHealth": [
+      {
+        "id": "jobs_alibaba",
+        "nameZh": "阿里招聘",
+        "status": "blocked",
+        "streak": 6,
+        "lastError": null,
+        "evidence": "真实接口 POST https://talent.alibaba.com/position/search：GET 405；无 CSRF 的 POST 403；带页面 XSRF-TOKEN 后 200 但 datas=null、totalCount=0，/searchCondition/list 的 searchItems 也为 null。token 需 baxia 浏览器脚本生成。",
+        "suggestedAction": "边缘反爬需要浏览器，脚本无法通过；建议保持 blocked，改走人工导入（scripts/inbox.py）或在浏览器导出岗位后导入。",
+        "escalate": true
+      },
+      {
+        "id": "jobs_bytedance",
+        "nameZh": "字节招聘",
+        "status": "blocked",
+        "streak": 6,
+        "lastError": null,
+        "evidence": "GET /api/v1/search/job/posts 返回 200 的「字节跳动猎头平台」HTML；带 JSON body 的 POST 405（0 字节）；带尾斜杠 POST 307；/referral/api/... 404。JS bundle 确认路径正确，是边缘 WAF 而非请求错误。",
+        "suggestedAction": "边缘 WAF 拦截，需要浏览器；建议保持 blocked，改走人工导入或在浏览器导出岗位后导入。",
+        "escalate": true
+      },
+      {
+        "id": "jobs_minimax",
+        "nameZh": "MiniMax",
+        "status": "blocked",
+        "streak": 6,
+        "lastError": null,
+        "evidence": "minimaxi.com/careers 内嵌飞书 ATSX（vrfi1sk8a0.jobs.feishu.cn）；索引页无岗位数据，API 返回 405（与字节同一套 ATSX 边缘），robots.txt 禁止 /api/。",
+        "suggestedAction": "无机器可读列表且 robots 禁止 /api/；建议保持 blocked，改走人工导入。",
+        "escalate": true
+      },
+      {
+        "id": "jobs_moonshot",
+        "nameZh": "月之暗面",
+        "status": "blocked",
+        "streak": 6,
+        "lastError": null,
+        "evidence": "www.moonshot.cn/careers 返回 200 / 95KB 但不含岗位关键词，并跳转 careers.kimi.com；后者是 11.6KB JS shell，/jobs 与 /positions 均 404，chunk 中也无岗位 API。",
+        "suggestedAction": "无机器可读列表；建议保持 blocked，改走人工导入或等待官方提供 ATS 接口。",
+        "escalate": true
+      },
+      {
+        "id": "jobs_shailab",
+        "nameZh": "上海 AI Lab",
+        "status": "blocked",
+        "streak": 6,
+        "lastError": null,
+        "evidence": "/joinus、/joinus/social、/joinus/campus 返回同一份约 70KB 营销页，无岗位行；岗位由 JS 拉取且未引用任何 ATS/API 端点。",
+        "suggestedAction": "无机器可读列表；建议保持 blocked，改走人工导入。",
+        "escalate": true
+      },
+      {
+        "id": "jobs_zhipu",
+        "nameZh": "智谱招聘",
+        "status": "blocked",
+        "streak": 6,
+        "lastError": null,
+        "evidence": "zhipuai.cn/joinus 返回 200 / 783KB，只服务端渲染岗位分类（算法/校招标签），没有逐岗位数据，也未暴露 ATS 主机；15 个 Next.js chunk 均未引用岗位 API。",
+        "suggestedAction": "需要浏览器或人工导入；建议保持 blocked，改走人工导入。",
+        "escalate": true
+      },
+      {
+        "id": "machineheart",
+        "nameZh": "机器之心",
+        "status": "blocked",
+        "streak": 6,
+        "lastError": null,
+        "evidence": "/rss 与 /feed 均返回 200 text/html（机器之心·数据服务落地页）而非 RSS，/rss/articles 404；唯一可达的 RSSHub 镜像 /jiqizhixin/daily 也 404。",
+        "suggestedAction": "Feed 已退役，替代源 leiphone 本轮有产出；建议加入 DISABLED_CHANNELS 标记退役，而不是继续重试。",
+        "escalate": true
+      },
+      {
+        "id": "openreview",
+        "nameZh": "OpenReview",
+        "status": "blocked",
+        "streak": 6,
+        "lastError": null,
+        "evidence": "api1 与 api2 的 /notes 都返回 200 text/html「Verifying your browser | OpenReview」（早前为 403 ChallengeRequiredError）；只有浏览器能通过挑战。",
+        "suggestedAction": "arXiv + s2 已覆盖论文投稿，建议暂不修复；保留渠道但从失败告警中豁免。",
+        "escalate": true
+      },
+      {
+        "id": "reddit",
+        "nameZh": "Reddit",
+        "status": "blocked",
+        "streak": 6,
+        "lastError": null,
+        "evidence": "robots.txt 为「User-agent: * / Disallow: /」，即使子版 top/.rss 返回 200 也不抓取；lobste.rs 同样全站 Disallow，HN 已覆盖同类信号。",
+        "suggestedAction": "合规决定不抓取，建议标记为「策略性禁用」，不计入失败告警。",
+        "escalate": true
+      },
+      {
+        "id": "rsshub",
+        "nameZh": "RSSHub",
+        "status": "blocked",
+        "streak": 6,
+        "lastError": null,
+        "evidence": "公共实例全部不可用：rsshub.app 403 Cloudflare 挑战、rssforever 503、ktachibana 404/503、pseudoyu TLS 错误；唯一可达镜像只提供 zhihu/solidot，而 zhihu 已由专用渠道覆盖。",
+        "suggestedAction": "公共实例整体不可用，建议标记退役；zhihu 路由已由专用 zhihu 渠道覆盖。",
+        "escalate": true
+      }
+    ],
+    "taxonomyProposals": [
+      {
+        "action": "add",
+        "category": "engineering",
+        "reason": "本轮唯一 fresh 条目是 Kafka 消息堆积排查（分布式系统运维题），却因命中「面经」被归入 coding；engineering 现有词表缺少消息队列与消费滞后类词，导致系统题无法正确分流。",
+        "proposedKeywords": ["Kafka", "consumer lag", "消息堆积", "消息队列", "rebalance", "partition"]
+      },
+      {
+        "action": "reweight",
+        "category": "coding",
+        "reason": "coding 同时吃下「算法手撕题」与「后端/系统设计面经」，找手撕题的读者会被系统题稀释；建议在 coding 内拆分或下调「面经」权重，把系统题导向 engineering。"
+      }
+    ],
+    "keywordProposals": [
+      {
+        "category": "engineering",
+        "add": ["Kafka", "consumer lag", "消息堆积", "消息队列", "rebalance"],
+        "remove": [],
+        "reason": "这类内容目前被 coding 的「面经」抢走；engineering 需要自己的命中词才能正确分流，本轮样本 1 条，属小权重微调。"
+      },
+      {
+        "category": "coding",
+        "add": [],
+        "remove": [],
+        "reason": "「面经」一词过宽：既覆盖算法手撕也覆盖系统设计。本次不下调（会影响历史条目重分类），先记录以待更多样本后评估精度。"
+      }
+    ],
+    "newChannelProposals": [],
+    "noiseReport": {
+      "overBroadKeywords": ["面经"],
+      "underCoveredCategories": ["engineering"]
+    },
+    "humanReviewQueue": [
+      "本轮唯一深读条目 id=525ceb8535fee263（牛客 Kafka 消息堆积题）的采集摘要为空；请人工打开 https://nowcoder.com/discuss/933796596888662016 核对正文与高赞答案。本轮 enrichment 的排查链路与公式是通用参考答案，不代表原帖内容。",
+      "分类复核：Kafka 消息堆积属于分布式系统/工程，本轮被编码层因「面经」归入 coding（面试手撕题）；请确认是否调整「面经」权重或为 engineering 增加消息队列关键词。",
+      "图解缺口：已深读的 18 条中，第一轮 12 条只有解析、没有 diagram（第二轮 6 条已含图解）。它们不在本轮 queue（计划只收 fresh 条目），需要决定是否安排一次「补图」回填。"
+    ]
+  },
+  "log": {
+    "status": "ok",
+    "notes": "按 web/data/deep-read-plan.json（queueSize=1，本轮新增 1 条）深读 1 条：牛客 Kafka 消息堆积排查题，含自包含内联 SVG 图解、3 个八层概念与 2 个五层公式。该条采集摘要为空，enrichment 的排查链路与公式是通用工程参考答案，已在 selfCheck.uncertain 逐条标注来源边界。本轮 digest 无新增招聘条目，jobs 不变更。提案补充了 10 个 blocked 渠道的实测证据与 4 条分类/关键词建议（2 条 taxonomy + 2 条 keyword），并记录「第一轮 12 条已有解析但缺图解」供人工决策。",
+    "errors": []
+  }
+}
